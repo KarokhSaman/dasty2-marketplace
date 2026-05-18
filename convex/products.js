@@ -1,6 +1,14 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 
+async function generateSeq(ctx) {
+  const yy = String(new Date().getFullYear()).slice(-2); // "26"
+  const prefix = `${yy}-`;
+  const all = await ctx.db.query("products").collect();
+  const count = all.filter((p) => (p.seq ?? "").startsWith(prefix)).length;
+  return `${prefix}${String(count + 1).padStart(4, "0")}`;
+}
+
 function calculateProfit(price) {
   if (price >= 5000 && price <= 9000) return 2000;
   if (price >= 10000 && price <= 29000) return 3000;
@@ -13,6 +21,16 @@ function calculateProfit(price) {
   if (price >= 500000 && price <= 1000000) return 30000;
   return 0;
 }
+
+export const getPublicById = query({
+  args: { id: v.id("products") },
+  handler: async (ctx, { id }) => {
+    const product = await ctx.db.get(id);
+    if (!product || product.status !== "approved") return null;
+    const { sellerId, sellerPhone, profit, ...rest } = product;
+    return rest;
+  },
+});
 
 export const getPublic = query({
   args: {},
@@ -45,7 +63,6 @@ export const getAll = query({
 
 export const add = mutation({
   args: {
-    seq: v.string(),
     title: v.string(),
     description: v.string(),
     category: v.union(
@@ -79,13 +96,23 @@ export const add = mutation({
   },
   handler: async (ctx, args) => {
     const profit = calculateProfit(args.price);
-    return await ctx.db.insert("products", {
+    const seq = await generateSeq(ctx);
+    const id = await ctx.db.insert("products", {
       ...args,
+      seq,
       city: args.city ?? "Erbil",
       profit,
       status: "pending",
       views: 0,
     });
+    await ctx.db.insert("notifications", {
+      sellerId: "ADMIN",
+      productId: id,
+      message: `New product submitted: "${args.title}" by ${args.sellerName}`,
+      read: false,
+      createdAt: new Date().toISOString(),
+    });
+    return id;
   },
 });
 
@@ -109,6 +136,111 @@ export const updateStatus = mutation({
       Object.entries(fields).filter(([, v]) => v !== undefined)
     );
     await ctx.db.patch(id, patch);
+  },
+});
+
+export const getById = query({
+  args: { id: v.id("products") },
+  handler: async (ctx, { id }) => {
+    return await ctx.db.get(id);
+  },
+});
+
+const CATEGORY_VALIDATOR = v.union(
+  v.literal("Carrycot"), v.literal("Carrier"), v.literal("Carseat"),
+  v.literal("Electrics"), v.literal("Fabric"), v.literal("Highchair"),
+  v.literal("Jolana"), v.literal("Jumper"), v.literal("Mastela"),
+  v.literal("Next2me"), v.literal("Rawrawa"), v.literal("Sisam"),
+  v.literal("Shirdosh"), v.literal("Stroller"), v.literal("Yary u sht"),
+  v.literal("Other")
+);
+
+export const sellerUpdate = mutation({
+  args: {
+    id: v.id("products"),
+    sellerId: v.string(),
+    title: v.string(),
+    description: v.string(),
+    category: CATEGORY_VALIDATOR,
+    condition: v.union(v.literal("new"), v.literal("used")),
+    price: v.number(),
+    photos: v.array(v.string()),
+  },
+  handler: async (ctx, { id, sellerId, ...fields }) => {
+    const product = await ctx.db.get(id);
+    if (!product) throw new Error("Product not found");
+    if (product.sellerId !== sellerId) throw new Error("Not authorized");
+    if (product.status === "sold" || product.status === "paid") {
+      throw new Error("Cannot edit a sold or paid product");
+    }
+    await ctx.db.patch(id, {
+      ...fields,
+      profit: calculateProfit(fields.price),
+      status: "pending",
+    });
+    await ctx.db.insert("notifications", {
+      sellerId: "ADMIN",
+      productId: id,
+      message: `Product resubmitted for review: "${fields.title}" by ${product.sellerName}`,
+      read: false,
+      createdAt: new Date().toISOString(),
+    });
+  },
+});
+
+export const duplicate = mutation({
+  args: {
+    id: v.id("products"),
+    sellerId: v.string(),
+  },
+  handler: async (ctx, { id, sellerId }) => {
+    const src = await ctx.db.get(id);
+    if (!src || src.sellerId !== sellerId) throw new Error("Not authorized");
+
+    const seq = await generateSeq(ctx);
+    const newId = await ctx.db.insert("products", {
+      seq,
+      title:       src.title,
+      description: src.description,
+      category:    src.category,
+      condition:   src.condition,
+      price:       src.price,
+      profit:      src.profit,
+      photos:      src.photos,
+      city:        src.city,
+      sellerId:    src.sellerId,
+      sellerName:  src.sellerName,
+      sellerPhone: src.sellerPhone,
+      status:      "pending",
+      featured:    false,
+      views:       0,
+      dateAdded:   new Date().toISOString(),
+    });
+
+    await ctx.db.insert("notifications", {
+      sellerId:  "ADMIN",
+      productId: newId,
+      message:   `New product submitted: "${src.title}" by ${src.sellerName}`,
+      read:      false,
+      createdAt: new Date().toISOString(),
+    });
+
+    return newId;
+  },
+});
+
+export const sellerRemove = mutation({
+  args: {
+    id: v.id("products"),
+    sellerId: v.string(),
+  },
+  handler: async (ctx, { id, sellerId }) => {
+    const product = await ctx.db.get(id);
+    if (!product || product.sellerId !== sellerId) throw new Error("Not authorized");
+    if (!["pending", "rejected"].includes(product.status)) {
+      throw new Error("Only pending or rejected products can be deleted");
+    }
+    await ctx.db.delete(id);
   },
 });
 

@@ -1,39 +1,56 @@
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { clerkMiddleware } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
+import { VALID_LOCALES, DEFAULT_LOCALE } from "./lib/i18n/translations";
 
-const ADMIN_EMAILS = ["karokh.saman.aziz@gmail.com", "soma.karam.a@gmail.com"];
+const isPublicPath = (pathname) =>
+  pathname === "/" ||
+  pathname.startsWith("/products") ||
+  pathname.startsWith("/sign-in") ||
+  pathname.startsWith("/sign-up") ||
+  pathname === "/seller/login" ||
+  pathname === "/admin/login" ||
+  pathname.startsWith("/api/seller/") ||
+  pathname.startsWith("/api/admin/");
 
-const isPublicRoute = createRouteMatcher([
-  "/",
-  "/products(.*)",
-  "/sign-in(.*)",
-  "/sign-up(.*)",
-]);
+const isSellerPath = (pathname) =>
+  pathname.startsWith("/seller") && pathname !== "/seller/login";
 
-const isSellerRoute = createRouteMatcher(["/seller(.*)"]);
-const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
+const isAdminPath = (pathname) =>
+  pathname.startsWith("/admin") && pathname !== "/admin/login";
 
-export default clerkMiddleware(async (auth, req) => {
-  if (isPublicRoute(req)) return NextResponse.next();
+function localeHeaders(req) {
+  const cookie = req.cookies.get("dasty2-lang")?.value;
+  const locale  = VALID_LOCALES.includes(cookie) ? cookie : DEFAULT_LOCALE;
+  const h = new Headers(req.headers);
+  h.set("x-locale", locale);
+  return h;
+}
 
-  if (isAdminRoute(req)) {
-    const { userId, sessionClaims } = await auth();
-    if (!userId) return NextResponse.redirect(new URL("/sign-in", req.url));
+export default clerkMiddleware(async (_auth, req) => {
+  const headers  = localeHeaders(req);
+  const { pathname } = req.nextUrl;
 
-    const email = sessionClaims?.email ?? sessionClaims?.["https://clerk.dev/email"];
-    if (!ADMIN_EMAILS.includes(email)) {
-      return NextResponse.redirect(new URL("/", req.url));
+  if (isPublicPath(pathname)) {
+    return NextResponse.next({ request: { headers } });
+  }
+
+  if (isAdminPath(pathname)) {
+    const adminCookie = req.cookies.get("dasty2-admin")?.value;
+    if (!adminCookie) {
+      return NextResponse.redirect(new URL("/admin/login", req.url));
     }
-    return NextResponse.next();
+    return NextResponse.next({ request: { headers } });
   }
 
-  if (isSellerRoute(req)) {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.redirect(new URL("/sign-in", req.url));
-    return NextResponse.next();
+  if (isSellerPath(pathname)) {
+    const sellerCookie = req.cookies.get("dasty2-seller")?.value;
+    if (!sellerCookie) {
+      return NextResponse.redirect(new URL("/seller/login", req.url));
+    }
+    return NextResponse.next({ request: { headers } });
   }
 
-  return NextResponse.next();
+  return NextResponse.next({ request: { headers } });
 });
 
 export const config = {

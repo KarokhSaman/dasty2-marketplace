@@ -1,26 +1,42 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 
-export const register = mutation({
+export const getByEmail = query({
+  args: { email: v.string() },
+  handler: async (ctx, { email }) => {
+    return await ctx.db
+      .query("sellers")
+      .filter((q) => q.eq(q.field("email"), email))
+      .first();
+  },
+});
+
+export const createWithEmail = mutation({
   args: {
-    clerkUserId: v.string(),
+    email: v.string(),
     name: v.string(),
     phone: v.string(),
     city: v.string(),
-    registeredAt: v.string(),
   },
   handler: async (ctx, args) => {
     const existing = await ctx.db
       .query("sellers")
-      .filter((q) => q.eq(q.field("clerkUserId"), args.clerkUserId))
+      .filter((q) => q.eq(q.field("email"), args.email))
       .first();
-
     if (existing) return existing._id;
-
     return await ctx.db.insert("sellers", {
       ...args,
+      clerkUserId: "",
+      registeredAt: new Date().toISOString(),
       isActive: true,
     });
+  },
+});
+
+export const getById = query({
+  args: { id: v.id("sellers") },
+  handler: async (ctx, { id }) => {
+    return await ctx.db.get(id);
   },
 });
 
@@ -31,6 +47,37 @@ export const getByClerkId = query({
       .query("sellers")
       .filter((q) => q.eq(q.field("clerkUserId"), clerkUserId))
       .first();
+  },
+});
+
+export const create = mutation({
+  args: {
+    clerkUserId: v.optional(v.string()),
+    email: v.optional(v.string()),
+    name: v.string(),
+    phone: v.string(),
+    city: v.string(),
+    registeredAt: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const key = args.email ?? args.clerkUserId ?? "";
+    const existing = await ctx.db
+      .query("sellers")
+      .filter((q) =>
+        args.email
+          ? q.eq(q.field("email"), args.email)
+          : q.eq(q.field("clerkUserId"), args.clerkUserId ?? "")
+      )
+      .first();
+    if (existing) return existing._id;
+    return await ctx.db.insert("sellers", { ...args, clerkUserId: args.clerkUserId ?? "", isActive: true });
+  },
+});
+
+export const setActive = mutation({
+  args: { id: v.id("sellers"), isActive: v.boolean() },
+  handler: async (ctx, { id, isActive }) => {
+    await ctx.db.patch(id, { isActive });
   },
 });
 

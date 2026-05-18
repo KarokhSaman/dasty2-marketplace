@@ -7,21 +7,11 @@ export default defineSchema({
     title: v.string(),
     description: v.string(),
     category: v.union(
-      v.literal("Carrycot"),
-      v.literal("Carrier"),
-      v.literal("Carseat"),
-      v.literal("Electrics"),
-      v.literal("Fabric"),
-      v.literal("Highchair"),
-      v.literal("Jolana"),
-      v.literal("Jumper"),
-      v.literal("Mastela"),
-      v.literal("Next2me"),
-      v.literal("Rawrawa"),
-      v.literal("Sisam"),
-      v.literal("Shirdosh"),
-      v.literal("Stroller"),
-      v.literal("Yary u sht"),
+      v.literal("Carrycot"), v.literal("Carrier"), v.literal("Carseat"),
+      v.literal("Electrics"), v.literal("Fabric"), v.literal("Highchair"),
+      v.literal("Jolana"), v.literal("Jumper"), v.literal("Mastela"),
+      v.literal("Next2me"), v.literal("Rawrawa"), v.literal("Sisam"),
+      v.literal("Shirdosh"), v.literal("Stroller"), v.literal("Yary u sht"),
       v.literal("Other")
     ),
     condition: v.union(v.literal("new"), v.literal("used")),
@@ -29,11 +19,8 @@ export default defineSchema({
     profit: v.number(),
     photos: v.array(v.string()),
     status: v.union(
-      v.literal("pending"),
-      v.literal("approved"),
-      v.literal("rejected"),
-      v.literal("sold"),
-      v.literal("paid")
+      v.literal("pending"), v.literal("approved"), v.literal("rejected"),
+      v.literal("sold"), v.literal("paid")
     ),
     city: v.string(),
     sellerId: v.string(),
@@ -49,12 +36,20 @@ export default defineSchema({
   }),
 
   sellers: defineTable({
-    clerkUserId: v.string(),
+    clerkUserId: v.optional(v.string()),
+    email: v.optional(v.string()),
     name: v.string(),
     phone: v.string(),
     city: v.string(),
     registeredAt: v.string(),
     isActive: v.boolean(),
+  }),
+
+  otpCodes: defineTable({
+    email: v.string(),
+    code: v.string(),
+    expiresAt: v.number(),
+    verified: v.boolean(),
   }),
 
   sales: defineTable({
