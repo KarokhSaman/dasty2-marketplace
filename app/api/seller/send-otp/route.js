@@ -18,7 +18,7 @@ export async function POST(request) {
     try {
       const resend = new Resend(process.env.RESEND_API_KEY);
       const { error } = await resend.emails.send({
-        from: "Dasty2 Mndalan <onboarding@resend.dev>",
+        from: "Dasty2 Mndalan <noreply@dasty2mndalan.com>",
         to: email.trim(),
         subject: "Your login code — Dasty2 Mndalan",
         html: `

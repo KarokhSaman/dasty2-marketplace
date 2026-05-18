@@ -23,7 +23,7 @@ export async function POST(request) {
     try {
       const resend = new Resend(process.env.RESEND_API_KEY);
       await resend.emails.send({
-        from: "Dasty2 Admin <onboarding@resend.dev>",
+        from: "Dasty2 Admin <noreply@dasty2mndalan.com>",
         to: email.trim(),
         subject: "Admin login code — Dasty2 Mndalan",
         html: `
