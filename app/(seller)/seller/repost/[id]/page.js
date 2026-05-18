@@ -8,9 +8,16 @@ import { useSellerSession } from "@/lib/useSellerSession";
 import { calculateProfit, formatPrice } from "@/lib/utils";
 
 const CATEGORIES = [
-  "Carrycot","Carrier","Carseat","Electrics","Fabric",
-  "Highchair","Jolana","Jumper","Mastela","Next2me",
-  "Rawrawa","Sisam","Shirdosh","Stroller","Yary u sht","Other",
+  "Strollers & Travel",
+  "Car Seats",
+  "Carry Cot",
+  "Bed",
+  "Feeding & Nursing",
+  "Bouncers & Swings",
+  "High Chairs",
+  "Toys & Play",
+  "Electronics & Monitors",
+  "Other",
 ];
 
 export default function RepostPage() {

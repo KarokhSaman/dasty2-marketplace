@@ -22,6 +22,19 @@ function calculateProfit(price) {
   return 0;
 }
 
+const CATEGORY_VALIDATOR = v.union(
+  v.literal("Strollers & Travel"),
+  v.literal("Car Seats"),
+  v.literal("Carry Cot"),
+  v.literal("Bed"),
+  v.literal("Feeding & Nursing"),
+  v.literal("Bouncers & Swings"),
+  v.literal("High Chairs"),
+  v.literal("Toys & Play"),
+  v.literal("Electronics & Monitors"),
+  v.literal("Other")
+);
+
 export const getPublicById = query({
   args: { id: v.id("products") },
   handler: async (ctx, { id }) => {
@@ -65,24 +78,7 @@ export const add = mutation({
   args: {
     title: v.string(),
     description: v.string(),
-    category: v.union(
-      v.literal("Carrycot"),
-      v.literal("Carrier"),
-      v.literal("Carseat"),
-      v.literal("Electrics"),
-      v.literal("Fabric"),
-      v.literal("Highchair"),
-      v.literal("Jolana"),
-      v.literal("Jumper"),
-      v.literal("Mastela"),
-      v.literal("Next2me"),
-      v.literal("Rawrawa"),
-      v.literal("Sisam"),
-      v.literal("Shirdosh"),
-      v.literal("Stroller"),
-      v.literal("Yary u sht"),
-      v.literal("Other")
-    ),
+    category: CATEGORY_VALIDATOR,
     condition: v.union(v.literal("new"), v.literal("used")),
     price: v.number(),
     photos: v.array(v.string()),
@@ -145,15 +141,6 @@ export const getById = query({
     return await ctx.db.get(id);
   },
 });
-
-const CATEGORY_VALIDATOR = v.union(
-  v.literal("Carrycot"), v.literal("Carrier"), v.literal("Carseat"),
-  v.literal("Electrics"), v.literal("Fabric"), v.literal("Highchair"),
-  v.literal("Jolana"), v.literal("Jumper"), v.literal("Mastela"),
-  v.literal("Next2me"), v.literal("Rawrawa"), v.literal("Sisam"),
-  v.literal("Shirdosh"), v.literal("Stroller"), v.literal("Yary u sht"),
-  v.literal("Other")
-);
 
 export const sellerUpdate = mutation({
   args: {

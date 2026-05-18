@@ -3,6 +3,7 @@ import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useState, useMemo, useRef, useEffect } from "react";
 import ProductCard from "@/components/buyer/ProductCard";
+import CategoryBar from "@/components/buyer/CategoryBar";
 import { useT } from "@/lib/i18n/LocaleProvider";
 
 function SortDropdown({ sort, setSort, t }) {
@@ -62,11 +63,6 @@ function SortDropdown({ sort, setSort, t }) {
   );
 }
 
-const CATEGORIES = [
-  "Carrycot", "Carrier", "Carseat", "Electrics", "Fabric",
-  "Highchair", "Jolana", "Jumper", "Mastela", "Next2me", "Rawrawa",
-  "Sisam", "Shirdosh", "Stroller", "Yary u sht", "Other",
-];
 
 export default function HomePage() {
   const { t } = useT();
@@ -115,8 +111,8 @@ export default function HomePage() {
         />
       </div>
 
-      {/* Condition filter */}
-      <div className="flex gap-2 mb-3">
+      {/* Condition filter — segmented control */}
+      <div className="flex mb-4 bg-gray-100 rounded-2xl p-1 gap-1">
         {[
           { value: "all",  label: t.allItems },
           { value: "new",  label: t.conditionNew },
@@ -125,10 +121,10 @@ export default function HomePage() {
           <button
             key={value}
             onClick={() => setCondition(value)}
-            className={`px-4 py-1.5 rounded-full text-sm font-medium border transition-colors ${
+            className={`flex-1 py-2 text-sm font-semibold rounded-xl transition-all duration-200 ${
               condition === value
-                ? "bg-rose-600 text-white border-rose-600"
-                : "bg-white text-gray-600 border-gray-200 hover:border-rose-300"
+                ? "bg-white text-rose-600 shadow-sm"
+                : "text-gray-500 hover:text-gray-700"
             }`}
           >
             {label}
@@ -136,31 +132,9 @@ export default function HomePage() {
         ))}
       </div>
 
-      {/* Category pills */}
-      <div className="flex gap-2 overflow-x-auto pb-2 mb-5 scrollbar-hide">
-        <button
-          onClick={() => setCategory("all")}
-          className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap border transition-colors ${
-            category === "all"
-              ? "bg-rose-600 text-white border-rose-600"
-              : "bg-white text-gray-600 border-gray-200 hover:border-rose-300"
-          }`}
-        >
-          {t.categoryAll}
-        </button>
-        {CATEGORIES.map((cat) => (
-          <button
-            key={cat}
-            onClick={() => setCategory(cat)}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap border transition-colors ${
-              category === cat
-                ? "bg-rose-600 text-white border-rose-600"
-                : "bg-white text-gray-600 border-gray-200 hover:border-rose-300"
-            }`}
-          >
-            {cat}
-          </button>
-        ))}
+      {/* Category icons bar */}
+      <div className="mb-5">
+        <CategoryBar selected={category} onSelect={setCategory} />
       </div>
 
       {/* Sort + result count row */}

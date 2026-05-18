@@ -15,7 +15,8 @@
     "next": "14.2.35",
     "react": "^18",
     "react-dom": "^18",
-    "resend": "^6.12.3"
+    "resend": "^6.12.3",
+    "twilio": "^6.0.2"
   },
   "devDependencies": {
     "postcss": "^8",

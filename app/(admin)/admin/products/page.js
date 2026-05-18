@@ -28,7 +28,7 @@ export default function AdminProductsPage() {
   const removeProduct  = useMutation(api.products.remove);
   const createNotif    = useMutation(api.notifications.create);
 
-  const [tab,          setTab]          = useState(focusId ? "pending" : "pending");
+  const [tab,          setTab]          = useState(searchParams.get("tab") ?? "pending");
   const [search,       setSearch]       = useState("");
   const [rejectingId,  setRejectingId]  = useState(focusId ?? null);
   const [rejectReason, setRejectReason] = useState("");

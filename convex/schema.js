@@ -6,14 +6,7 @@ export default defineSchema({
     seq: v.string(),
     title: v.string(),
     description: v.string(),
-    category: v.union(
-      v.literal("Carrycot"), v.literal("Carrier"), v.literal("Carseat"),
-      v.literal("Electrics"), v.literal("Fabric"), v.literal("Highchair"),
-      v.literal("Jolana"), v.literal("Jumper"), v.literal("Mastela"),
-      v.literal("Next2me"), v.literal("Rawrawa"), v.literal("Sisam"),
-      v.literal("Shirdosh"), v.literal("Stroller"), v.literal("Yary u sht"),
-      v.literal("Other")
-    ),
+    category: v.string(),
     condition: v.union(v.literal("new"), v.literal("used")),
     price: v.number(),
     profit: v.number(),

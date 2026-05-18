@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as migrate from "../migrate.js";
 import type * as notifications from "../notifications.js";
 import type * as otp from "../otp.js";
 import type * as products from "../products.js";
@@ -21,6 +22,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  migrate: typeof migrate;
   notifications: typeof notifications;
   otp: typeof otp;
   products: typeof products;
