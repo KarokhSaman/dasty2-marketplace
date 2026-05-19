@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useT } from "@/lib/i18n/LocaleProvider";
 import LocaleSwitcher from "@/components/ui/LocaleSwitcher";
+import SellerBrowseBar from "@/components/buyer/SellerBrowseBar";
 
 export default function PublicShell({ children }) {
   const { t } = useT();
@@ -26,9 +27,11 @@ export default function PublicShell({ children }) {
         </div>
       </header>
 
-      <main className="flex-1 max-w-6xl mx-auto w-full px-4 py-6">
+      <main className="flex-1 max-w-6xl mx-auto w-full px-4 py-6 pb-20 sm:pb-6">
         {children}
       </main>
+
+      <SellerBrowseBar />
 
       <footer className="border-t border-gray-200 bg-white mt-12 py-6">
         <p className="text-center text-sm text-gray-400">
