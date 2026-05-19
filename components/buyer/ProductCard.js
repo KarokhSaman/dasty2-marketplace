@@ -6,12 +6,12 @@ function formatPrice(price) {
   return price.toLocaleString("en-US") + " IQD";
 }
 
-export default function ProductCard({ product }) {
+export default function ProductCard({ product, onSave }) {
   const { t } = useT();
   const photo = product.photos?.[0];
 
   return (
-    <Link href={`/products/${product._id}`} className="group block">
+    <Link href={`/products/${product._id}`} className="group block" onClick={onSave}>
       <div className="bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-md hover:border-rose-100 transition-all duration-200">
         {/* Image */}
         <div className="aspect-square bg-gray-100 relative overflow-hidden">

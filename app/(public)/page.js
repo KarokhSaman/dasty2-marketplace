@@ -64,13 +64,43 @@ function SortDropdown({ sort, setSort, t }) {
 }
 
 
+const HOME_STATE_KEY  = "dasty2-home-state";
+const HOME_SCROLL_KEY = "dasty2-home-scroll";
+
 export default function HomePage() {
   const { t } = useT();
   const products = useQuery(api.products.getPublic);
-  const [search, setSearch]     = useState("");
-  const [category, setCategory] = useState("all");
+  const [search, setSearch]       = useState("");
+  const [category, setCategory]   = useState("all");
   const [condition, setCondition] = useState("all");
-  const [sort, setSort]         = useState("default");
+  const [sort, setSort]           = useState("default");
+
+  // Restore filters immediately on mount
+  useEffect(() => {
+    const raw = sessionStorage.getItem(HOME_STATE_KEY);
+    if (!raw) return;
+    sessionStorage.removeItem(HOME_STATE_KEY);
+    const { search: s, category: c, condition: co, sort: so, scrollY } = JSON.parse(raw);
+    if (s  !== undefined) setSearch(s);
+    if (c  !== undefined) setCategory(c);
+    if (co !== undefined) setCondition(co);
+    if (so !== undefined) setSort(so);
+    if (scrollY) sessionStorage.setItem(HOME_SCROLL_KEY, scrollY);
+  }, []);
+
+  // Restore scroll after products render
+  useEffect(() => {
+    const y = sessionStorage.getItem(HOME_SCROLL_KEY);
+    if (!products || !y) return;
+    sessionStorage.removeItem(HOME_SCROLL_KEY);
+    requestAnimationFrame(() => window.scrollTo({ top: Number(y), behavior: "instant" }));
+  }, [products]);
+
+  function saveState() {
+    sessionStorage.setItem(HOME_STATE_KEY, JSON.stringify({
+      search, category, condition, sort, scrollY: window.scrollY,
+    }));
+  }
 
   const filtered = useMemo(() => {
     if (!products) return [];
@@ -182,7 +212,7 @@ export default function HomePage() {
             {t.featured}
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {featured.map((p) => <ProductCard key={p._id} product={p} />)}
+            {featured.map((p) => <ProductCard key={p._id} product={p} onSave={saveState} />)}
           </div>
         </div>
       )}
@@ -190,7 +220,7 @@ export default function HomePage() {
       {/* Main grid */}
       {regular.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {regular.map((p) => <ProductCard key={p._id} product={p} />)}
+          {regular.map((p) => <ProductCard key={p._id} product={p} onSave={saveState} />)}
         </div>
       )}
     </div>
