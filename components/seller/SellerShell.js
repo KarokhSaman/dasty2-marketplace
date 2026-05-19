@@ -27,11 +27,11 @@ export default function SellerShell({ children }) {
 
   async function handleSignOut() {
     await clearSellerSession();
-    window.location.href = "/seller/login";
+    window.location.href = "/";
   }
 
-  const isHome = pathname === "/seller";
-  const isAdd  = pathname === "/seller/add";
+  const isHome  = pathname === "/seller";
+  const isAdd   = pathname === "/seller/add";
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 pb-16 sm:pb-0">
@@ -52,6 +52,13 @@ export default function SellerShell({ children }) {
           <Link href="/seller/add"
             className={`hidden sm:block text-sm font-medium px-3 py-1.5 rounded-lg transition-colors ${isAdd ? "bg-rose-50 text-rose-600" : "text-gray-600 hover:bg-gray-50"}`}>
             + {t.sellerAddProduct}
+          </Link>
+          <Link href="/"
+            className="hidden sm:flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+            </svg>
+            {t.browseShop}
           </Link>
 
           <div className="flex-1" />
@@ -121,6 +128,16 @@ export default function SellerShell({ children }) {
           }`}>
             +
           </div>
+        </Link>
+
+        <Link
+          href="/"
+          className="flex-1 flex flex-col items-center py-2.5 gap-0.5 text-gray-400 hover:text-rose-600 transition-colors"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+          </svg>
+          <span className="text-[10px] font-medium">{t.browseShop}</span>
         </Link>
 
         <button
