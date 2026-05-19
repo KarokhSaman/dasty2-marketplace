@@ -114,7 +114,13 @@ export default function SellerDashboard() {
   const router = useRouter();
   const { seller, loading } = useSellerSession();
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [bannerH, setBannerH] = useState(132);
+  const bannerRef = useRef(null);
   const sellerRemove = useMutation(api.products.sellerRemove);
+
+  useEffect(() => {
+    if (bannerRef.current) setBannerH(bannerRef.current.offsetHeight);
+  }, [seller]);
 
   const products = useQuery(api.products.getBySeller, seller ? { sellerId: seller._id } : "skip");
 
@@ -165,8 +171,8 @@ export default function SellerDashboard() {
   return (
     <div className="relative">
 
-      {/* ── Welcome banner ─────────────────────────────── */}
-      <div className="relative bg-gradient-to-br from-rose-600 via-rose-500 to-rose-400 rounded-2xl p-6 mb-6 overflow-hidden">
+      {/* ── Welcome banner — sticky below shell header ── */}
+      <div ref={bannerRef} className="relative bg-gradient-to-br from-rose-600 via-rose-500 to-rose-400 rounded-2xl p-6 mb-6 overflow-hidden sticky top-14 z-10 shadow-md">
         <div className="absolute top-0 end-0 w-32 h-32 bg-white/10 rounded-full -translate-y-8 translate-x-8" />
         <div className="absolute bottom-0 start-0 w-20 h-20 bg-white/5 rounded-full translate-y-8 -translate-x-4" />
         <p className="text-rose-100 text-sm font-medium mb-1">{t.sellerHello("").replace("!", "").trim()}</p>
@@ -198,27 +204,32 @@ export default function SellerDashboard() {
           icon={<svg className="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>}/>
       </div>
 
-      {/* ── My Products ────────────────────────────────── */}
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-base font-bold text-gray-800">{t.sellerMyProducts}</h2>
-        <span className="text-xs text-gray-400">{products.length} {t.statTotal.toLowerCase()}</span>
-      </div>
-
-      {/* Category filter */}
-      {sellerCategories.length > 1 && (
-        <div className="flex gap-2 overflow-x-auto pb-2 mb-4 scrollbar-hide">
-          {["all", ...sellerCategories].map((cat) => (
-            <button key={cat} onClick={() => setCategoryFilter(cat)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap border transition-colors shrink-0 ${
-                categoryFilter === cat ? "bg-rose-600 text-white border-rose-600" : "bg-white text-gray-600 border-gray-200 hover:border-rose-300"
-              }`}>{cat === "all" ? t.categoryAll : cat}</button>
-          ))}
+      {/* ── My Products — sticky below banner ──────────── */}
+      <div
+        className="sticky z-10 -mx-4 px-4 bg-gray-50 pb-2 shadow-[0_4px_8px_-4px_rgba(0,0,0,0.06)]"
+        style={{ top: `${56 + bannerH}px` }}
+      >
+        <div className="flex items-center justify-between pt-3 mb-3">
+          <h2 className="text-base font-bold text-gray-800">{t.sellerMyProducts}</h2>
+          <span className="text-xs text-gray-400">{products.length} {t.statTotal.toLowerCase()}</span>
         </div>
-      )}
+
+        {/* Category filter */}
+        {sellerCategories.length > 1 && (
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+            {["all", ...sellerCategories].map((cat) => (
+              <button key={cat} onClick={() => setCategoryFilter(cat)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap border transition-colors shrink-0 ${
+                  categoryFilter === cat ? "bg-rose-600 text-white border-rose-600" : "bg-white text-gray-600 border-gray-200 hover:border-rose-300"
+                }`}>{cat === "all" ? t.categoryAll : cat}</button>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Empty */}
       {products.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-16 bg-white rounded-2xl border border-dashed border-gray-200">
+        <div className="mt-4 flex flex-col items-center justify-center py-16 bg-white rounded-2xl border border-dashed border-gray-200">
           <svg className="w-12 h-12 text-gray-200 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10"/>
           </svg>
@@ -233,7 +244,7 @@ export default function SellerDashboard() {
 
       {/* Product list */}
       {visibleProducts.length > 0 && (
-        <div className="space-y-2">
+        <div className="mt-4 space-y-2">
           {visibleProducts.map((product) => (
             <div key={product._id} className="bg-white rounded-xl border border-gray-100 p-3.5 flex items-center gap-3 hover:border-rose-100 hover:shadow-sm transition-all">
               <div className="w-14 h-14 rounded-xl overflow-hidden bg-gray-100 shrink-0">

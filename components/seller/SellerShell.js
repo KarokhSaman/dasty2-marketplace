@@ -120,17 +120,6 @@ export default function SellerShell({ children }) {
         </Link>
 
         <Link
-          href="/seller/add"
-          className="flex-1 flex flex-col items-center py-2 gap-0.5"
-        >
-          <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-xl font-bold shadow-sm transition-colors ${
-            isAdd ? "bg-rose-700" : "bg-rose-600"
-          }`}>
-            +
-          </div>
-        </Link>
-
-        <Link
           href="/"
           className="flex-1 flex flex-col items-center py-2.5 gap-0.5 text-gray-400 hover:text-rose-600 transition-colors"
         >
