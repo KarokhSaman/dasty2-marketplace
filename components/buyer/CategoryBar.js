@@ -6,7 +6,7 @@ export default function CategoryBar({ selected, onSelect }) {
   const { locale } = useT();
 
   return (
-    <div className="flex gap-4 overflow-x-auto pb-2 px-1 py-1 scrollbar-hide">
+    <div data-catbar className="flex gap-4 overflow-x-auto pb-2 px-1 py-1 scrollbar-hide">
       {CATEGORY_CONFIG.map((cat) => {
         const isActive = selected === cat.value;
         const label = cat.labels?.[locale] ?? cat.labels?.en ?? cat.value;

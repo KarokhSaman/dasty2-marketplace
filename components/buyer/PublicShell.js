@@ -189,12 +189,23 @@ function HomeScrollRestorer() {
 
   useEffect(() => {
     if (pathname !== "/") return;
-    const y = sessionStorage.getItem("dasty2-home-scroll");
-    if (!y) return;
-    sessionStorage.removeItem("dasty2-home-scroll");
-    const target = Number(y);
-    // Small delay lets React finish painting the product grid
-    const t = setTimeout(() => window.scrollTo({ top: target, behavior: "instant" }), 100);
+
+    const y    = sessionStorage.getItem("dasty2-home-scroll");
+    const catX = sessionStorage.getItem("dasty2-catbar-scroll");
+
+    if (y)    sessionStorage.removeItem("dasty2-home-scroll");
+    if (catX) sessionStorage.removeItem("dasty2-catbar-scroll");
+
+    if (!y && !catX) return;
+
+    const t = setTimeout(() => {
+      if (y) window.scrollTo({ top: Number(y), behavior: "instant" });
+      if (catX) {
+        const catBar = document.querySelector("[data-catbar]");
+        if (catBar) catBar.scrollLeft = Number(catX);
+      }
+    }, 100);
+
     return () => clearTimeout(t);
   }, [pathname]);
 

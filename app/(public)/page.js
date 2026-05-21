@@ -64,8 +64,9 @@ function SortDropdown({ sort, setSort, t }) {
 }
 
 
-const HOME_STATE_KEY  = "dasty2-home-state";
-const HOME_SCROLL_KEY = "dasty2-home-scroll";
+const HOME_STATE_KEY   = "dasty2-home-state";
+const HOME_SCROLL_KEY  = "dasty2-home-scroll";
+const HOME_CATBAR_KEY  = "dasty2-catbar-scroll";
 
 export default function HomePage() {
   const { t } = useT();
@@ -90,13 +91,14 @@ export default function HomePage() {
 
 
   function saveState() {
-    const y = String(window.scrollY);
+    const y      = String(window.scrollY);
+    const catBar = document.querySelector("[data-catbar]");
+    const catX   = String(catBar?.scrollLeft ?? 0);
     sessionStorage.setItem(HOME_STATE_KEY, JSON.stringify({
       search, category, condition, sort, scrollY: y,
     }));
-    // Also write scroll separately so PublicShell can restore it
-    // even if this component is served from the router cache
     sessionStorage.setItem(HOME_SCROLL_KEY, y);
+    sessionStorage.setItem(HOME_CATBAR_KEY, catX);
   }
 
   const filtered = useMemo(() => {
