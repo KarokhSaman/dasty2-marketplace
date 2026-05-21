@@ -91,7 +91,14 @@ export const add = mutation({
     dateAdded: v.string(),
   },
   handler: async (ctx, args) => {
-    const profit = calculateProfit(args.price);
+    // Check for active offer and adjust fee accordingly
+    const today = new Date().toISOString().slice(0, 10);
+    const allOffers = await ctx.db.query("offers")
+      .filter(q => q.eq(q.field("isActive"), true)).collect();
+    const activeOffer = allOffers.find(o => o.startDate <= today && o.endDate >= today);
+    const profit = activeOffer
+      ? (activeOffer.type === "free" ? 0 : (activeOffer.flatFeeAmount ?? 0))
+      : calculateProfit(args.price);
     const seq = await generateSeq(ctx);
     const id = await ctx.db.insert("products", {
       ...args,

@@ -1,5 +1,5 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { useSearchParams } from "next/navigation";
 import { api } from "@/convex/_generated/api";
@@ -28,6 +28,12 @@ export default function AdminProductsPage() {
   const removeProduct   = useMutation(api.products.remove);
   const toggleFeatured  = useMutation(api.products.toggleFeatured);
   const createNotif     = useMutation(api.notifications.create);
+  const createLog       = useMutation(api.adminLogs.create);
+
+  const [adminEmail, setAdminEmail] = useState("");
+  useEffect(() => {
+    fetch("/api/admin/me").then(r => r.json()).then(d => setAdminEmail(d.email ?? "admin"));
+  }, []);
 
   const [tab,          setTab]          = useState(searchParams.get("tab") ?? "pending");
   const [search,       setSearch]       = useState("");
@@ -67,20 +73,29 @@ export default function AdminProductsPage() {
     );
   }, [products]);
 
-  async function approve(product) {
-    await updateStatus({
-      id: product._id,
-      status: "approved",
-      approvedBy: "admin",
-      approvedAt: new Date().toISOString(),
+  function log(action, product, notes) {
+    return createLog({
+      adminEmail,
+      action,
+      productId:    product?._id?.toString(),
+      productTitle: product?.title,
+      sellerName:   product?.sellerName,
+      price:        product?.price,
+      notes,
     });
+  }
+
+  async function approve(product) {
+    await updateStatus({ id: product._id, status: "approved", approvedBy: adminEmail, approvedAt: new Date().toISOString() });
     await createNotif({ sellerId: product.sellerId, productId: product._id, message: t.adminApproveMsg(product.title), url: `/products/${product._id}` });
+    await log("approved", product);
   }
 
   async function reject(product) {
     if (!rejectReason.trim()) return;
     await updateStatus({ id: product._id, status: "rejected", notes: rejectReason.trim() });
     await createNotif({ sellerId: product.sellerId, productId: product._id, message: t.adminRejectMsg(product.title, rejectReason.trim()), url: `/seller` });
+    await log("rejected", product, rejectReason.trim());
     setRejectingId(null);
     setRejectReason("");
   }
@@ -88,15 +103,19 @@ export default function AdminProductsPage() {
   async function markSold(product) {
     await updateStatus({ id: product._id, status: "sold", dateSold: new Date().toISOString() });
     await createNotif({ sellerId: product.sellerId, productId: product._id, message: t.adminSoldMsg(product.title), url: `/seller` });
+    await log("marked_sold", product);
   }
 
   async function markPaid(product) {
     await updateStatus({ id: product._id, status: "paid" });
     await createNotif({ sellerId: product.sellerId, productId: product._id, message: t.adminPaidMsg(product.title), url: `/seller` });
+    await log("marked_paid", product);
   }
 
   async function deleteProduct(id) {
+    const product = products?.find(p => p._id === id);
     await removeProduct({ id });
+    await log("deleted", product);
     setConfirmDel(null);
   }
 
@@ -186,7 +205,7 @@ export default function AdminProductsPage() {
                     {statusLabels[product.status]}
                   </span>
                   <button
-                    onClick={() => toggleFeatured({ id: product._id })}
+                    onClick={async () => { await toggleFeatured({ id: product._id }); await log(product.featured ? "unfeatured" : "featured", product); }}
                     title={product.featured ? "Remove from featured" : "Mark as featured"}
                     className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium border transition-colors ${
                       product.featured

@@ -1,6 +1,6 @@
 "use client";
 import { useState, useRef } from "react";
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { useRouter } from "next/navigation";
 import { api } from "@/convex/_generated/api";
 import { useT } from "@/lib/i18n/LocaleProvider";
@@ -39,7 +39,11 @@ export default function AddProductPage() {
   const [submitting, setSubmitting]   = useState(false);
   const [submitted, setSubmitted]     = useState(false);
 
-  const profit = calculateProfit(Number(price));
+  const activeOffer   = useQuery(api.offers.getActive);
+  const standardProfit = calculateProfit(Number(price));
+  const profit = activeOffer
+    ? (activeOffer.type === "free" ? 0 : (activeOffer.flatFeeAmount ?? 0))
+    : standardProfit;
 
   async function uploadFile(file) {
     setUploading((n) => n + 1);
@@ -144,10 +148,33 @@ export default function AddProductPage() {
           <label className="block text-sm font-medium text-gray-700 mb-1.5">{t.fieldPrice} <span className="text-rose-500">*</span></label>
           <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder={t.fieldPricePlaceholder} min={0} dir="ltr"
             className={`w-full border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300 ${errors.price ? "border-red-400 bg-red-50" : "border-gray-200"}`} />
-          {price && Number(price) >= 5000 && profit > 0 && (
-            <p className="mt-2 text-sm text-green-700 bg-green-50 rounded-lg px-3 py-2">
-              {t.profitLabel} <span className="font-bold">{formatPrice(profit)}</span>
-            </p>
+          {price && Number(price) >= 5000 && (
+            activeOffer ? (
+              <div className={`mt-2 rounded-lg px-3 py-2 ${
+                activeOffer.type === "free"
+                  ? "bg-green-50 border border-green-100"
+                  : "bg-amber-50 border border-amber-100"
+              }`}>
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <span className="text-xs font-bold bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded-full">🎉 {activeOffer.title}</span>
+                </div>
+                {activeOffer.type === "free" ? (
+                  <p className="text-sm text-green-700">
+                    Service fee: <span className="font-bold line-through text-gray-400">{formatPrice(standardProfit)}</span>{" "}
+                    <span className="font-bold text-green-600">Free</span>
+                  </p>
+                ) : (
+                  <p className="text-sm text-amber-700">
+                    Service fee: <span className="font-bold line-through text-gray-400">{formatPrice(standardProfit)}</span>{" "}
+                    <span className="font-bold text-amber-600">{formatPrice(profit)}</span>
+                  </p>
+                )}
+              </div>
+            ) : profit > 0 ? (
+              <p className="mt-2 text-sm text-green-700 bg-green-50 rounded-lg px-3 py-2">
+                {t.profitLabel} <span className="font-bold">{formatPrice(profit)}</span>
+              </p>
+            ) : null
           )}
           {errors.price && <p className="mt-1 text-xs text-red-500">{t.priceMinimum}</p>}
         </div>

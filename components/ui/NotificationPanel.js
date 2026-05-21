@@ -34,9 +34,9 @@ export default function NotificationPanel({ notifications, sellerId, label, onCl
     return () => document.removeEventListener("mousedown", handler);
   }, [onClose, bellRef]);
 
-  const sorted = [...(notifications ?? [])].sort(
-    (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-  );
+  const sorted = [...(notifications ?? [])]
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .slice(0, 15);
   const unread = sorted.filter(n => !n.read).length;
 
   return (

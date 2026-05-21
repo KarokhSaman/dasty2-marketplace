@@ -142,7 +142,8 @@ export default function SellerDashboard() {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const sellerRemove = useMutation(api.products.sellerRemove);
 
-  const products = useQuery(api.products.getBySeller, seller ? { sellerId: seller._id } : "skip");
+  const products    = useQuery(api.products.getBySeller, seller ? { sellerId: seller._id } : "skip");
+  const activeOffer = useQuery(api.offers.getActive);
 
   const sellerCategories = useMemo(() => {
     if (!products) return [];
@@ -190,6 +191,32 @@ export default function SellerDashboard() {
 
   return (
     <div className="relative">
+
+      {/* ── Active offer banner ── */}
+      {activeOffer && (
+        <div className="bg-gradient-to-br from-rose-600 via-rose-500 to-rose-400 rounded-2xl p-5 mb-4 relative overflow-hidden">
+          <div className="absolute top-0 end-0 w-32 h-32 bg-white/10 rounded-full -translate-y-12 translate-x-12 pointer-events-none"/>
+          <div className="absolute bottom-0 start-0 w-20 h-20 bg-white/5 rounded-full translate-y-8 -translate-x-4 pointer-events-none"/>
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-xl shrink-0">🎉</div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-white">{activeOffer.title}</p>
+              {activeOffer.description && (
+                <p className="text-xs text-rose-100 mt-0.5">{activeOffer.description}</p>
+              )}
+              <p className="text-xs text-rose-100 mt-1.5 font-medium">
+                {activeOffer.type === "free"
+                  ? "No service fee on all your listings this period"
+                  : `Fixed fee of ${activeOffer.flatFeeAmount?.toLocaleString()} IQD for any price range`}
+              </p>
+              <p className="text-[10px] text-rose-200 mt-1">
+                Valid: <span className="font-bold text-white">{activeOffer.startDate} → {activeOffer.endDate}</span>
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
 
       <StatsPanel stats={stats} t={t} />
 

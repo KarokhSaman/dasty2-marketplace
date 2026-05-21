@@ -130,14 +130,22 @@ export default function HomePage() {
   return (
     <div>
       {/* Search bar */}
-      <div className="mb-4">
+      <div className="relative mb-4">
         <input
           type="text"
           placeholder={t.searchPlaceholder}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-rose-300 shadow-sm"
+          className="w-full border border-gray-200 rounded-xl px-4 py-3 pe-10 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-rose-300 shadow-sm"
         />
+        {search && (
+          <button onClick={() => setSearch("")}
+            className="absolute end-3 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 text-gray-500 transition-colors">
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        )}
       </div>
 
       {/* Condition filter — segmented control */}

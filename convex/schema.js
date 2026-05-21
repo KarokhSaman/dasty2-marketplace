@@ -56,6 +56,28 @@ export default defineSchema({
     datePaid: v.string(),
   }),
 
+  offers: defineTable({
+    title:         v.string(),
+    description:   v.string(),
+    type:          v.union(v.literal("free"), v.literal("flat_fee")),
+    flatFeeAmount: v.optional(v.number()),
+    startDate:     v.string(),
+    endDate:       v.string(),
+    isActive:      v.boolean(),
+    createdAt:     v.string(),
+  }),
+
+  adminLogs: defineTable({
+    adminEmail:   v.string(),
+    action:       v.string(),
+    productId:    v.optional(v.string()),
+    productTitle: v.optional(v.string()),
+    sellerName:   v.optional(v.string()),
+    price:        v.optional(v.number()),
+    notes:        v.optional(v.string()),
+    createdAt:    v.string(),
+  }),
+
   notifications: defineTable({
     sellerId: v.string(),
     productId: v.string(),
