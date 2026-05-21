@@ -54,9 +54,13 @@ export default function ProductDetailPage() {
   const allProducts = useQuery(api.products.getPublic);
   const [activePhoto, setActivePhoto] = useState(0);
 
+  const productUrl = typeof window !== "undefined"
+    ? `${window.location.origin}/products/${id}`
+    : `https://dasty2mndalan.com/products/${id}`;
+
   const waLink = product
     ? `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(
-        t.waMessage(product.seq ?? "", product.title, formatPrice(product.price))
+        t.waMessage(product.seq ?? "", product.title, formatPrice(product.price), productUrl)
       )}`
     : "#";
 
