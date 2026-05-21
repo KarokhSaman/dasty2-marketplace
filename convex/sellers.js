@@ -87,3 +87,15 @@ export const getAll = query({
     return await ctx.db.query("sellers").collect();
   },
 });
+
+export const updateProfile = mutation({
+  args: {
+    id: v.id("sellers"),
+    name: v.string(),
+    phone: v.string(),
+    city: v.string(),
+  },
+  handler: async (ctx, { id, name, phone, city }) => {
+    await ctx.db.patch(id, { name, phone, city });
+  },
+});

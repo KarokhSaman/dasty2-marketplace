@@ -42,6 +42,7 @@ export const create = mutation({
     sellerId: v.string(),
     productId: v.string(),
     message: v.string(),
+    url: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     return await ctx.db.insert("notifications", {

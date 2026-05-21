@@ -62,5 +62,6 @@ export default defineSchema({
     message: v.string(),
     read: v.boolean(),
     createdAt: v.string(),
+    url: v.optional(v.string()),
   }),
 });

@@ -2,6 +2,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ConvexClientProvider } from "@/lib/convexClient";
+import { SellerSessionProvider } from "@/lib/SellerSessionContext";
 import { headers } from "next/headers";
 
 const geistSans = localFont({
@@ -24,7 +25,9 @@ export default function RootLayout({ children }) {
     <html lang={locale} dir={dir} data-locale={locale}>
       <body className={`${geistSans.variable} antialiased bg-gray-50 min-h-screen`}>
         <ClerkProvider>
-          <ConvexClientProvider>{children}</ConvexClientProvider>
+          <ConvexClientProvider>
+            <SellerSessionProvider>{children}</SellerSessionProvider>
+          </ConvexClientProvider>
         </ClerkProvider>
       </body>
     </html>

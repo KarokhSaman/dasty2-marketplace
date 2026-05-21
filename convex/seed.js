@@ -1,229 +1,112 @@
 import { mutation } from "./_generated/server";
 
-function profit(price) {
-  if (price >= 5000 && price <= 9000) return 2000;
-  if (price >= 10000 && price <= 29000) return 3000;
-  if (price >= 30000 && price <= 49000) return 4000;
-  if (price >= 50000 && price <= 99000) return 5000;
-  if (price >= 100000 && price <= 199000) return 10000;
-  if (price >= 200000 && price <= 299000) return 15000;
-  if (price >= 300000 && price <= 399000) return 20000;
-  if (price >= 400000 && price <= 499000) return 25000;
-  if (price >= 500000 && price <= 1000000) return 30000;
-  return 0;
-}
+const PHOTOS = {
+  "Strollers & Travel":     ["https://res.cloudinary.com/dqtgvfpk4/image/upload/v1779138359/strollers_mr5mhk.png"],
+  "Car Seats":              ["https://res.cloudinary.com/dqtgvfpk4/image/upload/v1779138358/carseats_lpxcga.png"],
+  "Carry Cot":              ["https://res.cloudinary.com/dqtgvfpk4/image/upload/v1779138358/Carry_Cot_y7yace.png"],
+  "Bed":                    ["https://res.cloudinary.com/dqtgvfpk4/image/upload/v1779138358/Bed_ouycjy.png"],
+  "Feeding & Nursing":      ["https://res.cloudinary.com/dqtgvfpk4/image/upload/v1779138359/feeding_aoipl9.png"],
+  "Bouncers & Swings":      ["https://res.cloudinary.com/dqtgvfpk4/image/upload/v1779141106/bouncers_wrha1c.png"],
+  "High Chairs":            ["https://res.cloudinary.com/dqtgvfpk4/image/upload/v1779138342/highchairs_erlg5h.png"],
+  "Toys & Play":            ["https://res.cloudinary.com/dqtgvfpk4/image/upload/v1779138359/toys_dziew5.png"],
+  "Electronics & Monitors": ["https://res.cloudinary.com/dqtgvfpk4/image/upload/v1779138359/electronics_qqj0mi.png"],
+  "Other":                  ["https://res.cloudinary.com/dqtgvfpk4/image/upload/v1779141105/Other_jq5gok.png"],
+};
 
 const SAMPLE_PRODUCTS = [
-  {
-    seq: "001",
-    title: "Bugaboo Fox 3 Complete Stroller — Grey Melange",
-    description: "Used for only 4 months. Includes carrycot, seat unit, and original rain cover. In excellent condition. All original accessories included.",
-    category: "Stroller",
-    condition: "used",
-    price: 550000,
-    photos: [
-      "https://images.unsplash.com/photo-1590503522834-b3854c0f4647?w=600&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1590503522834-b3854c0f4647?w=600&auto=format&fit=crop&q=80",
-    ],
-    featured: true,
-    sellerId: "seed_1",
-    sellerName: "Sara Ahmed",
-    sellerPhone: "07501111111",
-    city: "Erbil",
-  },
-  {
-    seq: "002",
-    title: "Chicco Next2Me Magic Bedside Crib — White",
-    description: "Brand new, still in box. Converts from bedside crib to standalone cot. Fits most beds. Up to 9 kg.",
-    category: "Next2me",
-    condition: "new",
-    price: 320000,
-    photos: [
-      "https://images.unsplash.com/photo-1519689373023-dd07c7988603?w=600&auto=format&fit=crop",
-    ],
-    featured: true,
-    sellerId: "seed_2",
-    sellerName: "Lana Kareem",
-    sellerPhone: "07502222222",
-    city: "Erbil",
-  },
-  {
-    seq: "003",
-    title: "Maxi-Cosi Pebble 360 Pro Car Seat — Essential Black",
-    description: "Used from birth to 12 months. No accidents. Comes with original base. Easy 360° rotation. ISOFIX included.",
-    category: "Carseat",
-    condition: "used",
-    price: 180000,
-    photos: [
-      "https://images.unsplash.com/photo-1617854818583-09e7f077a156?w=600&auto=format&fit=crop",
-    ],
-    featured: false,
-    sellerId: "seed_3",
-    sellerName: "Hana Soran",
-    sellerPhone: "07503333333",
-    city: "Erbil",
-  },
-  {
-    seq: "004",
-    title: "Ergobaby Omni 360 Baby Carrier — Cool Air Mesh",
-    description: "New without tags. Bought as a gift, never used. Supports newborn to toddler 45 kg. All 4 carry positions.",
-    category: "Carrier",
-    condition: "new",
-    price: 145000,
-    photos: [
-      "https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=600&auto=format&fit=crop",
-    ],
-    featured: false,
-    sellerId: "seed_4",
-    sellerName: "Roza Hassan",
-    sellerPhone: "07504444444",
-    city: "Erbil",
-  },
-  {
-    seq: "005",
-    title: "IKEA ANTILOP High Chair with Tray — White/Silver",
-    description: "Clean and in great condition. Legs detach for easy storage. Comes with original tray and safety belt.",
-    category: "Highchair",
-    condition: "used",
-    price: 28000,
-    photos: [
-      "https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?w=600&auto=format&fit=crop",
-    ],
-    featured: false,
-    sellerId: "seed_5",
-    sellerName: "Dina Aziz",
-    sellerPhone: "07505555555",
-    city: "Erbil",
-  },
-  {
-    seq: "006",
-    title: "Baby Einstein Sea & Discover Door Jumper",
-    description: "Used for 2 months. Adjustable height. Suitable from when baby can hold head up. Includes toys on tray.",
-    category: "Jumper",
-    condition: "used",
-    price: 55000,
-    photos: [
-      "https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=600&auto=format&fit=crop",
-    ],
-    featured: false,
-    sellerId: "seed_6",
-    sellerName: "Shirin Mustafa",
-    sellerPhone: "07506666666",
-    city: "Erbil",
-  },
-  {
-    seq: "007",
-    title: "Uppababy Vista V2 Carrycot — Greyson Charcoal",
-    description: "Barely used, like new. Compatible with Vista V2 and Cruz V2 frames. Can be used as overnight sleep space.",
-    category: "Carrycot",
-    condition: "used",
-    price: 210000,
-    photos: [
-      "https://images.unsplash.com/photo-1592078615290-033ee584e267?w=600&auto=format&fit=crop",
-    ],
-    featured: false,
-    sellerId: "seed_7",
-    sellerName: "Naz Ibrahim",
-    sellerPhone: "07507777777",
-    city: "Erbil",
-  },
-  {
-    seq: "008",
-    title: "Ingenuity Comfort 2 Go Portable Swing — Audrey",
-    description: "New in box. Plug-in or battery powered. 6 swing speeds, 8 melodies. Folds flat for travel.",
-    category: "Electrics",
-    condition: "new",
-    price: 85000,
-    photos: [
-      "https://images.unsplash.com/photo-1584432810601-6c7f27d2362b?w=600&auto=format&fit=crop",
-    ],
-    featured: false,
-    sellerId: "seed_8",
-    sellerName: "Sana Omar",
-    sellerPhone: "07508888888",
-    city: "Erbil",
-  },
-  {
-    seq: "009",
-    title: "Joie Litetrax 4 Flex Stroller — Coal",
-    description: "Used for 6 months. Full recline, one-hand fold, large basket. Good condition, slight scuff on frame.",
-    category: "Stroller",
-    condition: "used",
-    price: 130000,
-    photos: [
-      "https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=600&auto=format&fit=crop",
-    ],
-    featured: false,
-    sellerId: "seed_9",
-    sellerName: "Bana Jalal",
-    sellerPhone: "07509999999",
-    city: "Erbil",
-  },
-  {
-    seq: "010",
-    title: "Mastela 5-in-1 Baby Rocker and Bouncer — Blue",
-    description: "Brand new, unused. Converts to rocker, bouncer, and booster seat. Safe for 0–18 months.",
-    category: "Mastela",
-    condition: "new",
-    price: 65000,
-    photos: [
-      "https://images.unsplash.com/photo-1545558014-8692077e9b5c?w=600&auto=format&fit=crop",
-    ],
-    featured: false,
-    sellerId: "seed_2",
-    sellerName: "Lana Kareem",
-    sellerPhone: "07502222222",
-    city: "Erbil",
-  },
-  {
-    seq: "011",
-    title: "Silverleaf Muslin Swaddle Blankets — Set of 4",
-    description: "100% organic cotton. Pre-washed, super soft. Large 120x120cm. Pink, blue, mint, and grey.",
-    category: "Fabric",
-    condition: "new",
-    price: 38000,
-    photos: [
-      "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=600&auto=format&fit=crop",
-    ],
-    featured: false,
-    sellerId: "seed_1",
-    sellerName: "Sara Ahmed",
-    sellerPhone: "07501111111",
-    city: "Erbil",
-  },
-  {
-    seq: "012",
-    title: "Chicco Oasys 2-3 FixPlus Evo Car Seat — Black Air",
-    description: "Used from 15 months to 3 years. ISOFIX. Reclines 4 positions. Washable cover. No accidents.",
-    category: "Carseat",
-    condition: "used",
-    price: 160000,
-    photos: [
-      "https://images.unsplash.com/photo-1617854818583-09e7f077a156?w=600&auto=format&fit=crop&sat=-50",
-    ],
-    featured: false,
-    sellerId: "seed_10",
-    sellerName: "Awat Salih",
-    sellerPhone: "07500000001",
-    city: "Erbil",
-  },
+  { title: "Joie Litetrax 4 Stroller",      category: "Strollers & Travel",     condition: "used", price: 120000, description: "Lightweight stroller, very good condition. Used for 8 months. All accessories included." },
+  { title: "Bugaboo Fox 3 Pram",             category: "Strollers & Travel",     condition: "used", price: 350000, description: "Premium stroller in excellent condition. Barely used, like new." },
+  { title: "Maclaren Quest Stroller",        category: "Strollers & Travel",     condition: "used", price: 85000,  description: "Compact fold stroller. Good condition, minor wear on fabric." },
+  { title: "Silver Cross Wave Pram",         category: "Strollers & Travel",     condition: "new",  price: 420000, description: "Brand new, still in box. Received as gift, not needed." },
+  { title: "Chicco Miinimo Stroller",        category: "Strollers & Travel",     condition: "used", price: 55000,  description: "Ultra-compact travel stroller. Perfect for trips." },
+  { title: "UPPAbaby Vista V2",              category: "Strollers & Travel",     condition: "used", price: 280000, description: "Expandable pram system, used 1 year. Includes bassinet." },
+  { title: "Cybex Balios S Lux",             category: "Strollers & Travel",     condition: "used", price: 195000, description: "Reversible seat stroller. Excellent condition with all accessories." },
+  { title: "Maxi-Cosi Pebble 360 Pro",       category: "Car Seats",              condition: "used", price: 180000, description: "Rotating infant car seat 0–13 kg. Used 10 months, excellent condition." },
+  { title: "Joie i-Spin 360",                category: "Car Seats",              condition: "used", price: 120000, description: "360° swivel car seat, newborn to 4 years. Good condition." },
+  { title: "BeSafe iZi Modular",             category: "Car Seats",              condition: "new",  price: 250000, description: "Brand new in box. Rear and forward facing. Never used." },
+  { title: "Cybex Cloud Z2 i-Size",          category: "Car Seats",              condition: "used", price: 145000, description: "Reclinable infant carrier with lie-flat position. Very good condition." },
+  { title: "Chicco Seat3Fit",                category: "Car Seats",              condition: "used", price: 90000,  description: "3-in-1 car seat, grows with your child. Fully functional." },
+  { title: "Medela Swing Flex Pump",         category: "Feeding & Nursing",      condition: "used", price: 65000,  description: "Electric single breast pump. Cleaned and sanitised. All parts included." },
+  { title: "Tommee Tippee Steriliser",       category: "Feeding & Nursing",      condition: "used", price: 25000,  description: "Electric steam steriliser. Fits up to 6 bottles. Good working condition." },
+  { title: "Dr Brown's Bottle Set",          category: "Feeding & Nursing",      condition: "used", price: 18000,  description: "10 anti-colic bottles. Thoroughly cleaned, excellent condition." },
+  { title: "Spectra S1 Breast Pump",         category: "Feeding & Nursing",      condition: "used", price: 85000,  description: "Hospital grade double pump. Used 6 months. All accessories included." },
+  { title: "Fisher-Price Kick & Play Mat",   category: "Toys & Play",            condition: "used", price: 22000,  description: "Baby activity gym with piano. Clean and in great condition." },
+  { title: "VTech Baby Learning Cube",       category: "Toys & Play",            condition: "used", price: 15000,  description: "Interactive learning cube with lights and music. Works perfectly." },
+  { title: "LEGO DUPLO Classic Set",         category: "Toys & Play",            condition: "used", price: 35000,  description: "Complete set, no missing pieces. Clean and good condition." },
+  { title: "Wooden Rainbow Stacking Toy",    category: "Toys & Play",            condition: "new",  price: 28000,  description: "Brand new Montessori stacking rainbow. Educational and beautiful." },
+  { title: "Fisher-Price Snugapuppy Swing",  category: "Bouncers & Swings",      condition: "used", price: 55000,  description: "6-speed baby swing with music and mobile. Very good condition." },
+  { title: "BabyBjörn Bouncer Bliss",        category: "Bouncers & Swings",      condition: "used", price: 72000,  description: "Mesh bouncer, lightweight and easy to fold. Excellent condition." },
+  { title: "Graco DuetSoothe Swing",         category: "Bouncers & Swings",      condition: "used", price: 48000,  description: "Converts from swing to rocker. Good working condition." },
+  { title: "Motorola MBP36XL Monitor",       category: "Electronics & Monitors", condition: "used", price: 65000,  description: "Video baby monitor with 5\" screen. Range 300m. Good condition." },
+  { title: "Nanit Pro Smart Baby Camera",    category: "Electronics & Monitors", condition: "used", price: 120000, description: "Wi-Fi HD baby monitor with sleep tracking. Excellent condition." },
+  { title: "Owlet Smart Sock 3",             category: "Electronics & Monitors", condition: "used", price: 95000,  description: "Heart rate and oxygen monitor for babies. Barely used." },
+  { title: "Stokke Sleepi Crib",             category: "Bed",                    condition: "used", price: 185000, description: "Oval crib that grows with baby. Excellent condition, natural wood." },
+  { title: "IKEA Sniglar Cot",               category: "Bed",                    condition: "used", price: 28000,  description: "Simple solid beech cot. Good condition, includes mattress." },
+  { title: "Next2Me Dream Co-Sleeper",       category: "Bed",                    condition: "used", price: 75000,  description: "Side-sleeping crib, attaches to parent bed. Very good condition." },
+  { title: "Chicco Polly Highchair",         category: "High Chairs",            condition: "used", price: 45000,  description: "7-position reclining highchair. Easy to clean. Good condition." },
 ];
+
+function calcProfit(price) {
+  if (price <= 9000)   return 2000;
+  if (price <= 29000)  return 3000;
+  if (price <= 49000)  return 4000;
+  if (price <= 99000)  return 5000;
+  if (price <= 199000) return 10000;
+  if (price <= 299000) return 15000;
+  if (price <= 399000) return 20000;
+  if (price <= 499000) return 25000;
+  return 30000;
+}
 
 export const seedProducts = mutation({
   args: {},
   handler: async (ctx) => {
+    const existing = await ctx.db.query("sellers").first();
+    let sellerId, sellerName, sellerPhone;
+
+    if (existing) {
+      sellerId    = existing._id;
+      sellerName  = existing.name;
+      sellerPhone = existing.phone ?? "+964 750 971 7177";
+    } else {
+      sellerId = await ctx.db.insert("sellers", {
+        name: "Dasty2 Demo",
+        email: "demo@dasty2mndalan.com",
+        phone: "+964 750 971 7177",
+        city: "Erbil",
+        clerkUserId: "",
+        registeredAt: new Date().toISOString(),
+        isActive: true,
+      });
+      sellerName  = "Dasty2 Demo";
+      sellerPhone = "+964 750 971 7177";
+    }
+
+    const year = new Date().getFullYear().toString().slice(-2);
+    const count = (await ctx.db.query("products").collect()).length;
+    let seqN = count + 1;
     const now = new Date().toISOString();
 
     for (const p of SAMPLE_PRODUCTS) {
       await ctx.db.insert("products", {
-        ...p,
-        profit: profit(p.price),
-        status: "approved",
-        views: Math.floor(Math.random() * 80) + 5,
-        dateAdded: now,
+        seq:         `${year}-${String(seqN++).padStart(4, "0")}`,
+        title:       p.title,
+        description: p.description,
+        category:    p.category,
+        condition:   p.condition,
+        price:       p.price,
+        profit:      calcProfit(p.price),
+        photos:      PHOTOS[p.category] ?? [],
+        status:      "approved",
+        city:        "Erbil",
+        sellerId:    sellerId.toString(),
+        sellerName,
+        sellerPhone,
+        featured:    false,
+        dateAdded:   now,
       });
     }
 
-    return `Inserted ${SAMPLE_PRODUCTS.length} sample products.`;
+    return `Seeded ${SAMPLE_PRODUCTS.length} products.`;
   },
 });

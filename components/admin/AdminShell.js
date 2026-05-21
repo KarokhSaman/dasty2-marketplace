@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useT } from "@/lib/i18n/LocaleProvider";
@@ -42,6 +42,7 @@ export default function AdminShell({ children }) {
   const pathname = usePathname();
   const [adminEmail, setAdminEmail] = useState("");
   const [showNotifs, setShowNotifs] = useState(false);
+  const bellRef = useRef();
 
   useEffect(() => {
     fetch("/api/admin/me").then(r => r.json()).then(d => setAdminEmail(d.email ?? ""));
@@ -89,7 +90,7 @@ export default function AdminShell({ children }) {
           )}
 
           {/* Bell */}
-          <div className="relative">
+          <div ref={bellRef} className="relative">
             <button
               onClick={() => setShowNotifs((v) => !v)}
               className="relative p-2 text-gray-500 hover:text-rose-600 transition-colors"
@@ -107,8 +108,9 @@ export default function AdminShell({ children }) {
               <NotificationPanel
                 notifications={notifications ?? []}
                 sellerId={ADMIN_ID}
-                label={t.sellerNotifications}
+                label="Notifications"
                 onClose={() => setShowNotifs(false)}
+                bellRef={bellRef}
               />
             )}
           </div>

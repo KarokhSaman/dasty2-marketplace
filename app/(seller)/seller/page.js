@@ -19,15 +19,41 @@ const STATUS_STYLE = {
 };
 
 // ── Stat card ──────────────────────────────────────────────
-function StatCard({ label, value, color, iconBg, icon }) {
+function StatsPanel({ stats, t }) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-4 flex items-center gap-3 shadow-sm">
-      <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${iconBg}`}>
-        {icon}
+    <div className="space-y-3 mb-6">
+
+      {/* ── Featured: the two most actionable metrics ── */}
+      <div className="grid grid-cols-2 gap-3">
+        {/* Approved — live listings */}
+        <div className="bg-gradient-to-br from-green-500 to-emerald-400 rounded-2xl p-4 relative overflow-hidden">
+          <div className="absolute -top-3 -end-3 w-16 h-16 bg-white/10 rounded-full" />
+          <p className="text-[11px] font-semibold text-green-100 uppercase tracking-widest mb-1">{t.statApproved}</p>
+          <p className="text-4xl font-bold text-white leading-none">{stats.approved}</p>
+          <p className="text-[11px] text-green-100 mt-2">Live listings</p>
+        </div>
+
+        {/* Pending — awaiting review */}
+        <div className="bg-gradient-to-br from-amber-500 to-orange-400 rounded-2xl p-4 relative overflow-hidden">
+          <div className="absolute -top-3 -end-3 w-16 h-16 bg-white/10 rounded-full" />
+          <p className="text-[11px] font-semibold text-amber-100 uppercase tracking-widest mb-1">{t.statPending}</p>
+          <p className="text-4xl font-bold text-white leading-none">{stats.pending}</p>
+          <p className="text-[11px] text-amber-100 mt-2">Awaiting review</p>
+        </div>
       </div>
-      <div className="min-w-0">
-        <p className={`text-xl font-bold leading-none ${color}`}>{value}</p>
-        <p className="text-[11px] text-gray-400 mt-1 font-medium leading-tight">{label}</p>
+
+      {/* ── Secondary metrics strip ── */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm flex divide-x divide-gray-100 overflow-hidden">
+        {[
+          { label: t.statTotal, value: stats.total,    color: "text-gray-800"   },
+          { label: t.statSold,  value: stats.sold,     color: "text-blue-600"   },
+          { label: t.statPaid,  value: stats.paid,     color: "text-purple-600" },
+        ].map((item, i) => (
+          <div key={i} className="flex-1 flex flex-col items-center py-4 gap-0.5">
+            <span className={`text-2xl font-bold ${item.color}`}>{item.value}</span>
+            <span className="text-[11px] text-gray-400 font-medium">{item.label}</span>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -114,13 +140,7 @@ export default function SellerDashboard() {
   const router = useRouter();
   const { seller, loading } = useSellerSession();
   const [categoryFilter, setCategoryFilter] = useState("all");
-  const [bannerH, setBannerH] = useState(132);
-  const bannerRef = useRef(null);
   const sellerRemove = useMutation(api.products.sellerRemove);
-
-  useEffect(() => {
-    if (bannerRef.current) setBannerH(bannerRef.current.offsetHeight);
-  }, [seller]);
 
   const products = useQuery(api.products.getBySeller, seller ? { sellerId: seller._id } : "skip");
 
@@ -171,44 +191,10 @@ export default function SellerDashboard() {
   return (
     <div className="relative">
 
-      {/* ── Welcome banner — sticky below shell header ── */}
-      <div ref={bannerRef} className="relative bg-gradient-to-br from-rose-600 via-rose-500 to-rose-400 rounded-2xl p-6 mb-6 overflow-hidden sticky top-14 z-10 shadow-md">
-        <div className="absolute top-0 end-0 w-32 h-32 bg-white/10 rounded-full -translate-y-8 translate-x-8" />
-        <div className="absolute bottom-0 start-0 w-20 h-20 bg-white/5 rounded-full translate-y-8 -translate-x-4" />
-        <p className="text-rose-100 text-sm font-medium mb-1">{t.sellerHello("").replace("!", "").trim()}</p>
-        <h1 className="text-2xl font-bold text-white">{seller.name}</h1>
-        <p className="text-rose-100 text-sm mt-1 flex items-center gap-1.5">
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-          </svg>
-          {seller.city}
-        </p>
-        <Link href="/seller/add"
-          className="absolute top-5 end-5 bg-white text-rose-600 text-xs font-bold px-4 py-2 rounded-xl shadow-sm hover:bg-rose-50 transition-colors">
-          + {t.sellerAddProduct}
-        </Link>
-      </div>
+      <StatsPanel stats={stats} t={t} />
 
-      {/* ── Stats ──────────────────────────────────────── */}
-      <div className="grid grid-cols-3 gap-3 mb-6">
-        <StatCard label={t.statTotal} value={stats.total} color="text-gray-800" iconBg="bg-gray-100"
-          icon={<svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10"/></svg>}/>
-        <StatCard label={t.statPending} value={stats.pending} color="text-amber-600" iconBg="bg-amber-50"
-          icon={<svg className="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>}/>
-        <StatCard label={t.statApproved} value={stats.approved} color="text-green-600" iconBg="bg-green-50"
-          icon={<svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>}/>
-        <StatCard label={t.statSold} value={stats.sold} color="text-blue-600" iconBg="bg-blue-50"
-          icon={<svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>}/>
-        <StatCard label={t.statPaid} value={stats.paid} color="text-purple-600" iconBg="bg-purple-50"
-          icon={<svg className="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>}/>
-      </div>
-
-      {/* ── My Products — sticky below banner ──────────── */}
-      <div
-        className="sticky z-10 -mx-4 px-4 bg-gray-50 pb-2 shadow-[0_4px_8px_-4px_rgba(0,0,0,0.06)]"
-        style={{ top: `${56 + bannerH}px` }}
-      >
+      {/* ── My Products — sticky below header ──────────── */}
+      <div className="sticky top-14 z-10 -mx-4 px-4 bg-gray-50 pb-2 shadow-[0_4px_8px_-4px_rgba(0,0,0,0.06)]">
         <div className="flex items-center justify-between pt-3 mb-3">
           <h2 className="text-base font-bold text-gray-800">{t.sellerMyProducts}</h2>
           <span className="text-xs text-gray-400">{products.length} {t.statTotal.toLowerCase()}</span>
@@ -246,28 +232,41 @@ export default function SellerDashboard() {
       {visibleProducts.length > 0 && (
         <div className="mt-4 space-y-2">
           {visibleProducts.map((product) => (
-            <div key={product._id} className="bg-white rounded-xl border border-gray-100 p-3.5 flex items-center gap-3 hover:border-rose-100 hover:shadow-sm transition-all">
-              <div className="w-14 h-14 rounded-xl overflow-hidden bg-gray-100 shrink-0">
-                {product.photos?.[0]
-                  ? <img src={product.photos[0]} alt={product.title} className="w-full h-full object-cover"/>
-                  : <div className="w-full h-full flex items-center justify-center"><svg className="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></div>
-                }
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-gray-800 truncate">{product.title}</p>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-xs text-gray-400">{product.category}</span>
-                  {product.seq && <span className="text-xs font-mono text-rose-400 bg-rose-50 px-1.5 py-0.5 rounded">{product.seq}</span>}
+            <div key={product._id} className={`bg-white rounded-xl border p-3.5 hover:shadow-sm transition-all ${
+              product.status === "rejected" ? "border-red-100" : "border-gray-100 hover:border-rose-100"
+            }`}>
+              <div className="flex items-center gap-3">
+                <div className="w-14 h-14 rounded-xl overflow-hidden bg-gray-100 shrink-0">
+                  {product.photos?.[0]
+                    ? <img src={product.photos[0]} alt={product.title} className="w-full h-full object-cover"/>
+                    : <div className="w-full h-full flex items-center justify-center"><svg className="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></div>
+                  }
                 </div>
-                <p className="text-xs font-bold text-rose-600 mt-0.5">{formatPrice(product.price)}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-gray-800 truncate">{product.title}</p>
+                  <div className="flex items-center gap-2 mt-0.5 min-w-0">
+                    <span className="text-xs text-gray-400 truncate min-w-0">{product.category}</span>
+                    {product.seq && <span className="text-xs font-mono text-rose-400 bg-rose-50 px-1.5 py-0.5 rounded shrink-0">{product.seq}</span>}
+                  </div>
+                  <p className="text-xs font-bold text-rose-600 mt-0.5">{formatPrice(product.price)}</p>
+                </div>
+                <span className={`text-xs px-2.5 py-1 rounded-full font-semibold shrink-0 ${STATUS_STYLE[product.status] ?? "bg-gray-100 text-gray-500"}`}>
+                  {statusLabel[product.status] ?? product.status}
+                </span>
+                <ProductMenu product={product} t={t}
+                  onEdit={() => router.push(`/seller/products/${product._id}/edit`)}
+                  onRepost={() => handleRepost(product)}
+                  onDelete={() => handleDelete(product)}/>
               </div>
-              <span className={`text-xs px-2.5 py-1 rounded-full font-semibold shrink-0 ${STATUS_STYLE[product.status] ?? "bg-gray-100 text-gray-500"}`}>
-                {statusLabel[product.status] ?? product.status}
-              </span>
-              <ProductMenu product={product} t={t}
-                onEdit={() => router.push(`/seller/products/${product._id}/edit`)}
-                onRepost={() => handleRepost(product)}
-                onDelete={() => handleDelete(product)}/>
+              {/* Rejection reason */}
+              {product.status === "rejected" && product.notes && (
+                <div className="mt-2.5 flex items-start gap-2 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+                  <svg className="w-3.5 h-3.5 text-red-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                  </svg>
+                  <p className="text-xs text-red-600 leading-snug">{product.notes}</p>
+                </div>
+              )}
             </div>
           ))}
         </div>

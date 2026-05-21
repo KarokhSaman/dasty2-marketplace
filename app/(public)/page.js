@@ -88,18 +88,15 @@ export default function HomePage() {
     if (scrollY) sessionStorage.setItem(HOME_SCROLL_KEY, scrollY);
   }, []);
 
-  // Restore scroll after products render
-  useEffect(() => {
-    const y = sessionStorage.getItem(HOME_SCROLL_KEY);
-    if (!products || !y) return;
-    sessionStorage.removeItem(HOME_SCROLL_KEY);
-    requestAnimationFrame(() => window.scrollTo({ top: Number(y), behavior: "instant" }));
-  }, [products]);
 
   function saveState() {
+    const y = String(window.scrollY);
     sessionStorage.setItem(HOME_STATE_KEY, JSON.stringify({
-      search, category, condition, sort, scrollY: window.scrollY,
+      search, category, condition, sort, scrollY: y,
     }));
+    // Also write scroll separately so PublicShell can restore it
+    // even if this component is served from the router cache
+    sessionStorage.setItem(HOME_SCROLL_KEY, y);
   }
 
   const filtered = useMemo(() => {

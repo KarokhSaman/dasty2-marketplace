@@ -105,6 +105,7 @@ export const add = mutation({
       sellerId: "ADMIN",
       productId: id,
       message: `New product submitted: "${args.title}" by ${args.sellerName}`,
+      url: "/admin/products?tab=pending",
       read: false,
       createdAt: new Date().toISOString(),
     });
@@ -169,6 +170,7 @@ export const sellerUpdate = mutation({
       sellerId: "ADMIN",
       productId: id,
       message: `Product resubmitted for review: "${fields.title}" by ${product.sellerName}`,
+      url: "/admin/products?tab=pending",
       read: false,
       createdAt: new Date().toISOString(),
     });
@@ -208,6 +210,7 @@ export const duplicate = mutation({
       sellerId:  "ADMIN",
       productId: newId,
       message:   `New product submitted: "${src.title}" by ${src.sellerName}`,
+      url:       "/admin/products?tab=pending",
       read:      false,
       createdAt: new Date().toISOString(),
     });
@@ -235,5 +238,14 @@ export const remove = mutation({
   args: { id: v.id("products") },
   handler: async (ctx, { id }) => {
     await ctx.db.delete(id);
+  },
+});
+
+export const toggleFeatured = mutation({
+  args: { id: v.id("products") },
+  handler: async (ctx, { id }) => {
+    const product = await ctx.db.get(id);
+    if (!product) throw new Error("Product not found");
+    await ctx.db.patch(id, { featured: !product.featured });
   },
 });

@@ -70,7 +70,7 @@ export default function AdminDashboard() {
 
   async function approve(product) {
     await updateStatus({ id: product._id, status: "approved", approvedBy: "admin", approvedAt: new Date().toISOString() });
-    await createNotif({ sellerId: product.sellerId, productId: product._id, message: t.adminApproveMsg(product.title) });
+    await createNotif({ sellerId: product.sellerId, productId: product._id, message: t.adminApproveMsg(product.title), url: `/products/${product._id}` });
   }
 
   return (
