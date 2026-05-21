@@ -183,6 +183,7 @@ export default function SellerLoginPage() {
   const [name, setName]       = useState("");
   const [phone, setPhone]     = useState("");
   const [city, setCity]       = useState("Erbil");
+  const [address, setAddress] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState("");
 
@@ -223,7 +224,7 @@ export default function SellerLoginPage() {
     setError(""); setLoading(true);
     const res = await fetch("/api/seller/register", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, name, phone, city }),
+      body: JSON.stringify({ email, name, phone, city, address }),
     });
     const data = await res.json();
     setLoading(false);
@@ -358,8 +359,16 @@ export default function SellerLoginPage() {
                     options={IRAQ_CITIES.map(c => ({ value: c, label: c }))}
                   />
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    Address <span className="text-rose-500">*</span>
+                  </label>
+                  <input type="text" value={address} onChange={e => setAddress(e.target.value)}
+                    placeholder="Street, neighbourhood or landmark" required
+                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300" />
+                </div>
                 {error && <ErrorBox message={error} />}
-                <button type="submit" disabled={loading || !name.trim() || !phone.trim()}
+                <button type="submit" disabled={loading || !name.trim() || !phone.trim() || !address.trim()}
                   className="w-full bg-rose-600 text-white font-semibold py-3 rounded-xl hover:bg-rose-700 transition-colors disabled:opacity-50">
                   {loading ? "..." : t.continueBtn}
                 </button>

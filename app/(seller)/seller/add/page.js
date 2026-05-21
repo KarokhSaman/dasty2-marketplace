@@ -146,8 +146,18 @@ export default function AddProductPage() {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1.5">{t.fieldPrice} <span className="text-rose-500">*</span></label>
-          <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder={t.fieldPricePlaceholder} min={0} dir="ltr"
-            className={`w-full border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300 ${errors.price ? "border-red-400 bg-red-50" : "border-gray-200"}`} />
+          <div className="relative">
+            <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder={t.fieldPricePlaceholder} min={0} dir="ltr"
+              className={`w-full border rounded-xl px-4 py-2.5 pe-10 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300 ${errors.price ? "border-red-400 bg-red-50" : "border-gray-200"}`} />
+            {price && (
+              <button type="button" onClick={() => setPrice("")}
+                className="absolute end-3 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-400 hover:text-gray-600 transition-colors">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
           {price && Number(price) >= 5000 && (
             activeOffer ? (
               <div className={`mt-2 rounded-lg px-3 py-2 ${

@@ -1,10 +1,71 @@
 "use client";
-import { usePaginatedQuery } from "convex/react";
+import { usePaginatedQuery, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useState, useMemo, useRef, useEffect } from "react";
 import ProductCard from "@/components/buyer/ProductCard";
 import CategoryBar from "@/components/buyer/CategoryBar";
 import { useT } from "@/lib/i18n/LocaleProvider";
+
+function CityDropdown({ city, setCity, cities, t }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef();
+
+  useEffect(() => {
+    function handler(e) {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const label = city === "all" ? t.allCities : city;
+  const options = [{ value: "all", label: t.allCities }, ...cities.map((c) => ({ value: c, label: c }))];
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-colors text-xs font-medium whitespace-nowrap ${
+          city !== "all"
+            ? "border-rose-300 bg-rose-50 text-rose-600"
+            : "border-gray-200 bg-white hover:border-rose-300 text-gray-700"
+        }`}
+      >
+        <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+        </svg>
+        {label}
+        <svg className={`w-3 h-3 text-gray-400 transition-transform duration-150 ${open ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {open && (
+        <div className="absolute start-0 top-full mt-1.5 bg-white border border-gray-200 rounded-xl shadow-lg z-30 overflow-hidden min-w-[160px]">
+          {options.map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => { setCity(opt.value); setOpen(false); }}
+              className={`flex items-center justify-between gap-4 w-full px-4 py-2.5 text-sm text-start whitespace-nowrap transition-colors ${
+                city === opt.value
+                  ? "bg-rose-50 text-rose-600 font-semibold"
+                  : "text-gray-700 hover:bg-gray-50"
+              }`}
+            >
+              {opt.label}
+              {city === opt.value && (
+                <svg className="w-3.5 h-3.5 text-rose-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                </svg>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function SortDropdown({ sort, setSort, t }) {
   const [open, setOpen] = useState(false);
@@ -67,6 +128,7 @@ function SortDropdown({ sort, setSort, t }) {
 const HOME_STATE_KEY   = "dasty2-home-state";
 const HOME_SCROLL_KEY  = "dasty2-home-scroll";
 const HOME_CATBAR_KEY  = "dasty2-catbar-scroll";
+const HOME_COUNT_KEY   = "dasty2-home-count";
 
 const PAGE_SIZE = 24;
 
@@ -76,13 +138,25 @@ export default function HomePage() {
   const [category, setCategory]   = useState("all");
   const [condition, setCondition] = useState("all");
   const [sort, setSort]           = useState("default");
+  const [city, setCity]           = useState("all");
   const sentinelRef = useRef(null);
+
+  // Read saved result count synchronously so usePaginatedQuery starts
+  // with enough items to reach the saved scroll position immediately
+  const [initialItems] = useState(() => {
+    const saved = sessionStorage.getItem(HOME_COUNT_KEY);
+    if (saved) { sessionStorage.removeItem(HOME_COUNT_KEY); return Math.max(PAGE_SIZE, Number(saved)); }
+    return PAGE_SIZE;
+  });
+
+  // Featured products — separate query so they always appear at top
+  const featuredProducts = useQuery(api.products.getFeatured) ?? [];
 
   // Paginated query — resets automatically when category changes
   const { results, status, loadMore } = usePaginatedQuery(
     api.products.getPublicPaginated,
     { category: category === "all" ? undefined : category },
-    { initialNumItems: PAGE_SIZE },
+    { initialNumItems: initialItems },
   );
 
   // Restore filters immediately on mount
@@ -90,13 +164,35 @@ export default function HomePage() {
     const raw = sessionStorage.getItem(HOME_STATE_KEY);
     if (!raw) return;
     sessionStorage.removeItem(HOME_STATE_KEY);
-    const { search: s, category: c, condition: co, sort: so, scrollY } = JSON.parse(raw);
+    const { search: s, category: c, condition: co, sort: so, city: ci } = JSON.parse(raw);
     if (s  !== undefined) setSearch(s);
     if (c  !== undefined) setCategory(c);
     if (co !== undefined) setCondition(co);
     if (so !== undefined) setSort(so);
-    if (scrollY) sessionStorage.setItem(HOME_SCROLL_KEY, scrollY);
+    if (ci !== undefined) setCity(ci);
+    // scrollY stays in HOME_SCROLL_KEY — restored below once products load
   }, []);
+
+  // Scroll restoration — no dependency array so it runs after every render.
+  // Guards: only fires when products are loaded AND a scroll key exists.
+  // After restoring, removes the key so subsequent renders skip it.
+  // Handles both fresh-mount and router-cache cases.
+  useEffect(() => {
+    if (status === "LoadingFirstPage" || status === "LoadingMore") return;
+    const y    = sessionStorage.getItem(HOME_SCROLL_KEY);
+    const catX = sessionStorage.getItem(HOME_CATBAR_KEY);
+    if (!y && !catX) return;
+    if (y)    sessionStorage.removeItem(HOME_SCROLL_KEY);
+    if (catX) sessionStorage.removeItem(HOME_CATBAR_KEY);
+    const id = requestAnimationFrame(() => {
+      if (y) window.scrollTo({ top: Number(y), behavior: "instant" });
+      if (catX) {
+        const el = document.querySelector("[data-catbar]");
+        if (el) el.scrollLeft = Number(catX);
+      }
+    });
+    return () => cancelAnimationFrame(id);
+  }); // intentionally no deps
 
   // Auto-load next page when sentinel enters viewport
   useEffect(() => {
@@ -114,39 +210,58 @@ export default function HomePage() {
     const y      = String(window.scrollY);
     const catBar = document.querySelector("[data-catbar]");
     const catX   = String(catBar?.scrollLeft ?? 0);
-    sessionStorage.setItem(HOME_STATE_KEY, JSON.stringify({
-      search, category, condition, sort, scrollY: y,
-    }));
+    sessionStorage.setItem(HOME_STATE_KEY, JSON.stringify({ search, category, condition, sort, city, scrollY: y }));
     sessionStorage.setItem(HOME_SCROLL_KEY, y);
     sessionStorage.setItem(HOME_CATBAR_KEY, catX);
+    sessionStorage.setItem(HOME_COUNT_KEY,  String(results.length)); // restore same number of items
   }
 
-  // Client-side filter for search + condition (category is server-side)
-  const filtered = useMemo(() => {
+  // Set of featured product IDs so we can exclude them from the regular grid
+  const featuredIds = useMemo(
+    () => new Set(featuredProducts.map(p => p._id)),
+    [featuredProducts]
+  );
+
+  // Unique sorted city list derived from all loaded products
+  const availableCities = useMemo(() => {
+    const set = new Set([...results, ...featuredProducts].map(p => p.city).filter(Boolean));
+    return [...set].sort();
+  }, [results, featuredProducts]);
+
+  // Client-side filter for search + condition + city on the paginated feed
+  // Featured products are excluded from this list (they have their own section)
+  const regular = useMemo(() => {
     const q = search.toLowerCase();
-    return results.filter((p) => {
+    let list = results.filter(p => {
+      if (featuredIds.has(p._id)) return false;
       const matchSearch = !q || p.title.toLowerCase().includes(q) || p.category.toLowerCase().includes(q);
       const matchCond   = condition === "all" || p.condition === condition;
-      return matchSearch && matchCond;
+      const matchCity   = city === "all" || p.city === city;
+      return matchSearch && matchCond && matchCity;
     });
-  }, [results, search, condition]);
+    if (sort === "price_asc") return [...list].sort((a, b) => a.price - b.price);
+    if (sort === "price_desc") return [...list].sort((a, b) => b.price - a.price);
+    return list;
+  }, [results, search, condition, sort, city, featuredIds]);
 
-  const { featured, regular } = useMemo(() => {
-    if (sort === "price_asc") {
-      const sorted = [...filtered].sort((a, b) => a.price - b.price);
-      return { featured: [], regular: sorted };
-    }
-    if (sort === "price_desc") {
-      const sorted = [...filtered].sort((a, b) => b.price - a.price);
-      return { featured: [], regular: sorted };
-    }
-    return {
-      featured: filtered.filter((p) => p.featured),
-      regular:  filtered.filter((p) => !p.featured),
-    };
-  }, [filtered, sort]);
+  // Featured section filtered by search + condition + city too
+  const featured = useMemo(() => {
+    const q = search.toLowerCase();
+    let list = featuredProducts.filter(p => {
+      const matchSearch = !q || p.title.toLowerCase().includes(q) || p.category.toLowerCase().includes(q);
+      const matchCond   = condition === "all" || p.condition === condition;
+      const matchCat    = category === "all" || p.category === category;
+      const matchCity   = city === "all" || p.city === city;
+      return matchSearch && matchCond && matchCat && matchCity;
+    });
+    if (sort === "price_asc") return [...list].sort((a, b) => a.price - b.price);
+    if (sort === "price_desc") return [...list].sort((a, b) => b.price - a.price);
+    return list;
+  }, [featuredProducts, search, condition, sort, category, city]);
 
-  const isLoading = status === "LoadingFirstPage";
+  const filtered = useMemo(() => [...featured, ...regular], [featured, regular]);
+
+  const isLoading = status === "LoadingFirstPage" && featuredProducts.length === 0;
 
   return (
     <div>
@@ -195,10 +310,10 @@ export default function HomePage() {
         <CategoryBar selected={category} onSelect={setCategory} />
       </div>
 
-      {/* Sort + result count row */}
+      {/* City + Sort filter row */}
       {!isLoading && (
-        <div className="flex items-center justify-between mb-4">
-          <p className="text-xs text-gray-400">{t.productsFound(filtered.length)}</p>
+        <div className="flex items-center justify-between gap-2 mb-4">
+          <CityDropdown city={city} setCity={setCity} cities={availableCities} t={t} />
           <div className="flex items-center gap-2">
             <span className="text-xs text-gray-400 whitespace-nowrap">{t.sortBy}</span>
             <SortDropdown sort={sort} setSort={setSort} t={t} />

@@ -55,22 +55,24 @@ export default function SellerAccountPage() {
   const [showHow, setShowHow]   = useState(false);
   const [showFees, setShowFees] = useState(false);
 
-  const [name, setName]   = useState("");
-  const [phone, setPhone] = useState("");
-  const [city, setCity]   = useState("");
-  const [saving, setSaving] = useState(false);
+  const [name, setName]       = useState("");
+  const [phone, setPhone]     = useState("");
+  const [city, setCity]       = useState("");
+  const [address, setAddress] = useState("");
+  const [saving, setSaving]   = useState(false);
 
   function startEdit() {
     setName(seller.name);
     setPhone(seller.phone ?? "");
     setCity(seller.city ?? "Erbil");
+    setAddress(seller.address ?? "");
     setEditing(true);
   }
 
   async function handleSave(e) {
     e.preventDefault();
     setSaving(true);
-    await updateProfile({ id: seller._id, name: name.trim(), phone: phone.trim(), city });
+    await updateProfile({ id: seller._id, name: name.trim(), phone: phone.trim(), city, address: address.trim() });
     setSaving(false);
     setEditing(false);
   }
@@ -111,7 +113,7 @@ export default function SellerAccountPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
               </svg>
-              {seller.city}
+              {seller.city}{seller.address ? ` · ${seller.address}` : ""}
             </p>
           </div>
           <button onClick={startEdit}
@@ -142,6 +144,12 @@ export default function SellerAccountPage() {
               onChange={setCity}
               options={IRAQ_CITIES.map(c => ({ value: c, label: c }))}
             />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Address <span className="text-rose-500">*</span></label>
+            <input value={address} onChange={e => setAddress(e.target.value)} required
+              placeholder="Street, neighbourhood or landmark"
+              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300" />
           </div>
           <div className="flex gap-2 pt-1">
             <button type="submit" disabled={saving}

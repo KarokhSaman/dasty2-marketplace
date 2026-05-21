@@ -19,7 +19,8 @@ export default defineSchema({
     sellerId: v.string(),
     sellerName: v.string(),
     sellerPhone: v.string(),
-    featured: v.optional(v.boolean()),
+    featured:      v.optional(v.boolean()),
+    featuredUntil: v.optional(v.string()), // "YYYY-MM-DD" — undefined means indefinite
     views: v.optional(v.number()),
     notes: v.optional(v.string()),
     approvedBy: v.optional(v.string()),
@@ -37,6 +38,7 @@ export default defineSchema({
     name: v.string(),
     phone: v.string(),
     city: v.string(),
+    address: v.optional(v.string()),
     registeredAt: v.string(),
     isActive: v.boolean(),
   }),

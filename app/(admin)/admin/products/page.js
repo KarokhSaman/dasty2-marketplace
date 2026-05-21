@@ -26,7 +26,7 @@ export default function AdminProductsPage() {
   const products        = useQuery(api.products.getAll);
   const updateStatus    = useMutation(api.products.updateStatus);
   const removeProduct   = useMutation(api.products.remove);
-  const toggleFeatured  = useMutation(api.products.toggleFeatured);
+  const setFeatured     = useMutation(api.products.setFeatured);
   const createNotif     = useMutation(api.notifications.create);
   const createLog       = useMutation(api.adminLogs.create);
 
@@ -35,6 +35,7 @@ export default function AdminProductsPage() {
     fetch("/api/admin/me").then(r => r.json()).then(d => setAdminEmail(d.email ?? "admin"));
   }, []);
 
+  const [featuredPickerId, setFeaturedPickerId] = useState(null);
   const [tab,          setTab]          = useState(searchParams.get("tab") ?? "pending");
   const [search,       setSearch]       = useState("");
   const [rejectingId,  setRejectingId]  = useState(focusId ?? null);
@@ -185,105 +186,212 @@ export default function AdminProductsPage() {
             rejectingId === product._id ? "border-red-200" : "border-gray-100 hover:border-rose-100"
           }`}>
             {/* Main row */}
-            <div className="p-4 flex items-start gap-4">
-              {/* Photo */}
-              <div
-                className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 shrink-0 cursor-pointer"
-                onClick={() => setExpanded(expanded === product._id ? null : product._id)}
-              >
-                {product.photos?.[0]
-                  ? <img src={product.photos[0]} alt="" className="w-full h-full object-cover" />
-                  : <div className="w-full h-full bg-gray-200" />
-                }
-              </div>
+            <div className="p-4">
+              <div className="flex items-start gap-3">
+                {/* Photo */}
+                <div
+                  className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 shrink-0 cursor-pointer"
+                  onClick={() => setExpanded(expanded === product._id ? null : product._id)}
+                >
+                  {product.photos?.[0]
+                    ? <img src={product.photos[0]} alt="" className="w-full h-full object-cover" />
+                    : <div className="w-full h-full bg-gray-200" />
+                  }
+                </div>
 
-              {/* Info */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-start gap-2 flex-wrap">
-                  <p className="text-sm font-semibold text-gray-800 truncate">{product.title}</p>
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_STYLE[product.status]}`}>
-                    {statusLabels[product.status]}
-                  </span>
-                  <button
-                    onClick={async () => { await toggleFeatured({ id: product._id }); await log(product.featured ? "unfeatured" : "featured", product); }}
-                    title={product.featured ? "Remove from featured" : "Mark as featured"}
-                    className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium border transition-colors ${
-                      product.featured
-                        ? "bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-200"
-                        : "bg-gray-100 text-gray-400 border-gray-200 hover:bg-amber-50 hover:text-amber-500 hover:border-amber-200"
-                    }`}
-                  >
-                    <svg className="w-3 h-3" fill={product.featured ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
-                    </svg>
-                    {product.featured ? "Featured" : "Feature"}
-                  </button>
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start gap-2 flex-wrap">
+                    <p className="text-sm font-semibold text-gray-800 truncate">{product.title}</p>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_STYLE[product.status]}`}>
+                      {statusLabels[product.status]}
+                    </span>
+                    {/* Featured button + duration picker */}
+                    <div className="relative">
+                      {product.featured ? (
+                        <button
+                          onClick={async () => {
+                            await setFeatured({ id: product._id, featured: false });
+                            await log("unfeatured", product);
+                          }}
+                          className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium border bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-200 transition-colors"
+                        >
+                          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
+                          </svg>
+                          {product.featuredUntil
+                            ? `Until ${product.featuredUntil}`
+                            : "Featured"}
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => setFeaturedPickerId(featuredPickerId === product._id ? null : product._id)}
+                          className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium border bg-gray-100 text-gray-400 border-gray-200 hover:bg-amber-50 hover:text-amber-500 hover:border-amber-200 transition-colors"
+                        >
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
+                          </svg>
+                          Feature
+                        </button>
+                      )}
+
+                      {/* Duration picker popover */}
+                      {featuredPickerId === product._id && (
+                        <div className="absolute start-0 top-full mt-1.5 z-30 bg-white border border-gray-200 rounded-xl shadow-lg p-2 min-w-[160px]">
+                          <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide px-1 pb-1.5">Feature for</p>
+                          {[
+                            { label: "7 days",   days: 7  },
+                            { label: "14 days",  days: 14 },
+                            { label: "30 days",  days: 30 },
+                            { label: "No expiry", days: null },
+                          ].map(opt => (
+                            <button key={opt.label}
+                              onClick={async () => {
+                                const until = opt.days
+                                  ? new Date(Date.now() + opt.days * 864e5).toISOString().slice(0, 10)
+                                  : undefined;
+                                await setFeatured({ id: product._id, featured: true, featuredUntil: until });
+                                await log("featured", product, opt.label);
+                                setFeaturedPickerId(null);
+                              }}
+                              className="w-full text-start px-2 py-1.5 text-xs text-gray-700 hover:bg-amber-50 hover:text-amber-700 rounded-lg transition-colors"
+                            >
+                              {opt.label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  {/* Condition + seq */}
+                  <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1.5">
+                    <span>{product.condition === "new" ? t.conditionNew : t.conditionUsed}</span>
+                    {product.seq && <span className="font-mono font-bold text-rose-400">{product.seq}</span>}
+                  </p>
+
+                  {/* Price + fee + date */}
+                  <div className="flex items-center gap-3 mt-2 flex-wrap">
+                    <span className="text-sm font-bold text-gray-800">{formatPrice(product.price)}</span>
+                    <span className="text-xs text-rose-500 font-medium">{t.adminProfitLabel}: {formatPrice(product.profit)}</span>
+                    <span className="text-xs text-gray-300">{product.dateAdded?.slice(0,10)}</span>
+                  </div>
+
+                  {/* Seller + location */}
+                  <div className="mt-2 space-y-0.5">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-semibold text-gray-700">{product.sellerName}</span>
+                      {product.sellerPhone && (
+                        <a
+                          href={`https://wa.me/${product.sellerPhone.replace(/\D/g,"")}`}
+                          target="_blank" rel="noopener noreferrer"
+                          className="text-xs bg-green-50 text-green-600 border border-green-100 px-2 py-0.5 rounded-full hover:bg-green-100 transition-colors"
+                        >
+                          {t.adminContact} {product.sellerPhone}
+                        </a>
+                      )}
+                    </div>
+                    {(product.city || product.sellerAddress) && (
+                      <p className="text-xs text-gray-400 flex items-center gap-1">
+                        <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        {product.city}{product.sellerAddress ? `, ${product.sellerAddress}` : ""}
+                      </p>
+                    )}
+                  </div>
                 </div>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  {product.category} · {product.condition === "new" ? t.conditionNew : t.conditionUsed}
-                  {product.seq && <span className="ms-2 font-mono font-bold text-rose-400">{product.seq}</span>}
-                </p>
-                <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-                  <span className="text-sm font-bold text-gray-800">{formatPrice(product.price)}</span>
-                  <span className="text-xs text-rose-500 font-medium">{t.adminProfitLabel}: {formatPrice(product.profit)}</span>
-                  <span className="text-xs text-gray-400">{product.dateAdded?.slice(0,10)}</span>
-                </div>
-                <div className="flex items-center gap-2 mt-1.5">
-                  <span className="text-xs text-gray-600 font-medium">{product.sellerName}</span>
-                  {product.sellerPhone && (
-                    <a
-                      href={`https://wa.me/${product.sellerPhone.replace(/\D/g,"")}`}
-                      target="_blank" rel="noopener noreferrer"
-                      className="text-xs bg-green-50 text-green-600 border border-green-100 px-2 py-0.5 rounded-full hover:bg-green-100 transition-colors"
-                    >
-                      {t.adminContact} {product.sellerPhone}
-                    </a>
+
+                {/* Actions — desktop only */}
+                <div className="hidden sm:flex flex-col gap-1.5 shrink-0">
+                  {product.status === "pending" && (
+                    <>
+                      <button onClick={() => approve(product)}
+                        className="text-xs bg-green-500 hover:bg-green-600 text-white font-semibold px-3 py-1.5 rounded-lg transition-colors">
+                        {t.adminApprove}
+                      </button>
+                      <button onClick={() => { setRejectingId(product._id); setRejectReason(""); }}
+                        className="text-xs bg-red-50 hover:bg-red-100 text-red-600 font-semibold px-3 py-1.5 rounded-lg transition-colors border border-red-100">
+                        {t.adminReject}
+                      </button>
+                    </>
+                  )}
+                  {product.status === "approved" && (
+                    <button onClick={() => markSold(product)}
+                      className="text-xs bg-blue-50 hover:bg-blue-100 text-blue-600 font-semibold px-3 py-1.5 rounded-lg transition-colors border border-blue-100">
+                      {t.adminMarkSold}
+                    </button>
+                  )}
+                  {product.status === "sold" && (
+                    <button onClick={() => markPaid(product)}
+                      className="text-xs bg-purple-50 hover:bg-purple-100 text-purple-600 font-semibold px-3 py-1.5 rounded-lg transition-colors border border-purple-100">
+                      {t.adminMarkPaid}
+                    </button>
+                  )}
+                  {product.status === "rejected" && (
+                    <button onClick={() => approve(product)}
+                      className="text-xs bg-green-50 hover:bg-green-100 text-green-600 font-semibold px-3 py-1.5 rounded-lg transition-colors border border-green-100">
+                      {t.adminApprove}
+                    </button>
+                  )}
+                  {confirmDel === product._id ? (
+                    <div className="flex gap-1">
+                      <button onClick={() => deleteProduct(product._id)}
+                        className="text-xs bg-red-500 hover:bg-red-600 text-white font-semibold px-2 py-1.5 rounded-lg transition-colors">✓</button>
+                      <button onClick={() => setConfirmDel(null)}
+                        className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-2 py-1.5 rounded-lg transition-colors">✕</button>
+                    </div>
+                  ) : (
+                    <button onClick={() => setConfirmDel(product._id)}
+                      className="text-xs text-gray-400 hover:text-red-500 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors">
+                      {t.adminDelete}
+                    </button>
                   )}
                 </div>
               </div>
 
-              {/* Actions */}
-              <div className="flex flex-col gap-1.5 shrink-0">
+              {/* Actions — mobile only */}
+              <div className="flex sm:hidden items-center gap-2 mt-3 flex-wrap">
                 {product.status === "pending" && (
                   <>
                     <button onClick={() => approve(product)}
-                      className="text-xs bg-green-500 hover:bg-green-600 text-white font-semibold px-3 py-1.5 rounded-lg transition-colors">
+                      className="text-xs bg-green-500 hover:bg-green-600 text-white font-semibold px-4 py-2 rounded-lg transition-colors">
                       {t.adminApprove}
                     </button>
                     <button onClick={() => { setRejectingId(product._id); setRejectReason(""); }}
-                      className="text-xs bg-red-50 hover:bg-red-100 text-red-600 font-semibold px-3 py-1.5 rounded-lg transition-colors border border-red-100">
+                      className="text-xs bg-red-50 hover:bg-red-100 text-red-600 font-semibold px-4 py-2 rounded-lg transition-colors border border-red-100">
                       {t.adminReject}
                     </button>
                   </>
                 )}
                 {product.status === "approved" && (
                   <button onClick={() => markSold(product)}
-                    className="text-xs bg-blue-50 hover:bg-blue-100 text-blue-600 font-semibold px-3 py-1.5 rounded-lg transition-colors border border-blue-100">
+                    className="text-xs bg-blue-50 hover:bg-blue-100 text-blue-600 font-semibold px-4 py-2 rounded-lg transition-colors border border-blue-100">
                     {t.adminMarkSold}
                   </button>
                 )}
                 {product.status === "sold" && (
                   <button onClick={() => markPaid(product)}
-                    className="text-xs bg-purple-50 hover:bg-purple-100 text-purple-600 font-semibold px-3 py-1.5 rounded-lg transition-colors border border-purple-100">
+                    className="text-xs bg-purple-50 hover:bg-purple-100 text-purple-600 font-semibold px-4 py-2 rounded-lg transition-colors border border-purple-100">
                     {t.adminMarkPaid}
                   </button>
                 )}
                 {product.status === "rejected" && (
                   <button onClick={() => approve(product)}
-                    className="text-xs bg-green-50 hover:bg-green-100 text-green-600 font-semibold px-3 py-1.5 rounded-lg transition-colors border border-green-100">
+                    className="text-xs bg-green-50 hover:bg-green-100 text-green-600 font-semibold px-4 py-2 rounded-lg transition-colors border border-green-100">
                     {t.adminApprove}
                   </button>
                 )}
                 {confirmDel === product._id ? (
-                  <div className="flex gap-1">
+                  <div className="flex gap-1.5 ms-auto">
                     <button onClick={() => deleteProduct(product._id)}
-                      className="text-xs bg-red-500 hover:bg-red-600 text-white font-semibold px-2 py-1.5 rounded-lg transition-colors">✓</button>
+                      className="text-xs bg-red-500 hover:bg-red-600 text-white font-semibold px-3 py-2 rounded-lg transition-colors">✓</button>
                     <button onClick={() => setConfirmDel(null)}
-                      className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-2 py-1.5 rounded-lg transition-colors">✕</button>
+                      className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-2 rounded-lg transition-colors">✕</button>
                   </div>
                 ) : (
                   <button onClick={() => setConfirmDel(product._id)}
-                    className="text-xs text-gray-400 hover:text-red-500 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors">
+                    className="text-xs text-gray-400 hover:text-red-500 px-3 py-2 rounded-lg hover:bg-red-50 transition-colors ms-auto">
                     {t.adminDelete}
                   </button>
                 )}

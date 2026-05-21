@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useT } from "@/lib/i18n/LocaleProvider";
 import LocaleSwitcher from "@/components/ui/LocaleSwitcher";
 import NotificationPanel from "@/components/ui/NotificationPanel";
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, useLayoutEffect } from "react";
 import { usePathname } from "next/navigation";
 
 import { useQuery } from "convex/react";
@@ -183,32 +183,9 @@ function SmartBottomNav() {
   );
 }
 
-// ── Scroll restoration — lives in shell so it fires on every nav ──
+// ── Scroll restoration is handled entirely in page.js ────────────
+// This component is kept as a mount point but no longer does scroll work.
 function HomeScrollRestorer() {
-  const pathname = usePathname();
-
-  useEffect(() => {
-    if (pathname !== "/") return;
-
-    const y    = sessionStorage.getItem("dasty2-home-scroll");
-    const catX = sessionStorage.getItem("dasty2-catbar-scroll");
-
-    if (y)    sessionStorage.removeItem("dasty2-home-scroll");
-    if (catX) sessionStorage.removeItem("dasty2-catbar-scroll");
-
-    if (!y && !catX) return;
-
-    const t = setTimeout(() => {
-      if (y) window.scrollTo({ top: Number(y), behavior: "instant" });
-      if (catX) {
-        const catBar = document.querySelector("[data-catbar]");
-        if (catBar) catBar.scrollLeft = Number(catX);
-      }
-    }, 100);
-
-    return () => clearTimeout(t);
-  }, [pathname]);
-
   return null;
 }
 

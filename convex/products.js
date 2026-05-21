@@ -57,6 +57,21 @@ export const getPublic = query({
   },
 });
 
+// Always returns currently-featured products regardless of their pagination position
+export const getFeatured = query({
+  args: {},
+  handler: async (ctx) => {
+    const today = new Date().toISOString().slice(0, 10);
+    const all = await ctx.db
+      .query("products")
+      .withIndex("by_status", q => q.eq("status", "approved"))
+      .collect();
+    return all
+      .filter(p => p.featured && (!p.featuredUntil || p.featuredUntil >= today))
+      .map(({ sellerId, sellerPhone, profit, ...rest }) => rest);
+  },
+});
+
 // Paginated version — used by the buyer listing page
 export const getPublicPaginated = query({
   args: {
@@ -92,7 +107,10 @@ export const getBySeller = query({
 export const getAll = query({
   args: {},
   handler: async (ctx) => {
-    return await ctx.db.query("products").collect();
+    const products = await ctx.db.query("products").collect();
+    const sellers  = await ctx.db.query("sellers").collect();
+    const addrMap  = new Map(sellers.map(s => [s._id.toString(), s.address ?? ""]));
+    return products.map(p => ({ ...p, sellerAddress: addrMap.get(p.sellerId) ?? "" }));
   },
 });
 
@@ -270,11 +288,16 @@ export const remove = mutation({
   },
 });
 
-export const toggleFeatured = mutation({
-  args: { id: v.id("products") },
-  handler: async (ctx, { id }) => {
-    const product = await ctx.db.get(id);
-    if (!product) throw new Error("Product not found");
-    await ctx.db.patch(id, { featured: !product.featured });
+export const setFeatured = mutation({
+  args: {
+    id:            v.id("products"),
+    featured:      v.boolean(),
+    featuredUntil: v.optional(v.string()), // "YYYY-MM-DD"
+  },
+  handler: async (ctx, { id, featured, featuredUntil }) => {
+    await ctx.db.patch(id, {
+      featured,
+      featuredUntil: featured ? featuredUntil : undefined,
+    });
   },
 });

@@ -92,7 +92,7 @@ export default function AdminSellersPage() {
                     {seller.phone}
                   </a>
                 )}
-                <span className="text-xs text-gray-400">{seller.city}</span>
+                <span className="text-xs text-gray-400">{seller.city}{seller.address ? `, ${seller.address}` : ""}</span>
                 <span className="text-xs text-gray-400">
                   {seller.productCount} {t.adminProductCount}
                 </span>

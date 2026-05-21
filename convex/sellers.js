@@ -13,10 +13,11 @@ export const getByEmail = query({
 
 export const createWithEmail = mutation({
   args: {
-    email: v.string(),
-    name: v.string(),
-    phone: v.string(),
-    city: v.string(),
+    email:   v.string(),
+    name:    v.string(),
+    phone:   v.string(),
+    city:    v.string(),
+    address: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const existing = await ctx.db
@@ -90,12 +91,13 @@ export const getAll = query({
 
 export const updateProfile = mutation({
   args: {
-    id: v.id("sellers"),
-    name: v.string(),
-    phone: v.string(),
-    city: v.string(),
+    id:      v.id("sellers"),
+    name:    v.string(),
+    phone:   v.string(),
+    city:    v.string(),
+    address: v.optional(v.string()),
   },
-  handler: async (ctx, { id, name, phone, city }) => {
-    await ctx.db.patch(id, { name, phone, city });
+  handler: async (ctx, { id, name, phone, city, address }) => {
+    await ctx.db.patch(id, { name, phone, city, address });
   },
 });
