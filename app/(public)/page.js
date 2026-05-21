@@ -1,5 +1,5 @@
 "use client";
-import { useQuery } from "convex/react";
+import { usePaginatedQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useState, useMemo, useRef, useEffect } from "react";
 import ProductCard from "@/components/buyer/ProductCard";
@@ -68,13 +68,22 @@ const HOME_STATE_KEY   = "dasty2-home-state";
 const HOME_SCROLL_KEY  = "dasty2-home-scroll";
 const HOME_CATBAR_KEY  = "dasty2-catbar-scroll";
 
+const PAGE_SIZE = 24;
+
 export default function HomePage() {
   const { t } = useT();
-  const products = useQuery(api.products.getPublic);
   const [search, setSearch]       = useState("");
   const [category, setCategory]   = useState("all");
   const [condition, setCondition] = useState("all");
   const [sort, setSort]           = useState("default");
+  const sentinelRef = useRef(null);
+
+  // Paginated query — resets automatically when category changes
+  const { results, status, loadMore } = usePaginatedQuery(
+    api.products.getPublicPaginated,
+    { category: category === "all" ? undefined : category },
+    { initialNumItems: PAGE_SIZE },
+  );
 
   // Restore filters immediately on mount
   useEffect(() => {
@@ -89,6 +98,17 @@ export default function HomePage() {
     if (scrollY) sessionStorage.setItem(HOME_SCROLL_KEY, scrollY);
   }, []);
 
+  // Auto-load next page when sentinel enters viewport
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting && status === "CanLoadMore") loadMore(PAGE_SIZE); },
+      { threshold: 0.1 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [status, loadMore]);
 
   function saveState() {
     const y      = String(window.scrollY);
@@ -101,16 +121,15 @@ export default function HomePage() {
     sessionStorage.setItem(HOME_CATBAR_KEY, catX);
   }
 
+  // Client-side filter for search + condition (category is server-side)
   const filtered = useMemo(() => {
-    if (!products) return [];
     const q = search.toLowerCase();
-    return products.filter((p) => {
+    return results.filter((p) => {
       const matchSearch = !q || p.title.toLowerCase().includes(q) || p.category.toLowerCase().includes(q);
-      const matchCat  = category === "all" || p.category === category;
-      const matchCond = condition === "all" || p.condition === condition;
-      return matchSearch && matchCat && matchCond;
+      const matchCond   = condition === "all" || p.condition === condition;
+      return matchSearch && matchCond;
     });
-  }, [products, search, category, condition]);
+  }, [results, search, condition]);
 
   const { featured, regular } = useMemo(() => {
     if (sort === "price_asc") {
@@ -126,6 +145,8 @@ export default function HomePage() {
       regular:  filtered.filter((p) => !p.featured),
     };
   }, [filtered, sort]);
+
+  const isLoading = status === "LoadingFirstPage";
 
   return (
     <div>
@@ -175,7 +196,7 @@ export default function HomePage() {
       </div>
 
       {/* Sort + result count row */}
-      {products !== undefined && (
+      {!isLoading && (
         <div className="flex items-center justify-between mb-4">
           <p className="text-xs text-gray-400">{t.productsFound(filtered.length)}</p>
           <div className="flex items-center gap-2">
@@ -186,7 +207,7 @@ export default function HomePage() {
       )}
 
       {/* Loading skeletons */}
-      {products === undefined && (
+      {isLoading && (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {Array.from({ length: 8 }).map((_, i) => (
             <div key={i} className="bg-white rounded-xl border border-gray-100 overflow-hidden animate-pulse">
@@ -202,7 +223,7 @@ export default function HomePage() {
       )}
 
       {/* Empty state */}
-      {products !== undefined && filtered.length === 0 && (
+      {!isLoading && filtered.length === 0 && (
         <div className="flex flex-col items-center justify-center py-24 text-gray-300">
           <svg className="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
@@ -229,6 +250,29 @@ export default function HomePage() {
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {regular.map((p) => <ProductCard key={p._id} product={p} onSave={saveState} />)}
         </div>
+      )}
+
+      {/* Sentinel — triggers next page load when visible */}
+      <div ref={sentinelRef} className="h-4" />
+
+      {/* Loading more indicator */}
+      {status === "LoadingMore" && (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="bg-white rounded-xl border border-gray-100 overflow-hidden animate-pulse">
+              <div className="aspect-square bg-gray-200" />
+              <div className="p-3 space-y-2">
+                <div className="h-3 bg-gray-200 rounded w-1/2" />
+                <div className="h-4 bg-gray-200 rounded w-3/4" />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* End of results */}
+      {status === "Exhausted" && results.length > PAGE_SIZE && (
+        <p className="text-center text-xs text-gray-300 py-6">— {t.noProducts} —</p>
       )}
     </div>
   );

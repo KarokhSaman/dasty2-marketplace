@@ -26,7 +26,10 @@ export default defineSchema({
     approvedAt: v.optional(v.string()),
     dateAdded: v.string(),
     dateSold: v.optional(v.string()),
-  }),
+  })
+    .index("by_status",          ["status"])
+    .index("by_status_category", ["status", "category"])
+    .index("by_seller",          ["sellerId"]),
 
   sellers: defineTable({
     clerkUserId: v.optional(v.string()),

@@ -1,4 +1,5 @@
 import { query, mutation } from "./_generated/server";
+import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
 
 async function generateSeq(ctx) {
@@ -50,10 +51,31 @@ export const getPublic = query({
   handler: async (ctx) => {
     const products = await ctx.db
       .query("products")
-      .filter((q) => q.eq(q.field("status"), "approved"))
+      .withIndex("by_status", q => q.eq("status", "approved"))
       .collect();
-
     return products.map(({ sellerId, sellerPhone, profit, ...rest }) => rest);
+  },
+});
+
+// Paginated version — used by the buyer listing page
+export const getPublicPaginated = query({
+  args: {
+    paginationOpts: paginationOptsValidator,
+    category:       v.optional(v.string()),
+  },
+  handler: async (ctx, { paginationOpts, category }) => {
+    const q = (category && category !== "all")
+      ? ctx.db.query("products")
+          .withIndex("by_status_category", q =>
+            q.eq("status", "approved").eq("category", category))
+      : ctx.db.query("products")
+          .withIndex("by_status", q => q.eq("status", "approved"));
+
+    const result = await q.order("desc").paginate(paginationOpts);
+    return {
+      ...result,
+      page: result.page.map(({ sellerId, sellerPhone, profit, ...rest }) => rest),
+    };
   },
 });
 
@@ -62,7 +84,7 @@ export const getBySeller = query({
   handler: async (ctx, { sellerId }) => {
     return await ctx.db
       .query("products")
-      .filter((q) => q.eq(q.field("sellerId"), sellerId))
+      .withIndex("by_seller", q => q.eq("sellerId", sellerId))
       .collect();
   },
 });
