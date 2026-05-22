@@ -5,8 +5,9 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import ProductCard from "@/components/buyer/ProductCard";
 import CategoryBar from "@/components/buyer/CategoryBar";
 import { useT } from "@/lib/i18n/LocaleProvider";
+import { getCityLabel } from "@/lib/cities";
 
-function CityDropdown({ city, setCity, cities, t }) {
+function CityDropdown({ city, setCity, cities, t, locale }) {
   const [open, setOpen] = useState(false);
   const ref = useRef();
 
@@ -18,8 +19,11 @@ function CityDropdown({ city, setCity, cities, t }) {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const label = city === "all" ? t.allCities : city;
-  const options = [{ value: "all", label: t.allCities }, ...cities.map((c) => ({ value: c, label: c }))];
+  const label = city === "all" ? t.allCities : (getCityLabel(city, locale) ?? city);
+  const options = [
+    { value: "all", label: t.allCities },
+    ...cities.map((c) => ({ value: c, label: getCityLabel(c, locale) ?? c })),
+  ];
 
   return (
     <div ref={ref} className="relative">
@@ -133,7 +137,7 @@ const HOME_COUNT_KEY   = "dasty2-home-count";
 const PAGE_SIZE = 24;
 
 export default function HomePage() {
-  const { t } = useT();
+  const { t, locale } = useT();
   const [search, setSearch]       = useState("");
   const [category, setCategory]   = useState("all");
   const [condition, setCondition] = useState("all");
@@ -313,7 +317,7 @@ export default function HomePage() {
       {/* City + Sort filter row */}
       {!isLoading && (
         <div className="flex items-center justify-between gap-2 mb-4">
-          <CityDropdown city={city} setCity={setCity} cities={availableCities} t={t} />
+          <CityDropdown city={city} setCity={setCity} cities={availableCities} t={t} locale={locale} />
           <div className="flex items-center gap-2">
             <span className="text-xs text-gray-400 whitespace-nowrap">{t.sortBy}</span>
             <SortDropdown sort={sort} setSort={setSort} t={t} />

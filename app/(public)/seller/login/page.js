@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useT } from "@/lib/i18n/LocaleProvider";
-import { IRAQ_CITIES } from "@/lib/cities";
+import { getCityOptions } from "@/lib/cities";
 import CustomSelect from "@/components/ui/CustomSelect";
 
 // ── Fee tiers (mirrors lib/utils.js calculateProfit) ──────
@@ -204,6 +204,8 @@ export default function SellerLoginPage() {
 
   const stepIdx = ["email", "otp", "profile"].indexOf(step);
 
+  const { locale } = useT();
+
   const stepMeta = {
     email:   { title: t.loginTitle,       sub: t.loginSubtitle },
     otp:     { title: t.otpLabel,         sub: t.otpSent(email) },
@@ -324,7 +326,7 @@ export default function SellerLoginPage() {
                   <CustomSelect
                     value={city}
                     onChange={setCity}
-                    options={IRAQ_CITIES.map(c => ({ value: c, label: c }))}
+                    options={getCityOptions(locale)}
                   />
                 </div>
                 <div>

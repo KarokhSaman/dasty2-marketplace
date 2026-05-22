@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { api } from "@/convex/_generated/api";
 import { useSellerSession, clearSellerSession } from "@/lib/useSellerSession";
 import { useT } from "@/lib/i18n/LocaleProvider";
-import { IRAQ_CITIES } from "@/lib/cities";
+
+import { getCityOptions } from "@/lib/cities";
 import CustomSelect from "@/components/ui/CustomSelect";
 
 const FEE_TIERS = [
@@ -48,7 +49,7 @@ function SectionLabel({ label }) {
 
 export default function SellerAccountPage() {
   const router = useRouter();
-  const { t } = useT();
+  const { t, locale } = useT();
   const { seller, loading } = useSellerSession();
   const updateProfile = useMutation(api.sellers.updateProfile);
 
@@ -143,7 +144,7 @@ export default function SellerAccountPage() {
             <CustomSelect
               value={city}
               onChange={setCity}
-              options={IRAQ_CITIES.map(c => ({ value: c, label: c }))}
+              options={getCityOptions(locale)}
             />
           </div>
           <div>
