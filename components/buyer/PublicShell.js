@@ -99,7 +99,7 @@ function HeaderActions({ t }) {
           {/* Sell Now — rightmost corner */}
           <Link href="/seller/add"
             className="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition-colors shrink-0">
-            + Sell Now
+            + {t.sellNow}
           </Link>
         </>
       ) : (
