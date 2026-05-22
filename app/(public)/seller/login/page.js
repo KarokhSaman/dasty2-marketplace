@@ -260,9 +260,7 @@ export default function SellerLoginPage() {
                   className="w-full bg-rose-600 text-white font-semibold py-3 rounded-xl hover:bg-rose-700 transition-colors disabled:opacity-50">
                   {loading ? "..." : t.sendCodeBtn}
                 </button>
-                <p className="text-center text-xs text-gray-400">
-                  Already have an account? Just enter your email — no password needed.
-                </p>
+                <p className="text-center text-xs text-gray-400">{t.loginHasAccount}</p>
               </form>
             )}
 
@@ -346,9 +344,7 @@ export default function SellerLoginPage() {
             )}
           </div>
 
-          <p className="text-center text-xs text-gray-400 mt-5">
-            By signing up you agree to our terms. Listing is always free.
-          </p>
+          <p className="text-center text-xs text-gray-400 mt-5">{t.loginTermsNote}</p>
         </div>
       </div>
     </div>
