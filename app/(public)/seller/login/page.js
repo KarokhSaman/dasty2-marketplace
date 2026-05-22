@@ -17,43 +17,11 @@ const FEE_TIERS = [
   { range: "500,000 – 1,000,000", fee: "30,000" },
 ];
 
-const HOW_IT_WORKS = [
-  {
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-      </svg>
-    ),
-    title: "List for free",
-    desc: "Post your baby item with photos, price, and description — no upfront cost.",
-  },
-  {
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-    ),
-    title: "We review & publish",
-    desc: "Our team checks your listing and goes live — usually within a few hours.",
-  },
-  {
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
-      </svg>
-    ),
-    title: "Buyers reach out",
-    desc: "Interested buyers contact you directly. You agree on handover details.",
-  },
-  {
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-    ),
-    title: "Item sold — one small fee",
-    desc: "Once sold, a fixed service fee is deducted. You keep the rest.",
-  },
+const STEP_ICONS = [
+  <svg key="1" className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>,
+  <svg key="2" className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+  <svg key="3" className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" /></svg>,
+  <svg key="4" className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
 ];
 
 // ── Error box ─────────────────────────────────────────────
@@ -70,7 +38,15 @@ function ErrorBox({ message }) {
 
 // ── Info panel (left column) ──────────────────────────────
 function InfoPanel() {
+  const { t } = useT();
   const [showFees, setShowFees] = useState(false);
+
+  const steps = [
+    { icon: STEP_ICONS[0], title: t.loginStep1T, desc: t.loginStep1D },
+    { icon: STEP_ICONS[1], title: t.loginStep2T, desc: t.loginStep2D },
+    { icon: STEP_ICONS[2], title: t.loginStep3T, desc: t.loginStep3D },
+    { icon: STEP_ICONS[3], title: t.loginStep4T, desc: t.loginStep4D },
+  ];
 
   return (
     <div className="bg-gradient-to-br from-rose-700 via-rose-600 to-rose-500 lg:min-h-screen flex flex-col justify-center px-8 py-10 lg:py-16 relative overflow-hidden">
@@ -84,19 +60,15 @@ function InfoPanel() {
           <span className="text-2xl font-bold text-white tracking-tight">Dasty2</span>
           <span className="text-2xl font-medium text-rose-200">Mndalan</span>
         </div>
-        <h2 className="text-3xl font-bold text-white leading-tight">
-          Sell your baby items<br />in Erbil — simply.
-        </h2>
-        <p className="text-rose-200 mt-3 text-sm leading-relaxed">
-          A trusted marketplace for parents in Iraq to buy and sell quality baby products.
-        </p>
+        <h2 className="text-3xl font-bold text-white leading-tight">{t.loginHeroTitle}</h2>
+        <p className="text-rose-200 mt-3 text-sm leading-relaxed">{t.loginHeroSub}</p>
       </div>
 
       {/* How it works */}
       <div className="relative mb-8">
-        <p className="text-xs font-semibold text-rose-300 uppercase tracking-widest mb-4">How it works</p>
+        <p className="text-xs font-semibold text-rose-300 uppercase tracking-widest mb-4">{t.loginHowLabel}</p>
         <div className="space-y-4">
-          {HOW_IT_WORKS.map((step, i) => (
+          {steps.map((step, i) => (
             <div key={i} className="flex items-start gap-3">
               <div className="w-8 h-8 rounded-xl bg-white/15 flex items-center justify-center text-white shrink-0 mt-0.5">
                 {step.icon}
@@ -116,7 +88,7 @@ function InfoPanel() {
           onClick={() => setShowFees(v => !v)}
           className="flex items-center gap-2 w-full text-start mb-3 group"
         >
-          <p className="text-xs font-semibold text-rose-300 uppercase tracking-widest">Service fees</p>
+          <p className="text-xs font-semibold text-rose-300 uppercase tracking-widest">{t.loginFeesSec}</p>
           <svg
             className={`w-3.5 h-3.5 text-rose-300 transition-transform duration-200 ${showFees ? "rotate-180" : ""}`}
             fill="none" stroke="currentColor" viewBox="0 0 24 24"
@@ -128,21 +100,21 @@ function InfoPanel() {
         {/* Fee summary (always visible) */}
         <div className="bg-white/10 rounded-2xl p-4">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-white text-sm font-semibold">Fixed fee per sale — not a %</p>
+            <p className="text-white text-sm font-semibold">{t.loginFeesTitle}</p>
             <span className="text-xs bg-white/20 text-white px-2 py-0.5 rounded-full font-medium">IQD</span>
           </div>
 
           {/* Always-visible highlights */}
           <div className="grid grid-cols-2 gap-2 mb-2">
             <div className="bg-white/10 rounded-xl p-3 text-center">
-              <p className="text-rose-200 text-[10px] font-medium mb-1">Up to 9,000</p>
+              <p className="text-rose-200 text-[10px] font-medium mb-1">{t.loginFeesUpTo9k}</p>
               <p className="text-white font-bold text-base">2,000</p>
-              <p className="text-rose-300 text-[10px]">IQD fee</p>
+              <p className="text-rose-300 text-[10px]">{t.loginFeesIqdFee}</p>
             </div>
             <div className="bg-white/10 rounded-xl p-3 text-center">
-              <p className="text-rose-200 text-[10px] font-medium mb-1">Up to 99,000</p>
+              <p className="text-rose-200 text-[10px] font-medium mb-1">{t.loginFeesUpTo99k}</p>
               <p className="text-white font-bold text-base">5,000</p>
-              <p className="text-rose-300 text-[10px]">IQD fee</p>
+              <p className="text-rose-300 text-[10px]">{t.loginFeesIqdFee}</p>
             </div>
           </div>
 
@@ -157,15 +129,13 @@ function InfoPanel() {
                   </div>
                 ))}
               </div>
-              <p className="text-rose-300 text-[10px] mt-3 leading-relaxed">
-                Fee is collected once the item is confirmed sold. Listing is always free.
-              </p>
+              <p className="text-rose-300 text-[10px] mt-3 leading-relaxed">{t.loginFeesNote}</p>
             </div>
           )}
 
           {!showFees && (
             <button onClick={() => setShowFees(true)} className="text-[10px] text-rose-300 hover:text-white transition-colors underline">
-              View full fee table
+              {t.loginFeesViewFull}
             </button>
           )}
         </div>
