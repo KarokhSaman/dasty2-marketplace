@@ -6,6 +6,7 @@ import { api } from "@/convex/_generated/api";
 import { useT } from "@/lib/i18n/LocaleProvider";
 import { useSellerSession } from "@/lib/useSellerSession";
 import { formatPrice } from "@/lib/utils";
+import { getCategoryLabel } from "@/lib/categories";
 import Link from "next/link";
 
 const EDITABLE_STATUSES = ["pending", "approved", "rejected"];
@@ -19,7 +20,7 @@ const STATUS_STYLE = {
 };
 
 // ── Stat card ──────────────────────────────────────────────
-function StatsPanel({ stats, t }) {
+function StatsPanel({ stats, t, locale }) {
   return (
     <div className="space-y-3 mb-6">
 
@@ -30,7 +31,7 @@ function StatsPanel({ stats, t }) {
           <div className="absolute -top-3 -end-3 w-16 h-16 bg-white/10 rounded-full" />
           <p className="text-[11px] font-semibold text-green-100 uppercase tracking-widest mb-1">{t.statApproved}</p>
           <p className="text-4xl font-bold text-white leading-none">{stats.approved}</p>
-          <p className="text-[11px] text-green-100 mt-2">Live listings</p>
+          <p className="text-[11px] text-green-100 mt-2">{t.statLiveListings}</p>
         </div>
 
         {/* Pending — awaiting review */}
@@ -38,7 +39,7 @@ function StatsPanel({ stats, t }) {
           <div className="absolute -top-3 -end-3 w-16 h-16 bg-white/10 rounded-full" />
           <p className="text-[11px] font-semibold text-amber-100 uppercase tracking-widest mb-1">{t.statPending}</p>
           <p className="text-4xl font-bold text-white leading-none">{stats.pending}</p>
-          <p className="text-[11px] text-amber-100 mt-2">Awaiting review</p>
+          <p className="text-[11px] text-amber-100 mt-2">{t.statAwaitingReview}</p>
         </div>
       </div>
 
@@ -136,7 +137,7 @@ function ProductMenu({ product, t, onEdit, onRepost, onDelete }) {
 
 // ── Main page ──────────────────────────────────────────────
 export default function SellerDashboard() {
-  const { t } = useT();
+  const { t, locale } = useT();
   const router = useRouter();
   const { seller, loading } = useSellerSession();
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -206,8 +207,8 @@ export default function SellerDashboard() {
               )}
               <p className="text-xs text-rose-100 mt-1.5 font-medium">
                 {activeOffer.type === "free"
-                  ? "No service fee on all your listings this period"
-                  : `Fixed fee of ${activeOffer.flatFeeAmount?.toLocaleString()} IQD for any price range`}
+                  ? t.offerNoFeeNote
+                  : t.offerFlatFeeNote(activeOffer.flatFeeAmount?.toLocaleString())}
               </p>
               <p className="text-[10px] text-rose-200 mt-1">
                 Valid: <span className="font-bold text-white">{activeOffer.startDate} → {activeOffer.endDate}</span>
@@ -218,7 +219,7 @@ export default function SellerDashboard() {
       )}
 
 
-      <StatsPanel stats={stats} t={t} />
+      <StatsPanel stats={stats} t={t} locale={locale} />
 
       {/* ── My Products — sticky below header ──────────── */}
       <div className="sticky top-14 z-10 -mx-4 px-4 bg-gray-50 pb-2 shadow-[0_4px_8px_-4px_rgba(0,0,0,0.06)]">
@@ -234,7 +235,7 @@ export default function SellerDashboard() {
               <button key={cat} onClick={() => setCategoryFilter(cat)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap border transition-colors shrink-0 ${
                   categoryFilter === cat ? "bg-rose-600 text-white border-rose-600" : "bg-white text-gray-600 border-gray-200 hover:border-rose-300"
-                }`}>{cat === "all" ? t.categoryAll : cat}</button>
+                }`}>{cat === "all" ? t.categoryAll : getCategoryLabel(cat, locale)}</button>
             ))}
           </div>
         )}
@@ -272,7 +273,7 @@ export default function SellerDashboard() {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-gray-800 truncate">{product.title}</p>
                   <div className="flex items-center gap-2 mt-0.5 min-w-0">
-                    <span className="text-xs text-gray-400 truncate min-w-0">{product.category}</span>
+                    <span className="text-xs text-gray-400 truncate min-w-0">{getCategoryLabel(product.category, locale)}</span>
                     {product.seq && <span className="text-xs font-mono text-rose-400 bg-rose-50 px-1.5 py-0.5 rounded shrink-0">{product.seq}</span>}
                   </div>
                   <p className="text-xs font-bold text-rose-600 mt-0.5">{formatPrice(product.price)}</p>
