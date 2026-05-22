@@ -3,8 +3,8 @@ import { useState } from "react";
 import { useMutation } from "convex/react";
 import { useRouter } from "next/navigation";
 import { api } from "@/convex/_generated/api";
-import { useSellerSession } from "@/lib/useSellerSession";
-import { clearSellerSession } from "@/lib/useSellerSession";
+import { useSellerSession, clearSellerSession } from "@/lib/useSellerSession";
+import { useT } from "@/lib/i18n/LocaleProvider";
 import { IRAQ_CITIES } from "@/lib/cities";
 import CustomSelect from "@/components/ui/CustomSelect";
 
@@ -48,6 +48,7 @@ function SectionLabel({ label }) {
 
 export default function SellerAccountPage() {
   const router = useRouter();
+  const { t } = useT();
   const { seller, loading } = useSellerSession();
   const updateProfile = useMutation(api.sellers.updateProfile);
 
@@ -118,7 +119,7 @@ export default function SellerAccountPage() {
           </div>
           <button onClick={startEdit}
             className="bg-white/20 hover:bg-white/30 text-white text-xs font-semibold px-3 py-1.5 rounded-xl transition-colors shrink-0">
-            Edit
+            {t.editBtn}
           </button>
         </div>
       </div>
@@ -126,19 +127,19 @@ export default function SellerAccountPage() {
       {/* ── Edit profile form ── */}
       {editing && (
         <form onSubmit={handleSave} className="bg-white rounded-2xl border border-gray-100 p-5 mb-2 space-y-3">
-          <h2 className="text-sm font-bold text-gray-800 mb-1">Update Profile</h2>
+          <h2 className="text-sm font-bold text-gray-800 mb-1">{t.accountUpdateTitle}</h2>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Full Name</label>
+            <label className="block text-xs font-medium text-gray-600 mb-1">{t.registerNameLabel}</label>
             <input value={name} onChange={e => setName(e.target.value)} required
               className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Phone</label>
+            <label className="block text-xs font-medium text-gray-600 mb-1">{t.loginPhoneLabel}</label>
             <input value={phone} onChange={e => setPhone(e.target.value)} required dir="ltr"
               className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">City</label>
+            <label className="block text-xs font-medium text-gray-600 mb-1">{t.registerCityLabel}</label>
             <CustomSelect
               value={city}
               onChange={setCity}
@@ -146,19 +147,19 @@ export default function SellerAccountPage() {
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Address <span className="text-rose-500">*</span></label>
+            <label className="block text-xs font-medium text-gray-600 mb-1">{t.registerAddressLabel} <span className="text-rose-500">*</span></label>
             <input value={address} onChange={e => setAddress(e.target.value)} required
-              placeholder="Street, neighbourhood or landmark"
+              placeholder={t.registerAddressPlaceholder}
               className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300" />
           </div>
           <div className="flex gap-2 pt-1">
             <button type="submit" disabled={saving}
               className="flex-1 bg-rose-600 text-white text-sm font-semibold py-2.5 rounded-xl hover:bg-rose-700 transition-colors disabled:opacity-50">
-              {saving ? "Saving…" : "Save changes"}
+              {saving ? t.accountSaving : t.accountSaveBtn}
             </button>
             <button type="button" onClick={() => setEditing(false)}
               className="flex-1 bg-gray-100 text-gray-600 text-sm font-semibold py-2.5 rounded-xl hover:bg-gray-200 transition-colors">
-              Cancel
+              {t.adminCancel}
             </button>
           </div>
         </form>
@@ -262,7 +263,7 @@ export default function SellerAccountPage() {
         <div className="border-t border-gray-50" />
 
         <MenuItem
-          label="Sign Out"
+          label={t.accountSignOut}
           onClick={handleLogout}
           danger
           chevron={false}
