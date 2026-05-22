@@ -7,6 +7,7 @@ import { useT } from "@/lib/i18n/LocaleProvider";
 import { useSellerSession } from "@/lib/useSellerSession";
 import { calculateProfit, formatPrice } from "@/lib/utils";
 import CustomSelect from "@/components/ui/CustomSelect";
+import { CATEGORY_CONFIG, getCategoryLabel } from "@/lib/categories";
 
 const CATEGORIES = [
   "Strollers & Travel",
@@ -22,7 +23,7 @@ const CATEGORIES = [
 ];
 
 export default function AddProductPage() {
-  const { t } = useT();
+  const { t, locale } = useT();
   const router = useRouter();
   const { seller, loading } = useSellerSession();
   const fileInputRef = useRef(null);
@@ -128,7 +129,7 @@ export default function AddProductPage() {
               onChange={setCategory}
               placeholder={t.fieldCategoryPlaceholder}
               error={errors.category}
-              options={CATEGORIES.map(c => ({ value: c, label: c }))}
+              options={CATEGORIES.map(c => ({ value: c, label: getCategoryLabel(c, locale) }))}
             />
           </div>
           <div>
