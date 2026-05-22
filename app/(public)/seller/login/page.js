@@ -245,11 +245,11 @@ export default function SellerLoginPage() {
                     <input
                       type="email" value={email} onChange={e => setEmail(e.target.value)}
                       placeholder={t.loginEmailPlaceholder} required dir="ltr"
-                      className="w-full border border-gray-200 rounded-xl px-4 py-2.5 pe-9 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300"
+                      className="w-full border border-gray-200 rounded-xl px-4 py-2.5 pr-9 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300"
                     />
                     {email && (
                       <button type="button" onClick={() => setEmail("")}
-                        className="absolute end-2.5 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 text-gray-500 transition-colors">
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 text-gray-500 transition-colors">
                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12"/>
                         </svg>
