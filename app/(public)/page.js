@@ -6,6 +6,7 @@ import ProductCard from "@/components/buyer/ProductCard";
 import CategoryBar from "@/components/buyer/CategoryBar";
 import { useT } from "@/lib/i18n/LocaleProvider";
 import { getCityLabel } from "@/lib/cities";
+import { getCategorySearchStrings } from "@/lib/categories";
 
 function CityDropdown({ city, setCity, cities, t, locale }) {
   const [open, setOpen] = useState(false);
@@ -238,7 +239,8 @@ export default function HomePage() {
     const q = search.toLowerCase();
     let list = results.filter(p => {
       if (featuredIds.has(p._id)) return false;
-      const matchSearch = !q || p.title.toLowerCase().includes(q) || p.category.toLowerCase().includes(q);
+      const catStrings  = getCategorySearchStrings(p.category);
+      const matchSearch = !q || p.title.toLowerCase().includes(q) || catStrings.some(s => s.includes(q));
       const matchCond   = condition === "all" || p.condition === condition;
       const matchCity   = city === "all" || p.city === city;
       return matchSearch && matchCond && matchCity;
@@ -252,7 +254,8 @@ export default function HomePage() {
   const featured = useMemo(() => {
     const q = search.toLowerCase();
     let list = featuredProducts.filter(p => {
-      const matchSearch = !q || p.title.toLowerCase().includes(q) || p.category.toLowerCase().includes(q);
+      const catStrings  = getCategorySearchStrings(p.category);
+      const matchSearch = !q || p.title.toLowerCase().includes(q) || catStrings.some(s => s.includes(q));
       const matchCond   = condition === "all" || p.condition === condition;
       const matchCat    = category === "all" || p.category === category;
       const matchCity   = city === "all" || p.city === city;

@@ -1,13 +1,15 @@
 "use client";
 import Link from "next/link";
 import { useT } from "@/lib/i18n/LocaleProvider";
+import { getCategoryLabel } from "@/lib/categories";
+import { getCityLabel } from "@/lib/cities";
 
 function formatPrice(price) {
   return price.toLocaleString("en-US") + " IQD";
 }
 
 export default function ProductCard({ product, onSave }) {
-  const { t } = useT();
+  const { t, locale } = useT();
   const photo = product.photos?.[0];
 
   return (
@@ -48,7 +50,7 @@ export default function ProductCard({ product, onSave }) {
 
         {/* Info */}
         <div className="p-3">
-          <p className="text-xs text-gray-400 mb-1">{product.category}</p>
+          <p className="text-xs text-gray-400 mb-1">{getCategoryLabel(product.category, locale)}</p>
           <h3 className="text-sm font-medium text-gray-800 line-clamp-2 leading-snug mb-2 min-h-[2.5rem]">
             {product.title}
           </h3>

@@ -4,6 +4,8 @@ import { api } from "@/convex/_generated/api";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { useT } from "@/lib/i18n/LocaleProvider";
+import { getCategoryLabel } from "@/lib/categories";
+import { getCityLabel } from "@/lib/cities";
 import Link from "next/link";
 
 const WHATSAPP = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER;
@@ -49,7 +51,7 @@ function RelatedCard({ product, t }) {
 export default function ProductDetailPage() {
   const { id } = useParams();
   const router = useRouter();
-  const { t } = useT();
+  const { t, locale } = useT();
   const product    = useQuery(api.products.getPublicById, id ? { id } : "skip");
   const allProducts = useQuery(api.products.getPublic);
   const [activePhoto, setActivePhoto] = useState(0);
@@ -140,7 +142,7 @@ export default function ProductDetailPage() {
         <div>
           <div className="flex gap-2 mb-3 flex-wrap">
             <span className="text-xs px-3 py-1 rounded-full bg-gray-100 text-gray-600 font-medium">
-              {product.category}
+              {getCategoryLabel(product.category, locale)}
             </span>
             <span className={`text-xs px-3 py-1 rounded-full font-medium ${
               product.condition === "new" ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"
@@ -173,7 +175,7 @@ export default function ProductDetailPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
-            {product.city || "Erbil"}
+            {getCityLabel(product.city || "Erbil", locale) ?? product.city ?? "Erbil"}
           </div>
 
           <a href={waLink} target="_blank" rel="noopener noreferrer"
@@ -192,7 +194,7 @@ export default function ProductDetailPage() {
           <div className="flex items-center gap-3 mb-4">
             <div className="flex-1 h-px bg-gray-200" />
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest whitespace-nowrap">
-              More in {product.category}
+              {getCategoryLabel(product.category, locale)}
             </p>
             <div className="flex-1 h-px bg-gray-200" />
           </div>
