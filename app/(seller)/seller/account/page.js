@@ -104,24 +104,30 @@ export default function SellerAccountPage() {
       <div className="bg-gradient-to-br from-rose-600 via-rose-500 to-rose-400 rounded-2xl p-6 mb-2 relative overflow-hidden">
         <div className="absolute top-0 end-0 w-40 h-40 bg-white/10 rounded-full -translate-y-16 translate-x-16 pointer-events-none" />
         <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center shrink-0">
-            <span className="text-2xl font-bold text-white">{initial}</span>
+          {/* Avatar with edit button overlaid at bottom corner */}
+          <div className="relative shrink-0">
+            <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center">
+              <span className="text-2xl font-bold text-white">{initial}</span>
+            </div>
+            <button onClick={startEdit}
+              className="absolute -bottom-1.5 -end-1.5 w-7 h-7 bg-white rounded-xl flex items-center justify-center shadow-md hover:bg-gray-50 transition-colors">
+              <svg className="w-5 h-5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+              </svg>
+            </button>
           </div>
+
           <div className="flex-1 min-w-0">
             <h1 className="text-xl font-bold text-white truncate">{seller.name}</h1>
-            <p className="text-rose-200 text-sm mt-0.5">{seller.email}</p>
+            <p className="text-rose-200 text-sm mt-0.5 truncate">{seller.email}</p>
             <p className="text-rose-200 text-xs mt-0.5 flex items-center gap-1">
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
               </svg>
-              {seller.city}{seller.address ? ` · ${seller.address}` : ""}
+              <span className="truncate">{seller.city}{seller.address ? ` · ${seller.address}` : ""}</span>
             </p>
           </div>
-          <button onClick={startEdit}
-            className="bg-white/20 hover:bg-white/30 text-white text-xs font-semibold px-3 py-1.5 rounded-xl transition-colors shrink-0">
-            {t.editBtn}
-          </button>
         </div>
       </div>
 
