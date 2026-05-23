@@ -13,7 +13,7 @@ import { api } from "@/convex/_generated/api";
 import * as m from "@/src/paraglide/messages";
 import { getLocale } from "@/src/paraglide/runtime";
 import { useSellerSession } from "@/lib/useSellerSession";
-import { calculateProfit, formatPrice } from "@/lib/utils";
+import { calculateProfit, formatPrice, formatPriceLocale, normalizeDigits } from "@/lib/utils";
 import CustomSelect from "@/components/ui/CustomSelect";
 import { CATEGORY_CONFIG, getCategoryLabel } from "@/lib/categories";
 
@@ -49,10 +49,14 @@ export default function AddProductPage() {
   const [submitted, setSubmitted]     = useState(false);
 
   const activeOffer   = useQuery(api.offers.getActive);
-  const standardProfit = calculateProfit(Number(price));
+  // Normalize Arabic/Kurdish digits to ASCII for calculations
+  const priceNum = Number(normalizeDigits(price).replace(/[^\d]/g, "")) || 0;
+  const standardProfit = calculateProfit(priceNum);
   const profit = activeOffer
     ? (activeOffer.type === "free" ? 0 : (activeOffer.flatFeeAmount ?? 0))
     : standardProfit;
+
+  const MAX_PHOTOS = 5;
 
   async function uploadFile(file) {
     setUploading((n) => n + 1);
@@ -61,11 +65,12 @@ export default function AddProductPage() {
     const res  = await fetch("/api/upload", { method: "POST", body: fd });
     const data = await res.json();
     setUploading((n) => n - 1);
-    if (data.url) setPhotos((prev) => [...prev, data.url]);
+    if (data.url) setPhotos((prev) => prev.length < MAX_PHOTOS ? [...prev, data.url] : prev);
   }
 
   function handleFileChange(e) {
-    Array.from(e.target.files ?? []).forEach(uploadFile);
+    const remaining = MAX_PHOTOS - photos.length - uploading;
+    Array.from(e.target.files ?? []).slice(0, remaining).forEach(uploadFile);
     e.target.value = "";
   }
 
@@ -73,7 +78,7 @@ export default function AddProductPage() {
     const errs = {};
     if (!title.trim())                          errs.title    = true;
     if (!category)                              errs.category = true;
-    if (!price || Number(price) < 5000)         errs.price    = true;
+    if (!price || priceNum < 5000)               errs.price    = true;
     if (photos.length === 0 && uploading === 0) errs.photos   = true;
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -88,7 +93,7 @@ export default function AddProductPage() {
         title: title.trim(),
         category,
         condition,
-        price: Number(price),
+        price: priceNum,
         description: description.trim(),
         photos,
         city: seller.city || "Erbil",
@@ -156,18 +161,28 @@ export default function AddProductPage() {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1.5">{m.fieldPrice()} <span className="text-rose-500">*</span></label>
           <div className="relative">
-            <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder={m.fieldPricePlaceholder()} min={0} dir="ltr"
-              className={`w-full border rounded-xl px-4 py-2.5 pe-10 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300 ${errors.price ? "border-red-400 bg-red-50" : "border-gray-200"}`} />
+            <input
+              type="text" inputMode="decimal"
+              dir={locale === "en" ? "ltr" : "rtl"}
+              value={price}
+              onChange={(e) => {
+                // Allow ASCII digits, Arabic-Indic (U+0660-U+0669), Extended Arabic-Indic/Kurdish (U+06F0-U+06F9)
+                const val = e.target.value.replace(/[^\d٠-٩۰-۹]/g, "");
+                setPrice(val);
+              }}
+              placeholder={m.fieldPricePlaceholder()}
+              className={`w-full border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300 ${locale === "en" ? "pr-10" : "pl-10"} ${errors.price ? "border-red-400 bg-red-50" : "border-gray-200"}`}
+            />
             {price && (
               <button type="button" onClick={() => setPrice("")}
-                className="absolute end-3 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-400 hover:text-gray-600 transition-colors">
+                className={`absolute ${locale === "en" ? "right-3" : "left-3"} top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-400 hover:text-gray-600 transition-colors`}>
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             )}
           </div>
-          {price && Number(price) >= 5000 && (
+          {price && priceNum >= 5000 && (
             activeOffer ? (
               <div className={`mt-2 rounded-lg px-3 py-2 ${
                 activeOffer.type === "free"
@@ -179,19 +194,19 @@ export default function AddProductPage() {
                 </div>
                 {activeOffer.type === "free" ? (
                   <p className="text-sm text-green-700">
-                    Service fee: <span className="font-bold line-through text-gray-400">{formatPrice(standardProfit)}</span>{" "}
-                    <span className="font-bold text-green-600">Free</span>
+                    {m.profitLabel()} <span className="font-bold line-through text-gray-400">{formatPriceLocale(standardProfit, locale)}</span>{" "}
+                    <span className="font-bold text-green-600">{m.offerFreeLabel()}</span>
                   </p>
                 ) : (
                   <p className="text-sm text-amber-700">
-                    Service fee: <span className="font-bold line-through text-gray-400">{formatPrice(standardProfit)}</span>{" "}
-                    <span className="font-bold text-amber-600">{formatPrice(profit)}</span>
+                    {m.profitLabel()} <span className="font-bold line-through text-gray-400">{formatPriceLocale(standardProfit, locale)}</span>{" "}
+                    <span className="font-bold text-amber-600">{formatPriceLocale(profit, locale)}</span>
                   </p>
                 )}
               </div>
             ) : profit > 0 ? (
               <p className="mt-2 text-sm text-green-700 bg-green-50 rounded-lg px-3 py-2">
-                {m.profitLabel()} <span className="font-bold">{formatPrice(profit)}</span>
+                {m.profitLabel()} <span className="font-bold">{formatPriceLocale(profit, locale)}</span>
               </p>
             ) : null
           )}
@@ -206,13 +221,17 @@ export default function AddProductPage() {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1.5">{m.fieldPhotos()} <span className="text-rose-500">*</span></label>
-          <button type="button" onClick={() => fileInputRef.current?.click()}
-            className={`w-full border-2 border-dashed rounded-xl p-6 text-center transition-colors ${errors.photos ? "border-red-300 bg-red-50" : "border-gray-200 hover:border-rose-300 hover:bg-rose-50"}`}>
+          <button type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={photos.length + uploading >= MAX_PHOTOS}
+            className={`w-full border-2 border-dashed rounded-xl p-6 text-center transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${errors.photos ? "border-red-300 bg-red-50" : "border-gray-200 hover:border-rose-300 hover:bg-rose-50 disabled:hover:border-gray-200 disabled:hover:bg-white"}`}>
             <svg className="w-8 h-8 text-gray-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
             <p className="text-sm text-gray-500">{m.addPhotoBtn()}</p>
-            <p className="text-xs text-gray-400 mt-1">JPEG · PNG · WEBP</p>
+            <p className="text-xs text-gray-400 mt-1">
+              {photos.length + uploading}/{MAX_PHOTOS} · JPEG · PNG · WEBP
+            </p>
           </button>
           <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleFileChange} />
           {errors.photos && <p className="mt-1 text-xs text-red-500">{m.atLeastOnePhoto()}</p>}

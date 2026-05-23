@@ -39,6 +39,7 @@
   "statAwaitingReview": "بانتظار المراجعة",
   "offerNoFeeNote": "لا رسوم خدمة على جميع قوائمك خلال هذه الفترة",
   "offerFlatFeeNote": "رسوم ثابتة {amount} IQD لأي نطاق سعري",
+  "offerFreeLabel": "مجاناً",
   "statusPending": "بانتظار",
   "statusApproved": "مقبول",
   "statusRejected": "مرفوض",

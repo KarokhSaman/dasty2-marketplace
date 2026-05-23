@@ -39,6 +39,7 @@
   "statAwaitingReview": "چاوەڕوانی پێداچوونەوە",
   "offerNoFeeNote": "کرێی خزمەتگوزاری نییە لەسەر هەموو بڵاوکردنەوەکانت ئەم ماوەیە",
   "offerFlatFeeNote": "کرێی دیاریکراوی {amount} IQD بۆ هەر نرخێک",
+  "offerFreeLabel": "بەخۆڕایی",
   "statusPending": "چاوەڕوان",
   "statusApproved": "پەسەندکراو",
   "statusRejected": "ڕەتکراوە",

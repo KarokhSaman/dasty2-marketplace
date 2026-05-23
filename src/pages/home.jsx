@@ -96,7 +96,11 @@ function SortDropdown({ sort, setSort }) {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200 bg-white hover:border-rose-300 transition-colors text-xs font-medium text-gray-700 whitespace-nowrap"
+        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-colors text-xs font-medium whitespace-nowrap ${
+          sort !== "default"
+            ? "border-rose-300 bg-rose-50 text-rose-600"
+            : "border-gray-200 bg-white hover:border-rose-300 text-gray-700"
+        }`}
       >
         {current.label}
         <svg className={`w-3 h-3 text-gray-400 transition-transform duration-150 ${open ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">

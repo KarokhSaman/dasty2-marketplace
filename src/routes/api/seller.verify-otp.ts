@@ -19,7 +19,7 @@ export const Route = createFileRoute('/api/seller/verify-otp')({
         const result = await fetchMutation(api.otp.verify, {
           email: email.trim(),
           code: code.trim(),
-        })
+        }, { url: process.env.CONVEX_URL })
 
         if (!result.ok) {
           const code =
@@ -29,7 +29,7 @@ export const Route = createFileRoute('/api/seller/verify-otp')({
 
         const seller = await fetchQuery(api.sellers.getByEmail, {
           email: email.trim(),
-        })
+        }, { url: process.env.CONVEX_URL })
 
         if (!seller) {
           return Response.json({ ok: true, needsProfile: true })

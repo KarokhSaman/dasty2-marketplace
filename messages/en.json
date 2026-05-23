@@ -39,6 +39,7 @@
   "statAwaitingReview": "Awaiting review",
   "offerNoFeeNote": "No service fee on all your listings this period",
   "offerFlatFeeNote": "Fixed fee of {amount} IQD for any price range",
+  "offerFreeLabel": "Free",
   "statusPending": "Pending",
   "statusApproved": "Approved",
   "statusRejected": "Rejected",

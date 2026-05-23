@@ -21,7 +21,7 @@ export const Route = createFileRoute('/api/admin/send-otp')({
 
         const code = await fetchMutation(api.otp.create, {
           email: email.trim(),
-        })
+        }, { url: process.env.CONVEX_URL })
 
         console.log(`\n🔐  ADMIN OTP for ${email.trim()} → ${code}\n`)
 

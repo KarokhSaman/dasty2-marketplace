@@ -1,6 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { getCookie } from '@tanstack/react-start/server'
-import { auth } from '@clerk/tanstack-react-start/server'
 import { v2 as cloudinary } from 'cloudinary'
 
 cloudinary.config({
@@ -13,10 +12,10 @@ export const Route = createFileRoute('/api/upload')({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const { userId } = await auth()
         const sellerCookie = getCookie('dasty2-seller')
+        const adminCookie  = getCookie('dasty2-admin')
 
-        if (!userId && !sellerCookie) {
+        if (!sellerCookie && !adminCookie) {
           return Response.json({ error: 'unauthorized' }, { status: 401 })
         }
 

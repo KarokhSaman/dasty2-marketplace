@@ -288,6 +288,16 @@ export const remove = mutation({
   },
 });
 
+export const adminUpdatePhotos = mutation({
+  args: {
+    id:     v.id("products"),
+    photos: v.array(v.string()),
+  },
+  handler: async (ctx, { id, photos }) => {
+    await ctx.db.patch(id, { photos });
+  },
+});
+
 export const setFeatured = mutation({
   args: {
     id:            v.id("products"),
