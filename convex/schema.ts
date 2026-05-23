@@ -1,0 +1,97 @@
+import { defineSchema, defineTable } from "convex/server";
+import { v } from "convex/values";
+import {
+  categoryValidator,
+  conditionValidator,
+  offerTypeValidator,
+  productStatusValidator,
+} from "./types";
+
+export default defineSchema({
+  products: defineTable({
+    seq: v.string(),
+    title: v.string(),
+    description: v.string(),
+    category: v.string(),
+    condition: conditionValidator,
+    price: v.number(),
+    profit: v.number(),
+    photos: v.array(v.string()),
+    status: productStatusValidator,
+    city: v.string(),
+    sellerId: v.string(),
+    sellerName: v.string(),
+    sellerPhone: v.string(),
+    featured:      v.optional(v.boolean()),
+    featuredUntil: v.optional(v.string()), // "YYYY-MM-DD" — undefined means indefinite
+    views: v.optional(v.number()),
+    notes: v.optional(v.string()),
+    approvedBy: v.optional(v.string()),
+    approvedAt: v.optional(v.string()),
+    dateAdded: v.string(),
+    dateSold: v.optional(v.string()),
+  })
+    .index("by_status",          ["status"])
+    .index("by_status_category", ["status", "category"])
+    .index("by_seller",          ["sellerId"]),
+
+  sellers: defineTable({
+    clerkUserId: v.optional(v.string()),
+    email: v.optional(v.string()),
+    name: v.string(),
+    phone: v.string(),
+    city: v.string(),
+    address: v.optional(v.string()),
+    registeredAt: v.string(),
+    isActive: v.boolean(),
+  }),
+
+  otpCodes: defineTable({
+    email: v.string(),
+    code: v.string(),
+    expiresAt: v.number(),
+    verified: v.boolean(),
+  }),
+
+  sales: defineTable({
+    productId: v.string(),
+    sellerName: v.string(),
+    category: v.string(),
+    condition: v.string(),
+    salePrice: v.number(),
+    profit: v.number(),
+    dateAdded: v.string(),
+    datePaid: v.string(),
+  }),
+
+  offers: defineTable({
+    title:         v.string(),
+    description:   v.string(),
+    type:          offerTypeValidator,
+    flatFeeAmount: v.optional(v.number()),
+    startDate:     v.string(),
+    endDate:       v.string(),
+    isActive:      v.boolean(),
+    createdAt:     v.string(),
+  }),
+
+  adminLogs: defineTable({
+    adminEmail:   v.string(),
+    action:       v.string(),
+    productId:    v.optional(v.string()),
+    productTitle: v.optional(v.string()),
+    sellerName:   v.optional(v.string()),
+    price:        v.optional(v.number()),
+    notes:        v.optional(v.string()),
+    createdAt:    v.string(),
+  }),
+
+  notifications: defineTable({
+    sellerId: v.string(),
+    productId: v.string(),
+    message: v.string(),
+    read: v.boolean(),
+    createdAt: v.string(),
+    url: v.optional(v.string()),
+  }),
+});

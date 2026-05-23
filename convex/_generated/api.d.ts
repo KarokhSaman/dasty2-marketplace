@@ -16,6 +16,7 @@ import type * as otp from "../otp.js";
 import type * as products from "../products.js";
 import type * as seed from "../seed.js";
 import type * as sellers from "../sellers.js";
+import type * as types from "../types.js";
 
 import type {
   ApiFromModules,
@@ -32,6 +33,7 @@ declare const fullApi: ApiFromModules<{
   products: typeof products;
   seed: typeof seed;
   sellers: typeof sellers;
+  types: typeof types;
 }>;
 
 /**

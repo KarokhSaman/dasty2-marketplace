@@ -1,0 +1,48 @@
+/// <reference types="vite/client" />
+import { createRouter } from '@tanstack/react-router'
+import { QueryClient } from '@tanstack/react-query'
+import { ConvexQueryClient } from '@convex-dev/react-query'
+import { ConvexReactClient } from 'convex/react'
+import { routeTree } from './routeTree.gen'
+import { deLocalizeUrl, localizeUrl } from '@/src/paraglide/runtime'
+
+export function getRouter() {
+  const CONVEX_URL = import.meta.env.VITE_CONVEX_URL as string | undefined
+  if (!CONVEX_URL) {
+    throw new Error('VITE_CONVEX_URL env var is missing')
+  }
+
+  const convex = new ConvexReactClient(CONVEX_URL, {
+    unsavedChangesWarning: false,
+  })
+  const convexQueryClient = new ConvexQueryClient(convex)
+
+  const queryClient: QueryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        queryKeyHashFn: convexQueryClient.hashFn(),
+        queryFn: convexQueryClient.queryFn(),
+      },
+    },
+  })
+  convexQueryClient.connect(queryClient)
+
+  const router = createRouter({
+    routeTree,
+    defaultPreload: 'intent',
+    context: { queryClient, convexClient: convex, convexQueryClient },
+    scrollRestoration: true,
+    rewrite: {
+      input: ({ url }) => deLocalizeUrl(url),
+      output: ({ url }) => localizeUrl(url),
+    },
+  })
+
+  return router
+}
+
+declare module '@tanstack/react-router' {
+  interface Register {
+    router: ReturnType<typeof getRouter>
+  }
+}
