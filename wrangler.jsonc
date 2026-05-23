@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "dasty2mndalan",
+  "name": "dasty2-marketplace",
   "compatibility_date": "2026-05-23",
   "compatibility_flags": ["nodejs_compat"],
   "main": "src/server.ts",
