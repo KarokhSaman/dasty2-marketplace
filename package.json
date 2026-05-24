@@ -8,6 +8,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "deploy": "npm run build && wrangler deploy",
+    "deploy:dev": "npm run build && wrangler deploy",
+    "deploy:prod": "npm run build && wrangler deploy --env production",
     "cf-typegen": "wrangler types",
     "typecheck": "tsc --noEmit",
     "check:i18n": "node scripts/check-translations.mjs",

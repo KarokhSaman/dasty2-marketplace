@@ -1,0 +1,58 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main        # push to main → deploy to dev
+      - production  # push to production → deploy to prod
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - prod
+
+jobs:
+  deploy-dev:
+    name: Deploy to Dev
+    if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'dev')
+    runs-on: ubuntu-latest
+    environment: development
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - name: Deploy to dasty2-marketplace-dev
+        run: npm run deploy:dev
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          VITE_CONVEX_URL: ${{ secrets.DEV_VITE_CONVEX_URL }}
+          CONVEX_URL: ${{ secrets.DEV_CONVEX_URL }}
+          VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.DEV_VITE_CLERK_PUBLISHABLE_KEY }}
+
+  deploy-prod:
+    name: Deploy to Production
+    if: github.ref == 'refs/heads/production' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'prod')
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - name: Deploy to dasty2-marketplace-pro
+        run: npm run deploy:prod
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          VITE_CONVEX_URL: ${{ secrets.PROD_VITE_CONVEX_URL }}
+          CONVEX_URL: ${{ secrets.PROD_CONVEX_URL }}
+          VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.PROD_VITE_CLERK_PUBLISHABLE_KEY }}
