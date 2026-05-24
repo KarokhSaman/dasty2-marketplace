@@ -21,7 +21,6 @@ jobs:
     name: Deploy to Dev
     if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'dev')
     runs-on: ubuntu-latest
-    environment: development
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -29,7 +28,18 @@ jobs:
           node-version: '20'
           cache: 'npm'
       - run: npm ci
-      - name: Deploy to dasty2-marketplace-dev
+
+      - name: Set Cloudflare Worker secrets (dev)
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          echo "${{ secrets.DEV_CONVEX_URL }}"          | npx wrangler secret put CONVEX_URL            --name dasty2-marketplace-dev
+          echo "${{ secrets.DEV_CLERK_SECRET_KEY }}"    | npx wrangler secret put CLERK_SECRET_KEY       --name dasty2-marketplace-dev
+          echo "${{ secrets.RESEND_API_KEY }}"           | npx wrangler secret put RESEND_API_KEY         --name dasty2-marketplace-dev
+          echo "${{ secrets.CLOUDINARY_API_KEY }}"      | npx wrangler secret put CLOUDINARY_API_KEY     --name dasty2-marketplace-dev
+          echo "${{ secrets.CLOUDINARY_API_SECRET }}"   | npx wrangler secret put CLOUDINARY_API_SECRET  --name dasty2-marketplace-dev
+
+      - name: Build and deploy to dasty2-marketplace-dev
         run: npm run deploy:dev
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -37,12 +47,16 @@ jobs:
           CONVEX_URL: ${{ secrets.DEV_CONVEX_URL }}
           VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.DEV_VITE_CLERK_PUBLISHABLE_KEY }}
           CLERK_SECRET_KEY: ${{ secrets.DEV_CLERK_SECRET_KEY }}
+          VITE_CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
+          CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
+          CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          VITE_WHATSAPP_NUMBER: ${{ secrets.VITE_WHATSAPP_NUMBER }}
 
   deploy-prod:
     name: Deploy to Production
     if: github.ref == 'refs/heads/production' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'prod')
     runs-on: ubuntu-latest
-    environment: production
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -50,7 +64,18 @@ jobs:
           node-version: '20'
           cache: 'npm'
       - run: npm ci
-      - name: Deploy to dasty2-marketplace-pro
+
+      - name: Set Cloudflare Worker secrets (prod)
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          echo "${{ secrets.PROD_CONVEX_URL }}"         | npx wrangler secret put CONVEX_URL            --name dasty2-marketplace-pro
+          echo "${{ secrets.PROD_CLERK_SECRET_KEY }}"   | npx wrangler secret put CLERK_SECRET_KEY       --name dasty2-marketplace-pro
+          echo "${{ secrets.RESEND_API_KEY }}"           | npx wrangler secret put RESEND_API_KEY         --name dasty2-marketplace-pro
+          echo "${{ secrets.CLOUDINARY_API_KEY }}"      | npx wrangler secret put CLOUDINARY_API_KEY     --name dasty2-marketplace-pro
+          echo "${{ secrets.CLOUDINARY_API_SECRET }}"   | npx wrangler secret put CLOUDINARY_API_SECRET  --name dasty2-marketplace-pro
+
+      - name: Build and deploy to dasty2-marketplace-pro
         run: npm run deploy:prod
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -58,3 +83,8 @@ jobs:
           CONVEX_URL: ${{ secrets.PROD_CONVEX_URL }}
           VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.PROD_VITE_CLERK_PUBLISHABLE_KEY }}
           CLERK_SECRET_KEY: ${{ secrets.PROD_CLERK_SECRET_KEY }}
+          VITE_CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
+          CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
+          CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          VITE_WHATSAPP_NUMBER: ${{ secrets.VITE_WHATSAPP_NUMBER }}
