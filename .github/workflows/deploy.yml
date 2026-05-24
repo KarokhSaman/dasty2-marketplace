@@ -36,6 +36,7 @@ jobs:
           VITE_CONVEX_URL: ${{ secrets.DEV_VITE_CONVEX_URL }}
           CONVEX_URL: ${{ secrets.DEV_CONVEX_URL }}
           VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.DEV_VITE_CLERK_PUBLISHABLE_KEY }}
+          CLERK_SECRET_KEY: ${{ secrets.DEV_CLERK_SECRET_KEY }}
 
   deploy-prod:
     name: Deploy to Production
@@ -56,3 +57,4 @@ jobs:
           VITE_CONVEX_URL: ${{ secrets.PROD_VITE_CONVEX_URL }}
           CONVEX_URL: ${{ secrets.PROD_CONVEX_URL }}
           VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.PROD_VITE_CLERK_PUBLISHABLE_KEY }}
+          CLERK_SECRET_KEY: ${{ secrets.PROD_CLERK_SECRET_KEY }}
