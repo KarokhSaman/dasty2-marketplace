@@ -1,13 +1,21 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import * as m from "@/src/paraglide/messages";
+import { deleteSellerFn } from "@/src/server/clerk-seller";
 
 export default function AdminSellersPage() {
-  const sellers    = useQuery(api.sellers.getAll);
-  const products   = useQuery(api.products.getAll);
-  const setActive  = useMutation(api.sellers.setActive);
+  const sellers       = useQuery(api.sellers.getAll);
+  const products      = useQuery(api.products.getAll);
+  const setActive     = useMutation(api.sellers.setActive);
+  const createLog     = useMutation(api.adminLogs.create);
   const [search, setSearch] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState(null); // seller _id being confirmed
+  const [adminEmail, setAdminEmail] = useState("");
+
+  useEffect(() => {
+    fetch("/api/admin/me").then(r => r.json()).then(d => setAdminEmail(d.email ?? "admin"));
+  }, []);
 
   const enriched = useMemo(() => {
     if (!sellers || !products) return [];
@@ -100,17 +108,50 @@ export default function AdminSellersPage() {
               </div>
             </div>
 
-            {/* Toggle active */}
-            <button
-              onClick={() => setActive({ id: seller._id, isActive: !seller.isActive })}
-              className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors shrink-0 ${
-                seller.isActive
-                  ? "bg-gray-100 hover:bg-red-50 text-gray-500 hover:text-red-600"
-                  : "bg-green-50 hover:bg-green-100 text-green-600"
-              }`}
-            >
-              {seller.isActive ? m.adminDeactivate() : m.adminActivate()}
-            </button>
+            {/* Actions */}
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={() => setActive({ id: seller._id, isActive: !seller.isActive })}
+                className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${
+                  seller.isActive
+                    ? "bg-gray-100 hover:bg-red-50 text-gray-500 hover:text-red-600"
+                    : "bg-green-50 hover:bg-green-100 text-green-600"
+                }`}
+              >
+                {seller.isActive ? m.adminDeactivate() : m.adminActivate()}
+              </button>
+
+              {confirmDelete === seller._id ? (
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={async () => {
+                      await deleteSellerFn({ data: { sellerId: seller._id, clerkUserId: seller.clerkUserId || undefined } });
+                      await createLog({ adminEmail, action: "seller_deleted", sellerName: seller.name, notes: seller.email || undefined });
+                      setConfirmDelete(null);
+                    }}
+                    className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors"
+                  >
+                    {m.adminDelete()}
+                  </button>
+                  <button
+                    onClick={() => setConfirmDelete(null)}
+                    className="text-xs font-semibold px-2 py-1.5 rounded-lg bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors"
+                  >
+                    {m.adminCancel()}
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setConfirmDelete(seller._id)}
+                  className="p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors"
+                  title={m.adminDelete()}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              )}
+            </div>
           </div>
         ))}
       </div>

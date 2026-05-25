@@ -8,7 +8,12 @@ export const Route = createFileRoute('/_public/sign-in/$')({
 function SignInPage() {
   return (
     <div className="flex justify-center py-12">
-      <SignIn routing="path" path="/sign-in" />
+      <SignIn
+        routing="path"
+        path="/sign-in"
+        forceRedirectUrl="/seller/login"
+        signUpForceRedirectUrl="/seller/login"
+      />
     </div>
   )
 }

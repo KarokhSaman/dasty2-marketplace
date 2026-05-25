@@ -9,8 +9,10 @@ const useSearchParams = () => {
     getAll: (k) => (Array.isArray(s[k]) ? s[k] : s[k] != null ? [s[k]] : []),
   };
 };
+import { useClerk } from "@clerk/tanstack-react-start";
 import { api } from "@/convex/_generated/api";
 import { useSellerSession, clearSellerSession } from "@/lib/useSellerSession";
+import { useGlobalSellerSession } from "@/lib/SellerSessionContext";
 import * as m from "@/src/paraglide/messages";
 import { getLocale } from "@/src/paraglide/runtime";
 
@@ -58,6 +60,8 @@ function SectionLabel({ label }) {
 export default function SellerAccountPage() {
   const router = useRouter();
   const locale = getLocale();
+  const { signOut } = useClerk();
+  const { setSellerId } = useGlobalSellerSession();
   const { seller, loading } = useSellerSession();
   const updateProfile = useMutation(api.sellers.updateProfile);
 
@@ -89,7 +93,9 @@ export default function SellerAccountPage() {
 
   async function handleLogout() {
     await clearSellerSession();
-    window.location.href = "/";
+    setSellerId(null);
+    await signOut();
+    router.navigate({ to: "/", replace: true });
   }
 
   if (loading || !seller) {
@@ -127,7 +133,6 @@ export default function SellerAccountPage() {
 
           <div className="flex-1 min-w-0">
             <h1 className="text-xl font-bold text-white truncate">{seller.name}</h1>
-            <p className="text-rose-200 text-sm mt-0.5 truncate">{seller.email}</p>
             <p className="text-rose-200 text-xs mt-0.5 flex items-center gap-1">
               <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
@@ -135,6 +140,14 @@ export default function SellerAccountPage() {
               </svg>
               <span className="truncate">{seller.city}{seller.address ? ` · ${seller.address}` : ""}</span>
             </p>
+            {seller.email && (
+              <p className="text-rose-200 text-xs mt-0.5 flex items-center gap-1">
+                <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                </svg>
+                <span className="truncate" dir="ltr">{seller.email}</span>
+              </p>
+            )}
           </div>
         </div>
       </div>

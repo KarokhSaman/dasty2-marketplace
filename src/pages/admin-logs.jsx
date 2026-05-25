@@ -8,6 +8,7 @@ const ACTION_META = {
   marked_sold:       { label: "Marked Sold",       color: "bg-blue-100 text-blue-700"    },
   marked_paid:       { label: "Marked Paid",       color: "bg-purple-100 text-purple-700"},
   deleted:           { label: "Deleted",           color: "bg-gray-100 text-gray-600"    },
+  seller_deleted:    { label: "Seller Deleted",    color: "bg-red-100 text-red-700"      },
   featured:          { label: "Featured",          color: "bg-amber-100 text-amber-700"  },
   unfeatured:        { label: "Unfeatured",        color: "bg-gray-100 text-gray-500"    },
   offer_created:     { label: "Offer Created",     color: "bg-rose-100 text-rose-600"    },
@@ -97,18 +98,24 @@ export default function AdminLogsPage() {
                       </span>
                     </div>
 
-                    {log.productTitle && (
+                    {log.productTitle ? (
                       <p className="text-xs text-gray-600 mt-0.5 truncate">
                         "{log.productTitle}"
                         {log.sellerName && <span className="text-gray-400"> · {log.sellerName}</span>}
                         {log.price && <span className="text-gray-400"> · {formatPrice(log.price)}</span>}
                       </p>
-                    )}
+                    ) : log.sellerName ? (
+                      <p className="text-xs text-gray-600 mt-0.5 truncate">{log.sellerName}</p>
+                    ) : null}
 
                     {log.notes && (
-                      <p className="text-[11px] text-red-500 mt-0.5 bg-red-50 rounded-lg px-2 py-1 inline-block">
-                        Reason: {log.notes}
-                      </p>
+                      log.action === "rejected" ? (
+                        <p className="text-[11px] text-red-500 mt-0.5 bg-red-50 rounded-lg px-2 py-1 inline-block">
+                          Reason: {log.notes}
+                        </p>
+                      ) : (
+                        <p className="text-[11px] text-gray-400 mt-0.5" dir="ltr">{log.notes}</p>
+                      )
                     )}
                   </div>
 
