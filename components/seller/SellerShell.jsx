@@ -1,7 +1,8 @@
-import { Link, useLocation } from "@tanstack/react-router";
+import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 const usePathname = () => useLocation({ select: (l) => l.pathname });
 import { useQuery } from "convex/react";
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
+import { useAuth } from "@clerk/tanstack-react-start";
 import { api } from "@/convex/_generated/api";
 import * as m from "@/src/paraglide/messages";
 import LocaleSwitcher from "@/src/components/LocaleSwitcher";
@@ -10,9 +11,21 @@ import { useGlobalSellerSession } from "@/lib/SellerSessionContext";
 
 export default function SellerShell({ children }) {
   const pathname = usePathname();
-  const { sellerId } = useGlobalSellerSession();
+  const { sellerId, setSellerId } = useGlobalSellerSession();
+  const { isSignedIn } = useAuth();
+  const navigate = useNavigate();
   const [showNotifs, setShowNotifs] = useState(false);
   const bellRef = useRef();
+
+  // When Clerk invalidates the session (e.g. admin deleted the account),
+  // clear context and navigate to login immediately so the shell doesn't linger.
+  useEffect(() => {
+    if (isSignedIn === false) {
+      setSellerId(null);
+      fetch("/api/seller/logout", { method: "POST" }).catch(() => {});
+      navigate({ to: "/seller/login", replace: true });
+    }
+  }, [isSignedIn]);
 
   const notifications = useQuery(api.notifications.getBySeller, sellerId ? { sellerId } : "skip");
   const unread = (notifications ?? []).filter(n => !n.read).length;
@@ -49,15 +62,15 @@ export default function SellerShell({ children }) {
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
               </svg>
-              Home
+              {m.navHome()}
             </Link>
             <Link to="/seller"
               className={`hidden sm:block text-sm font-medium px-3 py-1.5 rounded-lg transition-colors ${isHome ? "bg-rose-50 text-rose-600" : "text-gray-600 hover:bg-gray-50"}`}>
-              Dashboard
+              {m.sellerDashboard()}
             </Link>
             <Link to="/seller/account"
               className={`hidden sm:block text-sm font-medium px-3 py-1.5 rounded-lg transition-colors ${isAccount ? "bg-rose-50 text-rose-600" : "text-gray-600 hover:bg-gray-50"}`}>
-              Account
+              {m.navAccount()}
             </Link>
           </div>
 

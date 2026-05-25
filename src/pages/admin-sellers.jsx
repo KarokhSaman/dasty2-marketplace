@@ -111,7 +111,16 @@ export default function AdminSellersPage() {
             {/* Actions */}
             <div className="flex items-center gap-2 shrink-0">
               <button
-                onClick={() => setActive({ id: seller._id, isActive: !seller.isActive })}
+                onClick={async () => {
+                  const newActive = !seller.isActive;
+                  await setActive({ id: seller._id, isActive: newActive });
+                  await createLog({
+                    adminEmail,
+                    action: newActive ? "seller_activated" : "seller_deactivated",
+                    sellerName: seller.name,
+                    notes: seller.email || undefined,
+                  });
+                }}
                 className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${
                   seller.isActive
                     ? "bg-gray-100 hover:bg-red-50 text-gray-500 hover:text-red-600"

@@ -1,36 +1,55 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Dasty2 Mndalan — Marketplace
 
-## Getting Started
+A second-hand marketplace for Iraqi Kurdistan, built with TanStack Start and deployed on Cloudflare Workers.
 
-First, run the development server:
+## Stack
+
+- **Framework** — [TanStack Start](https://tanstack.com/start) (React, file-based routing, SSR)
+- **Backend** — [Convex](https://convex.dev) (real-time database, mutations, queries)
+- **Auth** — [Clerk](https://clerk.com) (email sign-up/sign-in for sellers)
+- **Styling** — Tailwind CSS v4
+- **i18n** — [Paraglide JS](https://inlang.com/m/gerre34r/library-inlang-paraglideJs) (English, Kurdish Sorani, Arabic)
+- **Images** — Cloudinary
+- **Deployment** — [Cloudflare Workers](https://workers.cloudflare.com)
+
+## Local Development
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Requires a `.env.local` file — copy `.dev.vars.example` for server-side secrets and set `VITE_*` variables for client-side config.
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+## Convex
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+```bash
+# Start the Convex dev server (watches for schema/function changes)
+npx convex dev
+```
 
-## Learn More
+## Deployment
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+# Deploy to the dev Cloudflare Worker (uses dev Convex)
+npm run deploy:dev
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# Deploy to the production Cloudflare Worker (uses prod Convex)
+npm run deploy:prod
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+To deploy the Convex backend to production:
 
-## Deploy on Vercel
+```bash
+npx convex deploy --yes
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## i18n
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+Three locales: `en` (default, LTR), `ckb` (Central Kurdish, RTL), `ar` (Arabic, RTL).
+
+After adding keys to `messages/{en,ckb,ar}.json`, verify consistency:
+
+```bash
+npm run check:i18n
+```

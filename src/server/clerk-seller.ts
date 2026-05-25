@@ -40,7 +40,7 @@ export const sellerClerkSyncFn = createServerFn({ method: 'POST' })
         setCookie('dasty2-seller', bySeller._id, {
           httpOnly: true, path: '/', maxAge: 2_592_000, sameSite: 'lax',
         })
-        return { ok: true, needsProfile: false }
+        return { ok: true, needsProfile: false, sellerId: bySeller._id as string }
       }
       return { ok: true, needsProfile: true }
     }
@@ -50,7 +50,7 @@ export const sellerClerkSyncFn = createServerFn({ method: 'POST' })
     setCookie('dasty2-seller', seller._id, {
       httpOnly: true, path: '/', maxAge: 2_592_000, sameSite: 'lax',
     })
-    return { ok: true, needsProfile: false }
+    return { ok: true, needsProfile: false, sellerId: seller._id as string }
   })
 
 type RegisterInput = { name: string; phone: string; city: string; address: string }
@@ -84,7 +84,7 @@ export const sellerClerkRegisterFn = createServerFn({ method: 'POST' })
     setCookie('dasty2-seller', sellerId, {
       httpOnly: true, path: '/', maxAge: 2_592_000, sameSite: 'lax',
     })
-    return { ok: true }
+    return { ok: true, sellerId: sellerId as string }
   })
 
 type DeleteInput = { sellerId: string; clerkUserId?: string }

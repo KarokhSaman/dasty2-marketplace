@@ -1,6 +1,6 @@
 import { Link, useLocation } from "@tanstack/react-router";
 const usePathname = () => useLocation({ select: (l) => l.pathname });
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useClerk } from "@clerk/tanstack-react-start";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
@@ -13,8 +13,26 @@ const ADMIN_ID = "ADMIN";
 export default function AdminShell({ children }) {
   const pathname = usePathname();
   const [showNotifs, setShowNotifs] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
+  const [adminEmail, setAdminEmail] = useState("");
   const bellRef = useRef();
+  const profileRef = useRef();
   const { signOut } = useClerk();
+
+  useEffect(() => {
+    fetch("/api/admin/me").then(r => r.json()).then(d => setAdminEmail(d.email ?? ""));
+  }, []);
+
+  useEffect(() => {
+    if (!showProfile) return;
+    function handleClick(e) {
+      if (profileRef.current && !profileRef.current.contains(e.target)) {
+        setShowProfile(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [showProfile]);
 
   const notifications = useQuery(api.notifications.getBySeller, { sellerId: ADMIN_ID });
   const unread = (notifications ?? []).filter(n => !n.read).length;
@@ -32,7 +50,7 @@ export default function AdminShell({ children }) {
 
   const navTabs = [
     {
-      href: "/admin", active: isDashboard, label: m.adminDashboard(),
+      href: "/admin", active: isDashboard, label: m.adminDashboard(), shortLabel: "Dashboard",
       icon: (a) => (
         <svg className="w-5 h-5" fill={a ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
@@ -40,7 +58,7 @@ export default function AdminShell({ children }) {
       ),
     },
     {
-      href: "/admin/products", active: isProducts, label: m.adminProducts(),
+      href: "/admin/products", active: isProducts, label: m.adminProducts(), shortLabel: "Products",
       icon: (a) => (
         <svg className="w-5 h-5" fill={a ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10"/>
@@ -48,7 +66,7 @@ export default function AdminShell({ children }) {
       ),
     },
     {
-      href: "/admin/sellers", active: isSellers, label: m.adminSellers(),
+      href: "/admin/sellers", active: isSellers, label: m.adminSellers(), shortLabel: "Sellers",
       icon: (a) => (
         <svg className="w-5 h-5" fill={a ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
@@ -56,7 +74,7 @@ export default function AdminShell({ children }) {
       ),
     },
     {
-      href: "/admin/offers", active: isOffers, label: "Offers",
+      href: "/admin/offers", active: isOffers, label: m.adminOffers(), shortLabel: "Offers",
       icon: (a) => (
         <svg className="w-5 h-5" fill={a ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
@@ -118,14 +136,33 @@ export default function AdminShell({ children }) {
               )}
             </div>
 
-            {/* Sign out — desktop text, mobile icon */}
-            <button onClick={handleSignOut}
-              className="p-2 text-gray-400 hover:text-rose-600 transition-colors rounded-lg hover:bg-gray-50"
-              title={m.adminSignOut()}>
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-              </svg>
-            </button>
+            {/* Profile avatar + dropdown */}
+            <div ref={profileRef} className="relative">
+              <button
+                onClick={() => setShowProfile(v => !v)}
+                className="w-8 h-8 rounded-full bg-rose-600 flex items-center justify-center text-white text-sm font-bold hover:bg-rose-700 transition-colors focus:outline-none focus:ring-2 focus:ring-rose-400 focus:ring-offset-2"
+              >
+                {adminEmail ? adminEmail[0].toUpperCase() : "A"}
+              </button>
+
+              {showProfile && (
+                <div className="absolute end-0 top-10 w-52 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden z-30">
+                  <div className="px-4 py-3 border-b border-gray-100">
+                    <p className="text-[10px] text-gray-400 uppercase tracking-widest font-semibold mb-0.5">Signed in as</p>
+                    <p className="text-xs font-semibold text-gray-800 truncate" dir="ltr">{adminEmail || "Admin"}</p>
+                  </div>
+                  <button
+                    onClick={handleSignOut}
+                    className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors font-medium"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                    </svg>
+                    {m.adminSignOut()}
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </header>
@@ -143,7 +180,7 @@ export default function AdminShell({ children }) {
               tab.active ? "text-rose-600" : "text-gray-400"
             }`}>
             {tab.icon(tab.active)}
-            <span className="text-[10px] font-semibold leading-none">{tab.label}</span>
+            <span className="text-[10px] font-semibold leading-none">{tab.shortLabel}</span>
           </Link>
         ))}
       </nav>

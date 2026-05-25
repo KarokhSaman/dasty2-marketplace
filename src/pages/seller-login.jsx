@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useUser, useClerk, SignIn } from "@clerk/tanstack-react-start";
+import { useNavigate } from "@tanstack/react-router";
 import * as m from "@/src/paraglide/messages";
 import { getLocale } from "@/src/paraglide/runtime";
 import { getCityOptions } from "@/lib/cities";
@@ -8,6 +9,7 @@ import {
   sellerClerkSyncFn,
   sellerClerkRegisterFn,
 } from "@/src/server/clerk-seller";
+import { useGlobalSellerSession } from "@/lib/SellerSessionContext";
 
 // ── Fee tiers ─────────────────────────────────────────────
 const FEE_TIERS = [
@@ -125,8 +127,10 @@ function InfoPanel() {
 }
 
 // ── Profile completion form ───────────────────────────────
-function ProfileForm({ onDone }) {
+function ProfileForm() {
   const locale = getLocale();
+  const { setSellerId } = useGlobalSellerSession();
+  const navigate = useNavigate();
   const [name,    setName]    = useState("");
   const [phone,   setPhone]   = useState("");
   const [city,    setCity]    = useState("Erbil");
@@ -139,7 +143,11 @@ function ProfileForm({ onDone }) {
     setError(""); setLoading(true);
     try {
       const res = await sellerClerkRegisterFn({ data: { name, phone, city, address } });
-      if (res.ok) { onDone(); return; }
+      if (res.ok) {
+        setSellerId(res.sellerId);
+        navigate({ to: "/seller", replace: true });
+        return;
+      }
       setError(res.error ?? "unknown_error");
     } catch {
       setError("unknown_error");
@@ -161,7 +169,8 @@ function ProfileForm({ onDone }) {
         <label className="block text-sm font-medium text-gray-700 mb-1.5">
           {m.loginPhoneLabel()} <span className="text-rose-500">*</span>
         </label>
-        <input type="tel" value={phone} onChange={e => setPhone(e.target.value)}
+        <input type="tel" inputMode="numeric" value={phone}
+          onChange={e => setPhone(e.target.value.replace(/\D/g, ""))}
           placeholder={m.loginPhonePlaceholder()} required dir="ltr"
           className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300" />
         <div className="flex items-center gap-1.5 mt-1.5">
@@ -196,6 +205,8 @@ function ProfileForm({ onDone }) {
 export default function SellerLoginPage() {
   const { isLoaded, isSignedIn } = useUser();
   const { signOut } = useClerk();
+  const { setSellerId } = useGlobalSellerSession();
+  const navigate = useNavigate();
   // Start as "loading" so <SignIn /> never renders before Clerk state is known
   const [step, setStep] = useState("loading"); // loading | signin | syncing | profile | error
   const [errorMsg, setErrorMsg] = useState("");
@@ -215,16 +226,14 @@ export default function SellerLoginPage() {
           setStep("error");
           return;
         }
-        // Server says not authenticated — Clerk session is stale/invalid.
-        // Sign out client-side so the sign-in form can render cleanly.
         await signOut();
         return;
       }
       if (res.needsProfile) { setStep("profile"); return; }
-      window.location.href = "/seller";
+      // Update context so SellerShell has sellerId immediately — no reload needed.
+      setSellerId(res.sellerId);
+      navigate({ to: "/seller", replace: true });
     }).catch(async () => {
-      // Any server-side error: sign out to clear potentially stale session,
-      // then let useEffect re-run (isSignedIn → false → step="signin").
       try { await signOut(); } catch {
         setErrorMsg("Something went wrong. Please try again.");
         setStep("error");
@@ -232,7 +241,7 @@ export default function SellerLoginPage() {
     });
   }, [isLoaded, isSignedIn]);
 
-  const showInfoPanel = step !== "profile"
+  const showInfoPanel = step === "signin"
 
   return (
     <div className={`-mx-4 -my-6 lg:min-h-[calc(100vh-56px)] ${showInfoPanel ? "lg:grid lg:grid-cols-2" : "flex items-center justify-center bg-gray-50"}`}>
@@ -303,7 +312,7 @@ export default function SellerLoginPage() {
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-7">
                 <h1 className="text-xl font-bold text-gray-900 mb-1">{m.profileStepTitle()}</h1>
                 <p className="text-sm text-gray-500 mb-6">{m.profileStepSubtitle()}</p>
-                <ProfileForm onDone={() => { window.location.href = "/seller"; }} />
+                <ProfileForm />
               </div>
               <p className="text-center text-xs text-gray-400 mt-5">{m.loginTermsNote()}</p>
             </>
