@@ -16,6 +16,13 @@ body {
   font-family: var(--font-geist-sans);
 }
 
+/* Prevent iOS auto-zoom on input focus (triggered when font-size < 16px) */
+@media (max-width: 768px) {
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+}
+
 @utility scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;

@@ -31,8 +31,9 @@ export default function AdminProductsPage() {
 
   const products        = useQuery(api.products.getAll);
   const updateStatus    = useMutation(api.products.updateStatus);
-  const removeProduct   = useMutation(api.products.remove);
-  const setFeatured     = useMutation(api.products.setFeatured);
+  const removeProduct       = useMutation(api.products.remove);
+  const adminUpdatePhotos   = useMutation(api.products.adminUpdatePhotos);
+  const setFeatured         = useMutation(api.products.setFeatured);
   const createNotif     = useMutation(api.notifications.create);
   const createLog       = useMutation(api.adminLogs.create);
 
@@ -48,6 +49,7 @@ export default function AdminProductsPage() {
   const [rejectReason, setRejectReason] = useState("");
   const [expanded,     setExpanded]     = useState(null);
   const [confirmDel,   setConfirmDel]   = useState(null);
+  const [confirmPhoto, setConfirmPhoto] = useState(null); // "productId:photoIndex"
 
   const statusLabels = {
     all:      m.adminAllStatus(),
@@ -140,7 +142,7 @@ export default function AdminProductsPage() {
 
       {/* Search */}
       <div className="relative mb-4">
-        <svg className="absolute start-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
         <input
@@ -149,10 +151,10 @@ export default function AdminProductsPage() {
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search by title, code (DS-0001), seller name…"
           dir="ltr"
-          className="w-full border border-gray-200 rounded-xl ps-10 pe-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-rose-300"
+          className="w-full border border-gray-200 rounded-xl pl-10 pr-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-rose-300"
         />
         {search && (
-          <button onClick={() => setSearch("")} className="absolute end-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+          <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -434,11 +436,65 @@ export default function AdminProductsPage() {
                 {product.photos?.length > 0 && (
                   <div className="flex gap-2 flex-wrap mb-3">
                     {product.photos.map((url, i) => (
-                      <a key={i} href={url} target="_blank" rel="noopener noreferrer">
-                        <img src={url} alt="" className="w-24 h-24 object-cover rounded-lg border border-gray-200 hover:opacity-90" />
-                      </a>
+                      product.status === "pending" ? (
+                        <div key={i} className="relative group">
+                          <img
+                            src={url} alt=""
+                            className={`w-24 h-24 object-cover rounded-lg border transition-all ${confirmPhoto === `${product._id}:${i}` ? "border-red-400 opacity-60" : "border-gray-200"}`}
+                          />
+                          {confirmPhoto === `${product._id}:${i}` ? (
+                            /* Step 2 — confirm or cancel */
+                            <div className="absolute inset-0 flex items-center justify-center gap-1 rounded-lg bg-black/30">
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  const next = product.photos.filter((_, j) => j !== i);
+                                  await adminUpdatePhotos({ id: product._id, photos: next });
+                                  await log("photo_removed", product, `Photo ${i + 1} removed`);
+                                  setConfirmPhoto(null);
+                                }}
+                                className="w-7 h-7 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow"
+                                title="Confirm delete"
+                              >
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                                </svg>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setConfirmPhoto(null)}
+                                className="w-7 h-7 bg-white hover:bg-gray-100 text-gray-600 rounded-full flex items-center justify-center shadow"
+                                title="Cancel"
+                              >
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                              </button>
+                            </div>
+                          ) : (
+                            /* Step 1 — tap to start delete */
+                            <button
+                              type="button"
+                              onClick={() => setConfirmPhoto(`${product._id}:${i}`)}
+                              className="absolute top-1 right-1 w-5 h-5 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shadow"
+                              title="Remove photo"
+                            >
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          )}
+                        </div>
+                      ) : (
+                        <a key={i} href={url} target="_blank" rel="noopener noreferrer">
+                          <img src={url} alt="" className="w-24 h-24 object-cover rounded-lg border border-gray-200 hover:opacity-90" />
+                        </a>
+                      )
                     ))}
                   </div>
+                )}
+                {product.status === "pending" && product.photos?.length > 0 && (
+                  <p className="text-xs text-gray-400 mb-3 hidden sm:block">Hover a photo and click × to remove it before approving.</p>
                 )}
                 {product.description && (
                   <p className="text-sm text-gray-600 whitespace-pre-line">{product.description}</p>

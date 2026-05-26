@@ -26,7 +26,7 @@ export const Route = createFileRoute('/api/admin/verify-otp')({
         const result = await fetchMutation(api.otp.verify, {
           email: email.trim(),
           code: code.trim(),
-        })
+        }, { url: process.env.CONVEX_URL })
 
         if (!result.ok) {
           const code =

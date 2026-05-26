@@ -43,11 +43,21 @@ function calculateProfit(price: number): number {
   return 0;
 }
 
+async function getInactiveSellerIds(ctx: QueryCtx): Promise<Set<string>> {
+  const inactive = await ctx.db
+    .query("sellers")
+    .filter((q) => q.eq(q.field("isActive"), false))
+    .collect();
+  return new Set(inactive.map((s) => s._id.toString()));
+}
+
 export const getPublicById = query({
   args: { id: v.id("products") },
   handler: async (ctx, { id }) => {
     const product = await ctx.db.get(id);
     if (!product || product.status !== "approved") return null;
+    const inactiveIds = await getInactiveSellerIds(ctx);
+    if (inactiveIds.has(product.sellerId)) return null;
     return toPublic(product);
   },
 });
@@ -55,11 +65,14 @@ export const getPublicById = query({
 export const getPublic = query({
   args: {},
   handler: async (ctx) => {
+    const inactiveIds = await getInactiveSellerIds(ctx);
     const products = await ctx.db
       .query("products")
-      .withIndex("by_status", q => q.eq("status", "approved"))
+      .withIndex("by_status", (q) => q.eq("status", "approved"))
       .collect();
-    return products.map(toPublic);
+    return products
+      .filter((p) => !inactiveIds.has(p.sellerId))
+      .map(toPublic);
   },
 });
 
@@ -68,12 +81,18 @@ export const getFeatured = query({
   args: {},
   handler: async (ctx) => {
     const today = new Date().toISOString().slice(0, 10);
+    const inactiveIds = await getInactiveSellerIds(ctx);
     const all = await ctx.db
       .query("products")
-      .withIndex("by_status", q => q.eq("status", "approved"))
+      .withIndex("by_status", (q) => q.eq("status", "approved"))
       .collect();
     return all
-      .filter(p => p.featured && (!p.featuredUntil || p.featuredUntil >= today))
+      .filter(
+        (p) =>
+          !inactiveIds.has(p.sellerId) &&
+          p.featured &&
+          (!p.featuredUntil || p.featuredUntil >= today),
+      )
       .map(toPublic);
   },
 });
@@ -82,20 +101,27 @@ export const getFeatured = query({
 export const getPublicPaginated = query({
   args: {
     paginationOpts: paginationOptsValidator,
-    category:       v.optional(v.string()),
+    category: v.optional(v.string()),
   },
   handler: async (ctx, { paginationOpts, category }) => {
-    const q = (category && category !== "all")
-      ? ctx.db.query("products")
-          .withIndex("by_status_category", q =>
-            q.eq("status", "approved").eq("category", category))
-      : ctx.db.query("products")
-          .withIndex("by_status", q => q.eq("status", "approved"));
+    const inactiveIds = await getInactiveSellerIds(ctx);
+    const q =
+      category && category !== "all"
+        ? ctx.db
+            .query("products")
+            .withIndex("by_status_category", (q) =>
+              q.eq("status", "approved").eq("category", category),
+            )
+        : ctx.db
+            .query("products")
+            .withIndex("by_status", (q) => q.eq("status", "approved"));
 
     const result = await q.order("desc").paginate(paginationOpts);
     return {
       ...result,
-      page: result.page.map(toPublic),
+      page: result.page
+        .filter((p) => !inactiveIds.has(p.sellerId))
+        .map(toPublic),
     };
   },
 });
@@ -285,6 +311,16 @@ export const remove = mutation({
   args: { id: v.id("products") },
   handler: async (ctx, { id }) => {
     await ctx.db.delete(id);
+  },
+});
+
+export const adminUpdatePhotos = mutation({
+  args: {
+    id:     v.id("products"),
+    photos: v.array(v.string()),
+  },
+  handler: async (ctx, { id, photos }) => {
+    await ctx.db.patch(id, { photos });
   },
 });
 

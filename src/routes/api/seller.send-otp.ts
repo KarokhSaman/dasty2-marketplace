@@ -16,7 +16,7 @@ export const Route = createFileRoute('/api/seller/send-otp')({
 
         const code = await fetchMutation(api.otp.create, {
           email: email.trim(),
-        })
+        }, { url: process.env.CONVEX_URL })
 
         logInfo('seller_otp_created', { email: email.trim() })
 

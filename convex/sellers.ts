@@ -51,6 +51,13 @@ export const getByClerkId = query({
   },
 });
 
+export const patchClerkId = mutation({
+  args: { id: v.id("sellers"), clerkUserId: v.string() },
+  handler: async (ctx, { id, clerkUserId }) => {
+    await ctx.db.patch(id, { clerkUserId });
+  },
+});
+
 export const create = mutation({
   args: {
     clerkUserId: v.optional(v.string()),
@@ -58,6 +65,7 @@ export const create = mutation({
     name: v.string(),
     phone: v.string(),
     city: v.string(),
+    address: v.optional(v.string()),
     registeredAt: v.string(),
   },
   handler: async (ctx, args) => {
@@ -73,6 +81,7 @@ export const create = mutation({
     return await ctx.db.insert("sellers", {
       ...args,
       clerkUserId: args.clerkUserId ?? "",
+      address: args.address,
       isActive: true,
     });
   },
@@ -102,5 +111,23 @@ export const updateProfile = mutation({
   },
   handler: async (ctx, { id, name, phone, city, address }) => {
     await ctx.db.patch(id, { name, phone, city, address });
+  },
+});
+
+export const deleteSeller = mutation({
+  args: { id: v.id("sellers") },
+  handler: async (ctx, { id }) => {
+    const sellerIdStr = id as string;
+    // Delete all products and their notifications
+    const products = await ctx.db.query("products").withIndex("by_seller", q => q.eq("sellerId", sellerIdStr)).collect();
+    for (const product of products) {
+      const productNotifs = await ctx.db.query("notifications").filter(q => q.eq(q.field("productId"), product._id as string)).collect();
+      for (const n of productNotifs) await ctx.db.delete(n._id);
+      await ctx.db.delete(product._id);
+    }
+    // Delete seller-level notifications
+    const sellerNotifs = await ctx.db.query("notifications").filter(q => q.eq(q.field("sellerId"), sellerIdStr)).collect();
+    for (const n of sellerNotifs) await ctx.db.delete(n._id);
+    await ctx.db.delete(id);
   },
 });

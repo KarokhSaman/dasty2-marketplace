@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import * as m from "@/src/paraglide/messages";
 
 function formatDate(d) {
   if (!d) return "";
@@ -11,8 +12,8 @@ function formatDate(d) {
 
 function OfferTypeBadge({ type }) {
   return type === "free"
-    ? <span className="text-xs font-semibold bg-green-100 text-green-700 px-2 py-0.5 rounded-full">No Fee</span>
-    : <span className="text-xs font-semibold bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">Flat Fee</span>;
+    ? <span className="text-xs font-semibold bg-green-100 text-green-700 px-2 py-0.5 rounded-full">{m.adminOffersBadgeNoFee()}</span>
+    : <span className="text-xs font-semibold bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">{m.adminOffersBadgeFlatFee()}</span>;
 }
 
 export default function AdminOffersPage() {
@@ -62,7 +63,7 @@ export default function AdminOffersPage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">Offers & Promotions</h1>
+      <h1 className="text-2xl font-bold text-gray-900">{m.adminOffersTitle()}</h1>
 
       {/* ── Active offer ── */}
       {activeOffer ? (
@@ -71,14 +72,14 @@ export default function AdminOffersPage() {
           <div className="flex items-start justify-between gap-4">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-xs font-bold bg-white/20 px-2 py-0.5 rounded-full">ACTIVE NOW</span>
+                <span className="text-xs font-bold bg-white/20 px-2 py-0.5 rounded-full">{m.adminOffersActiveNow()}</span>
               </div>
               <h2 className="text-xl font-bold">{activeOffer.title}</h2>
               {activeOffer.description && <p className="text-green-100 text-sm mt-0.5">{activeOffer.description}</p>}
               <p className="text-green-100 text-xs mt-2">
                 {activeOffer.type === "free"
-                  ? "No service fee for any item"
-                  : `Fixed fee: ${activeOffer.flatFeeAmount?.toLocaleString()} IQD for any price range`}
+                  ? m.adminOffersNoFeeDesc()
+                  : m.adminOffersFlatFeeDesc({ amount: activeOffer.flatFeeAmount?.toLocaleString() })}
               </p>
               <p className="text-green-100 text-xs mt-1">
                 {formatDate(activeOffer.startDate)} → {formatDate(activeOffer.endDate)}
@@ -88,7 +89,7 @@ export default function AdminOffersPage() {
               onClick={() => deactivateOffer({ id: activeOffer._id, adminEmail })}
               className="shrink-0 bg-white/20 hover:bg-white/30 text-white text-xs font-bold px-3 py-2 rounded-xl transition-colors"
             >
-              Deactivate
+              {m.adminOffersDeactivate()}
             </button>
           </div>
         </div>
@@ -97,45 +98,45 @@ export default function AdminOffersPage() {
           <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
           </svg>
-          No active offer right now.
+          {m.adminOffersNoActive()}
         </div>
       )}
 
       {/* ── Create new offer ── */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-        <h2 className="text-base font-bold text-gray-800 mb-5">Create New Offer</h2>
+        <h2 className="text-base font-bold text-gray-800 mb-5">{m.adminOffersCreateTitle()}</h2>
 
         {success && (
           <div className="mb-4 flex items-center gap-2 bg-green-50 border border-green-100 rounded-xl px-4 py-3 text-sm text-green-700 font-medium">
             <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/>
             </svg>
-            Offer created and all sellers notified!
+            {m.adminOffersSuccess()}
           </div>
         )}
 
         <form onSubmit={handleCreate} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Offer Title <span className="text-rose-500">*</span></label>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">{m.adminOffersLabelTitle()} <span className="text-rose-500">*</span></label>
             <input value={title} onChange={e => setTitle(e.target.value)} required
-              placeholder="e.g. Ramadan Special Offer"
+              placeholder={m.adminOffersPlaceholderTitle()}
               className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300"/>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Description</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">{m.adminOffersLabelDesc()}</label>
             <input value={description} onChange={e => setDescription(e.target.value)}
-              placeholder="Short note visible to sellers (optional)"
+              placeholder={m.adminOffersPlaceholderDesc()}
               className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300"/>
           </div>
 
           {/* Fee type toggle */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Fee Type <span className="text-rose-500">*</span></label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">{m.adminOffersFeeType()} <span className="text-rose-500">*</span></label>
             <div className="grid grid-cols-2 gap-3">
               {[
-                { val: "free",     label: "No Service Fee",   sub: "0 IQD for all items" },
-                { val: "flat_fee", label: "Fixed Flat Fee",   sub: "Same amount for all prices" },
+                { val: "free",     label: m.adminOffersNoFeeLabel(), sub: m.adminOffersNoFeeSub() },
+                { val: "flat_fee", label: m.adminOffersFlatLabel(),  sub: m.adminOffersFlatSub() },
               ].map(opt => (
                 <button
                   key={opt.val} type="button"
@@ -155,11 +156,11 @@ export default function AdminOffersPage() {
 
           {type === "flat_fee" && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Flat Fee Amount (IQD) <span className="text-rose-500">*</span></label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">{m.adminOffersFlatAmount()} <span className="text-rose-500">*</span></label>
               <input
                 type="number" min={0} value={flatFeeAmount}
                 onChange={e => setFlatFeeAmount(e.target.value)}
-                placeholder="e.g. 2000" required
+                placeholder="2000" required
                 className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300" dir="ltr"
               />
             </div>
@@ -167,12 +168,12 @@ export default function AdminOffersPage() {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Start Date <span className="text-rose-500">*</span></label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">{m.adminOffersStartDate()} <span className="text-rose-500">*</span></label>
               <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} required
                 className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300"/>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">End Date <span className="text-rose-500">*</span></label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">{m.adminOffersEndDate()} <span className="text-rose-500">*</span></label>
               <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} required min={startDate}
                 className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300"/>
             </div>
@@ -182,12 +183,12 @@ export default function AdminOffersPage() {
             <svg className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
-            <p className="text-xs text-amber-700">Creating this offer will immediately send a notification to all active sellers.</p>
+            <p className="text-xs text-amber-700">{m.adminOffersNote()}</p>
           </div>
 
           <button type="submit" disabled={submitting}
             className="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold py-3 rounded-xl transition-colors disabled:opacity-50">
-            {submitting ? "Creating & notifying sellers…" : "Create Offer & Notify All Sellers"}
+            {submitting ? m.adminOffersSubmitting() : m.adminOffersSubmit()}
           </button>
         </form>
       </div>
@@ -196,7 +197,7 @@ export default function AdminOffersPage() {
       {allOffers && allOffers.length > 0 && (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest px-5 py-3 border-b border-gray-50">
-            All Offers
+            {m.adminOffersAllTitle()}
           </p>
           <div className="divide-y divide-gray-50">
             {allOffers.map(offer => {
@@ -208,12 +209,12 @@ export default function AdminOffersPage() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="text-sm font-semibold text-gray-800">{offer.title}</p>
                       <OfferTypeBadge type={offer.type} />
-                      {isCurrent && <span className="text-[10px] font-bold bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full">LIVE</span>}
-                      {!offer.isActive && <span className="text-[10px] font-bold bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded-full">INACTIVE</span>}
+                      {isCurrent && <span className="text-[10px] font-bold bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full">{m.adminOffersBadgeLive()}</span>}
+                      {!offer.isActive && <span className="text-[10px] font-bold bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded-full">{m.adminOffersBadgeInactive()}</span>}
                     </div>
                     {offer.description && <p className="text-xs text-gray-400 mt-0.5">{offer.description}</p>}
                     <p className="text-xs text-gray-400 mt-1">
-                      {offer.type === "free" ? "No fee" : `${offer.flatFeeAmount?.toLocaleString()} IQD`}
+                      {offer.type === "free" ? m.adminOffersNoFeeShort() : `${offer.flatFeeAmount?.toLocaleString()} IQD`}
                       {" · "}{formatDate(offer.startDate)} → {formatDate(offer.endDate)}
                     </p>
                   </div>
@@ -221,12 +222,12 @@ export default function AdminOffersPage() {
                     {offer.isActive ? (
                       <button onClick={() => deactivateOffer({ id: offer._id, adminEmail })}
                         className="text-xs text-gray-400 hover:text-red-500 border border-gray-200 hover:border-red-200 px-3 py-1.5 rounded-lg transition-colors">
-                        Deactivate
+                        {m.adminOffersDeactivate()}
                       </button>
                     ) : (
                       <button onClick={() => reactivateOffer({ id: offer._id, adminEmail })}
                         className="text-xs text-gray-400 hover:text-green-600 border border-gray-200 hover:border-green-200 px-3 py-1.5 rounded-lg transition-colors">
-                        Reactivate
+                        {m.adminOffersReactivate()}
                       </button>
                     )}
                     {confirmDel === offer._id ? (

@@ -23,7 +23,7 @@ export const Route = createFileRoute('/api/seller/register')({
 
         const verified = await fetchQuery(api.otp.isVerified, {
           email: email.trim(),
-        })
+        }, { url: process.env.CONVEX_URL })
         if (!verified) {
           return Response.json({ error: 'session_expired' }, { status: 401 })
         }
@@ -34,7 +34,7 @@ export const Route = createFileRoute('/api/seller/register')({
           phone: phone.trim(),
           city: city?.trim() || 'Erbil',
           address: address.trim(),
-        })
+        }, { url: process.env.CONVEX_URL })
 
         setCookie('dasty2-seller', sellerId, {
           ...secureCookieOptions(request),

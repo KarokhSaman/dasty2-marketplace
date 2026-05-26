@@ -53,7 +53,7 @@ export default function BuyerAccountPage() {
       {/* ── App header card ── */}
       <div className="bg-gradient-to-br from-rose-600 via-rose-500 to-rose-400 rounded-2xl p-6 mb-2 relative overflow-hidden">
         <div className="absolute top-0 end-0 w-40 h-40 bg-white/10 rounded-full -translate-y-16 translate-x-16 pointer-events-none"/>
-        <div dir="ltr" className="flex items-center gap-3 mb-3">
+        <div className="flex items-center gap-3 mb-3">
           <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center">
             <span className="text-xl font-bold text-white">D2</span>
           </div>
