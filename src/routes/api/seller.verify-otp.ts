@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { setCookie } from '@tanstack/react-start/server'
 import { fetchMutation, fetchQuery } from 'convex/nextjs'
 import { api } from '@/convex/_generated/api'
+import { secureCookieOptions } from '@/src/server/security'
 
 export const Route = createFileRoute('/api/seller/verify-otp')({
   server: {
@@ -43,10 +44,8 @@ export const Route = createFileRoute('/api/seller/verify-otp')({
         }
 
         setCookie('dasty2-seller', seller._id, {
-          httpOnly: true,
-          path: '/',
+          ...secureCookieOptions(request),
           maxAge: 2_592_000,
-          sameSite: 'lax',
         })
 
         return Response.json({ ok: true, needsProfile: false })

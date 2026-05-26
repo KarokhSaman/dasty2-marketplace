@@ -3,6 +3,7 @@ import {
   defaultStreamHandler,
 } from '@tanstack/react-start/server'
 import { paraglideMiddleware } from '@/src/paraglide/server'
+import { hardenResponse } from '@/src/server/security'
 
 const fetch = createStartHandler(defaultStreamHandler)
 
@@ -12,6 +13,7 @@ export default {
     // option de-localizes the URL itself, so handing it the middleware's
     // already-de-localized request would cause a rewrite loop.
     // (See paraglideMiddleware docs.)
-    return paraglideMiddleware(request, () => fetch(request))
+    const response = await paraglideMiddleware(request, () => fetch(request))
+    return hardenResponse(request, response)
   },
 }

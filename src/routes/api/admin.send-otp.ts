@@ -1,7 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { env } from 'cloudflare:workers'
 import { fetchMutation } from 'convex/nextjs'
 import { Resend } from 'resend'
 import { api } from '@/convex/_generated/api'
+import { logInfo, logWarning } from '@/src/server/security'
 
 const ADMIN_EMAILS = ['karokh.saman.aziz@gmail.com', 'soma.karam.a@gmail.com']
 
@@ -23,11 +25,11 @@ export const Route = createFileRoute('/api/admin/send-otp')({
           email: email.trim(),
         })
 
-        console.log(`\n🔐  ADMIN OTP for ${email.trim()} → ${code}\n`)
+        logInfo('admin_otp_created', { email: email.trim() })
 
-        if (process.env.RESEND_API_KEY) {
+        if (env.RESEND_API_KEY) {
           try {
-            const resend = new Resend(process.env.RESEND_API_KEY)
+            const resend = new Resend(env.RESEND_API_KEY)
             await resend.emails.send({
               from: 'Dasty2 Admin <noreply@dasty2mndalan.com>',
               to: email.trim(),
@@ -44,10 +46,9 @@ export const Route = createFileRoute('/api/admin/send-otp')({
               `,
             })
           } catch (err) {
-            console.warn(
-              'Resend error:',
-              err instanceof Error ? err.message : err,
-            )
+            logWarning('resend_error', {
+              message: err instanceof Error ? err.message : String(err),
+            })
           }
         }
 

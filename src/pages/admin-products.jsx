@@ -13,7 +13,7 @@ import { api } from "@/convex/_generated/api";
 import * as m from "@/src/paraglide/messages";
 import { formatPrice } from "@/lib/utils";
 
-const WHATSAPP = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER;
+const WHATSAPP = import.meta.env.VITE_WHATSAPP_NUMBER;
 
 const STATUS_STYLE = {
   pending:  "bg-yellow-100 text-yellow-700",

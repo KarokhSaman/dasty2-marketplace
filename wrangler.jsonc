@@ -1,10 +1,27 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "dasty2mndalan",
-  "compatibility_date": "2026-05-23",
+  "compatibility_date": "2026-05-26",
   "compatibility_flags": ["nodejs_compat"],
   "main": "src/server.ts",
+  "upload_source_maps": true,
   "observability": {
-    "enabled": true
+    "enabled": true,
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 1
+    },
+    "traces": {
+      "enabled": true,
+      "head_sampling_rate": 0.01
+    }
+  },
+  "secrets": {
+    "required": [
+      "CLERK_SECRET_KEY",
+      "CLOUDINARY_API_KEY",
+      "CLOUDINARY_API_SECRET",
+      "RESEND_API_KEY"
+    ]
   }
 }

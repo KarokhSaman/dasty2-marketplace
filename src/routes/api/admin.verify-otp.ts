@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { setCookie } from '@tanstack/react-start/server'
 import { fetchMutation } from 'convex/nextjs'
 import { api } from '@/convex/_generated/api'
+import { secureCookieOptions } from '@/src/server/security'
 
 const ADMIN_EMAILS = ['karokh.saman.aziz@gmail.com', 'soma.karam.a@gmail.com']
 
@@ -34,10 +35,8 @@ export const Route = createFileRoute('/api/admin/verify-otp')({
         }
 
         setCookie('dasty2-admin', encodeURIComponent(email.trim()), {
-          httpOnly: true,
-          path: '/',
+          ...secureCookieOptions(request),
           maxAge: 86_400,
-          sameSite: 'lax',
         })
 
         return Response.json({ ok: true })

@@ -1,11 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { deleteCookie } from '@tanstack/react-start/server'
+import { secureCookieOptions } from '@/src/server/security'
 
 export const Route = createFileRoute('/api/admin/logout')({
   server: {
     handlers: {
-      POST: () => {
-        deleteCookie('dasty2-admin', { path: '/' })
+      POST: ({ request }) => {
+        deleteCookie('dasty2-admin', secureCookieOptions(request))
         return Response.json({ ok: true })
       },
     },

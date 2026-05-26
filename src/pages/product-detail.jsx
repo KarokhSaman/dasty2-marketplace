@@ -17,7 +17,7 @@ import { getCityLabel } from "@/lib/cities";
 import { Link } from "@tanstack/react-router";
 import { getProductCache, setProductCache } from "@/src/lib/productCache";
 
-const WHATSAPP = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER;
+const WHATSAPP = import.meta.env.VITE_WHATSAPP_NUMBER;
 
 function formatPrice(price) {
   return price.toLocaleString("en-US") + " IQD";
