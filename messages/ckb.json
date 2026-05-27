@@ -248,5 +248,12 @@
   "adminOffersBadgeFlatFee": "کرێی جێگیر",
   "adminOffersBadgeLive": "ڕووداو",
   "adminOffersBadgeInactive": "ناچالاک",
-  "adminOffersNoFeeShort": "کرێ نییە"
+  "adminOffersNoFeeShort": "کرێ نییە",
+  "heroEyebrow": "هەڵبژێردراو بۆ منداڵەکانتان",
+  "heroTitle": "هەموو شتێک بۆ منداڵەکەت،",
+  "heroTitleAccent": "لە یەک شوێندا.",
+  "heroSubtitle": "گەڕان لە کاڵای منداڵانی متمانەپێکراو لە خێزانەکانی هەولێر.",
+  "filtersLabel": "فلتەرەکان",
+  "resultsCount": "{count} کاڵا",
+  "browseAll": "بینینی هەموو"
 }

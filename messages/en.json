@@ -248,5 +248,12 @@
   "adminOffersBadgeFlatFee": "Flat Fee",
   "adminOffersBadgeLive": "LIVE",
   "adminOffersBadgeInactive": "INACTIVE",
-  "adminOffersNoFeeShort": "No fee"
+  "adminOffersNoFeeShort": "No fee",
+  "heroEyebrow": "Curated for little ones",
+  "heroTitle": "Everything for your baby,",
+  "heroTitleAccent": "in one place.",
+  "heroSubtitle": "Browse trusted baby finds from families across Erbil.",
+  "filtersLabel": "Filters",
+  "resultsCount": "{count} items",
+  "browseAll": "Browse all"
 }

@@ -2,62 +2,100 @@ import { Link } from "@tanstack/react-router";
 import * as m from "@/src/paraglide/messages";
 import { getLocale } from "@/src/paraglide/runtime";
 import { getCategoryLabel } from "@/lib/categories";
+import { getCityLabel } from "@/lib/cities";
 import { setProductCache } from "@/src/lib/productCache";
+import { Chip, PriceTag } from "@/components/ui";
 
-function formatPrice(price) {
-  return price.toLocaleString("en-US") + " IQD";
+function ImagePlaceholder() {
+  return (
+    <div className="w-full h-full flex items-center justify-center">
+      <svg className="w-10 h-10 text-[var(--color-ink-fade)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+      </svg>
+    </div>
+  );
+}
+
+function PinIcon() {
+  return (
+    <svg className="w-3 h-3 text-[var(--color-ink-fade)] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+    </svg>
+  );
+}
+
+function FeaturedStar() {
+  return (
+    <span
+      title={m.featured()}
+      className="inline-flex items-center justify-center shrink-0 w-4 h-4 rounded-full bg-[var(--color-ember-500)] text-white shadow-[0_2px_6px_-2px_rgba(237,0,64,0.6)]"
+    >
+      <svg className="w-2.5 h-2.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+        <path d="M12 2l2.39 6.96H22l-6.18 4.49L18.18 22 12 17.27 5.82 22l2.36-8.55L2 8.96h7.61L12 2z" />
+      </svg>
+    </span>
+  );
 }
 
 export default function ProductCard({ product, onSave }) {
   const locale = getLocale();
   const photo = product.photos?.[0];
+  const cityLabel = product.city ? (getCityLabel(product.city, locale) ?? product.city) : null;
+  const categoryLabel = getCategoryLabel(product.category, locale);
   setProductCache(product);
 
   return (
     <Link to={`/products/${product._id}`} className="group block" onClick={onSave}>
-      <div className="bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-md hover:border-rose-100 transition-all duration-200">
+      <article className="bg-paper rounded-2xl overflow-hidden border border-[var(--color-hairline)] transition-all duration-300 hover:border-[var(--color-ember-200)] hover:shadow-[0_18px_36px_-22px_rgba(26,20,17,0.28)] hover:-translate-y-0.5">
         {/* Image */}
-        <div className="aspect-square bg-gray-100 relative overflow-hidden">
+        <div className="aspect-[4/5] relative overflow-hidden bg-[var(--color-cream-deep)]">
           {photo ? (
             <img
               src={photo}
               alt={product.title}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              loading="lazy"
+              className="w-full h-full object-cover group-hover:scale-[1.05] transition-transform duration-[500ms] ease-out"
             />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <svg className="w-10 h-10 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-            </div>
-          )}
-          <div className="absolute top-2 start-2 flex flex-col gap-1">
-            <span
-              className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                product.condition === "new"
-                  ? "bg-green-100 text-green-700"
-                  : "bg-amber-100 text-amber-700"
-              }`}
-            >
-              {product.condition === "new" ? m.badgeNew() : m.badgeUsed()}
+          ) : <ImagePlaceholder />}
+
+          {/* Only one chip on the image: condition. */}
+          <Chip
+            tone={product.condition === "new" ? "success" : "warning"}
+            dot
+            className="absolute top-2.5 start-2.5 backdrop-blur-md shadow-sm"
+          >
+            {product.condition === "new" ? m.badgeNew() : m.badgeUsed()}
+          </Chip>
+
+          {/* Featured indicator: small star pill, top-end */}
+          {product.featured && (
+            <span className="absolute top-2.5 end-2.5">
+              <FeaturedStar />
             </span>
-            {product.featured && (
-              <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-rose-100 text-rose-600">
-                {m.featured()}
-              </span>
-            )}
-          </div>
+          )}
         </div>
 
         {/* Info */}
-        <div className="p-3">
-          <p className="text-xs text-gray-400 mb-1">{getCategoryLabel(product.category, locale)}</p>
-          <h3 className="text-sm font-medium text-gray-800 line-clamp-2 leading-snug mb-2 min-h-[2.5rem]">
+        <div className="px-3 pt-2.5 pb-3">
+          <h3 className="text-[13.5px] font-semibold text-[var(--color-ink)] line-clamp-2 leading-snug min-h-[2.5rem] mb-1.5">
             {product.title}
           </h3>
-          <p className="text-rose-600 font-bold text-sm">{formatPrice(product.price)}</p>
+
+          <div className="flex items-center gap-1.5 text-[11px] text-[var(--color-ink-fade)] mb-2 min-w-0">
+            <span className="truncate">{categoryLabel}</span>
+            {cityLabel && (
+              <>
+                <span className="text-[var(--color-ink-fade)]/60">·</span>
+                <PinIcon />
+                <span className="truncate">{cityLabel}</span>
+              </>
+            )}
+          </div>
+
+          <PriceTag amount={product.price} size="md" />
         </div>
-      </div>
+      </article>
     </Link>
   );
 }

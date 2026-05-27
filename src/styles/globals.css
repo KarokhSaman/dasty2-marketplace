@@ -8,15 +8,101 @@
   font-display: swap;
 }
 
+/* ──────────────────────────────────────────────────────────
+   GLOBAL THEME — single source of truth for the entire app.
+   All buyer/seller/admin pages inherit from these tokens.
+   The brand red is #ed0040 (rose-500 / ember-500).
+   ────────────────────────────────────────────────────────── */
+@theme {
+  --font-sans: 'GeistVF', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Fraunces', 'GeistVF', Georgia, serif;
+
+  /* Surfaces & ink */
+  --color-cream: #fefcf9;
+  --color-cream-deep: #f6efe5;
+  --color-paper: #ffffff;
+  --color-ink: #1a1411;
+  --color-ink-soft: #6b5b50;
+  --color-ink-fade: #b2a397;
+  --color-hairline: #ebe1d3;
+
+  /* Brand — defined once as `--color-brand-*`.
+     Both `ember-*` and Tailwind's `rose-*` scale are aliased to this scale
+     so the brand color flows through the entire app from one place. */
+  --color-brand-50:  #fff0f4;
+  --color-brand-100: #ffd6e0;
+  --color-brand-200: #fda8bd;
+  --color-brand-300: #f86b8b;
+  --color-brand-400: #f33866;
+  --color-brand-500: #ed0040;
+  --color-brand-600: #c80037;
+  --color-brand-700: #9a002b;
+  --color-brand-800: #6e001f;
+  --color-brand-900: #4a0014;
+
+  /* Ember aliases (used by the refreshed buyer surfaces) */
+  --color-ember-50:  var(--color-brand-50);
+  --color-ember-100: var(--color-brand-100);
+  --color-ember-200: var(--color-brand-200);
+  --color-ember-300: var(--color-brand-300);
+  --color-ember-500: var(--color-brand-500);
+  --color-ember-600: var(--color-brand-600);
+  --color-ember-700: var(--color-brand-700);
+
+  /* Override Tailwind's rose-* palette so every existing
+     `bg-rose-600`, `text-rose-500`, etc. across admin/seller/legacy
+     surfaces automatically picks up the brand color. */
+  --color-rose-50:  var(--color-brand-50);
+  --color-rose-100: var(--color-brand-100);
+  --color-rose-200: var(--color-brand-200);
+  --color-rose-300: var(--color-brand-300);
+  --color-rose-400: var(--color-brand-400);
+  --color-rose-500: var(--color-brand-500);
+  --color-rose-600: var(--color-brand-600);
+  --color-rose-700: var(--color-brand-700);
+  --color-rose-800: var(--color-brand-800);
+  --color-rose-900: var(--color-brand-900);
+
+  /* Jade (success, WhatsApp, "new") */
+  --color-jade-50:  #e9f5ee;
+  --color-jade-500: #18966b;
+  --color-jade-600: #117855;
+
+  /* Honey (used items, warnings) */
+  --color-honey-50:  #fbf2dc;
+  --color-honey-600: #b27b15;
+}
+
 :root {
   --font-geist-sans: 'GeistVF', system-ui, sans-serif;
 }
 
-body {
-  font-family: var(--font-geist-sans);
+html {
+  background: var(--color-cream);
 }
 
-/* Prevent iOS auto-zoom on input focus (triggered when font-size < 16px) */
+body {
+  font-family: var(--font-sans);
+  color: var(--color-ink);
+  background: var(--color-cream);
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Display serif — only meaningful for Latin scripts; gets overridden for RTL */
+.font-display {
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
+  letter-spacing: -0.015em;
+}
+
+/* RTL: Fraunces doesn't carry Arabic/Kurdish glyphs — fall back to sans for those scripts. */
+html[dir='rtl'] .font-display {
+  font-family: var(--font-sans);
+  font-weight: 800;
+  letter-spacing: -0.005em;
+}
+
+/* Prevent iOS auto-zoom on input focus */
 @media (max-width: 768px) {
   input, textarea, select {
     font-size: 16px !important;
@@ -29,4 +115,104 @@ body {
   &::-webkit-scrollbar {
     display: none;
   }
+}
+
+/* ── Custom utilities ───────────────────────────────────── */
+@utility surface-card {
+  background: var(--color-paper);
+  border-radius: 1.25rem;
+  border: 1px solid var(--color-hairline);
+  box-shadow: 0 1px 0 rgba(26, 20, 17, 0.02), 0 8px 24px -16px rgba(26, 20, 17, 0.08);
+}
+
+@utility surface-frost {
+  background: color-mix(in srgb, var(--color-cream) 78%, transparent);
+  backdrop-filter: saturate(180%) blur(16px);
+  -webkit-backdrop-filter: saturate(180%) blur(16px);
+}
+
+@utility chip-base {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* ── Motion ─────────────────────────────────────────────── */
+@keyframes shimmer-sweep {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--color-cream-deep) 0%,
+    color-mix(in srgb, var(--color-cream-deep) 60%, white) 50%,
+    var(--color-cream-deep) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer-sweep 1.6s linear infinite;
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up {
+  animation: fade-up 420ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.scale-in {
+  animation: scale-in 200ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.55; }
+}
+.pulse-soft {
+  animation: pulse-soft 2.4s ease-in-out infinite;
+}
+
+/* Stagger helper — used on grid children */
+.stagger > * { animation: fade-up 460ms cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.stagger > *:nth-child(1)  { animation-delay: 30ms; }
+.stagger > *:nth-child(2)  { animation-delay: 70ms; }
+.stagger > *:nth-child(3)  { animation-delay: 110ms; }
+.stagger > *:nth-child(4)  { animation-delay: 150ms; }
+.stagger > *:nth-child(5)  { animation-delay: 190ms; }
+.stagger > *:nth-child(6)  { animation-delay: 230ms; }
+.stagger > *:nth-child(7)  { animation-delay: 270ms; }
+.stagger > *:nth-child(8)  { animation-delay: 310ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .shimmer, .fade-up, .scale-in, .pulse-soft, .stagger > * { animation: none !important; }
+}
+
+/* ── Scroll edge fade (used by category bar) ─────────────── */
+.scroll-fade-x {
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    black 1.25rem,
+    black calc(100% - 1.25rem),
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    black 1.25rem,
+    black calc(100% - 1.25rem),
+    transparent 100%
+  );
 }

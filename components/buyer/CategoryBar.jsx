@@ -5,47 +5,50 @@ export default function CategoryBar({ selected, onSelect }) {
   const locale = getLocale();
 
   return (
-    <div data-catbar className="flex gap-4 overflow-x-auto pb-2 px-1 py-1 scrollbar-hide">
-      {CATEGORY_CONFIG.map((cat) => {
-        const isActive = selected === cat.value;
-        const label = cat.labels?.[locale] ?? cat.labels?.en ?? cat.value;
+    <div className="-mx-4 sm:-mx-6 px-1 scroll-fade-x">
+      <div data-catbar className="flex gap-2.5 sm:gap-3 overflow-x-auto py-1 px-4 sm:px-6 scrollbar-hide">
+        {CATEGORY_CONFIG.map((cat) => {
+          const isActive = selected === cat.value;
+          const label = cat.labels?.[locale] ?? cat.labels?.en ?? cat.value;
 
-        return (
-          <button
-            key={cat.value}
-            onClick={() => onSelect(cat.value)}
-            className="flex flex-col items-center gap-1.5 shrink-0 group"
-          >
-            {/* Circle */}
-            <div
-              className={`w-16 h-16 rounded-full flex items-center justify-center transition-all duration-200 overflow-hidden bg-white ${
-                isActive
-                  ? "border-[3px] border-rose-500 shadow-md scale-105"
-                  : "border-2 border-gray-200 group-hover:border-rose-300 group-hover:scale-105"
-              }`}
+          return (
+            <button
+              key={cat.value}
+              onClick={() => onSelect(cat.value)}
+              className="flex flex-col items-center gap-1.5 shrink-0 group focus:outline-none"
+              aria-pressed={isActive}
             >
-              {cat.img ? (
-                <img
-                  src={cat.img}
-                  alt={label}
-                  className="w-10 h-10 object-contain"
-                />
-              ) : (
-                <span className="text-2xl">{cat.emoji}</span>
-              )}
-            </div>
+              <div
+                className={`w-[56px] h-[56px] sm:w-[60px] sm:h-[60px] rounded-full flex items-center justify-center overflow-hidden transition-all duration-300 ${
+                  isActive
+                    ? "bg-[var(--color-ember-50)] shadow-[inset_0_0_0_1px_var(--color-ember-200)] scale-[1.04]"
+                    : "bg-[var(--color-cream-deep)] group-hover:bg-[var(--color-ember-50)] group-hover:scale-[1.03]"
+                }`}
+              >
+                {cat.img ? (
+                  <img
+                    src={cat.img}
+                    alt={label}
+                    className={`w-9 h-9 object-contain transition-opacity duration-300 ${
+                      isActive ? "opacity-100" : "opacity-85 group-hover:opacity-100"
+                    }`}
+                  />
+                ) : (
+                  <span className="text-xl">{cat.emoji}</span>
+                )}
+              </div>
 
-            {/* Label */}
-            <span
-              className={`text-[10px] font-semibold text-center leading-tight max-w-[64px] transition-colors ${
-                isActive ? "text-rose-600" : "text-gray-500 group-hover:text-gray-700"
-              }`}
-            >
-              {label}
-            </span>
-          </button>
-        );
-      })}
+              <span
+                className={`text-[10.5px] font-semibold text-center leading-[1.15] max-w-[64px] transition-colors ${
+                  isActive ? "text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)] group-hover:text-[var(--color-ink)]"
+                }`}
+              >
+                {label}
+              </span>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

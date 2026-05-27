@@ -248,5 +248,12 @@
   "adminOffersBadgeFlatFee": "رسوم ثابتة",
   "adminOffersBadgeLive": "مباشر",
   "adminOffersBadgeInactive": "غير نشط",
-  "adminOffersNoFeeShort": "بدون رسوم"
+  "adminOffersNoFeeShort": "بدون رسوم",
+  "heroEyebrow": "مختار بعناية لصغاركم",
+  "heroTitle": "كل ما يحتاجه طفلك،",
+  "heroTitleAccent": "في مكان واحد.",
+  "heroSubtitle": "تصفّح منتجات الأطفال الموثوقة من العائلات في أربيل.",
+  "filtersLabel": "الفلاتر",
+  "resultsCount": "{count} منتج",
+  "browseAll": "تصفّح الكل"
 }
