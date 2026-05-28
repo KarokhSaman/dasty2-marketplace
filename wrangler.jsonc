@@ -19,8 +19,6 @@
   "secrets": {
     "required": [
       "CLERK_SECRET_KEY",
-      "CLOUDINARY_API_KEY",
-      "CLOUDINARY_API_SECRET",
       "RESEND_API_KEY"
     ]
   },
@@ -30,8 +28,6 @@
       "secrets": {
         "required": [
           "CLERK_SECRET_KEY",
-          "CLOUDINARY_API_KEY",
-          "CLOUDINARY_API_SECRET",
           "RESEND_API_KEY"
         ]
       }

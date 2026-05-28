@@ -38,7 +38,16 @@ Hosted on Cloudflare Workers — project name `dasty2mndalan` (`wrangler.jsonc`)
 
 **Secrets:** server-only values go in `.dev.vars` locally (see `.dev.vars.example`) and `wrangler secret put <NAME>` in production. Never put secrets in `wrangler.jsonc`. `VITE_*` public values continue to live in `.env`.
 
-**Compatibility flag `nodejs_compat` is required** — the cloudinary SDK in `src/routes/api/upload.ts` relies on `Buffer`. Don't drop it.
+**Compatibility flag `nodejs_compat` is required** — Worker-side dependencies rely on Node built-ins. Don't drop it.
+
+## Image storage (Cloudflare R2)
+
+Product photos and category icons live in Cloudflare R2 via the `@convex-dev/r2` component (`convex/r2.ts`, `convex/convex.config.ts`). Uploads go **directly** from the browser to R2 through a Convex-signed URL (`useUploadFile` in `lib/useImageUpload.js`) — there is no server upload route. The returned object key is composed into a permanent public URL (`VITE_R2_PUBLIC_URL` + `/` + key) and stored as a plain string in `products.photos`.
+
+- R2 credentials (`R2_ACCESS_KEY_ID`/`R2_SECRET_ACCESS_KEY`/`R2_ENDPOINT`/`R2_BUCKET`) and `R2_PUBLIC_URL` live in **Convex** env (per deployment), not in `wrangler.jsonc`.
+- `VITE_R2_PUBLIC_URL` (client, in `.env`) is the bucket's public custom domain, e.g. `https://dev-assets.dasty2mndalan.com`.
+- Browser uploads require a **CORS policy on the R2 bucket** allowing `PUT` from the app origin.
+- File type/size are validated client-side in `lib/useImageUpload.js` (the file no longer passes through a server route).
 
 Prerendering is enabled in `vite.config.ts` (`tanstackStart({ prerender: { enabled: true } })`) — build-time HTML is served as static assets; everything else is SSRed in the Worker.
 

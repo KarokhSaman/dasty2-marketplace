@@ -1,17 +1,20 @@
 import { mutation } from "./_generated/server";
 import type { Category, Condition } from "./types";
 
+const R2_BASE = (process.env.R2_PUBLIC_URL ?? "").replace(/\/$/, "");
+const icon = (name: string) => `${R2_BASE}/categories/${name}`;
+
 const PHOTOS: Record<Category, string[]> = {
-  "Strollers & Travel":     ["https://res.cloudinary.com/dqtgvfpk4/image/upload/v1779138359/strollers_mr5mhk.png"],
-  "Car Seats":              ["https://res.cloudinary.com/dqtgvfpk4/image/upload/v1779138358/carseats_lpxcga.png"],
-  "Carry Cot":              ["https://res.cloudinary.com/dqtgvfpk4/image/upload/v1779138358/Carry_Cot_y7yace.png"],
-  "Bed":                    ["https://res.cloudinary.com/dqtgvfpk4/image/upload/v1779138358/Bed_ouycjy.png"],
-  "Feeding & Nursing":      ["https://res.cloudinary.com/dqtgvfpk4/image/upload/v1779138359/feeding_aoipl9.png"],
-  "Bouncers & Swings":      ["https://res.cloudinary.com/dqtgvfpk4/image/upload/v1779141106/bouncers_wrha1c.png"],
-  "High Chairs":            ["https://res.cloudinary.com/dqtgvfpk4/image/upload/v1779138342/highchairs_erlg5h.png"],
-  "Toys & Play":            ["https://res.cloudinary.com/dqtgvfpk4/image/upload/v1779138359/toys_dziew5.png"],
-  "Electronics & Monitors": ["https://res.cloudinary.com/dqtgvfpk4/image/upload/v1779138359/electronics_qqj0mi.png"],
-  "Other":                  ["https://res.cloudinary.com/dqtgvfpk4/image/upload/v1779141105/Other_jq5gok.png"],
+  "Strollers & Travel":     [icon("strollers.png")],
+  "Car Seats":              [icon("carseats.png")],
+  "Carry Cot":              [icon("carry-cot.png")],
+  "Bed":                    [icon("bed.png")],
+  "Feeding & Nursing":      [icon("feeding.png")],
+  "Bouncers & Swings":      [icon("bouncers.png")],
+  "High Chairs":            [icon("highchairs.png")],
+  "Toys & Play":            [icon("toys.png")],
+  "Electronics & Monitors": [icon("electronics.png")],
+  "Other":                  [icon("other.png")],
 };
 
 type SampleProduct = {

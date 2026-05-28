@@ -13,6 +13,7 @@ import { api } from "@/convex/_generated/api";
 import * as m from "@/src/paraglide/messages";
 import { getLocale } from "@/src/paraglide/runtime";
 import { useSellerSession } from "@/lib/useSellerSession";
+import { useImageUpload } from "@/lib/useImageUpload";
 import { calculateProfit, formatPrice } from "@/lib/utils";
 import CustomSelect from "@/components/ui/CustomSelect";
 import { getCategoryLabel } from "@/lib/categories";
@@ -41,6 +42,7 @@ export default function EditProductPage() {
 
   const product = useQuery(api.products.getById, id ? { id } : "skip");
   const sellerUpdate = useMutation(api.products.sellerUpdate);
+  const uploadImage = useImageUpload();
 
   // Form state — initialised from product once loaded
   const [title, setTitle]             = useState("");
@@ -69,12 +71,14 @@ export default function EditProductPage() {
 
   async function uploadFile(file) {
     setUploading((n) => n + 1);
-    const fd = new FormData();
-    fd.append("file", file);
-    const res = await fetch("/api/upload", { method: "POST", body: fd });
-    const data = await res.json();
-    setUploading((n) => n - 1);
-    if (data.url) setPhotos((prev) => [...prev, data.url]);
+    try {
+      const url = await uploadImage(file);
+      setPhotos((prev) => [...prev, url]);
+    } catch {
+      // invalid type/size or upload failure — skip this file silently
+    } finally {
+      setUploading((n) => n - 1);
+    }
   }
 
   function handleFileChange(e) {

@@ -9,7 +9,7 @@ A second-hand marketplace for Iraqi Kurdistan, built with TanStack Start and dep
 - **Auth** — [Clerk](https://clerk.com) (email sign-up/sign-in for sellers)
 - **Styling** — Tailwind CSS v4
 - **i18n** — [Paraglide JS](https://inlang.com/m/gerre34r/library-inlang-paraglideJs) (English, Kurdish Sorani, Arabic)
-- **Images** — Cloudinary
+- **Images** — Cloudflare R2 (via `@convex-dev/r2`)
 - **Deployment** — [Cloudflare Workers](https://workers.cloudflare.com)
 
 ## Local Development
