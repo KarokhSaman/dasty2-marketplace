@@ -80,7 +80,7 @@ export default function LocaleSwitcher() {
         onClick={() => setOpen((v) => !v)}
         aria-label={`Language: ${current.name}`}
         aria-expanded={open}
-        className={`inline-flex items-center gap-1.5 h-8 ps-1.5 pe-2 rounded-full border transition-colors ${
+        className={`inline-flex items-center gap-1.5 h-8 ps-2 pe-3 rounded-full border transition-colors ${
           open
             ? "bg-white border-[var(--color-ember-300)]"
             : "bg-white border-[var(--color-hairline)] hover:border-[var(--color-ember-300)]"
@@ -89,7 +89,7 @@ export default function LocaleSwitcher() {
         <span className="inline-flex w-[22px] h-[22px] items-center justify-center rounded-full bg-[var(--color-cream-deep)]">
           <current.Flag size={14} />
         </span>
-        <span className="text-[10.5px] font-bold tracking-[0.08em] text-[var(--color-ink-soft)] uppercase">
+        <span className="text-[11.5px] font-bold tracking-[0.08em] text-[var(--color-ink-soft)] uppercase">
           {current.shortLabel}
         </span>
         <svg
@@ -105,7 +105,7 @@ export default function LocaleSwitcher() {
       {open && (
         <div
           role="listbox"
-          className="absolute top-full end-0 mt-2 z-50 min-w-[180px] bg-white border border-[var(--color-hairline)] rounded-2xl shadow-[0_24px_56px_-20px_rgba(26,20,17,0.30)] overflow-hidden scale-in origin-top p-1"
+          className="absolute top-full end-0 mt-2 z-50 min-w-[180px] bg-white border border-[var(--color-hairline)] rounded-2xl shadow-[0_24px_56px_-20px_rgba(11,12,15,0.30)] overflow-hidden scale-in origin-top p-1"
         >
           {LANGS.map((lang) => {
             const active = lang.code === locale

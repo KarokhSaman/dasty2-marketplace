@@ -15,16 +15,19 @@
    ────────────────────────────────────────────────────────── */
 @theme {
   --font-sans: 'GeistVF', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-display: 'Fraunces', 'GeistVF', Georgia, serif;
+  /* Display now uses the same clean grotesk as body — no serif.
+     Kept as a separate token so existing `.font-display` usages stay valid. */
+  --font-display: 'GeistVF', system-ui, -apple-system, 'Segoe UI', sans-serif;
 
-  /* Surfaces & ink */
-  --color-cream: #fefcf9;
-  --color-cream-deep: #f6efe5;
+  /* Surfaces & ink — cool-neutral, modern-app palette.
+     App background is a soft neutral; cards are pure white. */
+  --color-cream: #f4f5f7;
+  --color-cream-deep: #e9ebef;
   --color-paper: #ffffff;
-  --color-ink: #1a1411;
-  --color-ink-soft: #6b5b50;
-  --color-ink-fade: #b2a397;
-  --color-hairline: #ebe1d3;
+  --color-ink: #0b0c0f;
+  --color-ink-soft: #61656e;
+  --color-ink-fade: #9aa0a9;
+  --color-hairline: #e6e8ec;
 
   /* Brand — defined once as `--color-brand-*`.
      Both `ember-*` and Tailwind's `rose-*` scale are aliased to this scale
@@ -88,17 +91,16 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Display serif — only meaningful for Latin scripts; gets overridden for RTL */
+/* Display = clean grotesk, set tight & bold for a modern-app headline feel.
+   No serif anymore, so the same treatment works for LTR and RTL scripts. */
 .font-display {
   font-family: var(--font-display);
-  font-optical-sizing: auto;
-  letter-spacing: -0.015em;
+  font-weight: 700;
+  letter-spacing: -0.022em;
 }
 
-/* RTL: Fraunces doesn't carry Arabic/Kurdish glyphs — fall back to sans for those scripts. */
 html[dir='rtl'] .font-display {
-  font-family: var(--font-sans);
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: -0.005em;
 }
 
@@ -120,15 +122,15 @@ html[dir='rtl'] .font-display {
 /* ── Custom utilities ───────────────────────────────────── */
 @utility surface-card {
   background: var(--color-paper);
-  border-radius: 1.25rem;
+  border-radius: 1rem;
   border: 1px solid var(--color-hairline);
-  box-shadow: 0 1px 0 rgba(26, 20, 17, 0.02), 0 8px 24px -16px rgba(26, 20, 17, 0.08);
+  box-shadow: 0 1px 2px rgba(11, 12, 15, 0.04), 0 10px 30px -22px rgba(11, 12, 15, 0.18);
 }
 
 @utility surface-frost {
-  background: color-mix(in srgb, var(--color-cream) 78%, transparent);
-  backdrop-filter: saturate(180%) blur(16px);
-  -webkit-backdrop-filter: saturate(180%) blur(16px);
+  background: color-mix(in srgb, var(--color-paper) 72%, transparent);
+  backdrop-filter: saturate(140%) blur(20px);
+  -webkit-backdrop-filter: saturate(140%) blur(20px);
 }
 
 @utility chip-base {
@@ -184,6 +186,31 @@ html[dir='rtl'] .font-display {
   animation: pulse-soft 2.4s ease-in-out infinite;
 }
 
+/* Bottom sheet + modal motion */
+@keyframes sheet-up {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+.sheet-up {
+  animation: sheet-up 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes backdrop-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.backdrop-fade {
+  animation: backdrop-fade 220ms ease both;
+}
+
+@keyframes dialog-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.dialog-in {
+  animation: dialog-in 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 /* Stagger helper — used on grid children */
 .stagger > * { animation: fade-up 460ms cubic-bezier(0.2, 0.7, 0.2, 1) both; }
 .stagger > *:nth-child(1)  { animation-delay: 30ms; }
@@ -196,7 +223,14 @@ html[dir='rtl'] .font-display {
 .stagger > *:nth-child(8)  { animation-delay: 310ms; }
 
 @media (prefers-reduced-motion: reduce) {
-  .shimmer, .fade-up, .scale-in, .pulse-soft, .stagger > * { animation: none !important; }
+  .shimmer, .fade-up, .scale-in, .pulse-soft, .stagger > *,
+  .sheet-up, .backdrop-fade, .dialog-in { animation: none !important; }
+}
+
+/* ── Tap feedback — snappy press for buttons/cards/links ── */
+@utility tap {
+  transition: transform 140ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  &:active { transform: scale(0.97); }
 }
 
 /* ── Scroll edge fade (used by category bar) ─────────────── */
@@ -215,4 +249,43 @@ html[dir='rtl'] .font-display {
     black calc(100% - 1.25rem),
     transparent 100%
   );
+}
+
+/* ── Route transitions (View Transitions API) ─────────────
+   Enabled via the router's defaultViewTransition. Pure progressive
+   enhancement — a no-op on browsers without support and on the server.
+
+   Opening a product from the grid is a SHARED-ELEMENT morph: the tapped
+   photo (ProductCard) and the detail hero share `view-transition-name`
+   `vt-<productId>`, so the image smoothly expands into place. Everything
+   else does a quick, low-ghost cross-fade. */
+@media (prefers-reduced-motion: no-preference) {
+  /* The shared photo (and any matched element) — smooth, eased morph. */
+  ::view-transition-group(*) {
+    animation-duration: 320ms;
+    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  /* Page body: fade the old out fast, ease the new in — minimal overlap. */
+  ::view-transition-old(root) {
+    animation: vt-fade-out 150ms ease both;
+  }
+  ::view-transition-new(root) {
+    animation: vt-fade-in 230ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+}
+
+@keyframes vt-fade-out {
+  to { opacity: 0; }
+}
+@keyframes vt-fade-in {
+  from { opacity: 0; }
+}
+
+/* Reduced-motion: snap instantly, no transition animations at all. */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
 }

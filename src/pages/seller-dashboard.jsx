@@ -15,6 +15,7 @@ import { getLocale } from "@/src/paraglide/runtime";
 import { useSellerSession } from "@/lib/useSellerSession";
 import { calculateProfit, formatPrice } from "@/lib/utils";
 import CustomSelect from "@/components/ui/CustomSelect";
+import { BottomSheet, useIsDesktop } from "@/components/ui";
 import { getCategoryLabel } from "@/lib/categories";
 import { Link } from "@tanstack/react-router";
 
@@ -53,15 +54,15 @@ function StatsPanel({ stats }) {
       </div>
 
       {/* ── Secondary metrics strip ── */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm flex divide-x divide-gray-100 overflow-hidden">
+      <div className="bg-white rounded-2xl border border-[var(--color-hairline)] shadow-sm flex divide-x divide-[var(--color-hairline)] overflow-hidden">
         {[
-          { label: m.statTotal(), value: stats.total,    color: "text-gray-800"   },
+          { label: m.statTotal(), value: stats.total,    color: "text-[var(--color-ink)]"   },
           { label: m.statSold(),  value: stats.sold,     color: "text-blue-600"   },
           { label: m.statPaid(),  value: stats.paid,     color: "text-purple-600" },
         ].map((item, i) => (
           <div key={i} className="flex-1 flex flex-col items-center py-4 gap-0.5">
             <span className={`text-2xl font-bold ${item.color}`}>{item.value}</span>
-            <span className="text-[11px] text-gray-400 font-medium">{item.label}</span>
+            <span className="text-[11px] text-[var(--color-ink-fade)] font-medium">{item.label}</span>
           </div>
         ))}
       </div>
@@ -69,76 +70,89 @@ function StatsPanel({ stats }) {
   );
 }
 
-// ── Kebab menu ─────────────────────────────────────────────
+// ── Per-product actions — dropdown on desktop, action sheet on mobile ──
 function ProductMenu({ product, onEdit, onRepost, onDelete }) {
   const [open, setOpen] = useState(false);
   const [confirmDel, setConfirmDel] = useState(false);
+  const isDesktop = useIsDesktop();
   const ref = useRef();
 
   useEffect(() => {
+    if (!open || !isDesktop) return;
     function handler(e) {
       if (ref.current && !ref.current.contains(e.target)) { setOpen(false); setConfirmDel(false); }
     }
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
-  }, []);
+  }, [open, isDesktop]);
 
+  const close = () => { setOpen(false); setConfirmDel(false); };
   const canEdit   = EDITABLE_STATUSES.includes(product.status);
   const canDelete = ["pending","rejected"].includes(product.status);
 
+  const rowCls = "flex items-center gap-3 w-full px-4 py-3 sm:py-2.5 text-[15px] sm:text-sm text-start transition-colors";
+
+  const actions = confirmDel ? (
+    <div className="p-4 sm:p-3">
+      <p className="text-[13px] text-red-600 font-medium mb-3">{m.sellerDeleteConfirm()}</p>
+      <div className="flex gap-2">
+        <button onClick={() => { onDelete(); close(); }}
+          className="flex-1 text-sm bg-red-500 hover:bg-red-600 text-white font-semibold py-2.5 rounded-xl transition-colors">{m.adminDelete()}</button>
+        <button onClick={() => setConfirmDel(false)}
+          className="flex-1 text-sm bg-[var(--color-cream-deep)] hover:bg-[var(--color-hairline)] text-[var(--color-ink)] py-2.5 rounded-xl transition-colors">{m.adminCancel()}</button>
+      </div>
+    </div>
+  ) : (
+    <div className="py-1">
+      {canEdit && (
+        <button onClick={() => { onEdit(); close(); }} className={`${rowCls} text-[var(--color-ink)] hover:bg-[var(--color-cream)]`}>
+          <svg className="w-5 h-5 text-[var(--color-ink-fade)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+          </svg>
+          {m.editBtn()}
+        </button>
+      )}
+      <button onClick={() => { onRepost(); close(); }} className={`${rowCls} text-[var(--color-ink)] hover:bg-[var(--color-cream)]`}>
+        <svg className="w-5 h-5 text-[var(--color-ink-fade)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+        </svg>
+        {m.repostBtn()}
+      </button>
+      {canDelete && (
+        <>
+          <div className="border-t border-[var(--color-hairline)] mx-2 my-1"/>
+          <button onClick={() => setConfirmDel(true)} className={`${rowCls} text-red-500 hover:bg-red-50`}>
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+            </svg>
+            {m.adminDelete()}
+          </button>
+        </>
+      )}
+    </div>
+  );
+
   return (
     <div ref={ref} className="relative shrink-0">
-      <button onClick={() => { setOpen(v => !v); setConfirmDel(false); }}
-        className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+      <button onClick={() => { setOpen(v => !v); setConfirmDel(false); }} aria-label="Actions"
+        className="p-1.5 text-[var(--color-ink-fade)] hover:text-[var(--color-ink)] hover:bg-[var(--color-cream-deep)] rounded-lg transition-colors">
         <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
           <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
         </svg>
       </button>
-      {open && (
-        <div className="absolute end-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-20 overflow-hidden min-w-[130px]">
-          {confirmDel ? (
-            <div className="p-3">
-              <p className="text-xs text-red-600 font-medium mb-2">{m.sellerDeleteConfirm()}</p>
-              <div className="flex gap-2">
-                <button onClick={() => { onDelete(); setOpen(false); setConfirmDel(false); }}
-                  className="flex-1 text-xs bg-red-500 hover:bg-red-600 text-white font-semibold py-1.5 rounded-lg transition-colors">{m.adminDelete()}</button>
-                <button onClick={() => setConfirmDel(false)}
-                  className="flex-1 text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 py-1.5 rounded-lg transition-colors">{m.adminCancel()}</button>
-              </div>
-            </div>
-          ) : (
-            <>
-              {canEdit && (
-                <button onClick={() => { onEdit(); setOpen(false); }}
-                  className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors text-start">
-                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                  </svg>
-                  {m.editBtn()}
-                </button>
-              )}
-              <button onClick={() => { onRepost(); setOpen(false); }}
-                className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors text-start">
-                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                </svg>
-                {m.repostBtn()}
-              </button>
-              {canDelete && (
-                <>
-                  <div className="border-t border-gray-100 mx-2"/>
-                  <button onClick={() => setConfirmDel(true)}
-                    className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors text-start">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                    </svg>
-                    {m.adminDelete()}
-                  </button>
-                </>
-              )}
-            </>
-          )}
+
+      {/* Desktop: anchored dropdown */}
+      {open && isDesktop && (
+        <div className="absolute end-0 top-full mt-1 bg-white border border-[var(--color-hairline)] rounded-xl shadow-[0_18px_44px_-20px_rgba(11,12,15,0.28)] z-20 overflow-hidden min-w-[150px]">
+          {actions}
         </div>
+      )}
+
+      {/* Mobile: action sheet */}
+      {!isDesktop && (
+        <BottomSheet open={open} onClose={close} title={product.title}>
+          {actions}
+        </BottomSheet>
       )}
     </div>
   );
@@ -170,11 +184,11 @@ export default function SellerDashboard() {
   if (loading || !seller || products === undefined) {
     return (
       <div className="space-y-5 animate-pulse">
-        <div className="h-28 bg-gray-200 rounded-2xl"/>
+        <div className="h-28 bg-[var(--color-cream-deep)] rounded-2xl"/>
         <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
-          {Array.from({length:5}).map((_,i) => <div key={i} className="h-20 bg-gray-200 rounded-2xl"/>)}
+          {Array.from({length:5}).map((_,i) => <div key={i} className="h-20 bg-[var(--color-cream-deep)] rounded-2xl"/>)}
         </div>
-        <div className="h-48 bg-gray-200 rounded-2xl"/>
+        <div className="h-48 bg-[var(--color-cream-deep)] rounded-2xl"/>
       </div>
     );
   }
@@ -231,10 +245,10 @@ export default function SellerDashboard() {
       <StatsPanel stats={stats} />
 
       {/* ── My Products — sticky below header ──────────── */}
-      <div className="sticky top-14 z-10 -mx-4 px-4 bg-gray-50 pb-2 shadow-[0_4px_8px_-4px_rgba(0,0,0,0.06)]">
+      <div className="sticky top-14 z-10 -mx-4 px-4 bg-[var(--color-cream)] pb-2 shadow-[0_4px_8px_-4px_rgba(0,0,0,0.06)]">
         <div className="flex items-center justify-between pt-3 mb-3">
-          <h2 className="text-base font-bold text-gray-800">{m.sellerMyProducts()}</h2>
-          <span className="text-xs text-gray-400">{products.length} {m.statTotal().toLowerCase()}</span>
+          <h2 className="text-base font-bold text-[var(--color-ink)]">{m.sellerMyProducts()}</h2>
+          <span className="text-xs text-[var(--color-ink-fade)]">{products.length} {m.statTotal().toLowerCase()}</span>
         </div>
 
         {/* Category filter */}
@@ -243,7 +257,7 @@ export default function SellerDashboard() {
             {["all", ...sellerCategories].map((cat) => (
               <button key={cat} onClick={() => setCategoryFilter(cat)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap border transition-colors shrink-0 ${
-                  categoryFilter === cat ? "bg-rose-600 text-white border-rose-600" : "bg-white text-gray-600 border-gray-200 hover:border-rose-300"
+                  categoryFilter === cat ? "bg-rose-600 text-white border-rose-600" : "bg-white text-[var(--color-ink-soft)] border-[var(--color-hairline)] hover:border-rose-300"
                 }`}>{cat === "all" ? m.categoryAll() : getCategoryLabel(cat, locale)}</button>
             ))}
           </div>
@@ -252,42 +266,42 @@ export default function SellerDashboard() {
 
       {/* Empty */}
       {products.length === 0 && (
-        <div className="mt-4 flex flex-col items-center justify-center py-16 bg-white rounded-2xl border border-dashed border-gray-200">
-          <svg className="w-12 h-12 text-gray-200 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="mt-4 flex flex-col items-center justify-center py-16 bg-white rounded-2xl border border-dashed border-[var(--color-hairline)]">
+          <svg className="w-12 h-12 text-[var(--color-ink-fade)] mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10"/>
           </svg>
-          <p className="text-gray-400 font-medium text-sm">{m.noSellerProducts()}</p>
+          <p className="text-[var(--color-ink-fade)] font-medium text-sm">{m.noSellerProducts()}</p>
           <Link to="/seller/add" className="mt-3 text-xs font-semibold text-rose-500 hover:underline">{m.addFirstProduct()} →</Link>
         </div>
       )}
 
       {products.length > 0 && visibleProducts.length === 0 && (
-        <p className="text-sm text-gray-400 text-center py-10">{m.noProducts()}</p>
+        <p className="text-sm text-[var(--color-ink-fade)] text-center py-10">{m.noProducts()}</p>
       )}
 
       {/* Product list */}
       {visibleProducts.length > 0 && (
         <div className="mt-4 space-y-2">
           {visibleProducts.map((product) => (
-            <div key={product._id} className={`bg-white rounded-xl border p-3.5 hover:shadow-sm transition-all ${
-              product.status === "rejected" ? "border-red-100" : "border-gray-100 hover:border-rose-100"
+            <div key={product._id} className={`bg-white rounded-2xl border p-3.5 hover:shadow-[0_10px_30px_-22px_rgba(11,12,15,0.25)] transition-all ${
+              product.status === "rejected" ? "border-red-100" : "border-[var(--color-hairline)] hover:border-[var(--color-ember-200)]"
             }`}>
               <div className="flex items-center gap-3">
-                <div className="w-14 h-14 rounded-xl overflow-hidden bg-gray-100 shrink-0">
+                <div className="w-14 h-14 rounded-xl overflow-hidden bg-[var(--color-cream-deep)] shrink-0">
                   {product.photos?.[0]
                     ? <img src={product.photos[0]} alt={product.title} className="w-full h-full object-cover"/>
-                    : <div className="w-full h-full flex items-center justify-center"><svg className="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></div>
+                    : <div className="w-full h-full flex items-center justify-center"><svg className="w-5 h-5 text-[var(--color-ink-fade)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></div>
                   }
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-800 truncate">{product.title}</p>
+                  <p className="text-sm font-semibold text-[var(--color-ink)] truncate">{product.title}</p>
                   <div className="flex items-center gap-2 mt-0.5 min-w-0">
-                    <span className="text-xs text-gray-400 truncate min-w-0">{getCategoryLabel(product.category, locale)}</span>
+                    <span className="text-xs text-[var(--color-ink-fade)] truncate min-w-0">{getCategoryLabel(product.category, locale)}</span>
                     {product.seq && <span className="text-xs font-mono text-rose-400 bg-rose-50 px-1.5 py-0.5 rounded shrink-0">{product.seq}</span>}
                   </div>
-                  <p className="text-xs font-bold text-rose-600 mt-0.5">{formatPrice(product.price)}</p>
+                  <p className="text-[13px] font-bold text-[var(--color-ink)] mt-0.5">{formatPrice(product.price)}</p>
                 </div>
-                <span className={`text-xs px-2.5 py-1 rounded-full font-semibold shrink-0 ${STATUS_STYLE[product.status] ?? "bg-gray-100 text-gray-500"}`}>
+                <span className={`text-xs px-2.5 py-1 rounded-full font-semibold shrink-0 ${STATUS_STYLE[product.status] ?? "bg-[var(--color-cream-deep)] text-[var(--color-ink-soft)]"}`}>
                   {statusLabel[product.status] ?? product.status}
                 </span>
                 <ProductMenu product={product}

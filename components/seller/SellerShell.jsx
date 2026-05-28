@@ -7,7 +7,36 @@ import { api } from "@/convex/_generated/api";
 import * as m from "@/src/paraglide/messages";
 import LocaleSwitcher from "@/src/components/LocaleSwitcher";
 import NotificationPanel from "@/components/ui/NotificationPanel";
+import { Button } from "@/components/ui";
 import { useGlobalSellerSession } from "@/lib/SellerSessionContext";
+
+// ── Wordmark — clean sans, matches the buyer header ───────
+function Wordmark() {
+  return (
+    <Link
+      to="/seller"
+      dir="ltr"
+      aria-label="Dasty2 Mndalan"
+      className="group inline-flex items-baseline gap-2 shrink-0 select-none"
+    >
+      <span className="font-display text-[22px] leading-none text-[var(--color-ember-600)]">
+        Dasty<span className="font-medium">2</span>
+      </span>
+      <span aria-hidden className="self-center w-1 h-1 rounded-full bg-[var(--color-ember-300)]/80" />
+      <span className="text-[10.5px] font-semibold text-[var(--color-ink-soft)] tracking-[0.22em] uppercase">
+        Mndalan
+      </span>
+    </Link>
+  );
+}
+
+function PlusIcon({ className = "w-3.5 h-3.5" }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+    </svg>
+  );
+}
 
 export default function SellerShell({ children }) {
   const pathname = usePathname();
@@ -28,14 +57,16 @@ export default function SellerShell({ children }) {
   }, [isSignedIn]);
 
   const notifications = useQuery(api.notifications.getBySeller, sellerId ? { sellerId } : "skip");
-  const unread = (notifications ?? []).filter(n => !n.read).length;
+  const unread = (notifications ?? []).filter((n) => !n.read).length;
 
-  const isHome    = pathname === "/seller";
+  const isHomeTab = pathname === "/";
+  const isDash = pathname === "/seller";
   const isAccount = pathname === "/seller/account";
   const lastHomeTap = useRef(0);
+
   const handleHomeTap = useCallback((e) => {
     if (pathname === "/") {
-      e.preventDefault(); // never re-navigate when already on home
+      e.preventDefault();
       const now = Date.now();
       if (now - lastHomeTap.current < 400) {
         window.scrollTo({ top: 0, behavior: "smooth" });
@@ -44,49 +75,62 @@ export default function SellerShell({ children }) {
     }
   }, [pathname]);
 
+  const navLink = "hidden sm:flex items-center gap-1.5 text-sm font-medium px-3.5 py-2 rounded-full transition-all duration-200";
+  const tab = (active) =>
+    `flex flex-col items-center justify-center gap-0.5 px-4 py-2 rounded-2xl transition-all duration-200 active:scale-95 ${
+      active ? "text-[var(--color-ember-600)] bg-[var(--color-ember-50)]" : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]"
+    }`;
+
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50 pb-16 sm:pb-0">
+    <div className="min-h-screen flex flex-col">
+      {/* Atmospheric backdrop */}
+      <div
+        aria-hidden
+        className="fixed inset-x-0 top-0 h-[320px] pointer-events-none -z-10"
+        style={{
+          background:
+            "radial-gradient(120% 80% at 0% 0%, rgba(237,0,64,0.06) 0%, rgba(244,245,247,0) 58%)," +
+            "radial-gradient(90% 70% at 100% 0%, rgba(11,12,15,0.04) 0%, rgba(244,245,247,0) 55%)",
+        }}
+      />
 
       {/* ── Top bar ── */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-20 shadow-sm">
-        <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
-
-          {/* Logo + desktop nav */}
+      <header className="sticky top-0 z-40 bg-[var(--color-cream)] border-b border-[var(--color-hairline)] shadow-[0_1px_0_rgba(11,12,15,0.02)]">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Link to="/seller" dir="ltr" className="flex items-center gap-1.5 shrink-0">
-              <span className="text-lg font-bold text-rose-600 tracking-tight">Dasty2</span>
-              <span className="text-lg font-medium text-gray-600">Mndalan</span>
-            </Link>
-            <Link to="/"
-              className="hidden sm:flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg ms-1 text-gray-600 hover:bg-gray-50 transition-colors">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
-              </svg>
-              {m.navHome()}
-            </Link>
-            <Link to="/seller"
-              className={`hidden sm:block text-sm font-medium px-3 py-1.5 rounded-lg transition-colors ${isHome ? "bg-rose-50 text-rose-600" : "text-gray-600 hover:bg-gray-50"}`}>
-              {m.sellerDashboard()}
-            </Link>
-            <Link to="/seller/account"
-              className={`hidden sm:block text-sm font-medium px-3 py-1.5 rounded-lg transition-colors ${isAccount ? "bg-rose-50 text-rose-600" : "text-gray-600 hover:bg-gray-50"}`}>
-              {m.navAccount()}
-            </Link>
+            <Wordmark />
+            <div className="hidden sm:flex items-center gap-1 ms-2 ps-2 border-s border-[var(--color-hairline)]">
+              <Link to="/" className={`${navLink} text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] hover:bg-white/60`}>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                </svg>
+                {m.navHome()}
+              </Link>
+              <Link to="/seller" className={`${navLink} ${isDash ? "bg-[var(--color-ember-50)] text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] hover:bg-white/60"}`}>
+                {m.sellerDashboard()}
+              </Link>
+              <Link to="/seller/account" className={`${navLink} ${isAccount ? "bg-[var(--color-ember-50)] text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] hover:bg-white/60"}`}>
+                {m.navAccount()}
+              </Link>
+            </div>
           </div>
 
-          {/* Right-side actions */}
           <div className="flex items-center gap-2">
             <LocaleSwitcher />
 
             {/* Notification bell */}
             <div ref={bellRef} className="relative">
-              <button onClick={() => setShowNotifs(v => !v)}
-                className="relative p-2 text-gray-500 hover:text-rose-600 transition-colors">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+              <button
+                onClick={() => setShowNotifs((v) => !v)}
+                aria-label="Notifications"
+                aria-expanded={showNotifs}
+                className="relative inline-flex items-center justify-center w-8 h-8 rounded-full bg-white border border-[var(--color-hairline)] text-[var(--color-ink-soft)] hover:text-[var(--color-ember-600)] hover:border-[var(--color-ember-300)] transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                 </svg>
                 {unread > 0 && (
-                  <span className="absolute top-1 end-1 min-w-[1.1rem] h-[1.1rem] text-[10px] font-bold bg-rose-500 text-white rounded-full flex items-center justify-center">
+                  <span className="absolute -top-0.5 -end-0.5 min-w-[1rem] h-4 px-1 text-[9.5px] font-bold bg-[var(--color-ember-500)] text-white rounded-full flex items-center justify-center ring-2 ring-[var(--color-cream)]">
                     {unread > 9 ? "9+" : unread}
                   </span>
                 )}
@@ -102,45 +146,62 @@ export default function SellerShell({ children }) {
               )}
             </div>
 
-            <Link to="/seller/add"
-              className="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition-colors shrink-0">
-              + {m.sellNow()}
-            </Link>
-
+            <Button
+              to="/seller/add"
+              variant="ink"
+              size="sm"
+              className="hidden sm:inline-flex h-8 ps-2.5 pe-3 text-[11.5px] font-bold tracking-wide gap-1"
+              leadingIcon={<PlusIcon className="w-3 h-3" />}
+            >
+              {m.sellNow()}
+            </Button>
           </div>
         </div>
       </header>
 
       {/* ── Main content ── */}
-      <main className="flex-1 max-w-6xl mx-auto w-full px-4 py-6">
+      <main className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 pt-3 pb-10">
         {children}
       </main>
 
-      {/* ── Mobile bottom nav — 3 tabs ── */}
-      <nav className="sm:hidden fixed bottom-0 start-0 end-0 bg-white border-t border-gray-100 z-20 flex">
-        {/* Home */}
-        <Link to="/" onClick={handleHomeTap} className="flex-1 flex flex-col items-center py-2.5 gap-0.5 text-gray-400 hover:text-rose-600 transition-colors">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
-          </svg>
-          <span className="text-[10px] font-semibold">Home</span>
-        </Link>
+      {/* ── Mobile bottom nav — Home / Dashboard / FAB(Sell) / Account ── */}
+      <div className="sm:hidden h-24" aria-hidden />
+      <nav className="sm:hidden fixed bottom-0 inset-x-0 z-30 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 pointer-events-none">
+        <div className="pointer-events-auto mx-auto max-w-md surface-frost rounded-[1.75rem] border border-[var(--color-hairline)] shadow-[0_18px_44px_-20px_rgba(11,12,15,0.22)] px-2 py-1.5 flex items-stretch gap-1 relative">
+          <Link to="/" onClick={handleHomeTap} className={`flex-1 ${tab(isHomeTab)}`}>
+            <svg className="w-5 h-5" fill={isHomeTab ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            </svg>
+            <span className="text-[10px] font-semibold tracking-wide">{m.navHome()}</span>
+          </Link>
 
-        {/* Dashboard */}
-        <Link to="/seller" className={`flex-1 flex flex-col items-center py-2.5 gap-0.5 transition-colors ${isHome ? "text-rose-600" : "text-gray-400 hover:text-rose-600"}`}>
-          <svg className="w-5 h-5" fill={isHome ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
-          </svg>
-          <span className="text-[10px] font-semibold">Dashboard</span>
-        </Link>
+          <Link to="/seller" className={`flex-1 ${tab(isDash)}`}>
+            <svg className="w-5 h-5" fill={isDash ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+            </svg>
+            <span className="text-[10px] font-semibold tracking-wide">{m.sellerDashboard()}</span>
+          </Link>
 
-        {/* Account */}
-        <Link to="/seller/account" className={`flex-1 flex flex-col items-center py-2.5 gap-0.5 transition-colors ${isAccount ? "text-rose-600" : "text-gray-400 hover:text-rose-600"}`}>
-          <svg className="w-5 h-5" fill={isAccount ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-          </svg>
-          <span className="text-[10px] font-semibold">Account</span>
-        </Link>
+          {/* FAB — Sell */}
+          <Link
+            to="/seller/add"
+            className="flex-shrink-0 -mt-7 w-14 h-14 rounded-full bg-gradient-to-br from-[var(--color-ember-500)] to-[var(--color-ember-600)] text-white shadow-[0_14px_28px_-10px_rgba(237,0,64,0.55)] inline-flex items-center justify-center ring-4 ring-[var(--color-cream)] transition-transform active:scale-95 hover:scale-105"
+            aria-label={m.sellNow()}
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.6} d="M12 4v16m8-8H4" />
+            </svg>
+          </Link>
+
+          <Link to="/seller/account" className={`flex-1 ${tab(isAccount)}`}>
+            <svg className="w-5 h-5" fill={isAccount ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+            <span className="text-[10px] font-semibold tracking-wide">{m.navAccount()}</span>
+          </Link>
+
+          <div className="w-0" />
+        </div>
       </nav>
     </div>
   );

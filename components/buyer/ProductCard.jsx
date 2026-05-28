@@ -6,6 +6,11 @@ import { getCityLabel } from "@/lib/cities";
 import { setProductCache } from "@/src/lib/productCache";
 import { Chip, PriceTag } from "@/components/ui";
 
+// The product currently being opened/returned-to. Only this card gets a
+// `view-transition-name`, so just ONE photo morphs into the detail hero — the
+// other cards move with the page instead of each animating on their own.
+let morphProductId = null;
+
 function ImagePlaceholder() {
   return (
     <div className="w-full h-full flex items-center justify-center">
@@ -45,9 +50,19 @@ export default function ProductCard({ product, onSave }) {
   const categoryLabel = getCategoryLabel(product.category, locale);
   setProductCache(product);
 
+  // Tag only the tapped card for the shared-element morph, synchronously,
+  // just before navigating — so the photo expands into the detail hero while
+  // the rest of the grid stays part of the page transition.
+  const handleClick = (e) => {
+    morphProductId = product._id;
+    const img = e.currentTarget.querySelector("img");
+    if (img) img.style.viewTransitionName = `vt-${product._id}`;
+    onSave?.();
+  };
+
   return (
-    <Link to={`/products/${product._id}`} className="group block" onClick={onSave}>
-      <article className="bg-paper rounded-2xl overflow-hidden border border-[var(--color-hairline)] transition-all duration-300 hover:border-[var(--color-ember-200)] hover:shadow-[0_18px_36px_-22px_rgba(26,20,17,0.28)] hover:-translate-y-0.5">
+    <Link to={`/products/${product._id}`} className="group block" onClick={handleClick}>
+      <article className="bg-paper rounded-2xl overflow-hidden border border-[var(--color-hairline)] transition-all duration-300 hover:border-[var(--color-ember-200)] hover:shadow-[0_18px_36px_-22px_rgba(11,12,15,0.22)] hover:-translate-y-0.5 active:scale-[0.98]">
         {/* Image */}
         <div className="aspect-[4/5] relative overflow-hidden bg-[var(--color-cream-deep)]">
           {photo ? (
@@ -56,6 +71,7 @@ export default function ProductCard({ product, onSave }) {
               alt={product.title}
               loading="lazy"
               className="w-full h-full object-cover group-hover:scale-[1.05] transition-transform duration-[500ms] ease-out"
+              style={product._id === morphProductId ? { viewTransitionName: `vt-${product._id}` } : undefined}
             />
           ) : <ImagePlaceholder />}
 

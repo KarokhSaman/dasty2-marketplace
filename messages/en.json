@@ -255,5 +255,12 @@
   "heroSubtitle": "Browse trusted baby finds from families across Erbil.",
   "filtersLabel": "Filters",
   "resultsCount": "{count} items",
-  "browseAll": "Browse all"
+  "browseAll": "Browse all",
+  "aboutItem": "About this item",
+  "shareLabel": "Share",
+  "linkCopied": "Copied",
+  "listedBy": "Listed by",
+  "postedLabel": "Posted",
+  "viewsCount": "{count} views",
+  "safetyNote": "Inspect the item and meet in a public place before paying."
 }

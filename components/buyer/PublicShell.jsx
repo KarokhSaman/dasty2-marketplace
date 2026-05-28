@@ -182,8 +182,10 @@ function SmartBottomNav() {
   const isDash    = pathname === "/seller";
 
   const tab = (active) =>
-    `flex flex-col items-center justify-center gap-0.5 px-4 py-2 rounded-2xl transition-all duration-200 ${
-      active ? "text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]"
+    `flex flex-col items-center justify-center gap-0.5 px-4 py-2 rounded-2xl transition-all duration-200 active:scale-95 ${
+      active
+        ? "text-[var(--color-ember-600)] bg-[var(--color-ember-50)]"
+        : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]"
     }`;
 
   // Logged-in sellers: Home / Dashboard / FAB(Sell) / Account
@@ -192,7 +194,7 @@ function SmartBottomNav() {
       <>
         <div className="sm:hidden h-24" aria-hidden />
         <nav className="sm:hidden fixed bottom-0 inset-x-0 z-30 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 pointer-events-none">
-          <div className="pointer-events-auto mx-auto max-w-md surface-frost rounded-[1.75rem] border border-[var(--color-hairline)] shadow-[0_18px_44px_-20px_rgba(26,20,17,0.28)] px-2 py-1.5 flex items-stretch gap-1 relative">
+          <div className="pointer-events-auto mx-auto max-w-md surface-frost rounded-[1.75rem] border border-[var(--color-hairline)] shadow-[0_18px_44px_-20px_rgba(11,12,15,0.22)] px-2 py-1.5 flex items-stretch gap-1 relative">
             <Link to="/" onClick={handleHomeTap} className={`flex-1 ${tab(isHome)}`}>
               <svg className="w-5 h-5" fill={isHome ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
@@ -238,7 +240,7 @@ function SmartBottomNav() {
     <>
       <div className="sm:hidden h-24" aria-hidden />
       <nav className="sm:hidden fixed bottom-0 inset-x-0 z-30 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 pointer-events-none">
-        <div className="pointer-events-auto mx-auto max-w-md surface-frost rounded-[1.75rem] border border-[var(--color-hairline)] shadow-[0_18px_44px_-20px_rgba(26,20,17,0.28)] px-2 py-1.5 flex items-stretch gap-1 relative">
+        <div className="pointer-events-auto mx-auto max-w-md surface-frost rounded-[1.75rem] border border-[var(--color-hairline)] shadow-[0_18px_44px_-20px_rgba(11,12,15,0.22)] px-2 py-1.5 flex items-stretch gap-1 relative">
           <Link to="/" onClick={handleHomeTap} className={`flex-1 ${tab(isHome)}`}>
             <svg className="w-5 h-5" fill={isHome ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
@@ -278,15 +280,15 @@ export default function PublicShell({ children }) {
       {/* Atmospheric backdrop — sits behind everything */}
       <div
         aria-hidden
-        className="fixed inset-x-0 top-0 h-[360px] pointer-events-none -z-10"
+        className="fixed inset-x-0 top-0 h-[320px] pointer-events-none -z-10"
         style={{
           background:
-            "radial-gradient(120% 80% at 0% 0%, rgba(237,0,64,0.14) 0%, rgba(250,245,239,0) 60%)," +
-            "radial-gradient(80% 60% at 100% 0%, rgba(24,150,107,0.08) 0%, rgba(250,245,239,0) 55%)",
+            "radial-gradient(120% 80% at 0% 0%, rgba(237,0,64,0.06) 0%, rgba(244,245,247,0) 58%)," +
+            "radial-gradient(90% 70% at 100% 0%, rgba(11,12,15,0.04) 0%, rgba(244,245,247,0) 55%)",
         }}
       />
 
-      <header className="sticky top-0 z-40 bg-[var(--color-cream)] border-b border-[var(--color-hairline)] shadow-[0_1px_0_rgba(26,20,17,0.02)]">
+      <header className="sticky top-0 z-40 bg-[var(--color-cream)] border-b border-[var(--color-hairline)] shadow-[0_1px_0_rgba(11,12,15,0.03)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <SellerDesktopNav />
           <HeaderActions />

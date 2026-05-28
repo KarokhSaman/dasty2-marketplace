@@ -1,7 +1,8 @@
+import { useState } from "react";
 import * as m from "@/src/paraglide/messages";
 import { getLocale } from "@/src/paraglide/runtime";
 import { getCityLabel } from "@/lib/cities";
-import { Popover } from "@/components/ui";
+import { BottomSheet } from "@/components/ui";
 
 function PinIcon({ className = "w-4 h-4" }) {
   return (
@@ -14,18 +15,19 @@ function PinIcon({ className = "w-4 h-4" }) {
 
 function CheckIcon() {
   return (
-    <svg className="w-3.5 h-3.5 text-[var(--color-ember-500)] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg className="w-4 h-4 text-[var(--color-ember-500)] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
     </svg>
   );
 }
 
 /**
- * Location button + city picker popover. Always visible next to the search bar.
- * Shows the current city label inside the trigger.
+ * Location button + city picker. Opens a bottom sheet on mobile and a centered
+ * dialog on desktop (via the shared BottomSheet primitive).
  */
 export default function LocationPicker({ city, setCity, availableCities }) {
   const locale = getLocale();
+  const [open, setOpen] = useState(false);
   const currentLabel = city === "all" ? m.allCities() : (getCityLabel(city, locale) ?? city);
   const isActive = city !== "all";
 
@@ -35,39 +37,35 @@ export default function LocationPicker({ city, setCity, availableCities }) {
   ];
 
   return (
-    <Popover
-      align="end"
-      width="w-[200px] sm:w-[220px]"
-      trigger={({ open, toggle }) => (
-        <button
-          type="button"
-          onClick={toggle}
-          className={`shrink-0 h-10 inline-flex items-center gap-1.5 px-3 rounded-xl border text-[13px] font-semibold whitespace-nowrap transition-colors ${
-            isActive || open
-              ? "border-[var(--color-ember-500)] bg-[var(--color-ember-500)] text-white"
-              : "border-[var(--color-hairline)] bg-white text-[var(--color-ink)] hover:border-[var(--color-ember-300)]"
-          }`}
-        >
-          <PinIcon className="w-4 h-4 shrink-0" />
-          <span className="max-w-[6rem] truncate">{currentLabel}</span>
-          <svg className={`w-3 h-3 shrink-0 transition-transform duration-200 ${open ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
-      )}
-    >
-      {({ close }) => (
-        <div className="max-h-[60vh] overflow-y-auto py-1">
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className={`shrink-0 h-10 inline-flex items-center gap-1.5 px-3 rounded-xl border text-[13px] font-semibold whitespace-nowrap transition-colors tap ${
+          isActive || open
+            ? "border-[var(--color-ember-500)] bg-[var(--color-ember-500)] text-white"
+            : "border-[var(--color-hairline)] bg-white text-[var(--color-ink)] hover:border-[var(--color-ember-300)]"
+        }`}
+      >
+        <PinIcon className="w-4 h-4 shrink-0" />
+        <span className="max-w-[6rem] truncate">{currentLabel}</span>
+        <svg className="w-3 h-3 shrink-0 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      <BottomSheet open={open} onClose={() => setOpen(false)} title={m.registerCityLabel()}>
+        <div className="py-1.5">
           {options.map((opt) => {
             const active = city === opt.value;
             return (
               <button
                 key={opt.value}
                 type="button"
-                onClick={() => { setCity(opt.value); close(); }}
-                className={`flex items-center justify-between gap-3 w-full px-4 py-2.5 text-[13.5px] text-start transition-colors ${
+                onClick={() => { setCity(opt.value); setOpen(false); }}
+                className={`flex items-center justify-between gap-3 w-full px-5 py-3 text-[15px] text-start transition-colors ${
                   active
-                    ? "bg-[var(--color-ember-50)] text-[var(--color-ember-700)] font-semibold"
+                    ? "text-[var(--color-ember-700)] font-semibold"
                     : "text-[var(--color-ink)] hover:bg-[var(--color-cream)]"
                 }`}
               >
@@ -77,7 +75,7 @@ export default function LocationPicker({ city, setCity, availableCities }) {
             );
           })}
         </div>
-      )}
-    </Popover>
+      </BottomSheet>
+    </>
   );
 }

@@ -86,11 +86,16 @@ export function restoreScroll(haveItems, isLoadingMore) {
   if (!y && !catX) return;
   if (y)    sessionStorage.removeItem(KEYS.scroll);
   if (catX) sessionStorage.removeItem(KEYS.catbar);
-  requestAnimationFrame(() => {
+  const apply = () => {
     if (y) window.scrollTo({ top: Number(y), behavior: "instant" });
     if (catX) {
       const el = document.querySelector("[data-catbar]");
       if (el) el.scrollLeft = Number(catX);
     }
-  });
+  };
+  // Apply synchronously (this is called from a layout effect, so it lands
+  // before paint — and before a back-navigation View Transition snapshot),
+  // then re-affirm next frame in case late layout shifts the position.
+  apply();
+  requestAnimationFrame(apply);
 }

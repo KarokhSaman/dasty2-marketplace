@@ -1,6 +1,6 @@
 import { usePaginatedQuery, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect, useLayoutEffect } from "react";
 import ProductCard from "@/components/buyer/ProductCard";
 import CategoryBar from "@/components/buyer/CategoryBar";
 import LocationPicker from "@/components/buyer/LocationPicker";
@@ -14,6 +14,16 @@ import {
   DEFAULT_PAGE_SIZE,
 } from "@/src/lib/useHomeStatePersistence";
 
+// Runs synchronously before paint on the client (so restored scroll is in place
+// before a View Transition snapshots the page), but degrades to useEffect on the
+// server to avoid the SSR layout-effect warning.
+const useIsoLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
+
+// Entrance animations (fade-up / stagger) should only play the first time the
+// home screen is shown in a session — NOT when returning via the back button,
+// where they would fight the shared-element morph and re-stagger the grid.
+let homeEntranceShown = false;
+
 // ── Reusable bits ──────────────────────────────────────────
 function SortIcon() {
   return (
@@ -23,9 +33,9 @@ function SortIcon() {
   );
 }
 
-function SearchRow({ search, setSearch, city, setCity, availableCities }) {
+function SearchRow({ search, setSearch, city, setCity, availableCities, animate }) {
   return (
-    <div className="relative z-30 flex items-stretch gap-2 mb-3 fade-up">
+    <div className={`relative z-30 flex items-stretch gap-2 mb-3 ${animate ? "fade-up" : ""}`}>
       <SearchInput
         value={search}
         onChange={setSearch}
@@ -82,6 +92,7 @@ function MetaRow({ condition, setCondition, sort, setSort, hasActiveFilter, onRe
           leadingIcon={<SortIcon />}
           align="end"
           variant="ghost"
+          title={m.sortBy().replace(":", "")}
         />
       </div>
     </div>
@@ -124,6 +135,13 @@ export default function HomePage() {
   const updateFilter = (key) => (value) => setFilters((f) => ({ ...f, [key]: value }));
   const sentinelRef = useRef(null);
 
+  // Play entrance animations only on the first home view of the session.
+  const [animateEntrance] = useState(() => {
+    if (homeEntranceShown) return false;
+    homeEntranceShown = true;
+    return true;
+  });
+
   const { initialItems, cachedFeatured, cachedResults, saveState } =
     useHomeStatePersistence(filters, setFilters, DEFAULT_PAGE_SIZE);
 
@@ -140,7 +158,9 @@ export default function HomePage() {
     ? cachedResults
     : liveResults;
 
-  useEffect(() => {
+  // Restore scroll before paint so a back-navigation View Transition snapshots
+  // the page at the correct position (keeps the reverse photo-morph aligned).
+  useIsoLayoutEffect(() => {
     const haveItems = results.length > 0 || featuredProducts.length > 0;
     restoreScroll(haveItems, status === "LoadingMore");
   });
@@ -209,9 +229,10 @@ export default function HomePage() {
         city={city}
         setCity={updateFilter("city")}
         availableCities={availableCities}
+        animate={animateEntrance}
       />
 
-      <div className="mb-3 fade-up">
+      <div className={`mb-3 ${animateEntrance ? "fade-up" : ""}`}>
         <CategoryBar selected={category} onSelect={updateFilter("category")} />
       </div>
 
@@ -237,7 +258,7 @@ export default function HomePage() {
       {!isLoading && totalCount === 0 && <EmptyState />}
 
       {totalCount > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 stagger">
+        <div className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 ${animateEntrance ? "stagger" : ""}`}>
           {featured.map((p) => <ProductCard key={p._id} product={p} onSave={onSave} />)}
           {regular.map((p)  => <ProductCard key={p._id} product={p} onSave={onSave} />)}
         </div>

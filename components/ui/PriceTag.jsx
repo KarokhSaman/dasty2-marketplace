@@ -1,6 +1,7 @@
 /**
- * Display-serif price renderer.  Sizes inherit from CSS classes so the same
- * component fits cards, hero stickers, and detail-page primary prices.
+ * Price renderer.  Sizes inherit from CSS classes so the same component fits
+ * cards, hero stickers, and detail-page primary prices. Rendered in ink for a
+ * clean, neutral look — the brand red is reserved for actions/active states.
  *
  *   <PriceTag amount={12500} />            // card-sized
  *   <PriceTag amount={12500} size="xl" />  // detail page
@@ -25,7 +26,7 @@ export default function PriceTag({
   const s = SIZES[size] ?? SIZES.md;
   return (
     <span className={`inline-flex items-baseline gap-1 ${className}`}>
-      <span className={`font-display font-bold text-[var(--color-ember-600)] leading-none ${s.num}`}>
+      <span className={`font-display font-bold text-[var(--color-ink)] leading-none ${s.num}`}>
         {formatAmount(amount)}
       </span>
       <span className={`font-bold text-[var(--color-ink-soft)] tracking-wider uppercase ${s.unit}`}>

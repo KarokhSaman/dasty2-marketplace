@@ -9,6 +9,7 @@ import { getCityLabel } from "@/lib/cities";
 import { getProductCache, setProductCache } from "@/src/lib/productCache";
 import {
   Chip,
+  Gallery,
   PriceTag,
   Skeleton,
   WhatsAppButton,
@@ -33,6 +34,119 @@ function PinIcon({ className = "w-3 h-3" }) {
     </svg>
   );
 }
+function EyeIcon({ className = "w-3.5 h-3.5" }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+    </svg>
+  );
+}
+function ClockIcon({ className = "w-3.5 h-3.5" }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 8v4l3 2m6-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  );
+}
+function ShareIcon({ className = "w-4 h-4" }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.9} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+    </svg>
+  );
+}
+function CheckIcon({ className = "w-4 h-4" }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.4} d="M5 13l4 4L19 7" />
+    </svg>
+  );
+}
+function ShieldIcon({ className = "w-4 h-4" }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+    </svg>
+  );
+}
+
+// ── Format a posted date in the active locale ──────────────
+function formatDate(iso, locale) {
+  if (!iso) return "";
+  try {
+    const tag = locale === "en" ? "en-GB" : locale;
+    return new Date(iso).toLocaleDateString(tag, { day: "numeric", month: "short", year: "numeric" });
+  } catch {
+    return String(iso).slice(0, 10);
+  }
+}
+
+// ── Floating controls layered over the gallery ─────────────
+function GalleryOverlay({ onBack, shareTitle, shareUrl }) {
+  const [copied, setCopied] = useState(false);
+
+  async function onShare() {
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try { await navigator.share({ title: shareTitle, url: shareUrl }); } catch { /* dismissed */ }
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch { /* clipboard unavailable */ }
+  }
+
+  const btn = "pointer-events-auto inline-flex items-center justify-center w-9 h-9 rounded-full bg-black/35 text-white ring-1 ring-white/15 backdrop-blur-md transition-transform active:scale-90 hover:bg-black/45";
+
+  return (
+    <div className="absolute inset-x-3 top-3 z-10 flex items-center gap-2 pointer-events-none">
+      <button type="button" onClick={onBack} aria-label={m.back()} className={btn}>
+        <svg className="w-4 h-4 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.4} d="M15 19l-7-7 7-7" />
+        </svg>
+      </button>
+
+      <div className="flex-1 flex justify-center">
+        {copied && (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/70 text-white text-[12px] font-semibold backdrop-blur-md scale-in">
+            <CheckIcon className="w-3.5 h-3.5" /> {m.linkCopied()}
+          </span>
+        )}
+      </div>
+
+      <button type="button" onClick={onShare} aria-label={m.shareLabel()} className={btn}>
+        {copied ? <CheckIcon className="w-4 h-4" /> : <ShareIcon className="w-4 h-4" />}
+      </button>
+    </div>
+  );
+}
+
+// ── Seller attribution card ────────────────────────────────
+function SellerCard({ name, city }) {
+  if (!name) return null;
+  const initial = name.trim().charAt(0).toUpperCase() || "•";
+  return (
+    <div className="surface-card p-3.5 flex items-center gap-3 mb-1">
+      <div className="w-11 h-11 rounded-full bg-[var(--color-cream-deep)] text-[var(--color-ink-soft)] font-display text-lg flex items-center justify-center shrink-0">
+        {initial}
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-[10.5px] uppercase tracking-[0.14em] font-semibold text-[var(--color-ink-fade)]">{m.listedBy()}</p>
+        <p className="text-[15px] font-semibold text-[var(--color-ink)] truncate">{name}</p>
+      </div>
+      {city && (
+        <span className="inline-flex items-center gap-1 text-[12px] font-medium text-[var(--color-ink-soft)] shrink-0">
+          <PinIcon className="w-3.5 h-3.5 text-[var(--color-ink-fade)]" />
+          {city}
+        </span>
+      )}
+    </div>
+  );
+}
+
+// ── Image placeholder (related cards) ──────────────────────
 function ImagePlaceholder({ size = "lg" }) {
   const cls = size === "lg" ? "w-16 h-16" : "w-8 h-8";
   return (
@@ -50,7 +164,7 @@ function RelatedCard({ product }) {
   setProductCache(product);
   return (
     <Link to={`/products/${product._id}`} className="group block">
-      <div className="bg-white rounded-2xl border border-[var(--color-hairline)] overflow-hidden hover:border-[var(--color-ember-200)] hover:shadow-[0_18px_36px_-22px_rgba(26,20,17,0.25)] transition-all duration-300">
+      <div className="bg-white rounded-2xl border border-[var(--color-hairline)] overflow-hidden hover:border-[var(--color-ember-200)] hover:shadow-[0_18px_36px_-22px_rgba(11,12,15,0.22)] transition-all duration-300 active:scale-[0.98]">
         <div className="aspect-square relative overflow-hidden bg-[var(--color-cream-deep)]">
           {photo ? (
             <img src={photo} alt={product.title}
@@ -78,12 +192,18 @@ function RelatedCard({ product }) {
 // ── Loading shimmer ───────────────────────────────────────
 function ProductDetailSkeleton() {
   return (
-    <div className="max-w-3xl mx-auto space-y-4">
-      <Skeleton.Bar w="6rem" />
-      <Skeleton.Block className="aspect-square rounded-3xl" />
-      <Skeleton.Bar w="40%" />
-      <Skeleton.Bar w="75%" />
-      <Skeleton.Bar w="33%" h="2rem" />
+    <div className="max-w-5xl mx-auto">
+      <Skeleton.Bar w="5rem" />
+      <div className="grid md:grid-cols-[1.05fr_1fr] gap-6 md:gap-10 mt-4">
+        <Skeleton.Block className="aspect-square rounded-3xl" />
+        <div className="space-y-4 md:pt-2">
+          <Skeleton.Bar w="30%" />
+          <Skeleton.Bar w="80%" h="1.6rem" />
+          <Skeleton.Bar w="40%" h="2.2rem" />
+          <Skeleton.Block className="h-16 rounded-2xl" />
+          <Skeleton.Bar w="60%" />
+        </div>
+      </div>
     </div>
   );
 }
@@ -105,90 +225,11 @@ function NotFoundState({ onBack }) {
   );
 }
 
-// ── Back arrow row ────────────────────────────────────────
-function BackButton({ onClick }) {
-  return (
-    <button
-      onClick={onClick}
-      className="inline-flex items-center gap-2 text-[13px] font-semibold text-[var(--color-ink-soft)] hover:text-[var(--color-ember-600)] transition-colors mb-4 group"
-    >
-      <span className="w-8 h-8 inline-flex items-center justify-center rounded-full bg-white border border-[var(--color-hairline)] group-hover:border-[var(--color-ember-300)] group-hover:bg-[var(--color-ember-50)] transition-colors">
-        <svg className="w-3.5 h-3.5 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.4} d="M15 19l-7-7 7-7" />
-        </svg>
-      </span>
-      {m.back()}
-    </button>
-  );
-}
-
-// ── Photo gallery ─────────────────────────────────────────
-function PhotoGallery({ photos, title }) {
-  const [active, setActive] = useState(0);
-  return (
-    <div>
-      <div className="aspect-square bg-white border border-[var(--color-hairline)] rounded-[1.5rem] overflow-hidden mb-3 relative">
-        {photos.length > 0 ? (
-          <img src={photos[active]} alt={title} key={active} className="w-full h-full object-cover scale-in" />
-        ) : <ImagePlaceholder />}
-
-        {photos.length > 1 && (
-          <Chip tone="dark" className="absolute bottom-3 end-3">
-            {active + 1} / {photos.length}
-          </Chip>
-        )}
-      </div>
-
-      {photos.length > 1 && (
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
-          {photos.map((src, i) => (
-            <button
-              key={i}
-              onClick={() => setActive(i)}
-              className={`w-14 h-14 sm:w-16 sm:h-16 shrink-0 rounded-xl overflow-hidden border-2 transition-all ${
-                active === i
-                  ? "border-[var(--color-ember-500)] shadow-[0_6px_14px_-6px_rgba(237,0,64,0.4)]"
-                  : "border-transparent opacity-60 hover:opacity-100"
-              }`}
-            >
-              <img src={src} alt="" className="w-full h-full object-cover" />
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── Meta line (category · condition · city) ────────────────
-function MetaLine({ product, locale }) {
-  const cityLabel = getCityLabel(product.city || "Erbil", locale) ?? product.city ?? "Erbil";
-  return (
-    <div className="flex items-center gap-2 text-[12px] text-[var(--color-ink-soft)] flex-wrap mb-3">
-      <span className="font-semibold uppercase tracking-[0.14em] text-[var(--color-ink-fade)] text-[10.5px]">
-        {getCategoryLabel(product.category, locale)}
-      </span>
-      <span className="text-[var(--color-ink-fade)]/60">·</span>
-      <span className={`inline-flex items-center gap-1 font-semibold ${
-        product.condition === "new" ? "text-[var(--color-jade-600)]" : "text-[var(--color-honey-600)]"
-      }`}>
-        <span className={`w-1.5 h-1.5 rounded-full ${product.condition === "new" ? "bg-[var(--color-jade-500)]" : "bg-[var(--color-honey-600)]"}`} />
-        {product.condition === "new" ? m.badgeNew() : m.badgeUsed()}
-      </span>
-      <span className="text-[var(--color-ink-fade)]/60">·</span>
-      <span className="inline-flex items-center gap-1 font-medium">
-        <PinIcon className="w-3 h-3 text-[var(--color-ember-600)]" />
-        {cityLabel}
-      </span>
-    </div>
-  );
-}
-
 // ── Sticky mobile CTA ─────────────────────────────────────
 function StickyMobileCTA({ price, waLink, seq }) {
   return (
     <div className="sm:hidden fixed inset-x-0 bottom-0 z-30 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 pointer-events-none">
-      <div className="pointer-events-auto mx-auto max-w-md surface-frost rounded-[1.75rem] border border-[var(--color-hairline)] shadow-[0_18px_44px_-20px_rgba(26,20,17,0.28)] p-2.5 flex items-center gap-3">
+      <div className="pointer-events-auto mx-auto max-w-md surface-frost rounded-[1.75rem] border border-[var(--color-hairline)] shadow-[0_18px_44px_-20px_rgba(11,12,15,0.22)] p-2.5 flex items-center gap-3">
         <div className="flex flex-col min-w-0 ps-2">
           {seq && (
             <span className="text-[10px] uppercase tracking-[0.14em] font-semibold text-[var(--color-ink-fade)] leading-none">
@@ -266,45 +307,94 @@ export default function ProductDetailPage() {
     : [];
 
   const photos = product.photos?.length ? product.photos : [];
+  const isNew = product.condition === "new";
+  const cityLabel = product.city ? (getCityLabel(product.city, locale) ?? product.city) : null;
+  const categoryLabel = getCategoryLabel(product.category, locale);
+  const posted = formatDate(product.dateAdded, locale);
+  const views = typeof product.views === "number" ? product.views : 0;
 
   return (
     <div className="max-w-5xl mx-auto pb-28 sm:pb-12">
-      <BackButton onClick={() => router.history.back()} />
-
-      <div className="grid md:grid-cols-[1.05fr_1fr] gap-6 md:gap-10 mb-10 md:mb-14 fade-up">
-        <PhotoGallery photos={photos} title={product.title} />
+      <div className="grid md:grid-cols-[1.05fr_1fr] gap-5 md:gap-10 -mt-3 sm:mt-0 mb-10 md:mb-14 fade-up">
+        <div className="relative -mx-4 sm:mx-0 md:self-start">
+          <Gallery
+            photos={photos}
+            alt={product.title}
+            rounded="rounded-none sm:rounded-[1.5rem]"
+            heroTransitionName={`vt-${product._id}`}
+          />
+          <GalleryOverlay
+            onBack={() => router.history.back()}
+            shareTitle={product.title}
+            shareUrl={productUrl}
+          />
+        </div>
 
         <div className="md:pt-1">
-          <MetaLine product={product} locale={locale} />
+          {/* Category eyebrow */}
+          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--color-ink-fade)] mb-2">
+            {categoryLabel}
+          </p>
 
-          <h1 className="font-display text-[26px] sm:text-[34px] font-bold text-[var(--color-ink)] mb-3 leading-[1.1] tracking-tight flex items-start gap-2">
-            <span className="flex-1">{product.title}</span>
-            {product.featured && (
-              <span
-                title={m.featured()}
-                className="shrink-0 inline-flex items-center justify-center mt-1.5 w-6 h-6 rounded-full bg-[var(--color-ember-500)] text-white shadow-[0_4px_10px_-2px_rgba(237,0,64,0.6)]"
-              >
-                <StarIcon className="w-3 h-3" />
-              </span>
-            )}
+          {/* Title */}
+          <h1 className="font-display text-[26px] sm:text-[32px] text-[var(--color-ink)] mb-3 leading-[1.12]">
+            {product.title}
           </h1>
 
-          <div className="mb-5 flex items-baseline gap-3 flex-wrap">
+          {/* Quick chips */}
+          <div className="flex flex-wrap items-center gap-2 mb-4">
+            <Chip tone={isNew ? "success" : "warning"} dot>
+              {isNew ? m.badgeNew() : m.badgeUsed()}
+            </Chip>
+            {cityLabel && (
+              <Chip tone="neutral" leadingIcon={<PinIcon className="w-3 h-3" />}>
+                {cityLabel}
+              </Chip>
+            )}
+            {product.featured && (
+              <Chip tone="brand" leadingIcon={<StarIcon className="w-2.5 h-2.5" />}>
+                {m.featured()}
+              </Chip>
+            )}
+          </div>
+
+          {/* Price */}
+          <div className="mb-3">
             <PriceTag amount={product.price} size="xl" />
+          </div>
+
+          {/* Metadata: views · posted · product code */}
+          <div className="flex items-center gap-2.5 flex-wrap text-[12px] text-[var(--color-ink-fade)] mb-5">
+            {views > 0 && (
+              <span className="inline-flex items-center gap-1">
+                <EyeIcon className="w-3.5 h-3.5" />
+                {m.viewsCount({ count: views })}
+              </span>
+            )}
+            {views > 0 && posted && <span aria-hidden>·</span>}
+            {posted && (
+              <span className="inline-flex items-center gap-1">
+                <ClockIcon className="w-3.5 h-3.5" />
+                {m.postedLabel()} {posted}
+              </span>
+            )}
+            {product.seq && <span aria-hidden>·</span>}
             {product.seq && (
-              <span className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.14em] font-semibold text-[var(--color-ink-fade)]">
+              <span className="inline-flex items-center gap-1">
                 {m.productCode()}
-                <span className="font-mono font-bold text-[var(--color-ember-700)] bg-[var(--color-ember-50)] border border-[var(--color-ember-100)] px-2 py-0.5 rounded-md tracking-widest">
-                  {product.seq}
-                </span>
+                <span className="font-mono font-semibold text-[var(--color-ink-soft)] tracking-wide">{product.seq}</span>
               </span>
             )}
           </div>
 
+          {/* Seller */}
+          <SellerCard name={product.sellerName} city={cityLabel} />
+
+          {/* Description */}
           {product.description && (
             <div className="mt-6 pt-5 border-t border-[var(--color-hairline)]">
               <p className="text-[10.5px] uppercase tracking-[0.18em] font-bold text-[var(--color-ink-fade)] mb-2">
-                About this item
+                {m.aboutItem()}
               </p>
               <p className="text-[14.5px] text-[var(--color-ink)] leading-[1.7] whitespace-pre-line">
                 {product.description}
@@ -312,7 +402,16 @@ export default function ProductDetailPage() {
             </div>
           )}
 
-          <div className="hidden sm:block mt-8">
+          {/* Safety note */}
+          <div className="mt-6 flex items-start gap-2.5 rounded-2xl bg-[var(--color-cream)] border border-[var(--color-hairline)] p-3.5">
+            <span className="shrink-0 mt-0.5 text-[var(--color-jade-600)]">
+              <ShieldIcon className="w-4 h-4" />
+            </span>
+            <p className="text-[12.5px] leading-relaxed text-[var(--color-ink-soft)]">{m.safetyNote()}</p>
+          </div>
+
+          {/* Desktop CTA */}
+          <div className="hidden sm:block mt-6">
             <WhatsAppButton href={waLink} size="lg" label={m.contactToBuy()} />
           </div>
         </div>
@@ -320,7 +419,7 @@ export default function ProductDetailPage() {
 
       {(allProducts === undefined || related.length > 0) && (
         <RelatedSection
-          heading={getCategoryLabel(product.category, locale)}
+          heading={categoryLabel}
           loading={allProducts === undefined}
           items={related}
         />

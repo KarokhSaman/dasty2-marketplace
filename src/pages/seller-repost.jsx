@@ -132,7 +132,7 @@ export default function RepostPage() {
   // ── Not found / wrong seller ──────────────────────────────
   if (!source || source.sellerId !== seller._id) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-gray-400">
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-[var(--color-ink-fade)]">
         <p className="text-lg font-medium">{m.notFound()}</p>
         <button onClick={() => router.navigate({ to: "/seller" })} className="mt-4 text-sm text-rose-500 hover:underline">
           ← {m.sellerDashboard()}
@@ -150,7 +150,7 @@ export default function RepostPage() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
         </div>
-        <p className="text-gray-700 font-medium max-w-sm">{m.repostSuccess()}</p>
+        <p className="text-[var(--color-ink)] font-medium max-w-sm">{m.repostSuccess()}</p>
         <button onClick={() => router.navigate({ to: "/seller" })} className="mt-6 text-sm text-rose-600 hover:underline">
           ← {m.sellerDashboard()}
         </button>
@@ -161,11 +161,11 @@ export default function RepostPage() {
   // ── Form ──────────────────────────────────────────────────
   return (
     <div className="max-w-2xl mx-auto">
-      <button onClick={() => router.navigate({ to: "/seller" })} className="text-sm text-gray-400 hover:text-rose-600 transition-colors mb-3">
+      <button onClick={() => router.navigate({ to: "/seller" })} className="text-sm text-[var(--color-ink-fade)] hover:text-rose-600 transition-colors mb-3">
         ← {m.sellerDashboard()}
       </button>
 
-      <h1 className="text-xl font-bold text-gray-900 mb-2">{m.repostPageTitle()}</h1>
+      <h1 className="font-display text-[22px] text-[var(--color-ink)] mb-2">{m.repostPageTitle()}</h1>
 
       {/* Info notice */}
       <div className="flex items-start gap-2 bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 mb-6">
@@ -179,20 +179,20 @@ export default function RepostPage() {
 
         {/* Title */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">
+          <label className="block text-[13px] font-semibold text-[var(--color-ink)] mb-1.5">
             {m.fieldTitle()} <span className="text-rose-500">*</span>
           </label>
           <input
             type="text" value={title} onChange={(e) => setTitle(e.target.value)}
             placeholder={m.fieldTitlePlaceholder()}
-            className={`w-full border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300 ${errors.title ? "border-red-400 bg-red-50" : "border-gray-200"}`}
+            className={`w-full rounded-xl border bg-white px-4 py-2.5 text-[var(--color-ink)] placeholder:text-[var(--color-ink-fade)] focus:outline-none focus:ring-4 transition ${errors.title ? "border-red-400 bg-red-50" : "border-[var(--color-hairline)] focus:border-[var(--color-ember-300)] focus:ring-[var(--color-ember-100)]/50"}`}
           />
         </div>
 
         {/* Category + Condition */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            <label className="block text-[13px] font-semibold text-[var(--color-ink)] mb-1.5">
               {m.fieldCategory()} <span className="text-rose-500">*</span>
             </label>
             <CustomSelect
@@ -204,13 +204,13 @@ export default function RepostPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            <label className="block text-[13px] font-semibold text-[var(--color-ink)] mb-1.5">
               {m.fieldCondition()} <span className="text-rose-500">*</span>
             </label>
-            <div className="flex rounded-xl border border-gray-200 overflow-hidden">
+            <div className="flex rounded-xl border border-[var(--color-hairline)] overflow-hidden">
               {["new","used"].map((c) => (
                 <button key={c} type="button" onClick={() => setCondition(c)}
-                  className={`flex-1 py-2.5 text-sm font-medium transition-colors ${condition === c ? "bg-rose-600 text-white" : "text-gray-600 hover:bg-gray-50"}`}>
+                  className={`flex-1 py-2.5 text-sm font-medium transition-colors ${condition === c ? "bg-[var(--color-ember-500)] text-white" : "text-[var(--color-ink)] hover:bg-[var(--color-cream)]"}`}>
                   {c === "new" ? m.conditionNew() : m.conditionUsed()}
                 </button>
               ))}
@@ -220,13 +220,13 @@ export default function RepostPage() {
 
         {/* Price */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">
+          <label className="block text-[13px] font-semibold text-[var(--color-ink)] mb-1.5">
             {m.fieldPrice()} <span className="text-rose-500">*</span>
           </label>
           <input
             type="number" value={price} onChange={(e) => setPrice(e.target.value)}
             placeholder={m.fieldPricePlaceholder()} min={0} dir="ltr"
-            className={`w-full border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300 ${errors.price ? "border-red-400 bg-red-50" : "border-gray-200"}`}
+            className={`w-full rounded-xl border bg-white px-4 py-2.5 text-[var(--color-ink)] placeholder:text-[var(--color-ink-fade)] focus:outline-none focus:ring-4 transition ${errors.price ? "border-red-400 bg-red-50" : "border-[var(--color-hairline)] focus:border-[var(--color-ember-300)] focus:ring-[var(--color-ember-100)]/50"}`}
           />
           {price && Number(price) >= 5000 && profit > 0 && (
             <p className="mt-2 text-sm text-amber-700 bg-amber-50 rounded-lg px-3 py-2">
@@ -238,15 +238,15 @@ export default function RepostPage() {
 
         {/* Description */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">{m.fieldDescription()}</label>
+          <label className="block text-[13px] font-semibold text-[var(--color-ink)] mb-1.5">{m.fieldDescription()}</label>
           <textarea value={description} onChange={(e) => setDescription(e.target.value)}
             placeholder={m.fieldDescriptionPlaceholder()} rows={4}
-            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300 resize-none" />
+            className="w-full rounded-xl border border-[var(--color-hairline)] bg-white px-4 py-2.5 text-[var(--color-ink)] placeholder:text-[var(--color-ink-fade)] focus:outline-none focus:border-[var(--color-ember-300)] focus:ring-4 focus:ring-[var(--color-ember-100)]/50 transition resize-none" />
         </div>
 
         {/* Photos */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">
+          <label className="block text-[13px] font-semibold text-[var(--color-ink)] mb-1.5">
             {m.fieldPhotos()} <span className="text-rose-500">*</span>
           </label>
 
@@ -254,14 +254,14 @@ export default function RepostPage() {
           {(photos.length > 0 || uploading > 0) && (
             <div className="flex gap-3 flex-wrap mb-3">
               {photos.map((url) => (
-                <div key={url} className="relative w-20 h-20 rounded-lg overflow-hidden border border-gray-200">
+                <div key={url} className="relative w-20 h-20 rounded-lg overflow-hidden border border-[var(--color-hairline)]">
                   <img src={url} alt="" className="w-full h-full object-cover" />
                   <button type="button" onClick={() => setPhotos((p) => p.filter((u) => u !== url))}
                     className="absolute top-0.5 end-0.5 w-5 h-5 bg-black/60 text-white rounded-full text-xs flex items-center justify-center hover:bg-black/80">×</button>
                 </div>
               ))}
               {Array.from({ length: uploading }).map((_, i) => (
-                <div key={i} className="w-20 h-20 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center">
+                <div key={i} className="w-20 h-20 rounded-lg bg-[var(--color-cream-deep)] border border-[var(--color-hairline)] flex items-center justify-center">
                   <div className="w-5 h-5 border-2 border-rose-200 border-t-rose-600 rounded-full animate-spin" />
                 </div>
               ))}
@@ -269,16 +269,16 @@ export default function RepostPage() {
           )}
 
           <button type="button" onClick={() => fileInputRef.current?.click()}
-            className={`w-full border-2 border-dashed rounded-xl p-4 text-center transition-colors ${errors.photos ? "border-red-300 bg-red-50" : "border-gray-200 hover:border-rose-300 hover:bg-rose-50"}`}>
-            <p className="text-sm text-gray-500">+ {m.addPhotoBtn()}</p>
-            <p className="text-xs text-gray-400 mt-0.5">JPEG · PNG · WEBP</p>
+            className={`w-full border-2 border-dashed rounded-xl p-4 text-center transition-colors ${errors.photos ? "border-red-300 bg-red-50" : "border-[var(--color-hairline)] hover:border-rose-300 hover:bg-rose-50"}`}>
+            <p className="text-sm text-[var(--color-ink-soft)]">+ {m.addPhotoBtn()}</p>
+            <p className="text-xs text-[var(--color-ink-fade)] mt-0.5">JPEG · PNG · WEBP</p>
           </button>
           <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleFileChange} />
           {errors.photos && <p className="mt-1 text-xs text-red-500">{m.atLeastOnePhoto()}</p>}
         </div>
 
         <button type="submit" disabled={submitting || uploading > 0}
-          className="w-full bg-rose-600 text-white font-semibold py-3.5 rounded-xl hover:bg-rose-700 transition-colors disabled:opacity-50">
+          className="w-full bg-[var(--color-ember-500)] hover:bg-[var(--color-ember-600)] active:bg-[var(--color-ember-700)] text-white font-semibold py-3.5 rounded-full active:scale-[0.98] transition disabled:opacity-50">
           {submitting ? m.submitting() : uploading > 0 ? m.uploading() : m.submitProductBtn()}
         </button>
       </form>

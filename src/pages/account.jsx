@@ -14,17 +14,17 @@ const FEE_TIERS = [
   { range: "500,000 – 1,000,000", fee: "30,000" },
 ];
 
-function MenuItem({ icon, label, sub, onClick, chevron = true, iconBg = "bg-gray-100" }) {
+function MenuItem({ icon, label, sub, onClick, chevron = true, iconBg = "bg-[var(--color-cream-deep)]" }) {
   return (
     <button onClick={onClick}
-      className="w-full flex items-center gap-4 px-4 py-3.5 hover:bg-gray-50 transition-colors text-start">
+      className="w-full flex items-center gap-4 px-4 py-3.5 hover:bg-[var(--color-cream)] transition-colors text-start">
       <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${iconBg}`}>{icon}</div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-gray-800">{label}</p>
-        {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
+        <p className="text-sm font-semibold text-[var(--color-ink)]">{label}</p>
+        {sub && <p className="text-xs text-[var(--color-ink-fade)] mt-0.5">{sub}</p>}
       </div>
       {chevron && (
-        <svg className="w-4 h-4 text-gray-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-4 h-4 text-[var(--color-ink-fade)] shrink-0 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/>
         </svg>
       )}
@@ -33,7 +33,7 @@ function MenuItem({ icon, label, sub, onClick, chevron = true, iconBg = "bg-gray
 }
 
 function SectionLabel({ label }) {
-  return <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest px-4 pt-5 pb-1">{label}</p>;
+  return <p className="text-[11px] font-bold text-[var(--color-ink-fade)] uppercase tracking-[0.16em] px-4 pt-5 pb-1.5">{label}</p>;
 }
 
 export default function BuyerAccountPage() {
@@ -51,35 +51,34 @@ export default function BuyerAccountPage() {
     <div className="max-w-lg mx-auto pb-8">
 
       {/* ── App header card ── */}
-      <div className="bg-gradient-to-br from-rose-600 via-rose-500 to-rose-400 rounded-2xl p-6 mb-2 relative overflow-hidden">
-        <div className="absolute top-0 end-0 w-40 h-40 bg-white/10 rounded-full -translate-y-16 translate-x-16 pointer-events-none"/>
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center">
-            <span className="text-xl font-bold text-white">D2</span>
+      <div className="surface-card p-5 mb-3">
+        <div className="flex items-center gap-3.5 mb-3">
+          <div className="w-12 h-12 rounded-2xl bg-[var(--color-ember-500)] flex items-center justify-center shrink-0 shadow-[0_8px_18px_-8px_rgba(237,0,64,0.6)]">
+            <span dir="ltr" className="text-xl font-display text-white">D2</span>
           </div>
-          <div>
-            <p className="text-white font-bold text-lg leading-tight">Dasty2 Mndalan</p>
-            <p className="text-rose-200 text-xs">{m.acctAppTagline()}</p>
+          <div className="min-w-0">
+            <p className="font-display text-[17px] text-[var(--color-ink)] leading-tight">Dasty2 Mndalan</p>
+            <p className="text-[var(--color-ink-soft)] text-[12.5px] mt-0.5">{m.acctAppTagline()}</p>
           </div>
         </div>
-        <p className="text-rose-100 text-sm leading-relaxed">{m.acctAppDesc()}</p>
+        <p className="text-[var(--color-ink-soft)] text-[13.5px] leading-relaxed">{m.acctAppDesc()}</p>
       </div>
 
       {/* ── Menu ── */}
-      <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+      <div className="bg-white rounded-2xl border border-[var(--color-hairline)] overflow-hidden">
 
         <SectionLabel label={m.acctSellingSec()} />
-        <div className="border-t border-gray-50"/>
+        <div className="border-t border-[var(--color-hairline)]"/>
 
-        <Link to="/seller/login" className="w-full flex items-center gap-4 px-4 py-3.5 hover:bg-gray-50 transition-colors text-start">
-          <div className="w-9 h-9 rounded-xl bg-rose-50 flex items-center justify-center shrink-0">
-            <svg className="w-4 h-4 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/></svg>
+        <Link to="/seller/login" className="w-full flex items-center gap-4 px-4 py-3.5 hover:bg-[var(--color-cream)] transition-colors text-start">
+          <div className="w-9 h-9 rounded-xl bg-[var(--color-ember-50)] flex items-center justify-center shrink-0">
+            <svg className="w-4 h-4 text-[var(--color-ember-500)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/></svg>
           </div>
           <div className="flex-1">
-            <p className="text-sm font-semibold text-gray-800">{m.acctStartSelling()}</p>
-            <p className="text-xs text-gray-400 mt-0.5">{m.acctStartSellingSub()}</p>
+            <p className="text-sm font-semibold text-[var(--color-ink)]">{m.acctStartSelling()}</p>
+            <p className="text-xs text-[var(--color-ink-fade)] mt-0.5">{m.acctStartSellingSub()}</p>
           </div>
-          <svg className="w-4 h-4 text-gray-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg>
+          <svg className="w-4 h-4 text-[var(--color-ink-fade)] shrink-0 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg>
         </Link>
 
         <SectionLabel label={m.acctInfoSec()} />
@@ -87,24 +86,24 @@ export default function BuyerAccountPage() {
 
         {/* How it works */}
         <button onClick={() => setShowHow(v => !v)}
-          className="w-full flex items-center gap-4 px-4 py-3.5 hover:bg-gray-50 transition-colors text-start">
+          className="w-full flex items-center gap-4 px-4 py-3.5 hover:bg-[var(--color-cream)] transition-colors text-start">
           <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
             <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
           </div>
           <div className="flex-1">
-            <p className="text-sm font-semibold text-gray-800">{m.acctHowItWorks()}</p>
-            <p className="text-xs text-gray-400 mt-0.5">{m.acctHowItWorksSub()}</p>
+            <p className="text-sm font-semibold text-[var(--color-ink)]">{m.acctHowItWorks()}</p>
+            <p className="text-xs text-[var(--color-ink-fade)] mt-0.5">{m.acctHowItWorksSub()}</p>
           </div>
-          <svg className={`w-4 h-4 text-gray-300 transition-transform duration-200 ${showHow ? "rotate-90" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg>
+          <svg className={`w-4 h-4 text-[var(--color-ink-fade)] transition-transform duration-200 ${showHow ? "rotate-90" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg>
         </button>
         {showHow && (
-          <div className="px-4 pb-4 bg-gray-50 space-y-3">
+          <div className="px-4 pb-4 bg-[var(--color-cream)] space-y-3">
             {howSteps.map(s => (
               <div key={s.n} className="flex items-start gap-3 pt-3">
                 <div className="w-6 h-6 rounded-full bg-rose-100 text-rose-600 text-xs font-bold flex items-center justify-center shrink-0">{s.n}</div>
                 <div>
-                  <p className="text-sm font-semibold text-gray-800">{s.title}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">{s.desc}</p>
+                  <p className="text-sm font-semibold text-[var(--color-ink)]">{s.title}</p>
+                  <p className="text-xs text-[var(--color-ink-soft)] mt-0.5">{s.desc}</p>
                 </div>
               </div>
             ))}
@@ -115,31 +114,31 @@ export default function BuyerAccountPage() {
 
         {/* Service fees */}
         <button onClick={() => setShowFees(v => !v)}
-          className="w-full flex items-center gap-4 px-4 py-3.5 hover:bg-gray-50 transition-colors text-start">
+          className="w-full flex items-center gap-4 px-4 py-3.5 hover:bg-[var(--color-cream)] transition-colors text-start">
           <div className="w-9 h-9 rounded-xl bg-green-50 flex items-center justify-center shrink-0">
             <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
           </div>
           <div className="flex-1">
-            <p className="text-sm font-semibold text-gray-800">{m.acctFeesSec()}</p>
-            <p className="text-xs text-gray-400 mt-0.5">{m.acctFeesSub()}</p>
+            <p className="text-sm font-semibold text-[var(--color-ink)]">{m.acctFeesSec()}</p>
+            <p className="text-xs text-[var(--color-ink-fade)] mt-0.5">{m.acctFeesSub()}</p>
           </div>
-          <svg className={`w-4 h-4 text-gray-300 transition-transform duration-200 ${showFees ? "rotate-90" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg>
+          <svg className={`w-4 h-4 text-[var(--color-ink-fade)] transition-transform duration-200 ${showFees ? "rotate-90" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg>
         </button>
         {showFees && (
-          <div className="px-4 pb-4 bg-gray-50">
-            <div className="rounded-xl overflow-hidden border border-gray-200 mt-3">
-              <div className="grid grid-cols-2 bg-gray-100 px-3 py-2">
-                <p className="text-xs font-semibold text-gray-500">{m.acctFeesPriceCol()}</p>
-                <p className="text-xs font-semibold text-gray-500 text-end">{m.acctFeesFeeCol()}</p>
+          <div className="px-4 pb-4 bg-[var(--color-cream)]">
+            <div className="rounded-xl overflow-hidden border border-[var(--color-hairline)] mt-3">
+              <div className="grid grid-cols-2 bg-[var(--color-cream-deep)] px-3 py-2">
+                <p className="text-xs font-semibold text-[var(--color-ink-soft)]">{m.acctFeesPriceCol()}</p>
+                <p className="text-xs font-semibold text-[var(--color-ink-soft)] text-end">{m.acctFeesFeeCol()}</p>
               </div>
               {FEE_TIERS.map((tier, i) => (
-                <div key={i} className={`grid grid-cols-2 px-3 py-2 ${i % 2 === 0 ? "bg-white" : "bg-gray-50"}`}>
-                  <p className="text-xs text-gray-600 font-mono">{tier.range}</p>
+                <div key={i} className={`grid grid-cols-2 px-3 py-2 ${i % 2 === 0 ? "bg-white" : "bg-[var(--color-cream)]"}`}>
+                  <p className="text-xs text-[var(--color-ink-soft)] font-mono">{tier.range}</p>
                   <p className="text-xs font-bold text-rose-600 text-end">{tier.fee} IQD</p>
                 </div>
               ))}
             </div>
-            <p className="text-xs text-gray-400 mt-2 text-center">{m.acctFeesNote()}</p>
+            <p className="text-xs text-[var(--color-ink-fade)] mt-2 text-center">{m.acctFeesNote()}</p>
           </div>
         )}
 
@@ -150,8 +149,8 @@ export default function BuyerAccountPage() {
           label={m.acctAboutTitle()}
           sub={m.acctAboutSub()}
           onClick={() => {}}
-          iconBg="bg-gray-100"
-          icon={<svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>}
+          iconBg="bg-[var(--color-cream-deep)]"
+          icon={<svg className="w-4 h-4 text-[var(--color-ink-soft)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>}
         />
         <div className="border-t border-gray-50"/>
         <MenuItem
@@ -163,7 +162,7 @@ export default function BuyerAccountPage() {
         />
       </div>
 
-      <p className="text-center text-xs text-gray-300 mt-6">{m.acctFooter()}</p>
+      <p className="text-center text-xs text-[var(--color-ink-fade)] mt-6">{m.acctFooter()}</p>
     </div>
   );
 }

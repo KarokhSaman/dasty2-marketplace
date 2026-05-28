@@ -255,5 +255,12 @@
   "heroSubtitle": "تصفّح منتجات الأطفال الموثوقة من العائلات في أربيل.",
   "filtersLabel": "الفلاتر",
   "resultsCount": "{count} منتج",
-  "browseAll": "تصفّح الكل"
+  "browseAll": "تصفّح الكل",
+  "aboutItem": "عن هذا المنتج",
+  "shareLabel": "مشاركة",
+  "linkCopied": "تم النسخ",
+  "listedBy": "منشور بواسطة",
+  "postedLabel": "نُشر",
+  "viewsCount": "{count} مشاهدة",
+  "safetyNote": "افحص المنتج وقابِل البائع في مكان عام قبل الدفع."
 }

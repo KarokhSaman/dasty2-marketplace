@@ -255,5 +255,12 @@
   "heroSubtitle": "گەڕان لە کاڵای منداڵانی متمانەپێکراو لە خێزانەکانی هەولێر.",
   "filtersLabel": "فلتەرەکان",
   "resultsCount": "{count} کاڵا",
-  "browseAll": "بینینی هەموو"
+  "browseAll": "بینینی هەموو",
+  "aboutItem": "دەربارەی ئەم کاڵایە",
+  "shareLabel": "هاوبەشکردن",
+  "linkCopied": "کۆپی کرا",
+  "listedBy": "بڵاوکراوەتەوە لەلایەن",
+  "postedLabel": "بڵاوکرایەوە",
+  "viewsCount": "{count} بینین",
+  "safetyNote": "پێش پارەدان کاڵاکە بپشکنە و لە شوێنێکی گشتیدا یەکتر ببینن."
 }

@@ -17,7 +17,7 @@ function PillVariant({ value, onChange, options, className }) {
             onClick={() => onChange(opt.value)}
             className={`flex-1 py-1 text-[12px] font-semibold rounded-full transition-all duration-200 ${
               isActive
-                ? "bg-white text-[var(--color-ink)] shadow-[0_2px_8px_-2px_rgba(26,20,17,0.12)]"
+                ? "bg-white text-[var(--color-ink)] shadow-[0_2px_8px_-2px_rgba(11,12,15,0.12)]"
                 : "text-[var(--color-ink-fade)] hover:text-[var(--color-ink-soft)]"
             }`}
           >
