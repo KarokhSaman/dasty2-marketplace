@@ -2,10 +2,10 @@ import { Link, useLocation } from "@tanstack/react-router";
 const usePathname = () => useLocation({ select: (l) => l.pathname });
 import { useState, useRef, useEffect } from "react";
 import { useClerk } from "@clerk/tanstack-react-start";
-import { useQuery } from "convex/react";
+import { useQuery, useConvexAuth } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import * as m from "@/src/paraglide/messages";
-import LocaleSwitcher from "@/src/components/LocaleSwitcher";
+import * as m from "@/paraglide/messages";
+import LocaleSwitcher from "@/components/LocaleSwitcher";
 import NotificationPanel from "@/components/ui/NotificationPanel";
 
 const ADMIN_ID = "ADMIN";
@@ -15,13 +15,25 @@ export default function AdminShell({ children }) {
   const [showNotifs, setShowNotifs] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [adminEmail, setAdminEmail] = useState("");
+  const [authTimedOut, setAuthTimedOut] = useState(false);
   const bellRef = useRef();
   const profileRef = useRef();
   const { signOut } = useClerk();
+  const { isAuthenticated } = useConvexAuth();
 
   useEffect(() => {
     fetch("/api/admin/me").then(r => r.json()).then(d => setAdminEmail(d.email ?? ""));
   }, []);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      setAuthTimedOut(false);
+      return;
+    }
+
+    const timeout = window.setTimeout(() => setAuthTimedOut(true), 8000);
+    return () => window.clearTimeout(timeout);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     if (!showProfile) return;
@@ -34,7 +46,10 @@ export default function AdminShell({ children }) {
     return () => document.removeEventListener("mousedown", handleClick);
   }, [showProfile]);
 
-  const notifications = useQuery(api.notifications.getBySeller, { sellerId: ADMIN_ID });
+  const notifications = useQuery(
+    api.notifications.getBySeller,
+    isAuthenticated ? { sellerId: ADMIN_ID } : "skip",
+  );
   const unread = (notifications ?? []).filter(n => !n.read).length;
 
   async function handleSignOut() {
@@ -169,7 +184,22 @@ export default function AdminShell({ children }) {
 
       {/* ── Main content ── */}
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-6">
-        {children}
+        {isAuthenticated ? children : authTimedOut ? (
+          <div className="mx-auto max-w-md py-20 text-center space-y-4">
+            <p className="text-sm font-medium text-gray-700">{m.errSessionExpired()}</p>
+            <button
+              type="button"
+              onClick={handleSignOut}
+              className="inline-flex h-9 items-center justify-center rounded-lg bg-gray-900 px-4 text-sm font-semibold text-white hover:bg-gray-800"
+            >
+              {m.adminSignOut()}
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center justify-center py-24">
+            <div className="h-9 w-9 animate-spin rounded-full border-2 border-gray-200 border-t-rose-500" />
+          </div>
+        )}
       </main>
 
       {/* ── Mobile bottom nav ── */}

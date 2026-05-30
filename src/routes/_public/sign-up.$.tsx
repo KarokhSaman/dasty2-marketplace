@@ -7,6 +7,10 @@ export const Route = createFileRoute('/_public/sign-up/$')({
   component: SignUpPage,
 })
 
+// Clerk supports virtual routing at runtime; this package type still lists
+// only path/hash for the SignUp component.
+const clerkVirtualRouting = 'virtual' as never
+
 function SignUpPage() {
   const { isLoaded, isSignedIn } = useAuth()
   const navigate = useNavigate()
@@ -28,8 +32,7 @@ function SignUpPage() {
   return (
     <div className="flex justify-center py-12">
       <SignUp
-        routing="path"
-        path="/sign-up"
+        routing={clerkVirtualRouting}
         forceRedirectUrl="/seller/login?profile=1"
         signInForceRedirectUrl="/seller/login?profile=1"
       />

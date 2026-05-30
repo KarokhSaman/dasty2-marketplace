@@ -5,7 +5,7 @@ import { QueryClient } from '@tanstack/react-query'
 import { ConvexQueryClient } from '@convex-dev/react-query'
 import { ConvexReactClient } from 'convex/react'
 import { routeTree } from './routeTree.gen'
-import { deLocalizeUrl, localizeUrl } from '@/src/paraglide/runtime'
+import { deLocalizeUrl, localizeUrl } from '@/paraglide/runtime'
 
 export function getRouter() {
   const CONVEX_URL = import.meta.env.VITE_CONVEX_URL as string | undefined
@@ -40,7 +40,7 @@ export function getRouter() {
     defaultViewTransition: true,
     context: { queryClient, convexClient: convex, convexQueryClient },
     scrollRestoration: true,
-    // The Convex provider lives in __root.tsx (ConvexProviderWithClerk) which wraps
+    // The Convex auth provider lives in __root.tsx and wraps
     // the whole app — no second ConvexProvider needed here.
     rewrite: {
       input: ({ url }) => deLocalizeUrl(url),

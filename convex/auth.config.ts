@@ -1,9 +1,16 @@
 import type { AuthConfig } from "convex/server";
 
+const clerkJwtIssuerDomain =
+  process.env.CLERK_FRONTEND_API_URL ?? process.env.CLERK_JWT_ISSUER_DOMAIN;
+
+if (!clerkJwtIssuerDomain) {
+  throw new Error("Missing CLERK_FRONTEND_API_URL or CLERK_JWT_ISSUER_DOMAIN");
+}
+
 export default {
   providers: [
     {
-      domain: process.env.CLERK_FRONTEND_API_URL!,
+      domain: clerkJwtIssuerDomain,
       applicationID: "convex",
     },
   ],

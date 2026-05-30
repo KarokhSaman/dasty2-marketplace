@@ -1,4 +1,4 @@
-import { getLocale } from '@/src/paraglide/runtime'
+import { getLocale } from '@/paraglide/runtime'
 
 export function readLocale(): string {
   return getLocale()

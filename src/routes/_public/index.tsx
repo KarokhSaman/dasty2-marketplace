@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { convexQuery } from '@convex-dev/react-query'
 import { api } from '@/convex/_generated/api'
-import HomePage from '@/src/pages/home'
+import HomePage from '@/pages/home'
 
 export const Route = createFileRoute('/_public/')({
   // Prefetch the (non-paginated) featured products so they're SSR'd into the

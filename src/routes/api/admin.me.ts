@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { requireClerkAdmin } from '@/src/server/admin-auth'
+import { requireClerkAdmin } from '@/lib/admin-auth'
 
 export const Route = createFileRoute('/api/admin/me')({
   server: {

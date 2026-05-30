@@ -4,11 +4,11 @@ import { convexQuery } from "@convex-dev/react-query";
 import { api } from "@/convex/_generated/api";
 import { useRouter, useParams, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import * as m from "@/src/paraglide/messages";
-import { getLocale } from "@/src/paraglide/runtime";
+import * as m from "@/paraglide/messages";
+import { getLocale } from "@/paraglide/runtime";
 import { getCategoryLabel } from "@/lib/categories";
 import { getCityLabel } from "@/lib/cities";
-import { getProductCache, setProductCache } from "@/src/lib/productCache";
+import { getProductCache, setProductCache } from "@/lib/productCache";
 import {
   Chip,
   Gallery,

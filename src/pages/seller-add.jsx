@@ -10,8 +10,8 @@ const useSearchParams = () => {
   };
 };
 import { api } from "@/convex/_generated/api";
-import * as m from "@/src/paraglide/messages";
-import { getLocale } from "@/src/paraglide/runtime";
+import * as m from "@/paraglide/messages";
+import { getLocale } from "@/paraglide/runtime";
 import { useSellerSession } from "@/lib/useSellerSession";
 import { useImageUpload } from "@/lib/useImageUpload";
 import { calculateProfit, formatPrice, formatPriceLocale, normalizeDigits } from "@/lib/utils";

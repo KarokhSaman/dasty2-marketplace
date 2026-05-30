@@ -7,14 +7,14 @@ import ProductCard from "@/components/buyer/ProductCard";
 import CategoryBar from "@/components/buyer/CategoryBar";
 import LocationPicker from "@/components/buyer/LocationPicker";
 import { SearchInput, SegmentedControl, SelectMenu, Skeleton, FloatingCount } from "@/components/ui";
-import * as m from "@/src/paraglide/messages";
+import * as m from "@/paraglide/messages";
 import { getCategorySearchStrings } from "@/lib/categories";
-import { seedProductCache } from "@/src/lib/productCache";
+import { seedProductCache } from "@/lib/productCache";
 import {
   useHomeStatePersistence,
   restoreScroll,
   DEFAULT_PAGE_SIZE,
-} from "@/src/lib/useHomeStatePersistence";
+} from "@/lib/useHomeStatePersistence";
 
 // Runs synchronously before paint on the client (so restored scroll is in place
 // before a View Transition snapshots the page), but degrades to useEffect on the

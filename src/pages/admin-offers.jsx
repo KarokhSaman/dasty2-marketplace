@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import * as m from "@/src/paraglide/messages";
+import * as m from "@/paraglide/messages";
 
 function formatDate(d) {
   if (!d) return "";

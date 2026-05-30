@@ -1,6 +1,6 @@
 import { createServerFn } from '@tanstack/react-start'
 import { setCookie } from '@tanstack/react-start/server'
-import { auth, clerkClient, clerkMiddleware } from '@clerk/tanstack-react-start/server'
+import { auth, clerkMiddleware } from '@clerk/tanstack-react-start/server'
 import { fetchMutation, fetchQuery } from 'convex/nextjs'
 import { api } from '@/convex/_generated/api'
 import type { Id } from '@/convex/_generated/dataModel'
@@ -17,7 +17,7 @@ export const sellerClerkSyncFn = createServerFn({ method: 'POST' })
     if (!token) return { ok: false, error: 'not_authenticated' as const }
 
     const sellerResult = await fetchQuery(
-      api.sellers.getCurrent,
+      api.users.getCurrentSeller,
       {},
       convexServerOptions(token),
     )
@@ -56,7 +56,7 @@ export const sellerClerkRegisterFn = createServerFn({ method: 'POST' })
     const email = await getPrimaryEmail(userId)
 
     const sellerResult = await fetchMutation(
-      api.sellers.create,
+      api.users.createSeller,
       {
         email: email || undefined,
         name: data.name.trim(),
@@ -80,26 +80,18 @@ export const sellerClerkRegisterFn = createServerFn({ method: 'POST' })
     return { ok: true, sellerId: sellerResult.sellerId as string }
   })
 
-type DeleteInput = { sellerId: string; clerkUserId?: string }
+type DeleteInput = { sellerId: string }
 
 export const deleteSellerFn = createServerFn({ method: 'POST' })
   .middleware([clerkMiddleware()])
   .handler(async (ctx) => {
-    const { sellerId, clerkUserId } = (ctx as unknown as { data: DeleteInput }).data
+    const { sellerId } = (ctx as unknown as { data: DeleteInput }).data
     const admin = await requireClerkAdmin()
     if (!admin) return { ok: false, error: 'not_admin' as const }
 
-    if (clerkUserId) {
-      try {
-        await clerkClient().users.deleteUser(clerkUserId)
-      } catch {
-        // Clerk user may already be gone — continue with Convex deletion
-      }
-    }
-
     await fetchMutation(
-      api.sellers.deleteSeller,
-      { id: sellerId as Id<'sellers'> },
+      api.users.deleteSeller,
+      { id: sellerId as Id<'users'> },
       convexServerOptions(admin.token),
     )
 

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, type ReactElement } from 'react'
-import { getLocale, locales, setLocale } from '@/src/paraglide/runtime'
+import { getLocale, locales, setLocale } from '@/paraglide/runtime'
 
 // ── Mini flag components ───────────────────────────────────
 function KurdishFlag({ size = 18 }: { size?: number }) {

@@ -1,13 +1,13 @@
 import { useMemo, useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import * as m from "@/src/paraglide/messages";
-import { deleteSellerFn } from "@/src/server/clerk-seller";
+import * as m from "@/paraglide/messages";
+import { deleteSellerFn } from "@/lib/clerk-seller";
 
 export default function AdminSellersPage() {
-  const sellers       = useQuery(api.sellers.getAll);
+  const sellers       = useQuery(api.users.getAll);
   const products      = useQuery(api.products.getAll);
-  const setActive     = useMutation(api.sellers.setActive);
+  const setActive     = useMutation(api.users.setActive);
   const createLog     = useMutation(api.adminLogs.create);
   const [search, setSearch] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(null); // seller _id being confirmed
@@ -128,7 +128,7 @@ export default function AdminSellersPage() {
                 <div className="flex items-center gap-1">
                   <button
                     onClick={async () => {
-                      await deleteSellerFn({ data: { sellerId: seller._id, clerkUserId: seller.clerkUserId || undefined } });
+                      await deleteSellerFn({ data: { sellerId: seller._id } });
                       await createLog({ action: "seller_deleted", sellerName: seller.name, notes: seller.email || undefined });
                       setConfirmDelete(null);
                     }}

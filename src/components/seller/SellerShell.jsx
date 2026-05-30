@@ -4,8 +4,8 @@ import { useQuery, useConvexAuth } from "convex/react";
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useAuth } from "@clerk/tanstack-react-start";
 import { api } from "@/convex/_generated/api";
-import * as m from "@/src/paraglide/messages";
-import LocaleSwitcher from "@/src/components/LocaleSwitcher";
+import * as m from "@/paraglide/messages";
+import LocaleSwitcher from "@/components/LocaleSwitcher";
 import NotificationPanel from "@/components/ui/NotificationPanel";
 import { Button } from "@/components/ui";
 import { useGlobalSellerSession } from "@/lib/SellerSessionContext";
@@ -47,6 +47,7 @@ export default function SellerShell({ children }) {
   const { isAuthenticated } = useConvexAuth();
   const navigate = useNavigate();
   const [showNotifs, setShowNotifs] = useState(false);
+  const [authTimedOut, setAuthTimedOut] = useState(false);
   const bellRef = useRef();
 
   // When Clerk invalidates the session (e.g. admin deleted the account),
@@ -58,6 +59,23 @@ export default function SellerShell({ children }) {
       navigate({ to: "/seller/login", replace: true });
     }
   }, [isSignedIn]);
+
+  useEffect(() => {
+    if (!isSignedIn || isAuthenticated) {
+      setAuthTimedOut(false);
+      return;
+    }
+
+    const timeout = window.setTimeout(() => setAuthTimedOut(true), 8000);
+    return () => window.clearTimeout(timeout);
+  }, [isSignedIn, isAuthenticated]);
+
+  const handleAuthReset = useCallback(() => {
+    setSellerId(null);
+    fetch("/api/seller/logout", { method: "POST" }).finally(() => {
+      navigate({ to: "/seller/login", replace: true });
+    });
+  }, [navigate, setSellerId]);
 
   const notifications = useQuery(api.notifications.getBySeller, isAuthenticated && sellerId ? { sellerId } : "skip");
   const unread = (notifications ?? []).filter((n) => !n.read).length;
@@ -166,7 +184,14 @@ export default function SellerShell({ children }) {
       <main className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 pt-3 pb-10">
         {/* Hold child pages (and their authed queries) until the Convex
             websocket is authenticated — server already gated via requireSellerFn. */}
-        {isAuthenticated ? children : (
+        {isAuthenticated ? children : authTimedOut ? (
+          <div className="max-w-md mx-auto py-20 text-center space-y-4">
+            <p className="text-sm font-semibold text-[var(--color-ink)]">{m.errSessionExpired()}</p>
+            <Button variant="ink" size="sm" onClick={handleAuthReset}>
+              {m.loginTitle()}
+            </Button>
+          </div>
+        ) : (
           <div className="flex items-center justify-center py-24">
             <div className="w-9 h-9 border-2 border-[var(--color-ember-200)] border-t-[var(--color-ember-500)] rounded-full animate-spin" />
           </div>

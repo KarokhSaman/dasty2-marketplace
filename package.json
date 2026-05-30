@@ -33,17 +33,17 @@
     "twilio": "^6.0.2"
   },
   "devDependencies": {
-    "@cloudflare/vite-plugin": "^1.38.0",
+    "@cloudflare/vite-plugin": "^1.39.0",
     "@tailwindcss/vite": "^4.3.0",
-    "@tanstack/router-plugin": "^1.168.10",
+    "@tanstack/router-plugin": "^1.168.13",
     "@types/node": "^25.9.1",
-    "@types/react": "^19.1.0",
-    "@types/react-dom": "^19.1.0",
+    "@types/react": "^19.2.15",
+    "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.2",
     "tailwindcss": "^4.3.0",
     "typescript": "^5.7.2",
     "vite": "^8.0.14",
     "vite-tsconfig-paths": "^6.1.1",
-    "wrangler": "^4.94.0"
+    "wrangler": "^4.95.0"
   }
 }

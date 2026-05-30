@@ -1,5 +1,5 @@
 import { CATEGORY_CONFIG } from "@/lib/categories";
-import { getLocale } from "@/src/paraglide/runtime";
+import { getLocale } from "@/paraglide/runtime";
 
 export default function CategoryBar({ selected, onSelect }) {
   const locale = getLocale();

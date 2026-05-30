@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useAuth, useClerk, useUser } from "@clerk/tanstack-react-start";
-import * as m from "@/src/paraglide/messages";
+import * as m from "@/paraglide/messages";
 import { useGlobalSellerSession } from "@/lib/SellerSessionContext";
 import { clearLocalClerkAuth } from "@/lib/clerkAuthReset";
 

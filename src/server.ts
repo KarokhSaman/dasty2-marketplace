@@ -2,8 +2,8 @@ import {
   createStartHandler,
   defaultStreamHandler,
 } from '@tanstack/react-start/server'
-import { paraglideMiddleware } from '@/src/paraglide/server'
-import { hardenResponse } from '@/src/server/security'
+import { paraglideMiddleware } from '@/paraglide/server'
+import { hardenResponse } from '@/lib/security'
 
 const fetch = createStartHandler(defaultStreamHandler)
 

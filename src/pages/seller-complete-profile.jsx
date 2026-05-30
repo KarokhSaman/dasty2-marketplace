@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { useUser } from "@clerk/tanstack-react-start";
 import { useNavigate } from "@tanstack/react-router";
-import * as m from "@/src/paraglide/messages";
-import { getLocale } from "@/src/paraglide/runtime";
+import { useConvexAuth } from "convex/react";
+import * as m from "@/paraglide/messages";
+import { getLocale } from "@/paraglide/runtime";
 import { getCityOptions } from "@/lib/cities";
 import CustomSelect from "@/components/ui/CustomSelect";
-import { sellerClerkRegisterFn, sellerClerkSyncFn } from "@/src/server/clerk-seller";
+import { sellerClerkRegisterFn, sellerClerkSyncFn } from "@/lib/clerk-seller";
 import { useGlobalSellerSession } from "@/lib/SellerSessionContext";
 
 function ErrorBox({ message }) {
@@ -97,17 +98,24 @@ function ProfileForm() {
 // ── Page ──────────────────────────────────────────────────
 export default function SellerCompleteProfilePage() {
   const { isLoaded, isSignedIn } = useUser();
+  const convexAuth = useConvexAuth();
   const { setSellerId } = useGlobalSellerSession();
   const navigate = useNavigate();
   const [status, setStatus] = useState("checking"); // checking | form
 
-  // Verify eligibility with one deterministic server round-trip rather than
-  // reacting to live client auth/query signals (which flicker and ping-pong
-  // back to /seller/login). Only "signed in, no seller yet" stays here; every
-  // other outcome routes away. /seller/login owns the error/already-registered UX.
+  // Match the login completion flow: wait for Convex to accept the Clerk token,
+  // then verify whether this signed-in user still needs a seller profile.
   useEffect(() => {
     if (!isLoaded) return;
     if (!isSignedIn) {
+      navigate({ to: "/seller/login", replace: true });
+      return;
+    }
+    if (convexAuth.isLoading) {
+      setStatus("checking");
+      return;
+    }
+    if (!convexAuth.isAuthenticated) {
       navigate({ to: "/seller/login", replace: true });
       return;
     }
@@ -138,7 +146,14 @@ export default function SellerCompleteProfilePage() {
     return () => {
       cancelled = true;
     };
-  }, [isLoaded, isSignedIn, navigate, setSellerId]);
+  }, [
+    convexAuth.isAuthenticated,
+    convexAuth.isLoading,
+    isLoaded,
+    isSignedIn,
+    navigate,
+    setSellerId,
+  ]);
 
   const showForm = status === "form";
 

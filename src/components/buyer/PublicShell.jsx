@@ -1,13 +1,13 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import * as m from "@/src/paraglide/messages";
-import LocaleSwitcher from "@/src/components/LocaleSwitcher";
+import * as m from "@/paraglide/messages";
+import LocaleSwitcher from "@/components/LocaleSwitcher";
 import NotificationPanel from "@/components/ui/NotificationPanel";
 import { Button } from "@/components/ui";
 import { useState, useRef, useCallback } from "react";
 
 function usePathname() { return useLocation({ select: (l) => l.pathname }); }
 
-import { useQuery } from "convex/react";
+import { useQuery, useConvexAuth } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useGlobalSellerSession } from "@/lib/SellerSessionContext";
 
@@ -80,10 +80,14 @@ function PlusIcon({ className = "w-3.5 h-3.5" }) {
 
 function HeaderActions() {
   const { sellerId, ready }         = useGlobalSellerSession();
+  const { isAuthenticated }         = useConvexAuth();
   const [showNotifs, setShowNotifs] = useState(false);
   const bellRef = useRef();
 
-  const notifications = useQuery(api.notifications.getBySeller, sellerId ? { sellerId } : "skip");
+  const notifications = useQuery(
+    api.notifications.getBySeller,
+    ready && isAuthenticated && sellerId ? { sellerId } : "skip",
+  );
   const unread = (notifications ?? []).filter(n => !n.read).length;
 
   if (!ready) {

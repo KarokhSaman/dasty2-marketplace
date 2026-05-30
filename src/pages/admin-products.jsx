@@ -10,7 +10,7 @@ const useSearchParams = () => {
   };
 };
 import { api } from "@/convex/_generated/api";
-import * as m from "@/src/paraglide/messages";
+import * as m from "@/paraglide/messages";
 import { formatPrice } from "@/lib/utils";
 
 const WHATSAPP = import.meta.env.VITE_WHATSAPP_NUMBER;

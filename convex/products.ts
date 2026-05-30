@@ -13,10 +13,10 @@ import {
   productStatusValidator,
 } from "./types";
 import {
-  isAdminIdentity,
+  getCurrentUser,
+  isAdminUser,
   requireAdmin,
   requireCurrentSeller,
-  requireIdentity,
 } from "./auth";
 
 type PublicProduct = Omit<Doc<"products">, "sellerId" | "sellerPhone" | "profit">;
@@ -51,8 +51,10 @@ function calculateProfit(price: number): number {
 
 async function getInactiveSellerIds(ctx: QueryCtx): Promise<Set<string>> {
   const inactive = await ctx.db
-    .query("sellers")
-    .filter((q) => q.eq(q.field("isActive"), false))
+    .query("users")
+    .withIndex("by_role_and_isActive", (q) =>
+      q.eq("role", "seller").eq("isActive", false),
+    )
     .collect();
   return new Set(inactive.map((s) => s._id.toString()));
 }
@@ -148,7 +150,10 @@ export const getAll = query({
   handler: async (ctx) => {
     await requireAdmin(ctx);
     const products = await ctx.db.query("products").collect();
-    const sellers  = await ctx.db.query("sellers").collect();
+    const sellers  = await ctx.db
+      .query("users")
+      .withIndex("by_role", (q) => q.eq("role", "seller"))
+      .collect();
     const addrMap  = new Map(sellers.map(s => [s._id.toString(), s.address ?? ""]));
     return products.map(p => ({ ...p, sellerAddress: addrMap.get(p.sellerId) ?? "" }));
   },
@@ -182,7 +187,7 @@ export const add = mutation({
       city: seller.city || "Erbil",
       sellerId: seller._id.toString(),
       sellerName: seller.name,
-      sellerPhone: seller.phone,
+      sellerPhone: seller.phone ?? "",
       profit,
       status: "pending",
       views: 0,
@@ -224,8 +229,8 @@ export const getById = query({
     const product = await ctx.db.get(id);
     if (!product) return null;
 
-    const identity = await requireIdentity(ctx);
-    if (isAdminIdentity(identity)) return product;
+    const { user } = await getCurrentUser(ctx);
+    if (isAdminUser(user)) return product;
 
     const seller = await requireCurrentSeller(ctx);
     if (product.sellerId !== seller._id.toString()) {

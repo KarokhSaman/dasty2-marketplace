@@ -1,5 +1,5 @@
-import * as m from "@/src/paraglide/messages";
-import { getLocale } from "@/src/paraglide/runtime";
+import * as m from "@/paraglide/messages";
+import { getLocale } from "@/paraglide/runtime";
 import { getCityLabel } from "@/lib/cities";
 import { Popover } from "@/components/ui";
 

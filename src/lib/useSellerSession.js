@@ -17,7 +17,7 @@ export function useSellerSession() {
   // mount, adding a waterfall before the page's own queries. `getCurrent`
   // returns the seller doc (incl `_id`) or null when there's no record.
   const seller = useQuery(
-    api.sellers.getCurrent,
+    api.users.getCurrentSeller,
     isSignedIn && isAuthenticated ? {} : "skip",
   );
 

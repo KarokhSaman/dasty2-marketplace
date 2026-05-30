@@ -13,8 +13,8 @@ import { useClerk } from "@clerk/tanstack-react-start";
 import { api } from "@/convex/_generated/api";
 import { useSellerSession, clearSellerSession } from "@/lib/useSellerSession";
 import { useGlobalSellerSession } from "@/lib/SellerSessionContext";
-import * as m from "@/src/paraglide/messages";
-import { getLocale } from "@/src/paraglide/runtime";
+import * as m from "@/paraglide/messages";
+import { getLocale } from "@/paraglide/runtime";
 
 import { getCityOptions } from "@/lib/cities";
 import CustomSelect from "@/components/ui/CustomSelect";
@@ -63,7 +63,7 @@ export default function SellerAccountPage() {
   const { signOut } = useClerk();
   const { setSellerId } = useGlobalSellerSession();
   const { seller, loading } = useSellerSession();
-  const updateProfile = useMutation(api.sellers.updateProfile);
+  const updateProfile = useMutation(api.users.updateProfile);
 
   const [editing, setEditing]   = useState(false);
   const [showHow, setShowHow]   = useState(false);

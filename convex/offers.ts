@@ -42,8 +42,11 @@ export const create = mutation({
     });
 
     // Notify every active seller
-    const sellers = await ctx.db.query("sellers")
-      .filter(q => q.eq(q.field("isActive"), true))
+    const sellers = await ctx.db
+      .query("users")
+      .withIndex("by_role_and_isActive", (q) =>
+        q.eq("role", "seller").eq("isActive", true),
+      )
       .collect();
 
     const feeText = args.type === "free"

@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { useUser, useClerk, SignIn } from "@clerk/tanstack-react-start";
 import { useNavigate } from "@tanstack/react-router";
-import * as m from "@/src/paraglide/messages";
-import { sellerClerkSyncFn } from "@/src/server/clerk-seller";
+import { useConvexAuth } from "convex/react";
+import * as m from "@/paraglide/messages";
+import { sellerClerkSyncFn } from "@/lib/clerk-seller";
 import { useGlobalSellerSession } from "@/lib/SellerSessionContext";
 import { clearLocalClerkAuth } from "@/lib/clerkAuthReset";
 
@@ -27,7 +28,7 @@ const STEP_ICONS = [
 ];
 
 const CONVEX_AUTH_ERROR_MESSAGE =
-  "Clerk signed in, but Convex rejected the session token. Activate the Clerk Convex integration, then refresh and sign in again.";
+  "We could not connect your sign-in. Reload and try again. If the problem persists, contact support.";
 
 function ErrorBox({ message }) {
   return (
@@ -126,6 +127,7 @@ function InfoPanel() {
 export default function SellerLoginPage() {
   const { isLoaded, isSignedIn } = useUser();
   const clerk = useClerk();
+  const convexAuth = useConvexAuth();
   const { setSellerId } = useGlobalSellerSession();
   const navigate = useNavigate();
   // Start as "loading" so <SignIn /> never renders before Clerk state is known
@@ -133,16 +135,25 @@ export default function SellerLoginPage() {
   const [errorMsg, setErrorMsg] = useState("");
   const [reloadKey, setReloadKey] = useState(0);
 
-  // Once Clerk reports a signed-in user, resolve the seller state with a single
-  // deterministic server round-trip instead of reacting to the (transient)
-  // client Convex-auth + live-query signals — that combination flickers through
-  // "not authenticated yet" states right after sign-in and produced false
-  // errors and a redirect loop with /seller/complete-profile.
+  // Match Psoola's auth completion flow: wait until Convex confirms the Clerk
+  // session token before running seller sync.
   useEffect(() => {
     if (!isLoaded) return;
     if (!isSignedIn) {
       setErrorMsg("");
       setStep("signin");
+      return;
+    }
+
+    if (convexAuth.isLoading) {
+      setErrorMsg("");
+      setStep("syncing");
+      return;
+    }
+
+    if (!convexAuth.isAuthenticated) {
+      setErrorMsg(CONVEX_AUTH_ERROR_MESSAGE);
+      setStep("error");
       return;
     }
 
@@ -178,7 +189,15 @@ export default function SellerLoginPage() {
     return () => {
       cancelled = true;
     };
-  }, [isLoaded, isSignedIn, navigate, setSellerId, reloadKey]);
+  }, [
+    convexAuth.isAuthenticated,
+    convexAuth.isLoading,
+    isLoaded,
+    isSignedIn,
+    navigate,
+    setSellerId,
+    reloadKey,
+  ]);
 
   async function handleSignOut() {
     setSellerId(null);
@@ -243,7 +262,7 @@ export default function SellerLoginPage() {
           {/* Clerk sign-in */}
           {step === "signin" && !isSignedIn && (
             <SignIn
-              routing="hash"
+              routing="virtual"
               forceRedirectUrl="/seller/login?profile=1"
               signUpForceRedirectUrl="/seller/login?profile=1"
               appearance={{

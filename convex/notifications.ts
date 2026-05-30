@@ -1,8 +1,8 @@
 import { v } from "convex/values";
 import { mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
-import { requireAdmin, requireCurrentSeller } from "./auth";
+import { getCurrentSeller, requireAdmin, requireCurrentSeller } from "./auth";
 
-async function authorizeNotificationOwner(
+async function requireNotificationOwner(
   ctx: QueryCtx | MutationCtx,
   sellerId: string,
 ) {
@@ -17,10 +17,25 @@ async function authorizeNotificationOwner(
   }
 }
 
+async function canReadNotificationOwner(ctx: QueryCtx, sellerId: string) {
+  try {
+    if (sellerId === "ADMIN") {
+      await requireAdmin(ctx);
+      return true;
+    }
+
+    const { seller } = await getCurrentSeller(ctx);
+    return seller?._id.toString() === sellerId;
+  } catch {
+    return false;
+  }
+}
+
 export const getBySeller = query({
   args: { sellerId: v.string() },
   handler: async (ctx, { sellerId }) => {
-    await authorizeNotificationOwner(ctx, sellerId);
+    if (!(await canReadNotificationOwner(ctx, sellerId))) return [];
+
     return await ctx.db
       .query("notifications")
       .withIndex("by_sellerId", (q) => q.eq("sellerId", sellerId))
@@ -31,7 +46,8 @@ export const getBySeller = query({
 export const getUnreadCount = query({
   args: { sellerId: v.string() },
   handler: async (ctx, { sellerId }) => {
-    await authorizeNotificationOwner(ctx, sellerId);
+    if (!(await canReadNotificationOwner(ctx, sellerId))) return 0;
+
     const all = await ctx.db
       .query("notifications")
       .withIndex("by_sellerId", (q) => q.eq("sellerId", sellerId))
@@ -43,7 +59,7 @@ export const getUnreadCount = query({
 export const markAllRead = mutation({
   args: { sellerId: v.string() },
   handler: async (ctx, { sellerId }) => {
-    await authorizeNotificationOwner(ctx, sellerId);
+    await requireNotificationOwner(ctx, sellerId);
     const unread = await ctx.db
       .query("notifications")
       .withIndex("by_sellerId", (q) => q.eq("sellerId", sellerId))

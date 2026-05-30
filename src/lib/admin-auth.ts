@@ -1,9 +1,7 @@
 import { auth, clerkClient } from "@clerk/tanstack-react-start/server";
-
-export const ADMIN_EMAILS = [
-  "karokh.saman.aziz@gmail.com",
-  "soma.karam.a@gmail.com",
-] as const;
+import { fetchMutation } from "convex/nextjs";
+import { api } from "@/convex/_generated/api";
+import { convexServerOptions } from "./convex";
 
 export async function getPrimaryEmail(userId: string) {
   const clerkUser = await clerkClient().users.getUser(userId);
@@ -18,13 +16,15 @@ export async function requireClerkAdmin() {
   const { userId, getToken } = await auth();
   if (!userId) return null;
 
-  const email = await getPrimaryEmail(userId);
-  if (!ADMIN_EMAILS.includes(email as (typeof ADMIN_EMAILS)[number])) {
-    return null;
-  }
-
   const token = await getToken();
   if (!token) return null;
 
-  return { userId, email, token };
+  const user = await fetchMutation(
+    api.users.ensureCurrent,
+    {},
+    convexServerOptions(token),
+  ).catch(() => null);
+  if (!user || user.role !== "admin" || !user.isActive) return null;
+
+  return { userId, email: user.email ?? "", token };
 }

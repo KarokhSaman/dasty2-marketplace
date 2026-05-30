@@ -5,6 +5,7 @@ import {
   conditionValidator,
   offerTypeValidator,
   productStatusValidator,
+  userRoleValidator,
 } from "./types";
 
 export default defineSchema({
@@ -35,18 +36,19 @@ export default defineSchema({
     .index("by_status_category", ["status", "category"])
     .index("by_seller",          ["sellerId"]),
 
-  sellers: defineTable({
-    clerkUserId: v.optional(v.string()),
+  users: defineTable({
+    role: userRoleValidator,
     clerkTokenIdentifier: v.optional(v.string()),
     email: v.optional(v.string()),
     name: v.string(),
-    phone: v.string(),
-    city: v.string(),
+    phone: v.optional(v.string()),
+    city: v.optional(v.string()),
     address: v.optional(v.string()),
     registeredAt: v.string(),
     isActive: v.boolean(),
   })
-    .index("by_clerkUserId", ["clerkUserId"])
+    .index("by_role", ["role"])
+    .index("by_role_and_isActive", ["role", "isActive"])
     .index("by_clerkTokenIdentifier", ["clerkTokenIdentifier"])
     .index("by_email", ["email"]),
 

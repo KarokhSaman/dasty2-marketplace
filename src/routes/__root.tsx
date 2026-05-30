@@ -4,11 +4,11 @@ import {
   Scripts,
   createRootRouteWithContext,
 } from '@tanstack/react-router'
-import { createServerFn } from '@tanstack/react-start'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ConvexQueryClient } from '@convex-dev/react-query'
 import { ConvexReactClient } from 'convex/react'
 import { ConvexProviderWithClerk } from 'convex/react-clerk'
+import { createServerFn } from '@tanstack/react-start'
 import { ClerkProvider, useAuth } from '@clerk/tanstack-react-start'
 import { auth } from '@clerk/tanstack-react-start/server'
 import type { ReactNode } from 'react'
@@ -17,9 +17,9 @@ import {
   getTextDirection,
   locales,
   localizeHref,
-} from '@/src/paraglide/runtime'
+} from '@/paraglide/runtime'
 import { SellerSessionProvider } from '@/lib/SellerSessionContext'
-import appCss from '@/src/styles/globals.css?url'
+import appCss from '@/styles/globals.css?url'
 
 interface RouterContext {
   queryClient: QueryClient
@@ -28,19 +28,17 @@ interface RouterContext {
 }
 
 const fetchClerkAuth = createServerFn({ method: 'GET' }).handler(async () => {
-  try {
-    const { userId, getToken } = await auth()
-    const token = userId ? await getToken().catch(() => null) : null
-    return { userId, token }
-  } catch {
-    return { userId: null, token: null }
-  }
+  const { userId, getToken } = await auth()
+  const token = await getToken()
+
+  return { userId, token }
 })
 
 export const Route = createRootRouteWithContext<RouterContext>()({
   beforeLoad: async (ctx) => {
     const locale = getLocale()
     const { userId, token } = await fetchClerkAuth()
+
     if (token) {
       ctx.context.convexQueryClient.serverHttpClient?.setAuth(token)
     }
@@ -76,21 +74,32 @@ export const Route = createRootRouteWithContext<RouterContext>()({
       ],
     }
   },
+  notFoundComponent: NotFoundComponent,
   component: RootComponent,
+  shellComponent: RootDocument,
 })
 
+function NotFoundComponent() {
+  return (
+    <div className="flex min-h-[50vh] flex-col items-center justify-center gap-4 px-4 text-center">
+      <h1 className="text-4xl font-semibold text-ink">404</h1>
+      <p className="text-sm text-ink-soft">Page not found</p>
+      <a href="/" className="text-sm font-semibold text-rose-600 underline underline-offset-4">
+        Go home
+      </a>
+    </div>
+  )
+}
+
 function RootComponent() {
-  const { queryClient, convexClient, locale } = Route.useRouteContext()
-  const dir = getTextDirection(locale)
+  const { queryClient, convexClient } = Route.useRouteContext()
 
   return (
     <ClerkProvider>
       <ConvexProviderWithClerk client={convexClient} useAuth={useAuth}>
         <QueryClientProvider client={queryClient}>
           <SellerSessionProvider>
-            <RootDocument locale={locale} dir={dir}>
-              <Outlet />
-            </RootDocument>
+            <Outlet />
           </SellerSessionProvider>
         </QueryClientProvider>
       </ConvexProviderWithClerk>
@@ -100,13 +109,12 @@ function RootComponent() {
 
 function RootDocument({
   children,
-  locale,
-  dir,
 }: {
   children: ReactNode
-  locale: string
-  dir: string
 }) {
+  const locale = getLocale()
+  const dir = getTextDirection(locale)
+
   return (
     <html lang={locale} dir={dir} data-locale={locale}>
       <head>

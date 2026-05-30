@@ -20,7 +20,7 @@ export const requireSellerFn = createServerFn({ method: 'GET' }).handler(async (
   }
 
   const seller = await fetchQuery(
-    api.sellers.getCurrent,
+    api.users.getCurrentSeller,
     {},
     convexServerOptions(token),
   )

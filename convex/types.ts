@@ -34,3 +34,9 @@ export const offerTypeValidator = v.union(
   v.literal("flat_fee"),
 );
 export type OfferType = typeof offerTypeValidator.type;
+
+export const userRoleValidator = v.union(
+  v.literal("seller"),
+  v.literal("admin"),
+);
+export type UserRole = typeof userRoleValidator.type;

@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { auth } from '@clerk/tanstack-react-start/server'
 import { fetchQuery } from 'convex/nextjs'
 import { api } from '@/convex/_generated/api'
-import { convexServerOptions } from '@/src/server/convex'
+import { convexServerOptions } from '@/lib/convex'
 
 export const Route = createFileRoute('/api/seller/me')({
   server: {
@@ -15,7 +15,7 @@ export const Route = createFileRoute('/api/seller/me')({
         if (!token) return Response.json({ sellerId: null })
 
         const sellerResult = await fetchQuery(
-          api.sellers.getCurrent,
+          api.users.getCurrentSeller,
           {},
           convexServerOptions(token),
         )

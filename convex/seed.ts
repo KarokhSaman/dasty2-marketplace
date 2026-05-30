@@ -144,7 +144,10 @@ function calcProfit(price: number): number {
 export const seedProducts = mutation({
   args: {},
   handler: async (ctx) => {
-    const existing = await ctx.db.query("sellers").first();
+    const existing = await ctx.db
+      .query("users")
+      .withIndex("by_role", (q) => q.eq("role", "seller"))
+      .first();
     let sellerId: string;
     let sellerName: string;
     let sellerPhone: string;
@@ -154,12 +157,12 @@ export const seedProducts = mutation({
       sellerName  = existing.name;
       sellerPhone = existing.phone ?? "+964 750 971 7177";
     } else {
-      const newId = await ctx.db.insert("sellers", {
+      const newId = await ctx.db.insert("users", {
+        role: "seller",
         name: "Dasty2 Demo",
         email: "demo@dasty2mndalan.com",
         phone: "+964 750 971 7177",
         city: "Erbil",
-        clerkUserId: "",
         registeredAt: new Date().toISOString(),
         isActive: true,
       });

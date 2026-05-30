@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { convexQuery } from '@convex-dev/react-query'
 import { api } from '@/convex/_generated/api'
 import type { Id } from '@/convex/_generated/dataModel'
-import ProductDetailPage from '@/src/pages/product-detail'
+import ProductDetailPage from '@/pages/product-detail'
 
 export const Route = createFileRoute('/_public/products/$id')({
   // Prefetch the product into the React Query cache (and SSR it) before the

@@ -16,20 +16,12 @@
     "resolveJsonModule": true,
     "allowJs": true,
     "checkJs": false,
+    "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./src/*"],
+      "@/convex/*": ["./convex/*"]
     }
   },
-  "include": [
-    "src",
-    "lib",
-    "components",
-    "convex",
-    "vite.config.ts",
-    "**/*.ts",
-    "**/*.tsx",
-    "**/*.js",
-    "**/*.jsx"
-  ],
+  "include": ["src", "convex", "vite.config.ts"],
   "exclude": ["node_modules", ".output", ".nitro", ".vinxi"]
 }

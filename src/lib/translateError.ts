@@ -1,4 +1,4 @@
-import * as m from '@/src/paraglide/messages'
+import * as m from '@/paraglide/messages'
 
 // Backend (API routes + Convex throws) returns stable snake_case codes.
 // Unknown / missing codes fall back to a generic message.

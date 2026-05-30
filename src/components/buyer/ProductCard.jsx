@@ -1,9 +1,9 @@
 import { Link } from "@tanstack/react-router";
-import * as m from "@/src/paraglide/messages";
-import { getLocale } from "@/src/paraglide/runtime";
+import * as m from "@/paraglide/messages";
+import { getLocale } from "@/paraglide/runtime";
 import { getCategoryLabel } from "@/lib/categories";
 import { getCityLabel } from "@/lib/cities";
-import { setProductCache } from "@/src/lib/productCache";
+import { setProductCache } from "@/lib/productCache";
 import { Chip, PriceTag } from "@/components/ui";
 
 // The product currently being opened/returned-to. Only this card gets a

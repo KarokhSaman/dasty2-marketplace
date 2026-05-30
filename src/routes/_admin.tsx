@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet } from '@tanstack/react-router'
 import AdminShell from '@/components/admin/AdminShell'
-import { requireAdminFn } from '@/src/server/auth-guards'
+import { requireAdminFn } from '@/lib/auth-guards'
 
 export const Route = createFileRoute('/_admin')({
   beforeLoad: async () => {

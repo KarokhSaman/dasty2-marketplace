@@ -2,7 +2,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { ConvexHttpClient } from 'convex/browser'
 import { api } from '@/convex/_generated/api'
-import { locales, localizeHref } from '@/src/paraglide/runtime'
+import { locales, localizeHref } from '@/paraglide/runtime'
 
 // Static public routes worth indexing. Login/signup/account omitted —
 // either user-specific or shouldn't rank.

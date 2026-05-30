@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useUser, useClerk, SignIn } from "@clerk/tanstack-react-start";
-import * as m from "@/src/paraglide/messages";
-import { adminClerkVerifyFn } from "@/src/server/clerk-admin";
+import * as m from "@/paraglide/messages";
+import { adminClerkVerifyFn } from "@/lib/clerk-admin";
 import { clearLocalClerkAuth } from "@/lib/clerkAuthReset";
 
 function ErrorBox({ message }) {
@@ -114,7 +114,7 @@ export default function AdminLoginPage() {
               <p className="text-sm text-gray-500 mt-1 text-center">{m.adminEnterEmail()}</p>
             </div>
             <SignIn
-              routing="hash"
+              routing="virtual"
               forceRedirectUrl="/admin/login"
               appearance={{
                 elements: {

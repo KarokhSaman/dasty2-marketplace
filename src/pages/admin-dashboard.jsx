@@ -1,7 +1,7 @@
 import { useQuery } from "convex/react";
 import { useState } from "react";
 import { api } from "@/convex/_generated/api";
-import * as m from "@/src/paraglide/messages";
+import * as m from "@/paraglide/messages";
 import { formatPrice } from "@/lib/utils";
 import { Link } from "@tanstack/react-router";
 
@@ -79,7 +79,7 @@ export default function AdminDashboard() {
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   const products = useQuery(api.products.getAll);
-  const sellers  = useQuery(api.sellers.getAll);
+  const sellers  = useQuery(api.users.getAll);
   const logs     = useQuery(api.adminLogs.getAll);
 
   if (!products || !sellers) {
