@@ -22,7 +22,7 @@ export default function CategoryBar({ selected, onSelect }) {
                 className={`w-[56px] h-[56px] sm:w-[60px] sm:h-[60px] rounded-full flex items-center justify-center overflow-hidden transition-all duration-300 ${
                   isActive
                     ? "bg-[var(--color-ember-50)] shadow-[inset_0_0_0_1px_var(--color-ember-200)] scale-[1.04]"
-                    : "bg-[var(--color-cream-deep)] group-hover:bg-[var(--color-ember-50)] group-hover:scale-[1.03]"
+                    : "bg-[var(--color-sand)] group-hover:bg-[var(--color-ember-50)] group-hover:scale-[1.03]"
                 }`}
               >
                 {cat.img ? (

@@ -61,7 +61,7 @@ export default function Gallery({
 
   if (count === 0) {
     return (
-      <div className={`${aspectClassName} ${rounded} bg-[var(--color-cream-deep)] flex items-center justify-center ${className}`}>
+      <div className={`${aspectClassName} ${rounded} bg-[var(--color-sand)] flex items-center justify-center ${className}`}>
         <ImagePlaceholder />
       </div>
     );
@@ -69,7 +69,7 @@ export default function Gallery({
 
   return (
     <div
-      className={`relative ${rounded} overflow-hidden bg-[var(--color-cream-deep)] ${className}`}
+      className={`relative ${rounded} overflow-hidden bg-[var(--color-sand)] ${className}`}
       onKeyDown={onKey}
       tabIndex={0}
       role="group"

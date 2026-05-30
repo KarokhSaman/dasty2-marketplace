@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
+import { useAuth, useClerk, useUser } from "@clerk/tanstack-react-start";
 import * as m from "@/src/paraglide/messages";
+import { useGlobalSellerSession } from "@/lib/SellerSessionContext";
+import { clearLocalClerkAuth } from "@/lib/clerkAuthReset";
 
 const FEE_TIERS = [
   { range: "5,000 – 9,000",       fee: "2,000" },
@@ -39,6 +42,23 @@ function SectionLabel({ label }) {
 export default function BuyerAccountPage() {
   const [showHow, setShowHow]   = useState(false);
   const [showFees, setShowFees] = useState(false);
+  const { isLoaded, isSignedIn } = useAuth();
+  const { user } = useUser();
+  const clerk = useClerk();
+  const {
+    sellerId,
+    setSellerId,
+    ready: sellerReady,
+    authError: sellerAuthError,
+  } = useGlobalSellerSession();
+  const email = user?.primaryEmailAddress?.emailAddress ?? "";
+  const displayName = user?.fullName || email;
+  const signedInInitial = (displayName || "D").trim().charAt(0).toUpperCase();
+
+  async function handleSignOut() {
+    setSellerId(null);
+    await clearLocalClerkAuth(clerk, ["/api/seller/logout", "/api/admin/logout"]);
+  }
 
   const howSteps = [
     { n: "1", title: m.acctHowStep1T(), desc: m.acctHowStep1D() },
@@ -54,11 +74,11 @@ export default function BuyerAccountPage() {
       <div className="surface-card p-5 mb-3">
         <div className="flex items-center gap-3.5 mb-3">
           <div className="w-12 h-12 rounded-2xl bg-[var(--color-ember-500)] flex items-center justify-center shrink-0 shadow-[0_8px_18px_-8px_rgba(237,0,64,0.6)]">
-            <span dir="ltr" className="text-xl font-display text-white">D2</span>
+            <span dir="ltr" className="text-xl font-display text-white">{isSignedIn ? signedInInitial : "D2"}</span>
           </div>
           <div className="min-w-0">
-            <p className="font-display text-[17px] text-[var(--color-ink)] leading-tight">Dasty2 Mndalan</p>
-            <p className="text-[var(--color-ink-soft)] text-[12.5px] mt-0.5">{m.acctAppTagline()}</p>
+            <p className="font-display text-[17px] text-[var(--color-ink)] leading-tight">{isSignedIn ? (displayName || m.acctMyAccountSec()) : "Dasty2 Mndalan"}</p>
+            <p className="text-[var(--color-ink-soft)] text-[12.5px] mt-0.5">{isSignedIn ? email : m.acctAppTagline()}</p>
           </div>
         </div>
         <p className="text-[var(--color-ink-soft)] text-[13.5px] leading-relaxed">{m.acctAppDesc()}</p>
@@ -66,20 +86,93 @@ export default function BuyerAccountPage() {
 
       {/* ── Menu ── */}
       <div className="bg-white rounded-2xl border border-[var(--color-hairline)] overflow-hidden">
+        {isLoaded && isSignedIn && (
+          <>
+            <SectionLabel label={m.acctMyAccountSec()} />
+            <div className="border-t border-[var(--color-hairline)]"/>
 
-        <SectionLabel label={m.acctSellingSec()} />
-        <div className="border-t border-[var(--color-hairline)]"/>
+            {!sellerReady && (
+              <div className="w-full flex items-center gap-4 px-4 py-3.5 text-start">
+                <div className="w-9 h-9 rounded-xl bg-[var(--color-cream-deep)] flex items-center justify-center shrink-0">
+                  <div className="w-4 h-4 border-2 border-rose-100 border-t-rose-500 rounded-full animate-spin" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-[var(--color-ink)]">{m.acctMyAccountSec()}</p>
+                  <p className="text-xs text-[var(--color-ink-fade)] mt-0.5">{m.acctMyProductsSub()}</p>
+                </div>
+              </div>
+            )}
 
-        <Link to="/seller/login" className="w-full flex items-center gap-4 px-4 py-3.5 hover:bg-[var(--color-cream)] transition-colors text-start">
-          <div className="w-9 h-9 rounded-xl bg-[var(--color-ember-50)] flex items-center justify-center shrink-0">
-            <svg className="w-4 h-4 text-[var(--color-ember-500)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/></svg>
-          </div>
-          <div className="flex-1">
-            <p className="text-sm font-semibold text-[var(--color-ink)]">{m.acctStartSelling()}</p>
-            <p className="text-xs text-[var(--color-ink-fade)] mt-0.5">{m.acctStartSellingSub()}</p>
-          </div>
-          <svg className="w-4 h-4 text-[var(--color-ink-fade)] shrink-0 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg>
-        </Link>
+            {sellerReady && sellerId && (
+              <Link to="/seller" className="w-full flex items-center gap-4 px-4 py-3.5 hover:bg-[var(--color-cream)] transition-colors text-start">
+                <div className="w-9 h-9 rounded-xl bg-[var(--color-ember-50)] flex items-center justify-center shrink-0">
+                  <svg className="w-4 h-4 text-[var(--color-ember-500)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 13h8V3H3v10zm10 8h8V3h-8v18zM3 21h8v-6H3v6z"/></svg>
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-[var(--color-ink)]">{m.sellerDashboard()}</p>
+                  <p className="text-xs text-[var(--color-ink-fade)] mt-0.5">{m.acctMyProductsSub()}</p>
+                </div>
+                <svg className="w-4 h-4 text-[var(--color-ink-fade)] shrink-0 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg>
+              </Link>
+            )}
+
+            {sellerReady && sellerAuthError && (
+              <div className="w-full flex items-start gap-4 px-4 py-3.5 text-start">
+                <div className="w-9 h-9 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
+                  <svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                  </svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-[var(--color-ink)]">Seller auth needs setup</p>
+                  <p className="text-xs text-[var(--color-ink-fade)] mt-0.5">
+                    Clerk is signed in, but Convex is not accepting the session token yet.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {sellerReady && !sellerAuthError && !sellerId && (
+              <Link to="/seller/login" className="w-full flex items-center gap-4 px-4 py-3.5 hover:bg-[var(--color-cream)] transition-colors text-start">
+                <div className="w-9 h-9 rounded-xl bg-[var(--color-ember-50)] flex items-center justify-center shrink-0">
+                  <svg className="w-4 h-4 text-[var(--color-ember-500)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/></svg>
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-[var(--color-ink)]">{m.acctStartSelling()}</p>
+                  <p className="text-xs text-[var(--color-ink-fade)] mt-0.5">{m.acctStartSellingSub()}</p>
+                </div>
+                <svg className="w-4 h-4 text-[var(--color-ink-fade)] shrink-0 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg>
+              </Link>
+            )}
+
+            <div className="border-t border-gray-50"/>
+            <MenuItem
+              label={m.accountSignOut()}
+              onClick={handleSignOut}
+              chevron={false}
+              iconBg="bg-gray-50"
+              icon={<svg className="w-4 h-4 text-[var(--color-ink-soft)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H9m4 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1"/></svg>}
+            />
+          </>
+        )}
+
+        {(!isLoaded || !isSignedIn) && (
+          <>
+            <SectionLabel label={m.acctSellingSec()} />
+            <div className="border-t border-[var(--color-hairline)]"/>
+
+            <Link to="/seller/login" className="w-full flex items-center gap-4 px-4 py-3.5 hover:bg-[var(--color-cream)] transition-colors text-start">
+              <div className="w-9 h-9 rounded-xl bg-[var(--color-ember-50)] flex items-center justify-center shrink-0">
+                <svg className="w-4 h-4 text-[var(--color-ember-500)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/></svg>
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-[var(--color-ink)]">{m.acctStartSelling()}</p>
+                <p className="text-xs text-[var(--color-ink-fade)] mt-0.5">{m.acctStartSellingSub()}</p>
+              </div>
+              <svg className="w-4 h-4 text-[var(--color-ink-fade)] shrink-0 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg>
+            </Link>
+          </>
+        )}
 
         <SectionLabel label={m.acctInfoSec()} />
         <div className="border-t border-gray-50"/>

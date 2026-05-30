@@ -1,6 +1,7 @@
 import { internalAction, internalMutation, internalQuery } from "./_generated/server";
 import type { ActionCtx } from "./_generated/server";
 import { internal, components } from "./_generated/api";
+import type { Id } from "./_generated/dataModel";
 import { v } from "convex/values";
 import { paginationOptsValidator } from "convex/server";
 import { R2 } from "@convex-dev/r2";
@@ -61,7 +62,11 @@ export const migrateProductPhotos = internalAction({
     let scanned = 0;
 
     for (;;) {
-      const page = await ctx.runQuery(internal.migrateImages.listProductsPage, {
+      const page: {
+        page: Array<{ _id: Id<"products">; photos: string[] }>;
+        isDone: boolean;
+        continueCursor: string;
+      } = await ctx.runQuery(internal.migrateImages.listProductsPage, {
         paginationOpts: { numItems: 25, cursor },
       });
 

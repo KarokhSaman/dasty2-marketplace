@@ -4,12 +4,12 @@ import {
   Scripts,
   createRootRouteWithContext,
 } from '@tanstack/react-router'
+import { createServerFn } from '@tanstack/react-start'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ConvexQueryClient } from '@convex-dev/react-query'
 import { ConvexReactClient } from 'convex/react'
 import { ConvexProviderWithClerk } from 'convex/react-clerk'
 import { ClerkProvider, useAuth } from '@clerk/tanstack-react-start'
-import { createServerFn } from '@tanstack/react-start'
 import { auth } from '@clerk/tanstack-react-start/server'
 import type { ReactNode } from 'react'
 import {
@@ -21,29 +21,30 @@ import {
 import { SellerSessionProvider } from '@/lib/SellerSessionContext'
 import appCss from '@/src/styles/globals.css?url'
 
-const fetchClerkAuth = createServerFn({ method: 'GET' }).handler(async () => {
-  const { userId, getToken } = await auth()
-  const token = await getToken({ template: 'convex' })
-  return { userId, token }
-})
-
 interface RouterContext {
   queryClient: QueryClient
   convexClient: ConvexReactClient
   convexQueryClient: ConvexQueryClient
 }
 
+const fetchClerkAuth = createServerFn({ method: 'GET' }).handler(async () => {
+  try {
+    const { userId, getToken } = await auth()
+    const token = userId ? await getToken().catch(() => null) : null
+    return { userId, token }
+  } catch {
+    return { userId: null, token: null }
+  }
+})
+
 export const Route = createRootRouteWithContext<RouterContext>()({
   beforeLoad: async (ctx) => {
     const locale = getLocale()
-    const auth = await fetchClerkAuth().catch(() => ({
-      userId: null,
-      token: null,
-    }))
-    if (auth.token) {
-      ctx.context.convexQueryClient.serverHttpClient?.setAuth(auth.token)
+    const { userId, token } = await fetchClerkAuth()
+    if (token) {
+      ctx.context.convexQueryClient.serverHttpClient?.setAuth(token)
     }
-    return { locale, userId: auth.userId, token: auth.token }
+    return { locale, userId, token }
   },
   head: ({ matches }) => {
     // De-localized pathname (TanStack Router's rewrite.input strips the locale
@@ -64,12 +65,12 @@ export const Route = createRootRouteWithContext<RouterContext>()({
         // hreflang — base locale doubles as x-default for SEO.
         {
           rel: 'alternate',
-          hreflang: 'x-default',
+          hrefLang: 'x-default',
           href: localizeHref(pathname, { locale: 'en' }),
         },
         ...locales.map((locale) => ({
           rel: 'alternate',
-          hreflang: locale,
+          hrefLang: locale,
           href: localizeHref(pathname, { locale }),
         })),
       ],

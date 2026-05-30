@@ -1,7 +1,9 @@
 import { useQuery } from "convex/react";
+import { useQuery as useReactQuery } from "@tanstack/react-query";
+import { convexQuery } from "@convex-dev/react-query";
 import { api } from "@/convex/_generated/api";
 import { useRouter, useParams, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import * as m from "@/src/paraglide/messages";
 import { getLocale } from "@/src/paraglide/runtime";
 import { getCategoryLabel } from "@/lib/categories";
@@ -76,7 +78,11 @@ function formatDate(iso, locale) {
   if (!iso) return "";
   try {
     const tag = locale === "en" ? "en-GB" : locale;
-    return new Date(iso).toLocaleDateString(tag, { day: "numeric", month: "short", year: "numeric" });
+    // Iraq is a fixed UTC+3 (no DST). Shift by +3h and format in UTC — workerd
+    // lacks named-timezone (ICU) data, so formatting in UTC is the only way the
+    // server and client agree on the calendar date (avoids a hydration mismatch).
+    const local = new Date(new Date(iso).getTime() + 3 * 60 * 60 * 1000);
+    return local.toLocaleDateString(tag, { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
   } catch {
     return String(iso).slice(0, 10);
   }
@@ -150,7 +156,7 @@ function SellerCard({ name, city }) {
 function ImagePlaceholder({ size = "lg" }) {
   const cls = size === "lg" ? "w-16 h-16" : "w-8 h-8";
   return (
-    <div className="w-full h-full flex items-center justify-center bg-[var(--color-cream-deep)]">
+    <div className="w-full h-full flex items-center justify-center bg-[var(--color-sand)]">
       <svg className={`${cls} text-[var(--color-ink-fade)]`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
       </svg>
@@ -165,7 +171,7 @@ function RelatedCard({ product }) {
   return (
     <Link to={`/products/${product._id}`} className="group block">
       <div className="bg-white rounded-2xl border border-[var(--color-hairline)] overflow-hidden hover:border-[var(--color-ember-200)] hover:shadow-[0_18px_36px_-22px_rgba(11,12,15,0.22)] transition-all duration-300 active:scale-[0.98]">
-        <div className="aspect-square relative overflow-hidden bg-[var(--color-cream-deep)]">
+        <div className="aspect-square relative overflow-hidden bg-[var(--color-sand)]">
           {photo ? (
             <img src={photo} alt={product.title}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
@@ -278,7 +284,16 @@ export default function ProductDetailPage() {
   const { id } = useParams({ strict: false });
   const router = useRouter();
   const locale = getLocale();
-  const live = useQuery(api.products.getPublicById, id ? { id } : "skip");
+  // Main product: prefetched in the route loader and SSR'd through the React
+  // Query ↔ Convex integration, so navigation lands on real content while still
+  // updating live. `data` is the product, `null` (not found), or `undefined`
+  // (loading) — same contract the rest of this component already expects.
+  const { data: live } = useReactQuery({
+    ...convexQuery(api.products.getPublicById, { id }),
+    enabled: !!id,
+  });
+  // Related list stays a client-only live query — it shuffles with Math.random(),
+  // which must not run during SSR (hydration mismatch).
   const allProducts = useQuery(api.products.getPublic);
   const seed = useMemo(() => getProductCache(id), [id]);
   const product = live ?? seed;
@@ -286,9 +301,12 @@ export default function ProductDetailPage() {
   if (live === null) return <NotFoundState onBack={() => router.history.back()} />;
   if (!product)      return <ProductDetailSkeleton />;
 
-  const productUrl = typeof window !== "undefined"
-    ? `${window.location.origin}/products/${id}`
-    : `https://dasty2mndalan.com/products/${id}`;
+  // Build the canonical origin SSR-safely: both the server and the first client
+  // render use the production domain (so hydration matches), then the effect
+  // swaps in the real origin after mount (e.g. localhost in dev).
+  const [origin, setOrigin] = useState("https://dasty2mndalan.com");
+  useEffect(() => { setOrigin(window.location.origin); }, []);
+  const productUrl = `${origin}/products/${id}`;
 
   const waLink = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(
     m.waMessage({

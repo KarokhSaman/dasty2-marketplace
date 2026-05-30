@@ -1,4 +1,6 @@
-import { usePaginatedQuery, useQuery } from "convex/react";
+import { usePaginatedQuery } from "convex/react";
+import { useQuery as useReactQuery } from "@tanstack/react-query";
+import { convexQuery } from "@convex-dev/react-query";
 import { api } from "@/convex/_generated/api";
 import { useState, useMemo, useRef, useEffect, useLayoutEffect } from "react";
 import ProductCard from "@/components/buyer/ProductCard";
@@ -135,17 +137,25 @@ export default function HomePage() {
   const updateFilter = (key) => (value) => setFilters((f) => ({ ...f, [key]: value }));
   const sentinelRef = useRef(null);
 
-  // Play entrance animations only on the first home view of the session.
-  const [animateEntrance] = useState(() => {
-    if (homeEntranceShown) return false;
-    homeEntranceShown = true;
-    return true;
-  });
+  // Play entrance animations only on the first home view of the session — but
+  // NOT during SSR / first hydration (the static HTML has no animation classes,
+  // so adding them in the initial render would hydration-mismatch). Start false
+  // to match the server, then trigger the animation once after mount.
+  const [animateEntrance, setAnimateEntrance] = useState(false);
+  useEffect(() => {
+    if (!homeEntranceShown) {
+      homeEntranceShown = true;
+      setAnimateEntrance(true);
+    }
+  }, []);
 
   const { initialItems, cachedFeatured, cachedResults, saveState } =
     useHomeStatePersistence(filters, setFilters, DEFAULT_PAGE_SIZE);
 
-  const liveFeatured = useQuery(api.products.getFeatured);
+  // Featured is non-paginated → prefetched in the route loader (SSR + intent
+  // preload) via React Query, still live-reactive. The paginated feed below
+  // stays on usePaginatedQuery (convexQuery has no pagination).
+  const { data: liveFeatured } = useReactQuery(convexQuery(api.products.getFeatured, {}));
   const featuredProducts = liveFeatured ?? cachedFeatured ?? [];
 
   const { results: liveResults, status, loadMore } = usePaginatedQuery(

@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import { createFileRoute } from '@tanstack/react-router'
 import { ConvexHttpClient } from 'convex/browser'
 import { api } from '@/convex/_generated/api'
@@ -40,7 +41,7 @@ export const Route = createFileRoute('/sitemap.xml')({
 
         // Fetch approved products from Convex for dynamic /products/:id entries.
         let productIds: string[] = []
-        const convexUrl = process.env.VITE_CONVEX_URL ?? process.env.CONVEX_URL
+        const convexUrl = import.meta.env.VITE_CONVEX_URL
         if (convexUrl) {
           try {
             const client = new ConvexHttpClient(convexUrl)

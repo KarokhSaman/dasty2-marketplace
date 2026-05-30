@@ -1,5 +1,6 @@
 /// <reference types="vite/client" />
 import { createRouter } from '@tanstack/react-router'
+import { setupRouterSsrQueryIntegration } from '@tanstack/react-router-ssr-query'
 import { QueryClient } from '@tanstack/react-query'
 import { ConvexQueryClient } from '@convex-dev/react-query'
 import { ConvexReactClient } from 'convex/react'
@@ -15,7 +16,13 @@ export function getRouter() {
   const convex = new ConvexReactClient(CONVEX_URL, {
     unsavedChangesWarning: false,
   })
-  const convexQueryClient = new ConvexQueryClient(convex)
+  // Single-roundtrip SSR fetches. The default "consistent" mode does a 2-roundtrip
+  // timestamped fetch that doesn't resolve reliably in the Worker dev runtime,
+  // leaving loader-prefetched queries unhydrated (skeleton SSR). Our pages don't
+  // depend on cross-query SSR consistency, so the faster single fetch is correct.
+  const convexQueryClient = new ConvexQueryClient(convex, {
+    dangerouslyUseInconsistentQueriesDuringSSR: true,
+  })
 
   const queryClient: QueryClient = new QueryClient({
     defaultOptions: {
@@ -33,11 +40,14 @@ export function getRouter() {
     defaultViewTransition: true,
     context: { queryClient, convexClient: convex, convexQueryClient },
     scrollRestoration: true,
+    // The Convex provider lives in __root.tsx (ConvexProviderWithClerk) which wraps
+    // the whole app — no second ConvexProvider needed here.
     rewrite: {
       input: ({ url }) => deLocalizeUrl(url),
       output: ({ url }) => localizeUrl(url),
     },
   })
+  setupRouterSsrQueryIntegration({ router, queryClient })
 
   return router
 }

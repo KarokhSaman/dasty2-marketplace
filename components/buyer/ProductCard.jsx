@@ -64,7 +64,7 @@ export default function ProductCard({ product, onSave }) {
     <Link to={`/products/${product._id}`} className="group block" onClick={handleClick}>
       <article className="bg-paper rounded-2xl overflow-hidden border border-[var(--color-hairline)] transition-all duration-300 hover:border-[var(--color-ember-200)] hover:shadow-[0_18px_36px_-22px_rgba(11,12,15,0.22)] hover:-translate-y-0.5 active:scale-[0.98]">
         {/* Image */}
-        <div className="aspect-[4/5] relative overflow-hidden bg-[var(--color-cream-deep)]">
+        <div className="aspect-[4/5] relative overflow-hidden bg-[var(--color-sand)]">
           {photo ? (
             <img
               src={photo}

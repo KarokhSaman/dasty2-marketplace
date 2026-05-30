@@ -12,6 +12,12 @@ import {
   conditionValidator,
   productStatusValidator,
 } from "./types";
+import {
+  isAdminIdentity,
+  requireAdmin,
+  requireCurrentSeller,
+  requireIdentity,
+} from "./auth";
 
 type PublicProduct = Omit<Doc<"products">, "sellerId" | "sellerPhone" | "profit">;
 
@@ -127,11 +133,12 @@ export const getPublicPaginated = query({
 });
 
 export const getBySeller = query({
-  args: { sellerId: v.string() },
-  handler: async (ctx, { sellerId }) => {
+  args: {},
+  handler: async (ctx) => {
+    const seller = await requireCurrentSeller(ctx);
     return await ctx.db
       .query("products")
-      .withIndex("by_seller", q => q.eq("sellerId", sellerId))
+      .withIndex("by_seller", q => q.eq("sellerId", seller._id.toString()))
       .collect();
   },
 });
@@ -139,6 +146,7 @@ export const getBySeller = query({
 export const getAll = query({
   args: {},
   handler: async (ctx) => {
+    await requireAdmin(ctx);
     const products = await ctx.db.query("products").collect();
     const sellers  = await ctx.db.query("sellers").collect();
     const addrMap  = new Map(sellers.map(s => [s._id.toString(), s.address ?? ""]));
@@ -154,15 +162,11 @@ export const add = mutation({
     condition: conditionValidator,
     price: v.number(),
     photos: v.array(v.string()),
-    city: v.optional(v.string()),
-    sellerId: v.string(),
-    sellerName: v.string(),
-    sellerPhone: v.string(),
     featured: v.optional(v.boolean()),
     notes: v.optional(v.string()),
-    dateAdded: v.string(),
   },
   handler: async (ctx, args) => {
+    const seller = await requireCurrentSeller(ctx);
     // Check for active offer and adjust fee accordingly
     const today = new Date().toISOString().slice(0, 10);
     const allOffers = await ctx.db.query("offers")
@@ -175,15 +179,19 @@ export const add = mutation({
     const id = await ctx.db.insert("products", {
       ...args,
       seq,
-      city: args.city ?? "Erbil",
+      city: seller.city || "Erbil",
+      sellerId: seller._id.toString(),
+      sellerName: seller.name,
+      sellerPhone: seller.phone,
       profit,
       status: "pending",
       views: 0,
+      dateAdded: new Date().toISOString(),
     });
     await ctx.db.insert("notifications", {
       sellerId: "ADMIN",
       productId: id,
-      message: `New product submitted: "${args.title}" by ${args.sellerName}`,
+      message: `New product submitted: "${args.title}" by ${seller.name}`,
       url: "/admin/products?tab=pending",
       read: false,
       createdAt: new Date().toISOString(),
@@ -202,6 +210,7 @@ export const updateStatus = mutation({
     dateSold: v.optional(v.string()),
   },
   handler: async (ctx, { id, ...fields }) => {
+    await requireAdmin(ctx);
     const patch = Object.fromEntries(
       Object.entries(fields).filter(([, value]) => value !== undefined),
     );
@@ -212,14 +221,23 @@ export const updateStatus = mutation({
 export const getById = query({
   args: { id: v.id("products") },
   handler: async (ctx, { id }) => {
-    return await ctx.db.get(id);
+    const product = await ctx.db.get(id);
+    if (!product) return null;
+
+    const identity = await requireIdentity(ctx);
+    if (isAdminIdentity(identity)) return product;
+
+    const seller = await requireCurrentSeller(ctx);
+    if (product.sellerId !== seller._id.toString()) {
+      throw new Error("Not authorized");
+    }
+    return product;
   },
 });
 
 export const sellerUpdate = mutation({
   args: {
     id: v.id("products"),
-    sellerId: v.string(),
     title: v.string(),
     description: v.string(),
     category: categoryValidator,
@@ -227,10 +245,13 @@ export const sellerUpdate = mutation({
     price: v.number(),
     photos: v.array(v.string()),
   },
-  handler: async (ctx, { id, sellerId, ...fields }) => {
+  handler: async (ctx, { id, ...fields }) => {
+    const seller = await requireCurrentSeller(ctx);
     const product = await ctx.db.get(id);
     if (!product) throw new Error("Product not found");
-    if (product.sellerId !== sellerId) throw new Error("Not authorized");
+    if (product.sellerId !== seller._id.toString()) {
+      throw new Error("Not authorized");
+    }
     if (product.status === "sold" || product.status === "paid") {
       throw new Error("Cannot edit a sold or paid product");
     }
@@ -253,11 +274,13 @@ export const sellerUpdate = mutation({
 export const duplicate = mutation({
   args: {
     id: v.id("products"),
-    sellerId: v.string(),
   },
-  handler: async (ctx, { id, sellerId }) => {
+  handler: async (ctx, { id }) => {
+    const seller = await requireCurrentSeller(ctx);
     const src = await ctx.db.get(id);
-    if (!src || src.sellerId !== sellerId) throw new Error("Not authorized");
+    if (!src || src.sellerId !== seller._id.toString()) {
+      throw new Error("Not authorized");
+    }
 
     const seq = await generateSeq(ctx);
     const newId = await ctx.db.insert("products", {
@@ -295,11 +318,13 @@ export const duplicate = mutation({
 export const sellerRemove = mutation({
   args: {
     id: v.id("products"),
-    sellerId: v.string(),
   },
-  handler: async (ctx, { id, sellerId }) => {
+  handler: async (ctx, { id }) => {
+    const seller = await requireCurrentSeller(ctx);
     const product = await ctx.db.get(id);
-    if (!product || product.sellerId !== sellerId) throw new Error("Not authorized");
+    if (!product || product.sellerId !== seller._id.toString()) {
+      throw new Error("Not authorized");
+    }
     if (!["pending", "rejected"].includes(product.status)) {
       throw new Error("Only pending or rejected products can be deleted");
     }
@@ -310,6 +335,7 @@ export const sellerRemove = mutation({
 export const remove = mutation({
   args: { id: v.id("products") },
   handler: async (ctx, { id }) => {
+    await requireAdmin(ctx);
     await ctx.db.delete(id);
   },
 });
@@ -320,6 +346,7 @@ export const adminUpdatePhotos = mutation({
     photos: v.array(v.string()),
   },
   handler: async (ctx, { id, photos }) => {
+    await requireAdmin(ctx);
     await ctx.db.patch(id, { photos });
   },
 });
@@ -331,6 +358,7 @@ export const setFeatured = mutation({
     featuredUntil: v.optional(v.string()), // "YYYY-MM-DD"
   },
   handler: async (ctx, { id, featured, featuredUntil }) => {
+    await requireAdmin(ctx);
     await ctx.db.patch(id, {
       featured,
       featuredUntil: featured ? featuredUntil : undefined,

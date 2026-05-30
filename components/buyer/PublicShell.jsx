@@ -18,16 +18,16 @@ function Wordmark() {
       to="/"
       dir="ltr"
       aria-label="Dasty2 Mndalan — home"
-      className="group inline-flex items-baseline gap-2 shrink-0 select-none"
+      className="group inline-flex items-baseline gap-1.5 shrink-0 select-none"
     >
-      <span className="font-display text-[22px] leading-none font-bold text-[var(--color-ember-600)] tracking-tight">
+      <span className="font-display text-[18px] leading-none font-bold text-[var(--color-ember-600)] tracking-tight">
         Dasty<span className="italic font-medium">2</span>
       </span>
       <span
         aria-hidden
         className="self-center w-1 h-1 rounded-full bg-[var(--color-ember-300)]/80 group-hover:bg-[var(--color-ember-500)] transition-colors"
       />
-      <span className="text-[10.5px] font-semibold text-[var(--color-ink-soft)] tracking-[0.22em] uppercase">
+      <span className="text-[9px] font-semibold text-[var(--color-ink-soft)] tracking-[0.14em] uppercase">
         Mndalan
       </span>
     </Link>
@@ -195,6 +195,8 @@ function SmartBottomNav() {
         <div className="sm:hidden h-24" aria-hidden />
         <nav className="sm:hidden fixed bottom-0 inset-x-0 z-30 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 pointer-events-none">
           <div className="pointer-events-auto mx-auto max-w-md surface-frost rounded-[1.75rem] border border-[var(--color-hairline)] shadow-[0_18px_44px_-20px_rgba(11,12,15,0.22)] px-2 py-1.5 flex items-stretch gap-1 relative">
+            {/* Left group — split equally with the right group so the FAB stays centered */}
+            <div className="flex-1 flex items-stretch gap-1">
             <Link to="/" onClick={handleHomeTap} className={`flex-1 ${tab(isHome)}`}>
               <svg className="w-5 h-5" fill={isHome ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
@@ -208,8 +210,9 @@ function SmartBottomNav() {
               </svg>
               <span className="text-[10px] font-semibold tracking-wide">Dashboard</span>
             </Link>
+            </div>
 
-            {/* FAB — Sell */}
+            {/* FAB — Sell (centered between the two equal groups) */}
             <Link
               to="/seller/add"
               className="flex-shrink-0 -mt-7 w-14 h-14 rounded-full bg-gradient-to-br from-[var(--color-ember-500)] to-[var(--color-ember-600)] text-white shadow-[0_14px_28px_-10px_rgba(237,0,64,0.55)] inline-flex items-center justify-center ring-4 ring-[var(--color-cream)] transition-transform active:scale-95 hover:scale-105"
@@ -220,15 +223,15 @@ function SmartBottomNav() {
               </svg>
             </Link>
 
+            {/* Right group — same flex width as the left group */}
+            <div className="flex-1 flex items-stretch gap-1">
             <Link to="/seller/account" className={`flex-1 ${tab(isAccount)}`}>
               <svg className="w-5 h-5" fill={isAccount ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
               </svg>
               <span className="text-[10px] font-semibold tracking-wide">Account</span>
             </Link>
-
-            {/* spacer to balance the FAB so labels stay centered */}
-            <div className="w-0" />
+            </div>
           </div>
         </nav>
       </>

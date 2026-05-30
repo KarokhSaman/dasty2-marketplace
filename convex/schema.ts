@@ -37,6 +37,7 @@ export default defineSchema({
 
   sellers: defineTable({
     clerkUserId: v.optional(v.string()),
+    clerkTokenIdentifier: v.optional(v.string()),
     email: v.optional(v.string()),
     name: v.string(),
     phone: v.string(),
@@ -44,7 +45,10 @@ export default defineSchema({
     address: v.optional(v.string()),
     registeredAt: v.string(),
     isActive: v.boolean(),
-  }),
+  })
+    .index("by_clerkUserId", ["clerkUserId"])
+    .index("by_clerkTokenIdentifier", ["clerkTokenIdentifier"])
+    .index("by_email", ["email"]),
 
   otpCodes: defineTable({
     email: v.string(),
@@ -93,5 +97,5 @@ export default defineSchema({
     read: v.boolean(),
     createdAt: v.string(),
     url: v.optional(v.string()),
-  }),
+  }).index("by_sellerId", ["sellerId"]),
 });

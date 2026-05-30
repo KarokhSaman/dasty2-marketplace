@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useUser, useClerk, SignIn } from "@clerk/tanstack-react-start";
 import * as m from "@/src/paraglide/messages";
 import { adminClerkVerifyFn } from "@/src/server/clerk-admin";
+import { clearLocalClerkAuth } from "@/lib/clerkAuthReset";
 
 function ErrorBox({ message }) {
   return (
@@ -16,7 +17,7 @@ function ErrorBox({ message }) {
 
 export default function AdminLoginPage() {
   const { isLoaded, isSignedIn, user } = useUser();
-  const { signOut } = useClerk();
+  const clerk = useClerk();
   // Start as "loading" so <SignIn /> never renders before Clerk state is known
   const [step, setStep] = useState("loading"); // loading | signin | verifying | error
   const [errorMsg, setErrorMsg] = useState("");
@@ -24,16 +25,26 @@ export default function AdminLoginPage() {
 
   useEffect(() => {
     if (!isLoaded) return;
-    if (!isSignedIn) { setStep("signin"); return; }
+    if (!isSignedIn) {
+      setVerified(false);
+      setStep("signin");
+      return;
+    }
     if (verified) return;
+
+    async function resetStaleSession() {
+      await clearLocalClerkAuth(clerk, "/api/admin/logout");
+      setErrorMsg("");
+      setVerified(false);
+      setStep("signin");
+    }
 
     setVerified(true);
     setStep("verifying");
     adminClerkVerifyFn().then(async res => {
       if (!res.ok) {
         if (res.error === "not_authenticated") {
-          // Stale/invalid Clerk session — sign out so sign-in form can render cleanly.
-          await signOut();
+          await resetStaleSession();
           return;
         }
         setErrorMsg(
@@ -46,12 +57,9 @@ export default function AdminLoginPage() {
       }
       window.location.href = "/admin";
     }).catch(async () => {
-      try { await signOut(); } catch {
-        setErrorMsg("Something went wrong. Please try again.");
-        setStep("error");
-      }
+      await resetStaleSession();
     });
-  }, [isLoaded, isSignedIn, verified]);
+  }, [clerk, isLoaded, isSignedIn, verified]);
 
   return (
     <div className="flex items-center justify-center min-h-[75vh]">
@@ -94,7 +102,7 @@ export default function AdminLoginPage() {
         )}
 
         {/* Clerk sign-in */}
-        {step === "signin" && (
+        {step === "signin" && !isSignedIn && (
           <>
             <div className="flex flex-col items-center mb-6">
               <div className="w-14 h-14 bg-rose-50 rounded-2xl flex items-center justify-center mb-4">

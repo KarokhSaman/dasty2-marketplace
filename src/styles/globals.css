@@ -19,15 +19,23 @@
      Kept as a separate token so existing `.font-display` usages stay valid. */
   --font-display: 'GeistVF', system-ui, -apple-system, 'Segoe UI', sans-serif;
 
-  /* Surfaces & ink — cool-neutral, modern-app palette.
-     App background is a soft neutral; cards are pure white. */
-  --color-cream: #f4f5f7;
+  /* Surfaces & ink — modern-app palette.
+     App background and card surfaces share one warm off-white. */
+  --color-cream: #fefcf9;
   --color-cream-deep: #e9ebef;
-  --color-paper: #ffffff;
+  --color-paper: #fefcf9;
+  /* Redefine Tailwind's `white` too, so the many `bg-white` cards across
+     seller/admin/login surfaces also pick up the warm off-white. (Cards keep
+     their hairline borders/shadows, so they stay distinct from the page.) */
+  --color-white: #fefcf9;
   --color-ink: #0b0c0f;
   --color-ink-soft: #61656e;
   --color-ink-fade: #9aa0a9;
   --color-hairline: #e6e8ec;
+
+  /* Warm sand — neutral surface for filter controls (category icons, sort,
+     condition tabs). Distinct from the cool `cream-deep` used by skeletons. */
+  --color-sand: #f6eee5;
 
   /* Brand — defined once as `--color-brand-*`.
      Both `ember-*` and Tailwind's `rose-*` scale are aliased to this scale

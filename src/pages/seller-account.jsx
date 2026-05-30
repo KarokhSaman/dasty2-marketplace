@@ -86,7 +86,7 @@ export default function SellerAccountPage() {
   async function handleSave(e) {
     e.preventDefault();
     setSaving(true);
-    await updateProfile({ id: seller._id, name: name.trim(), phone: phone.trim(), city, address: address.trim() });
+    await updateProfile({ name: name.trim(), phone: phone.trim(), city, address: address.trim() });
     setSaving(false);
     setEditing(false);
   }

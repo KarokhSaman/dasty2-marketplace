@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import * as m from "@/src/paraglide/messages";
@@ -24,11 +24,6 @@ export default function AdminOffersPage() {
   const reactivateOffer = useMutation(api.offers.reactivate);
   const deleteOffer     = useMutation(api.offers.deleteOffer);
 
-  const [adminEmail, setAdminEmail] = useState("");
-  useEffect(() => {
-    fetch("/api/admin/me").then(r => r.json()).then(d => setAdminEmail(d.email ?? "admin"));
-  }, []);
-
   const today = new Date().toISOString().slice(0, 10);
 
   const [title,         setTitle]         = useState("");
@@ -47,7 +42,6 @@ export default function AdminOffersPage() {
     setSubmitting(true);
     await createOffer({
       title:         title.trim(),
-      adminEmail,
       description:   description.trim(),
       type,
       flatFeeAmount: type === "flat_fee" ? Number(flatFeeAmount) : undefined,
@@ -86,7 +80,7 @@ export default function AdminOffersPage() {
               </p>
             </div>
             <button
-              onClick={() => deactivateOffer({ id: activeOffer._id, adminEmail })}
+              onClick={() => deactivateOffer({ id: activeOffer._id })}
               className="shrink-0 bg-white/20 hover:bg-white/30 text-white text-xs font-bold px-3 py-2 rounded-xl transition-colors"
             >
               {m.adminOffersDeactivate()}
@@ -220,19 +214,19 @@ export default function AdminOffersPage() {
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     {offer.isActive ? (
-                      <button onClick={() => deactivateOffer({ id: offer._id, adminEmail })}
+                      <button onClick={() => deactivateOffer({ id: offer._id })}
                         className="text-xs text-gray-400 hover:text-red-500 border border-gray-200 hover:border-red-200 px-3 py-1.5 rounded-lg transition-colors">
                         {m.adminOffersDeactivate()}
                       </button>
                     ) : (
-                      <button onClick={() => reactivateOffer({ id: offer._id, adminEmail })}
+                      <button onClick={() => reactivateOffer({ id: offer._id })}
                         className="text-xs text-gray-400 hover:text-green-600 border border-gray-200 hover:border-green-200 px-3 py-1.5 rounded-lg transition-colors">
                         {m.adminOffersReactivate()}
                       </button>
                     )}
                     {confirmDel === offer._id ? (
                       <div className="flex items-center gap-1">
-                        <button onClick={() => { deleteOffer({ id: offer._id, adminEmail }); setConfirmDel(null); }}
+                        <button onClick={() => { deleteOffer({ id: offer._id }); setConfirmDel(null); }}
                           className="text-xs bg-red-500 hover:bg-red-600 text-white font-semibold px-2 py-1.5 rounded-lg transition-colors">✓</button>
                         <button onClick={() => setConfirmDel(null)}
                           className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-2 py-1.5 rounded-lg transition-colors">✕</button>

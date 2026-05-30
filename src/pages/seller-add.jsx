@@ -100,11 +100,6 @@ export default function AddProductPage() {
         price: priceNum,
         description: description.trim(),
         photos,
-        city: seller.city || "Erbil",
-        sellerId: seller._id,
-        sellerName: seller.name,
-        sellerPhone: seller.phone,
-        dateAdded: new Date().toISOString(),
       });
       setSubmitted(true);
     } catch { setSubmitting(false); }

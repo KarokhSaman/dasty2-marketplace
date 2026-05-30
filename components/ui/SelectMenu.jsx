@@ -24,7 +24,7 @@ const VARIANT_STYLES = {
   },
   ghost: {
     active:   "border-transparent bg-[var(--color-ember-500)] text-white",
-    inactive: "border-transparent bg-[var(--color-cream-deep)] hover:bg-[var(--color-ember-50)] text-[var(--color-ink)]",
+    inactive: "border-transparent bg-[var(--color-sand)] hover:bg-[var(--color-ember-50)] text-[var(--color-ink)]",
   },
 };
 

@@ -1,13 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { getCookie } from '@tanstack/react-start/server'
+import { requireClerkAdmin } from '@/src/server/admin-auth'
 
 export const Route = createFileRoute('/api/admin/me')({
   server: {
     handlers: {
-      GET: () => {
-        const raw = getCookie('dasty2-admin') ?? null
-        const email = raw ? decodeURIComponent(raw) : null
-        return Response.json({ email })
+      GET: async () => {
+        const admin = await requireClerkAdmin()
+        return Response.json({ email: admin?.email ?? null })
       },
     },
   },

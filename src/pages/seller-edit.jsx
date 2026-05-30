@@ -103,7 +103,6 @@ export default function EditProductPage() {
     try {
       await sellerUpdate({
         id,
-        sellerId: seller._id,
         title: title.trim(),
         category,
         condition,

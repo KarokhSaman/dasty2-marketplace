@@ -17,6 +17,7 @@
 /.output/
 /.nitro/
 /.vinxi/
+/.tanstack/
 /dist/
 src/routeTree.gen.ts
 

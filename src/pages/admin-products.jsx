@@ -84,7 +84,6 @@ export default function AdminProductsPage() {
 
   function log(action, product, notes) {
     return createLog({
-      adminEmail,
       action,
       productId:    product?._id?.toString(),
       productTitle: product?.title,

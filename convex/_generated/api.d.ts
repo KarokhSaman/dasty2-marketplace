@@ -9,6 +9,7 @@
  */
 
 import type * as adminLogs from "../adminLogs.js";
+import type * as auth from "../auth.js";
 import type * as migrate from "../migrate.js";
 import type * as migrateImages from "../migrateImages.js";
 import type * as notifications from "../notifications.js";
@@ -28,6 +29,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   adminLogs: typeof adminLogs;
+  auth: typeof auth;
   migrate: typeof migrate;
   migrateImages: typeof migrateImages;
   notifications: typeof notifications;

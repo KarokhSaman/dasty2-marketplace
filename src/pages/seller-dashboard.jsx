@@ -166,7 +166,7 @@ export default function SellerDashboard() {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const sellerRemove = useMutation(api.products.sellerRemove);
 
-  const products    = useQuery(api.products.getBySeller, seller ? { sellerId: seller._id } : "skip");
+  const products    = useQuery(api.products.getBySeller, seller ? {} : "skip");
   const activeOffer = useQuery(api.offers.getActive);
 
   const sellerCategories = useMemo(() => {
@@ -204,7 +204,7 @@ export default function SellerDashboard() {
   };
 
   async function handleDelete(product) {
-    await sellerRemove({ id: product._id, sellerId: seller._id });
+    await sellerRemove({ id: product._id });
   }
 
   async function handleRepost(product) {
@@ -287,7 +287,7 @@ export default function SellerDashboard() {
               product.status === "rejected" ? "border-red-100" : "border-[var(--color-hairline)] hover:border-[var(--color-ember-200)]"
             }`}>
               <div className="flex items-center gap-3">
-                <div className="w-14 h-14 rounded-xl overflow-hidden bg-[var(--color-cream-deep)] shrink-0">
+                <div className="w-14 h-14 rounded-xl overflow-hidden bg-[var(--color-sand)] shrink-0">
                   {product.photos?.[0]
                     ? <img src={product.photos[0]} alt={product.title} className="w-full h-full object-cover"/>
                     : <div className="w-full h-full flex items-center justify-center"><svg className="w-5 h-5 text-[var(--color-ink-fade)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></div>

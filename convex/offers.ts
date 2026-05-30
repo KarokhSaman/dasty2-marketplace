@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { requireAdmin } from "./auth";
 import { offerTypeValidator } from "./types";
 
 export const getActive = query({
@@ -16,6 +17,7 @@ export const getActive = query({
 export const getAll = query({
   args: {},
   handler: async (ctx) => {
+    await requireAdmin(ctx);
     return (await ctx.db.query("offers").collect())
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   },
@@ -23,7 +25,6 @@ export const getAll = query({
 
 export const create = mutation({
   args: {
-    adminEmail:    v.string(),
     title:         v.string(),
     description:   v.string(),
     type:          offerTypeValidator,
@@ -32,10 +33,10 @@ export const create = mutation({
     endDate:       v.string(),
   },
   handler: async (ctx, args) => {
-    const { adminEmail, ...offerFields } = args;
+    const { email: adminEmail } = await requireAdmin(ctx);
 
     const offerId = await ctx.db.insert("offers", {
-      ...offerFields,
+      ...args,
       isActive:  true,
       createdAt: new Date().toISOString(),
     });
@@ -76,8 +77,9 @@ export const create = mutation({
 });
 
 export const deactivate = mutation({
-  args: { id: v.id("offers"), adminEmail: v.string() },
-  handler: async (ctx, { id, adminEmail }) => {
+  args: { id: v.id("offers") },
+  handler: async (ctx, { id }) => {
+    const { email: adminEmail } = await requireAdmin(ctx);
     const offer = await ctx.db.get(id);
     await ctx.db.patch(id, { isActive: false });
     await ctx.db.insert("adminLogs", {
@@ -90,8 +92,9 @@ export const deactivate = mutation({
 });
 
 export const reactivate = mutation({
-  args: { id: v.id("offers"), adminEmail: v.string() },
-  handler: async (ctx, { id, adminEmail }) => {
+  args: { id: v.id("offers") },
+  handler: async (ctx, { id }) => {
+    const { email: adminEmail } = await requireAdmin(ctx);
     const offer = await ctx.db.get(id);
     await ctx.db.patch(id, { isActive: true });
     await ctx.db.insert("adminLogs", {
@@ -104,8 +107,9 @@ export const reactivate = mutation({
 });
 
 export const deleteOffer = mutation({
-  args: { id: v.id("offers"), adminEmail: v.string() },
-  handler: async (ctx, { id, adminEmail }) => {
+  args: { id: v.id("offers") },
+  handler: async (ctx, { id }) => {
+    const { email: adminEmail } = await requireAdmin(ctx);
     const offer = await ctx.db.get(id);
     await ctx.db.delete(id);
     await ctx.db.insert("adminLogs", {

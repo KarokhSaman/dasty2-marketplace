@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import * as m from "@/src/paraglide/messages";
@@ -11,11 +11,6 @@ export default function AdminSellersPage() {
   const createLog     = useMutation(api.adminLogs.create);
   const [search, setSearch] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(null); // seller _id being confirmed
-  const [adminEmail, setAdminEmail] = useState("");
-
-  useEffect(() => {
-    fetch("/api/admin/me").then(r => r.json()).then(d => setAdminEmail(d.email ?? "admin"));
-  }, []);
 
   const enriched = useMemo(() => {
     if (!sellers || !products) return [];
@@ -115,7 +110,6 @@ export default function AdminSellersPage() {
                   const newActive = !seller.isActive;
                   await setActive({ id: seller._id, isActive: newActive });
                   await createLog({
-                    adminEmail,
                     action: newActive ? "seller_activated" : "seller_deactivated",
                     sellerName: seller.name,
                     notes: seller.email || undefined,
@@ -135,7 +129,7 @@ export default function AdminSellersPage() {
                   <button
                     onClick={async () => {
                       await deleteSellerFn({ data: { sellerId: seller._id, clerkUserId: seller.clerkUserId || undefined } });
-                      await createLog({ adminEmail, action: "seller_deleted", sellerName: seller.name, notes: seller.email || undefined });
+                      await createLog({ action: "seller_deleted", sellerName: seller.name, notes: seller.email || undefined });
                       setConfirmDelete(null);
                     }}
                     className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors"
