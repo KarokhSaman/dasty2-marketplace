@@ -49,4 +49,4 @@ Product photos and category icons live in Cloudflare R2 via the `@convex-dev/r2`
 - Browser uploads require a **CORS policy on the R2 bucket** allowing `PUT` from the app origin.
 - File type/size are validated client-side in `lib/useImageUpload.js` (the file no longer passes through a server route).
 
-Prerendering is enabled in `vite.config.ts` (`tanstackStart({ prerender: { enabled: true } })`) — build-time HTML is served as static assets; everything else is SSRed in the Worker.
+Pages are SSR-rendered by the Worker. Do not enable TanStack prerendering unless the Cloudflare build environment has every server runtime secret required by middleware such as Clerk.

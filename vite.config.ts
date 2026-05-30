@@ -19,7 +19,6 @@ export default defineConfig({
     cloudflare({ viteEnvironment: { name: 'ssr' } }),
     tanstackStart({
       srcDirectory: 'src',
-      prerender: { enabled: true },
     }),
     viteReact(),
   ],
