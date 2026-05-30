@@ -36,7 +36,7 @@ Hosted on Cloudflare Workers — project name `dasty2mndalan` (`wrangler.jsonc`)
 - `npm run preview` — previews the built bundle locally on miniflare.
 - `npm run cf-typegen` — regenerates `worker-configuration.d.ts` from `wrangler.jsonc` after binding/var changes.
 
-**Secrets:** server-only values go in `.dev.vars` locally (see `.dev.vars.example`) and `wrangler secret put <NAME>` in production. Never put secrets in `wrangler.jsonc`. `VITE_*` public values continue to live in `.env`.
+**Secrets:** local values go in `.env.local`, following `.env.example`. In production, configure Worker runtime values/secrets in Cloudflare (`wrangler secret put <NAME>` or the dashboard). Never put secret values in `wrangler.jsonc`; `VITE_*` public values must exist at build time.
 
 **Compatibility flag `nodejs_compat` is required** — Worker-side dependencies rely on Node built-ins. Don't drop it.
 
@@ -45,9 +45,8 @@ Hosted on Cloudflare Workers — project name `dasty2mndalan` (`wrangler.jsonc`)
 Product photos and category icons live in Cloudflare R2 via the `@convex-dev/r2` component (`convex/r2.ts`, `convex/convex.config.ts`). Uploads go **directly** from the browser to R2 through a Convex-signed URL (`useUploadFile` in `lib/useImageUpload.js`) — there is no server upload route. The returned object key is composed into a permanent public URL (`VITE_R2_PUBLIC_URL` + `/` + key) and stored as a plain string in `products.photos`.
 
 - R2 credentials (`R2_ACCESS_KEY_ID`/`R2_SECRET_ACCESS_KEY`/`R2_ENDPOINT`/`R2_BUCKET`) and `R2_PUBLIC_URL` live in **Convex** env (per deployment), not in `wrangler.jsonc`.
-- `VITE_R2_PUBLIC_URL` (client, in `.env`) is the bucket's public custom domain, e.g. `https://dev-assets.dasty2mndalan.com`.
+- `VITE_R2_PUBLIC_URL` (client, in `.env.local` locally and build variables in Cloudflare) is the bucket's public custom domain, e.g. `https://dev-assets.dasty2mndalan.com`.
 - Browser uploads require a **CORS policy on the R2 bucket** allowing `PUT` from the app origin.
 - File type/size are validated client-side in `lib/useImageUpload.js` (the file no longer passes through a server route).
 
 Prerendering is enabled in `vite.config.ts` (`tanstackStart({ prerender: { enabled: true } })`) — build-time HTML is served as static assets; everything else is SSRed in the Worker.
-

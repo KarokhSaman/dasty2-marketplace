@@ -33,9 +33,10 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# local env files
-.env*.local
-.env.production
+# environment variables
+.env
+.env.*
+!.env.example
 
 # vercel
 .vercel
@@ -50,7 +51,6 @@ next-env.d.ts
 # cloudflare / wrangler
 /.wrangler/
 /worker-configuration.d.ts
-.dev.vars
 
 # claude code per-developer settings
 .claude/settings.local.json

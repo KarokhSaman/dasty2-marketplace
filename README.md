@@ -19,7 +19,7 @@ npm install
 npm run dev
 ```
 
-Requires a `.env.local` file — copy `.dev.vars.example` for server-side secrets and set `VITE_*` variables for client-side config.
+Requires a `.env.local` file — copy `.env.example`, fill in the local values, and keep deployed Worker runtime secrets in Cloudflare.
 
 ## Convex
 
