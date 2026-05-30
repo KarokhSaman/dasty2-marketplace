@@ -17,12 +17,25 @@ export async function getCurrentUser(ctx: Ctx) {
   const identity = await ctx.auth.getUserIdentity();
   if (!identity) return { identity: null, user: null };
 
-  const user = await ctx.db
-    .query("users")
-    .withIndex("by_clerkTokenIdentifier", (q) =>
-      q.eq("clerkTokenIdentifier", identity.tokenIdentifier),
-    )
-    .unique();
+  // Try clerkUserId first (stable across sessions), then fall back to clerkTokenIdentifier
+  let user = null;
+  if (identity.userId) {
+    user = await ctx.db
+      .query("users")
+      .withIndex("by_clerkUserId", (q) =>
+        q.eq("clerkUserId", identity.userId),
+      )
+      .unique();
+  }
+
+  if (!user) {
+    user = await ctx.db
+      .query("users")
+      .withIndex("by_clerkTokenIdentifier", (q) =>
+        q.eq("clerkTokenIdentifier", identity.tokenIdentifier),
+      )
+      .unique();
+  }
   return { identity, user };
 }
 

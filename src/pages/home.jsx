@@ -6,10 +6,12 @@ import { useState, useMemo, useRef, useEffect, useLayoutEffect } from "react";
 import ProductCard from "@/components/buyer/ProductCard";
 import CategoryBar from "@/components/buyer/CategoryBar";
 import LocationPicker from "@/components/buyer/LocationPicker";
-import { SearchInput, SegmentedControl, SelectMenu, Skeleton, FloatingCount } from "@/components/ui";
+import { SearchInput, SegmentedControl, SelectMenu, Skeleton } from "@/components/ui";
+import { Link } from "@tanstack/react-router";
 import * as m from "@/paraglide/messages";
 import { getCategorySearchStrings } from "@/lib/categories";
 import { seedProductCache } from "@/lib/productCache";
+import { useGlobalSellerSession } from "@/lib/SellerSessionContext";
 import {
   useHomeStatePersistence,
   restoreScroll,
@@ -132,6 +134,7 @@ const INITIAL_FILTERS = {
 };
 
 export default function HomePage() {
+  const { sellerId, ready } = useGlobalSellerSession();
   const [filters, setFilters] = useState(INITIAL_FILTERS);
   const { search, category, condition, sort, city } = filters;
   const updateFilter = (key) => (value) => setFilters((f) => ({ ...f, [key]: value }));
@@ -286,11 +289,16 @@ export default function HomePage() {
         <EndDivider label="End" />
       )}
 
-      {!isLoading && (
-        <FloatingCount
-          count={totalCount}
-          label={totalCount > 0 ? m.resultsCount({ count: totalCount }) : undefined}
-        />
+      {ready && sellerId && totalCount > 0 && (
+        <Link
+          to="/seller/add"
+          className="fixed end-3 sm:end-6 bottom-24 sm:bottom-6 z-30 w-14 h-14 rounded-full bg-[#ed0040] hover:bg-[#c80037] text-white shadow-[0_14px_30px_-12px_rgba(237,0,64,0.55)] inline-flex items-center justify-center ring-4 ring-[var(--color-cream)] transition-transform active:scale-95 hover:scale-105"
+          aria-label="Sell now"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.6} d="M12 4v16m8-8H4" />
+          </svg>
+        </Link>
       )}
     </div>
   );

@@ -39,6 +39,7 @@ export default defineSchema({
   users: defineTable({
     role: userRoleValidator,
     clerkTokenIdentifier: v.optional(v.string()),
+    clerkUserId: v.optional(v.string()),
     email: v.optional(v.string()),
     name: v.string(),
     phone: v.optional(v.string()),
@@ -50,6 +51,7 @@ export default defineSchema({
     .index("by_role", ["role"])
     .index("by_role_and_isActive", ["role", "isActive"])
     .index("by_clerkTokenIdentifier", ["clerkTokenIdentifier"])
+    .index("by_clerkUserId", ["clerkUserId"])
     .index("by_email", ["email"]),
 
   otpCodes: defineTable({

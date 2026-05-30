@@ -26,10 +26,10 @@ export default function PriceTag({
   const s = SIZES[size] ?? SIZES.md;
   return (
     <span className={`inline-flex items-baseline gap-1 ${className}`}>
-      <span className={`font-display font-bold text-[var(--color-ink)] leading-none ${s.num}`}>
+      <span className={`font-display font-bold text-[var(--color-ember-600)] leading-none ${s.num}`}>
         {formatAmount(amount)}
       </span>
-      <span className={`font-bold text-[var(--color-ink-soft)] tracking-wider uppercase ${s.unit}`}>
+      <span className={`font-bold text-[var(--color-ember-500)] tracking-wider uppercase ${s.unit}`}>
         {currency}
       </span>
     </span>

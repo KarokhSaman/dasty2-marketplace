@@ -167,15 +167,13 @@ export default function SellerShell({ children }) {
               )}
             </div>
 
-            <Button
-              to="/seller/add"
-              variant="ink"
-              size="sm"
-              className="hidden sm:inline-flex h-8 ps-2.5 pe-3 text-[11.5px] font-bold tracking-wide gap-1"
-              leadingIcon={<PlusIcon className="w-3 h-3" />}
+            <a
+              href="/seller/add"
+              className="hidden sm:inline-flex items-center justify-center h-8 ps-2.5 pe-3 text-[11.5px] font-bold tracking-wide gap-1 rounded-full bg-[#ed0040] hover:bg-[#c80037] text-white transition-all active:scale-[0.98]"
             >
+              <PlusIcon className="w-3 h-3" />
               {m.sellNow()}
-            </Button>
+            </a>
           </div>
         </div>
       </header>
@@ -201,9 +199,7 @@ export default function SellerShell({ children }) {
       {/* ── Mobile bottom nav — Home / Dashboard / FAB(Sell) / Account ── */}
       <div className="sm:hidden h-24" aria-hidden />
       <nav className="sm:hidden fixed bottom-0 inset-x-0 z-30 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 pointer-events-none">
-        <div className="pointer-events-auto mx-auto max-w-md surface-frost rounded-[1.75rem] border border-[var(--color-hairline)] shadow-[0_18px_44px_-20px_rgba(11,12,15,0.22)] px-2 py-1.5 flex items-stretch gap-1 relative">
-          {/* Left group — split equally with the right group so the FAB stays centered */}
-          <div className="flex-1 flex items-stretch gap-1">
+        <div className="pointer-events-auto mx-auto max-w-md surface-frost rounded-[1.75rem] border border-[var(--color-hairline)] shadow-[0_18px_44px_-20px_rgba(11,12,15,0.22)] px-2 py-1.5 flex items-stretch gap-1">
           <Link to="/" onClick={handleHomeTap} className={`flex-1 ${tab(isHomeTab)}`}>
             <svg className="w-5 h-5" fill={isHomeTab ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
@@ -217,28 +213,13 @@ export default function SellerShell({ children }) {
             </svg>
             <span className="text-[10px] font-semibold tracking-wide">{m.sellerDashboard()}</span>
           </Link>
-          </div>
 
-          {/* FAB — Sell (centered between the two equal groups) */}
-          <Link
-            to="/seller/add"
-            className="flex-shrink-0 -mt-7 w-14 h-14 rounded-full bg-gradient-to-br from-[var(--color-ember-500)] to-[var(--color-ember-600)] text-white shadow-[0_14px_28px_-10px_rgba(237,0,64,0.55)] inline-flex items-center justify-center ring-4 ring-[var(--color-cream)] transition-transform active:scale-95 hover:scale-105"
-            aria-label={m.sellNow()}
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.6} d="M12 4v16m8-8H4" />
-            </svg>
-          </Link>
-
-          {/* Right group — same flex width as the left group */}
-          <div className="flex-1 flex items-stretch gap-1">
           <Link to="/seller/account" className={`flex-1 ${tab(isAccount)}`}>
             <svg className="w-5 h-5" fill={isAccount ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
             <span className="text-[10px] font-semibold tracking-wide">{m.navAccount()}</span>
           </Link>
-          </div>
         </div>
       </nav>
     </div>

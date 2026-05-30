@@ -405,9 +405,6 @@ export default function ProductDetailPage() {
             )}
           </div>
 
-          {/* Seller */}
-          <SellerCard name={product.sellerName} city={cityLabel} />
-
           {/* Description */}
           {product.description && (
             <div className="mt-6 pt-5 border-t border-[var(--color-hairline)]">
@@ -419,14 +416,6 @@ export default function ProductDetailPage() {
               </p>
             </div>
           )}
-
-          {/* Safety note */}
-          <div className="mt-6 flex items-start gap-2.5 rounded-2xl bg-[var(--color-cream)] border border-[var(--color-hairline)] p-3.5">
-            <span className="shrink-0 mt-0.5 text-[var(--color-jade-600)]">
-              <ShieldIcon className="w-4 h-4" />
-            </span>
-            <p className="text-[12.5px] leading-relaxed text-[var(--color-ink-soft)]">{m.safetyNote()}</p>
-          </div>
 
           {/* Desktop CTA */}
           <div className="hidden sm:block mt-6">

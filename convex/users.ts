@@ -29,6 +29,7 @@ export const ensureCurrent = mutation({
     const id = await ctx.db.insert("users", {
       role: "seller",
       clerkTokenIdentifier: identity.tokenIdentifier,
+      clerkUserId: identity.userId ?? undefined,
       email: identity.email ?? undefined,
       name: defaultUserName(identity),
       registeredAt: new Date().toISOString(),
@@ -81,6 +82,7 @@ export const createSeller = mutation({
         phone: args.phone,
         city: args.city,
         address: args.address,
+        clerkUserId: identity.userId ?? existing.clerkUserId,
         isActive: true,
       });
       return existing._id;
@@ -90,6 +92,7 @@ export const createSeller = mutation({
       ...args,
       role: "seller",
       clerkTokenIdentifier: identity.tokenIdentifier,
+      clerkUserId: identity.userId ?? undefined,
       email: args.email ?? identity.email ?? undefined,
       address: args.address,
       isActive: true,

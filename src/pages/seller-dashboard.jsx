@@ -322,6 +322,17 @@ export default function SellerDashboard() {
           ))}
         </div>
       )}
+
+      {/* Floating "+" button for sellers */}
+      <Link
+        to="/seller/add"
+        className="fixed end-3 sm:end-6 bottom-24 sm:bottom-6 z-30 w-14 h-14 rounded-full bg-[#ed0040] hover:bg-[#c80037] text-white shadow-[0_14px_30px_-12px_rgba(237,0,64,0.55)] inline-flex items-center justify-center ring-4 ring-[var(--color-cream)] transition-transform active:scale-95 hover:scale-105"
+        aria-label={m.sellNow()}
+      >
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.6} d="M12 4v16m8-8H4" />
+        </svg>
+      </Link>
     </div>
   );
 }
