@@ -61,6 +61,7 @@ export default function AdminShell({ children }) {
   const isDashboard = pathname === "/admin";
   const isProducts  = pathname.startsWith("/admin/products");
   const isSellers   = pathname.startsWith("/admin/sellers");
+  const isAdmins    = pathname.startsWith("/admin/admins");
   const isOffers    = pathname.startsWith("/admin/offers");
 
   const navTabs = [
@@ -89,6 +90,14 @@ export default function AdminShell({ children }) {
       ),
     },
     {
+      href: "/admin/admins", active: isAdmins, label: "Admins", shortLabel: "Admins",
+      icon: (a) => (
+        <svg className="w-5 h-5" fill={a ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5-5.5A11.95 11.95 0 0112 2.75 11.95 11.95 0 014 4.5v6.75c0 5.05 3.4 9.75 8 10.95 4.6-1.2 8-5.9 8-10.95V4.5z"/>
+        </svg>
+      ),
+    },
+    {
       href: "/admin/offers", active: isOffers, label: m.adminOffers(), shortLabel: "Offers",
       icon: (a) => (
         <svg className="w-5 h-5" fill={a ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
@@ -113,7 +122,7 @@ export default function AdminShell({ children }) {
             </Link>
             <div className="hidden sm:flex items-center gap-1 ms-1">
               {navTabs.map(tab => (
-                <Link key={tab.href} href={tab.href}
+                <Link key={tab.href} to={tab.href}
                   className={`text-sm font-medium px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap ${
                     tab.active ? "bg-rose-50 text-rose-600" : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
                   }`}>
@@ -205,12 +214,12 @@ export default function AdminShell({ children }) {
       {/* ── Mobile bottom nav ── */}
       <nav className="sm:hidden fixed bottom-0 start-0 end-0 bg-white border-t border-gray-100 z-20 flex">
         {navTabs.map(tab => (
-          <Link key={tab.href} href={tab.href}
-            className={`flex-1 flex flex-col items-center py-2.5 gap-0.5 transition-colors ${
+          <Link key={tab.href} to={tab.href}
+            className={`flex-1 min-w-0 flex flex-col items-center py-2.5 gap-0.5 transition-colors ${
               tab.active ? "text-rose-600" : "text-gray-400"
             }`}>
             {tab.icon(tab.active)}
-            <span className="text-[10px] font-semibold leading-none">{tab.shortLabel}</span>
+            <span className="text-[10px] font-semibold leading-none truncate max-w-full px-0.5">{tab.shortLabel}</span>
           </Link>
         ))}
       </nav>

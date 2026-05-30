@@ -13,6 +13,8 @@ const ACTION_META = {
   marked_sold:       { label: "Marked Sold",       color: "bg-blue-100 text-blue-700"     },
   marked_paid:       { label: "Marked Paid",       color: "bg-purple-100 text-purple-700" },
   deleted:           { label: "Deleted",           color: "bg-gray-100 text-gray-600"     },
+  seller_promoted_to_admin:{ label: "Promoted Admin", color: "bg-indigo-100 text-indigo-700" },
+  admin_demoted_to_seller:{ label: "Made Seller", color: "bg-gray-100 text-gray-700" },
   featured:          { label: "Featured",          color: "bg-amber-100 text-amber-700"   },
   unfeatured:        { label: "Unfeatured",        color: "bg-gray-100 text-gray-500"     },
   offer_created:     { label: "Offer Created",     color: "bg-rose-100 text-rose-600"     },
@@ -65,7 +67,7 @@ function StatsPanel({ products, sellers, pending, approved, sold, paid }) {
           { label: m.statApproved(), value: approved.length, color: "text-green-600", href: "/admin/products?tab=approved" },
           { label: m.adminSellers(), value: sellers.length,  color: "text-rose-600",  href: "/admin/sellers" },
         ].map((item, i) => (
-          <Link key={i} href={item.href} className="flex-1 flex flex-col items-center py-3.5 gap-0.5 hover:bg-gray-50 transition-colors">
+          <Link key={i} to={item.href} className="flex-1 flex flex-col items-center py-3.5 gap-0.5 hover:bg-gray-50 transition-colors">
             <span className={`text-xl font-bold ${item.color}`}>{item.value}</span>
             <span className="text-[10px] text-gray-400 font-medium leading-tight text-center px-1">{item.label}</span>
           </Link>

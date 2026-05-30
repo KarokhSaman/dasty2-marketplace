@@ -90,7 +90,7 @@ export default function NotificationPanel({ notifications, sellerId, label, onCl
                 !n.read ? "bg-[var(--color-ember-50)] hover:bg-[var(--color-ember-100)]/60" : "hover:bg-[var(--color-cream)]"
               }`;
               return n.url ? (
-                <Link key={n._id} href={n.url} onClick={onClose} className={cls}>
+                <Link key={n._id} to={n.url} onClick={onClose} className={cls}>
                   {inner}
                 </Link>
               ) : (

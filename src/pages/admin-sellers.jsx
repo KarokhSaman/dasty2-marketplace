@@ -8,9 +8,11 @@ export default function AdminSellersPage() {
   const sellers       = useQuery(api.users.getAll);
   const products      = useQuery(api.products.getAll);
   const setActive     = useMutation(api.users.setActive);
+  const setRole       = useMutation(api.users.setRole);
   const createLog     = useMutation(api.adminLogs.create);
   const [search, setSearch] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(null); // seller _id being confirmed
+  const [confirmPromote, setConfirmPromote] = useState(null); // seller _id being confirmed
 
   const enriched = useMemo(() => {
     if (!sellers || !products) return [];
@@ -104,7 +106,42 @@ export default function AdminSellersPage() {
             </div>
 
             {/* Actions */}
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex flex-wrap items-center justify-end gap-2 shrink-0">
+              {confirmPromote === seller._id ? (
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={async () => {
+                      await setRole({ id: seller._id, role: "admin" });
+                      await createLog({
+                        action: "seller_promoted_to_admin",
+                        sellerName: seller.name,
+                        notes: seller.email || undefined,
+                      });
+                      setConfirmPromote(null);
+                    }}
+                    className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-gray-900 text-white hover:bg-gray-700 transition-colors"
+                  >
+                    Promote
+                  </button>
+                  <button
+                    onClick={() => setConfirmPromote(null)}
+                    className="text-xs font-semibold px-2 py-1.5 rounded-lg bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors"
+                  >
+                    {m.adminCancel()}
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => {
+                    setConfirmDelete(null);
+                    setConfirmPromote(seller._id);
+                  }}
+                  className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors"
+                >
+                  Promote admin
+                </button>
+              )}
+
               <button
                 onClick={async () => {
                   const newActive = !seller.isActive;
@@ -145,7 +182,10 @@ export default function AdminSellersPage() {
                 </div>
               ) : (
                 <button
-                  onClick={() => setConfirmDelete(seller._id)}
+                  onClick={() => {
+                    setConfirmPromote(null);
+                    setConfirmDelete(seller._id);
+                  }}
                   className="p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors"
                   title={m.adminDelete()}
                 >

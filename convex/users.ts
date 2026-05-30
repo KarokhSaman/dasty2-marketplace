@@ -111,6 +111,23 @@ export const setRole = mutation({
   args: { id: v.id("users"), role: userRoleValidator },
   handler: async (ctx, { id, role }) => {
     await requireAdmin(ctx);
+    const { user: actingUser } = await getCurrentUser(ctx);
+    const targetUser = await ctx.db.get(id);
+    if (!actingUser || !targetUser) throw new Error("User not found");
+
+    if (targetUser.role === "admin" && role === "seller") {
+      if (targetUser._id === actingUser._id) {
+        throw new Error("You cannot remove your own admin access");
+      }
+      const admins = await ctx.db
+        .query("users")
+        .withIndex("by_role", (q) => q.eq("role", "admin"))
+        .take(2);
+      if (admins.length <= 1) {
+        throw new Error("At least one admin is required");
+      }
+    }
+
     await ctx.db.patch(id, { role });
   },
 });
@@ -123,6 +140,18 @@ export const getAll = query({
       .query("users")
       .withIndex("by_role", (q) => q.eq("role", "seller"))
       .collect();
+  },
+});
+
+export const getAdmins = query({
+  args: {},
+  handler: async (ctx) => {
+    await requireAdmin(ctx);
+    return await ctx.db
+      .query("users")
+      .withIndex("by_role", (q) => q.eq("role", "admin"))
+      .order("desc")
+      .take(100);
   },
 });
 
