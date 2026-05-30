@@ -65,8 +65,9 @@ export default function AddProductPage() {
     try {
       const url = await uploadImage(file);
       setPhotos((prev) => prev.length < MAX_PHOTOS ? [...prev, url] : prev);
-    } catch {
-      // invalid type/size or upload failure — skip this file silently
+    } catch (err) {
+      console.error("Image upload failed:", err);
+      alert(`Upload failed: ${err.code === "unsupported_file_type" ? "File type not supported (JPEG, PNG, WEBP only)" : err.code === "file_too_large" ? "File too large (max 8MB)" : "Upload error - please try again"}`);
     } finally {
       setUploading((n) => n - 1);
     }
