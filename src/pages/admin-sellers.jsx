@@ -68,38 +68,70 @@ export default function AdminSellersPage() {
           <div key={seller._id} className={`bg-white rounded-xl border transition-colors overflow-hidden ${
             seller.isActive ? "border-[var(--color-hairline)]" : "border-[var(--color-hairline)] opacity-60"
           }`}>
-            {/* Header Section: Avatar + Name + Badges + Status - Clickable */}
-            <button onClick={() => setExpandedSeller(isExpanded ? null : seller._id)}
-              className="w-full text-left px-4 py-4 flex items-start gap-3 border-b border-[var(--color-hairline)] hover:bg-[var(--color-cream)] transition-colors">
-              <div className="w-12 h-12 rounded-full bg-[var(--color-ember-50)] flex items-center justify-center shrink-0">
-                <span className="text-[var(--color-ember-600)] font-bold text-base">{seller.name?.[0]?.toUpperCase() ?? "?"}</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-[var(--color-ink)]">{seller.name}</p>
-                {seller.phone && (
-                  <p className="text-xs text-[var(--color-ink-soft)] mt-1.5 truncate" dir="ltr">
-                    {seller.phone}
+            {/* Header Section: Avatar + Name + Phone/Address + Status + Actions - Clickable */}
+            <div className="px-4 py-4 flex items-start gap-3 border-b border-[var(--color-hairline)] hover:bg-[var(--color-cream)] transition-colors">
+              <button onClick={() => setExpandedSeller(isExpanded ? null : seller._id)}
+                className="flex-1 flex items-start gap-3 text-left min-w-0">
+                <div className="w-12 h-12 rounded-full bg-[var(--color-ember-50)] flex items-center justify-center shrink-0">
+                  <span className="text-[var(--color-ember-600)] font-bold text-base">{seller.name?.[0]?.toUpperCase() ?? "?"}</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-[var(--color-ink)]">{seller.name}</p>
+                  {seller.phone && (
+                    <p className="text-xs text-[var(--color-ink-soft)] mt-1.5 truncate" dir="ltr">
+                      {seller.phone}
+                    </p>
+                  )}
+                  {(seller.city || seller.address) && (
+                    <p className="text-xs text-[var(--color-ink-fade)] mt-1 truncate">
+                      {seller.city}{seller.address ? `, ${seller.address}` : ""}
+                    </p>
+                  )}
+                </div>
+                <div className="text-end shrink-0">
+                  <p className="text-xs text-[var(--color-ink-fade)] font-semibold uppercase tracking-wide">Status</p>
+                  <p className="text-sm font-semibold text-[var(--color-ink)] mt-0.5">
+                    {seller.isActive ? "Active" : "Inactive"}
                   </p>
-                )}
-                {(seller.city || seller.address) && (
-                  <p className="text-xs text-[var(--color-ink-fade)] mt-1 truncate">
-                    {seller.city}{seller.address ? `, ${seller.address}` : ""}
-                  </p>
-                )}
+                </div>
+                <div className="shrink-0 flex items-center pt-1">
+                  <svg className={`w-5 h-5 text-[var(--color-ink-fade)] transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
+                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                  </svg>
+                </div>
+              </button>
+              <div className="shrink-0 pt-1">
+                <SellerActionsMenu
+                  seller={seller}
+                  onPromote={async () => {
+                    await setRole({ id: seller._id, role: "admin" });
+                    await createLog({
+                      action: "seller_promoted_to_admin",
+                      sellerName: seller.name,
+                      notes: seller.email || undefined,
+                    });
+                  }}
+                  onToggleActive={async () => {
+                    const newActive = !seller.isActive;
+                    await setActive({ id: seller._id, isActive: newActive });
+                    await createLog({
+                      action: newActive ? "seller_activated" : "seller_deactivated",
+                      sellerName: seller.name,
+                      notes: seller.email || undefined,
+                    });
+                  }}
+                  onDelete={async () => {
+                    await deleteSellerFn({ data: { sellerId: seller._id } });
+                    await createLog({
+                      action: "seller_deleted",
+                      sellerName: seller.name,
+                      notes: seller.email || undefined,
+                    });
+                  }}
+                />
               </div>
-              <div className="flex-1 text-end shrink-0">
-                <p className="text-xs text-[var(--color-ink-fade)] font-semibold uppercase tracking-wide">Status</p>
-                <p className="text-sm font-semibold text-[var(--color-ink)] mt-0.5">
-                  {seller.isActive ? "Active" : "Inactive"}
-                </p>
-              </div>
-              <div className="shrink-0 flex items-center pt-1">
-                <svg className={`w-5 h-5 text-[var(--color-ink-fade)] transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
-                  fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                </svg>
-              </div>
-            </button>
+            </div>
 
             {/* Details Section: Contact Info - Collapsible */}
             {isExpanded && (
@@ -141,40 +173,6 @@ export default function AdminSellersPage() {
                   </div>
                 )}
               </div>
-            </div>
-            )}
-
-            {/* Actions Section - Collapsible */}
-            {isExpanded && (
-            <div className="px-4 py-3 flex items-center justify-end">
-              <SellerActionsMenu
-                seller={seller}
-                onPromote={async () => {
-                  await setRole({ id: seller._id, role: "admin" });
-                  await createLog({
-                    action: "seller_promoted_to_admin",
-                    sellerName: seller.name,
-                    notes: seller.email || undefined,
-                  });
-                }}
-                onToggleActive={async () => {
-                  const newActive = !seller.isActive;
-                  await setActive({ id: seller._id, isActive: newActive });
-                  await createLog({
-                    action: newActive ? "seller_activated" : "seller_deactivated",
-                    sellerName: seller.name,
-                    notes: seller.email || undefined,
-                  });
-                }}
-                onDelete={async () => {
-                  await deleteSellerFn({ data: { sellerId: seller._id } });
-                  await createLog({
-                    action: "seller_deleted",
-                    sellerName: seller.name,
-                    notes: seller.email || undefined,
-                  });
-                }}
-              />
             </div>
             )}
           </div>
