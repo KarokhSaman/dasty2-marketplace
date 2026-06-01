@@ -229,7 +229,7 @@ export default function AdminShell({ children }) {
         <div className="pointer-events-auto mx-auto max-w-full sm:max-w-md surface-frost rounded-[1.5rem] sm:rounded-[1.75rem] border border-[var(--color-hairline)] shadow-[0_18px_44px_-20px_rgba(11,12,15,0.22)] px-1 sm:px-2 py-2.5 sm:py-3 flex items-stretch gap-0.5 sm:gap-1.5">
           {navTabs.map(tab => (
             <Link key={tab.href} to={tab.href}
-              className={`flex-1 flex flex-col items-center justify-center gap-0.5 sm:gap-1 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg sm:rounded-2xl transition-all duration-200 active:scale-95 ${
+              className={`flex-1 flex flex-col items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg sm:rounded-2xl transition-all duration-200 active:scale-95 ${
                 tab.active
                   ? "text-[var(--color-ember-600)] bg-[var(--color-ember-50)]"
                   : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]"
