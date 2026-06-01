@@ -27,6 +27,7 @@ export default function AdminAdminsPage() {
   const admins = useQuery(api.users.getAdmins);
   const currentUser = useQuery(api.users.getCurrent);
   const setRole = useMutation(api.users.setRole);
+  const deleteAdmin = useMutation(api.users.deleteAdmin);
   const createLog = useMutation(api.adminLogs.create);
   const [search, setSearch] = useState("");
   const [expandedAdmin, setExpandedAdmin] = useState(null);
@@ -114,9 +115,9 @@ export default function AdminAdminsPage() {
                     )}
                   </div>
                   <div className="text-end shrink-0">
-                    <p className="text-xs text-[var(--color-ink-fade)] font-semibold uppercase tracking-wide">Status</p>
+                    <p className="text-xs text-[var(--color-ink-fade)] font-semibold uppercase tracking-wide">Role</p>
                     <p className="text-sm font-semibold text-[var(--color-ink)] mt-0.5">
-                      {isCurrent ? "Current" : admin.isActive ? "Active" : "Inactive"}
+                      {admin.role === "super_admin" ? "Super Admin" : "Admin"}
                     </p>
                   </div>
                   <div className="shrink-0 flex items-center pt-1">
@@ -127,19 +128,19 @@ export default function AdminAdminsPage() {
                   </div>
                 </button>
                 <div className="shrink-0 pt-1">
-                  {!isCurrent && (
+                  {!isCurrent && currentUser?.role === "super_admin" && (
                     <button
                       type="button"
                       onClick={async () => {
-                        await setRole({ id: admin._id, role: "seller" });
+                        await deleteAdmin({ id: admin._id });
                         await createLog({
-                          action: "admin_demoted_to_seller",
+                          action: "admin_deleted",
                           sellerName: admin.name,
                           notes: admin.email || undefined,
                         });
                       }}
                       className="p-1.5 text-[var(--color-ink-fade)] hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                      title="Make seller"
+                      title="Delete admin"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -152,6 +153,13 @@ export default function AdminAdminsPage() {
               {/* Details Section - Collapsible */}
               {isExpanded && (
               <div className="px-4 py-4 space-y-2.5 border-b border-[var(--color-hairline)]">
+                <div>
+                  <p className="text-[11px] font-semibold text-[var(--color-ink-fade)] uppercase tracking-wide mb-0.5">Role</p>
+                  <p className="text-sm text-[var(--color-ink)]">
+                    {admin.role === "super_admin" ? "Super Admin" : "Admin"}
+                    {isCurrent && " (Current)"}
+                  </p>
+                </div>
                 {admin.email && (
                   <div>
                     <p className="text-[11px] font-semibold text-[var(--color-ink-fade)] uppercase tracking-wide mb-0.5">Email</p>

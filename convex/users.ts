@@ -7,6 +7,7 @@ import {
   requireAdmin,
   requireCurrentSeller,
   requireIdentity,
+  requireSuperAdmin,
 } from "./auth";
 import { userRoleValidator } from "./types";
 
@@ -150,11 +151,17 @@ export const getAdmins = query({
   args: {},
   handler: async (ctx) => {
     await requireAdmin(ctx);
-    return await ctx.db
+    const admins = await ctx.db
       .query("users")
       .withIndex("by_role", (q) => q.eq("role", "admin"))
       .order("desc")
       .take(100);
+    const superAdmins = await ctx.db
+      .query("users")
+      .withIndex("by_role", (q) => q.eq("role", "super_admin"))
+      .order("desc")
+      .take(100);
+    return [...superAdmins, ...admins];
   },
 });
 
@@ -196,6 +203,33 @@ export const deleteSeller = mutation({
       .withIndex("by_sellerId", (q) => q.eq("sellerId", sellerIdStr))
       .collect();
     for (const n of sellerNotifs) await ctx.db.delete(n._id);
+    await ctx.db.delete(id);
+  },
+});
+
+export const deleteAdmin = mutation({
+  args: { id: v.id("users") },
+  handler: async (ctx, { id }) => {
+    await requireSuperAdmin(ctx);
+    const { user: actingUser } = await getCurrentUser(ctx);
+    const targetAdmin = await ctx.db.get(id);
+    if (!targetAdmin || (targetAdmin.role !== "admin" && targetAdmin.role !== "super_admin")) {
+      throw new Error("Admin not found");
+    }
+    if (targetAdmin._id === actingUser?._id) {
+      throw new Error("You cannot delete your own admin account");
+    }
+    const admins = await ctx.db
+      .query("users")
+      .withIndex("by_role", (q) => q.eq("role", "admin"))
+      .take(1);
+    const superAdmins = await ctx.db
+      .query("users")
+      .withIndex("by_role", (q) => q.eq("role", "super_admin"))
+      .take(1);
+    if (admins.length + superAdmins.length <= 1) {
+      throw new Error("At least one admin is required");
+    }
     await ctx.db.delete(id);
   },
 });

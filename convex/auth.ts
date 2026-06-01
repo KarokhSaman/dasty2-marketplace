@@ -46,13 +46,24 @@ export async function requireCurrentUser(ctx: Ctx): Promise<Doc<"users">> {
 }
 
 export function isAdminUser(user: Doc<"users"> | null) {
-  return !!user && user.role === "admin" && user.isActive;
+  return !!user && (user.role === "admin" || user.role === "super_admin") && user.isActive;
+}
+
+export function isSuperAdminUser(user: Doc<"users"> | null) {
+  return !!user && user.role === "super_admin" && user.isActive;
 }
 
 export async function requireAdmin(ctx: Ctx) {
   const identity = await requireIdentity(ctx);
   const { user } = await getCurrentUser(ctx);
   if (!isAdminUser(user)) throw new Error("Unauthorized");
+  return { identity, email: identityEmail(identity) };
+}
+
+export async function requireSuperAdmin(ctx: Ctx) {
+  const identity = await requireIdentity(ctx);
+  const { user } = await getCurrentUser(ctx);
+  if (!isSuperAdminUser(user)) throw new Error("Unauthorized");
   return { identity, email: identityEmail(identity) };
 }
 

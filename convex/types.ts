@@ -38,5 +38,6 @@ export type OfferType = typeof offerTypeValidator.type;
 export const userRoleValidator = v.union(
   v.literal("seller"),
   v.literal("admin"),
+  v.literal("super_admin"),
 );
 export type UserRole = typeof userRoleValidator.type;
