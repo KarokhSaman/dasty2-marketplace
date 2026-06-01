@@ -20,14 +20,14 @@ function Wordmark() {
       aria-label="Dasty2 Mndalan — home"
       className="group inline-flex items-baseline gap-1.5 shrink-0 select-none"
     >
-      <span className="font-display text-[18px] leading-none font-bold text-[var(--color-ember-600)] tracking-tight">
+      <span className="font-display text-[18px] leading-none font-bold text-[var(--color-ink)] tracking-tight">
         Dasty<span className="italic font-medium">2</span>
       </span>
       <span
         aria-hidden
         className="self-center w-1 h-1 rounded-full bg-[var(--color-ember-300)]/80 group-hover:bg-[var(--color-ember-500)] transition-colors"
       />
-      <span className="text-[9px] font-semibold text-[var(--color-ink-soft)] tracking-[0.14em] uppercase">
+      <span className="text-[9px] font-semibold text-[var(--color-ember-600)] tracking-[0.14em] uppercase">
         Mndalan
       </span>
     </Link>
@@ -279,7 +279,7 @@ export default function PublicShell({ children }) {
 
       <footer className="hidden sm:block border-t border-[var(--color-hairline)] bg-white/40 mt-12 py-8">
         <p className="text-center text-sm text-[var(--color-ink-fade)]">
-          © {new Date().getFullYear()} <span className="font-display font-semibold text-[var(--color-ink-soft)]">Dasty2 Mndalan</span> — {m.footerText()}
+          © {new Date().getFullYear()} <span className="font-display font-semibold"><span className="text-[var(--color-ink)]">Dasty2</span> <span className="text-[var(--color-ember-600)]">Mndalan</span></span> — {m.footerText()}
         </p>
       </footer>
     </div>

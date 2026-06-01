@@ -55,8 +55,8 @@ function InfoPanel() {
     <div className="bg-white rounded-2xl border border-[var(--color-hairline)] lg:min-h-screen flex flex-col justify-center px-8 py-10 lg:py-16 relative overflow-hidden">
 
       <div className="relative mb-8">
-        <p className="text-2xl font-bold text-[var(--color-ink)] tracking-tight mb-4">
-          Dasty2 <span className="font-medium text-[var(--color-ember-600)]">Mndalan</span>
+        <p className="text-2xl font-bold tracking-tight mb-4">
+          <span className="text-[var(--color-ink)]">Dasty2</span> <span className="font-medium text-[var(--color-ember-600)]">Mndalan</span>
         </p>
         <h2 className="text-3xl font-display text-[var(--color-ink)] leading-tight">{m.loginHeroTitle()}</h2>
         <p className="text-[var(--color-ink-soft)] mt-3 text-sm leading-relaxed">{m.loginHeroSub()}</p>
