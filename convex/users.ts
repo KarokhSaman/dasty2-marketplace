@@ -235,6 +235,27 @@ export const deleteAdmin = mutation({
     if (admins.length + superAdmins.length <= 1) {
       throw new Error("At least one admin is required");
     }
+
+    // Clean up any data associated with this admin (if they were previously a seller)
+    const adminIdStr = id as string;
+    const products = await ctx.db
+      .query("products")
+      .withIndex("by_seller", (q) => q.eq("sellerId", adminIdStr))
+      .collect();
+    for (const product of products) {
+      const productNotifs = await ctx.db
+        .query("notifications")
+        .filter((q) => q.eq(q.field("productId"), product._id as string))
+        .collect();
+      for (const n of productNotifs) await ctx.db.delete(n._id);
+      await ctx.db.delete(product._id);
+    }
+    const adminNotifs = await ctx.db
+      .query("notifications")
+      .withIndex("by_sellerId", (q) => q.eq("sellerId", adminIdStr))
+      .collect();
+    for (const n of adminNotifs) await ctx.db.delete(n._id);
+
     await ctx.db.delete(id);
   },
 });
