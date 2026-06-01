@@ -65,18 +65,29 @@ export default function AdminSellersPage() {
           <div key={seller._id} className={`bg-white rounded-xl border transition-colors overflow-hidden ${
             seller.isActive ? "border-[var(--color-hairline)]" : "border-[var(--color-hairline)] opacity-60"
           }`}>
-            {/* Header Section: Avatar + Name + Status */}
+            {/* Header Section: Avatar + Name + Badges + Status */}
             <div className="px-4 py-4 flex items-start gap-3 border-b border-[var(--color-hairline)]">
               <div className="w-12 h-12 rounded-full bg-[var(--color-ember-50)] flex items-center justify-center shrink-0">
                 <span className="text-[var(--color-ember-600)] font-bold text-base">{seller.name?.[0]?.toUpperCase() ?? "?"}</span>
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold text-[var(--color-ink)]">{seller.name}</p>
-                <span className={`inline-block text-xs px-2.5 py-1 rounded-full font-medium mt-1.5 ${
-                  seller.isActive ? "bg-green-100 text-green-700" : "bg-[var(--color-ember-50)] text-[var(--color-ink-fade)]"
-                }`}>
-                  {seller.isActive ? m.adminActive() : m.adminInactive()}
-                </span>
+                <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                  <span className="inline-block text-xs px-2.5 py-1 rounded-full font-medium bg-[var(--color-ember-50)] text-[var(--color-ember-600)]">
+                    Seller
+                  </span>
+                  <span className={`inline-block text-xs px-2.5 py-1 rounded-full font-medium ${
+                    seller.isActive ? "bg-green-100 text-green-700" : "bg-[var(--color-hairline)] text-[var(--color-ink-fade)]"
+                  }`}>
+                    {seller.isActive ? m.adminActive() : m.adminInactive()}
+                  </span>
+                </div>
+              </div>
+              <div className="text-end shrink-0">
+                <p className="text-xs text-[var(--color-ink-fade)] font-semibold uppercase tracking-wide">Status</p>
+                <p className="text-sm font-semibold text-[var(--color-ink)] mt-0.5">
+                  {seller.isActive ? "Active" : "Inactive"}
+                </p>
               </div>
             </div>
 
@@ -122,7 +133,7 @@ export default function AdminSellersPage() {
             </div>
 
             {/* Actions Section */}
-            <div className="px-4 py-2 flex items-center justify-end">
+            <div className="px-4 py-3 flex items-center justify-end">
               <SellerActionsMenu
                 seller={seller}
                 onPromote={async () => {
