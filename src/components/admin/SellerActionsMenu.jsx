@@ -6,6 +6,7 @@ import * as m from "@/paraglide/messages";
 export default function SellerActionsMenu({ seller, onPromote, onToggleActive, onDelete }) {
   const [open, setOpen] = useState(false);
   const [confirmDel, setConfirmDel] = useState(false);
+  const [confirmPromote, setConfirmPromote] = useState(false);
   const isDesktop = useIsDesktop();
   const ref = useRef();
 
@@ -15,6 +16,7 @@ export default function SellerActionsMenu({ seller, onPromote, onToggleActive, o
       if (ref.current && !ref.current.contains(e.target)) {
         setOpen(false);
         setConfirmDel(false);
+        setConfirmPromote(false);
       }
     }
     document.addEventListener("mousedown", handler);
@@ -24,11 +26,36 @@ export default function SellerActionsMenu({ seller, onPromote, onToggleActive, o
   const close = () => {
     setOpen(false);
     setConfirmDel(false);
+    setConfirmPromote(false);
   };
 
   const rowCls = "flex items-center gap-3 w-full px-4 py-3 sm:py-2.5 text-[15px] sm:text-sm text-start transition-colors";
 
-  const actions = confirmDel ? (
+  const actions = confirmPromote ? (
+    <div className="p-4 sm:p-3">
+      <p className="text-[13px] font-semibold text-[var(--color-ink)] mb-2">Promote to Admin?</p>
+      <p className="text-xs text-[var(--color-ink-fade)] mb-3">
+        This seller will no longer have seller access. They can only access the admin dashboard.
+      </p>
+      <div className="flex gap-2">
+        <button
+          onClick={() => {
+            onPromote();
+            close();
+          }}
+          className="flex-1 text-sm bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-xl transition-colors"
+        >
+          Promote
+        </button>
+        <button
+          onClick={() => setConfirmPromote(false)}
+          className="flex-1 text-sm bg-[var(--color-cream-deep)] hover:bg-[var(--color-hairline)] text-[var(--color-ink)] py-2.5 rounded-xl transition-colors"
+        >
+          {m.adminCancel()}
+        </button>
+      </div>
+    </div>
+  ) : confirmDel ? (
     <div className="p-4 sm:p-3">
       <p className="text-[13px] text-red-600 font-medium mb-3">Delete seller "{seller.name}"?</p>
       <div className="flex gap-2">
@@ -52,10 +79,7 @@ export default function SellerActionsMenu({ seller, onPromote, onToggleActive, o
   ) : (
     <div className="py-1">
       <button
-        onClick={() => {
-          onPromote();
-          close();
-        }}
+        onClick={() => setConfirmPromote(true)}
         className={`${rowCls} text-indigo-600 hover:bg-indigo-50`}
       >
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
