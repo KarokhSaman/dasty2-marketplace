@@ -119,15 +119,20 @@ export const setRole = mutation({
     const targetUser = await ctx.db.get(id);
     if (!actingUser || !targetUser) throw new Error("User not found");
 
-    if (targetUser.role === "admin" && role === "seller") {
-      if (targetUser._id === actingUser._id) {
-        throw new Error("You cannot remove your own admin access");
-      }
+    if (targetUser._id === actingUser._id && role === "seller") {
+      throw new Error("You cannot remove your own admin access");
+    }
+
+    if ((targetUser.role === "admin" || targetUser.role === "super_admin") && role === "seller") {
       const admins = await ctx.db
         .query("users")
         .withIndex("by_role", (q) => q.eq("role", "admin"))
         .take(2);
-      if (admins.length <= 1) {
+      const superAdmins = await ctx.db
+        .query("users")
+        .withIndex("by_role", (q) => q.eq("role", "super_admin"))
+        .take(2);
+      if (admins.length + superAdmins.length <= 1) {
         throw new Error("At least one admin is required");
       }
     }
