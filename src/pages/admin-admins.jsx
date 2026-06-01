@@ -29,7 +29,7 @@ export default function AdminAdminsPage() {
   const setRole = useMutation(api.users.setRole);
   const createLog = useMutation(api.adminLogs.create);
   const [search, setSearch] = useState("");
-  const [confirmDemote, setConfirmDemote] = useState(null);
+  const [expandedAdmin, setExpandedAdmin] = useState(null);
 
   const visibleAdmins = useMemo(() => {
     if (!admins) return [];
@@ -85,54 +85,49 @@ export default function AdminAdminsPage() {
         </div>
       ) : (
         <div className="space-y-3">
-          {visibleAdmins.map((admin) => (
+          {visibleAdmins.map((admin) => {
+            const isExpanded = expandedAdmin === admin._id;
+            const isCurrent = currentUser?._id === admin._id;
+            return (
             <div
               key={admin._id}
-              className="bg-white rounded-xl border border-[var(--color-hairline)] p-4 flex items-center gap-4"
+              className="bg-white rounded-xl border border-[var(--color-hairline)] overflow-hidden"
             >
-              <div className="w-11 h-11 rounded-full bg-indigo-50 flex items-center justify-center shrink-0">
-                <span className="text-indigo-600 font-bold text-sm">{initials(admin)}</span>
-              </div>
-
-              <div className="flex-1 min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="text-sm font-semibold text-gray-800 truncate">
-                    {admin.name}
-                  </p>
-                  <span className="text-xs px-2 py-0.5 rounded-full font-semibold bg-indigo-50 text-indigo-600">
-                    Admin
-                  </span>
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                    admin.isActive ? "bg-green-100 text-green-700" : "bg-[var(--color-ember-50)] text-[var(--color-ink-fade)]"
-                  }`}>
-                    {admin.isActive ? "Active" : "Inactive"}
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-3 mt-0.5 flex-wrap">
-                  {admin.email && (
-                    <span className="text-xs text-[var(--color-ink-fade)]" dir="ltr">
-                      {admin.email}
-                    </span>
-                  )}
-                  {admin.clerkTokenIdentifier && (
-                    <span className="text-xs text-gray-300 truncate max-w-full" dir="ltr">
-                      {admin.clerkTokenIdentifier}
-                    </span>
-                  )}
-                  <span className="text-xs text-gray-300">
-                    {formatDate(admin.registeredAt)}
-                  </span>
-                </div>
-              </div>
-
-              <div className="shrink-0">
-                {currentUser?._id === admin._id ? (
-                  <span className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-gray-100 text-[var(--color-ink-fade)]">
-                    Current admin
-                  </span>
-                ) : confirmDemote === admin._id ? (
-                  <div className="flex items-center gap-1">
+              {/* Header Section - Clickable */}
+              <div className="px-4 py-4 flex items-start gap-3 border-b border-[var(--color-hairline)] hover:bg-[var(--color-cream)] transition-colors">
+                <button onClick={() => setExpandedAdmin(isExpanded ? null : admin._id)}
+                  className="flex-1 flex items-start gap-3 text-left min-w-0">
+                  <div className="w-12 h-12 rounded-full bg-indigo-50 flex items-center justify-center shrink-0">
+                    <span className="text-indigo-600 font-bold text-base">{initials(admin)}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-[var(--color-ink)]">{admin.name}</p>
+                    {admin.email && (
+                      <p className="text-xs text-[var(--color-ink-soft)] mt-1.5 truncate" dir="ltr">
+                        {admin.email}
+                      </p>
+                    )}
+                    {admin.registeredAt && (
+                      <p className="text-xs text-[var(--color-ink-fade)] mt-1 truncate">
+                        Joined {formatDate(admin.registeredAt)}
+                      </p>
+                    )}
+                  </div>
+                  <div className="text-end shrink-0">
+                    <p className="text-xs text-[var(--color-ink-fade)] font-semibold uppercase tracking-wide">Status</p>
+                    <p className="text-sm font-semibold text-[var(--color-ink)] mt-0.5">
+                      {isCurrent ? "Current" : admin.isActive ? "Active" : "Inactive"}
+                    </p>
+                  </div>
+                  <div className="shrink-0 flex items-center pt-1">
+                    <svg className={`w-5 h-5 text-[var(--color-ink-fade)] transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
+                      fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                    </svg>
+                  </div>
+                </button>
+                <div className="shrink-0 pt-1">
+                  {!isCurrent && (
                     <button
                       type="button"
                       onClick={async () => {
@@ -142,32 +137,44 @@ export default function AdminAdminsPage() {
                           sellerName: admin.name,
                           notes: admin.email || undefined,
                         });
-                        setConfirmDemote(null);
                       }}
-                      className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-gray-900 text-white hover:bg-gray-700 transition-colors"
+                      className="p-1.5 text-[var(--color-ink-fade)] hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                      title="Make seller"
                     >
-                      Make seller
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => setConfirmDemote(null)}
-                      className="text-xs font-semibold px-2 py-1.5 rounded-lg bg-gray-100 text-[var(--color-ink-fade)] hover:bg-white/60 transition-colors"
-                    >
-                      Cancel
-                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Details Section - Collapsible */}
+              {isExpanded && (
+              <div className="px-4 py-4 space-y-2.5 border-b border-[var(--color-hairline)]">
+                {admin.email && (
+                  <div>
+                    <p className="text-[11px] font-semibold text-[var(--color-ink-fade)] uppercase tracking-wide mb-0.5">Email</p>
+                    <p className="text-sm text-[var(--color-ink)]" dir="ltr">{admin.email}</p>
                   </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setConfirmDemote(admin._id)}
-                    className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-gray-100 text-[var(--color-ink-soft)] hover:bg-white/60 transition-colors"
-                  >
-                    Make seller
-                  </button>
+                )}
+                {admin.clerkTokenIdentifier && (
+                  <div>
+                    <p className="text-[11px] font-semibold text-[var(--color-ink-fade)] uppercase tracking-wide mb-0.5">Clerk ID</p>
+                    <p className="text-xs text-[var(--color-ink)]" dir="ltr">{admin.clerkTokenIdentifier}</p>
+                  </div>
+                )}
+                {admin.registeredAt && (
+                  <div>
+                    <p className="text-[11px] font-semibold text-[var(--color-ink-fade)] uppercase tracking-wide mb-0.5">Joined</p>
+                    <p className="text-sm text-[var(--color-ink)]">{formatDate(admin.registeredAt)}</p>
+                  </div>
                 )}
               </div>
+              )}
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
