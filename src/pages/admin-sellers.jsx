@@ -12,6 +12,7 @@ export default function AdminSellersPage() {
   const setRole       = useMutation(api.users.setRole);
   const createLog     = useMutation(api.adminLogs.create);
   const [search, setSearch] = useState("");
+  const [expandedSeller, setExpandedSeller] = useState(null);
 
   const enriched = useMemo(() => {
     if (!sellers || !products) return [];
@@ -61,12 +62,15 @@ export default function AdminSellersPage() {
       )}
 
       <div className="space-y-3">
-        {enriched.map((seller) => (
+        {enriched.map((seller) => {
+          const isExpanded = expandedSeller === seller._id;
+          return (
           <div key={seller._id} className={`bg-white rounded-xl border transition-colors overflow-hidden ${
             seller.isActive ? "border-[var(--color-hairline)]" : "border-[var(--color-hairline)] opacity-60"
           }`}>
-            {/* Header Section: Avatar + Name + Badges + Status */}
-            <div className="px-4 py-4 flex items-start gap-3 border-b border-[var(--color-hairline)]">
+            {/* Header Section: Avatar + Name + Badges + Status - Clickable */}
+            <button onClick={() => setExpandedSeller(isExpanded ? null : seller._id)}
+              className="w-full text-left px-4 py-4 flex items-start gap-3 border-b border-[var(--color-hairline)] hover:bg-[var(--color-cream)] transition-colors">
               <div className="w-12 h-12 rounded-full bg-[var(--color-ember-50)] flex items-center justify-center shrink-0">
                 <span className="text-[var(--color-ember-600)] font-bold text-base">{seller.name?.[0]?.toUpperCase() ?? "?"}</span>
               </div>
@@ -83,15 +87,22 @@ export default function AdminSellersPage() {
                   </span>
                 </div>
               </div>
-              <div className="text-end shrink-0">
+              <div className="flex-1 text-end shrink-0">
                 <p className="text-xs text-[var(--color-ink-fade)] font-semibold uppercase tracking-wide">Status</p>
                 <p className="text-sm font-semibold text-[var(--color-ink)] mt-0.5">
                   {seller.isActive ? "Active" : "Inactive"}
                 </p>
               </div>
-            </div>
+              <div className="shrink-0 flex items-center pt-1">
+                <svg className={`w-5 h-5 text-[var(--color-ink-fade)] transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
+                  fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                </svg>
+              </div>
+            </button>
 
-            {/* Details Section: Contact Info */}
+            {/* Details Section: Contact Info - Collapsible */}
+            {isExpanded && (
             <div className="px-4 py-4 space-y-2.5 border-b border-[var(--color-hairline)]">
               {seller.email && (
                 <div>
@@ -131,8 +142,10 @@ export default function AdminSellersPage() {
                 )}
               </div>
             </div>
+            )}
 
-            {/* Actions Section */}
+            {/* Actions Section - Collapsible */}
+            {isExpanded && (
             <div className="px-4 py-3 flex items-center justify-end">
               <SellerActionsMenu
                 seller={seller}
@@ -163,8 +176,10 @@ export default function AdminSellersPage() {
                 }}
               />
             </div>
+            )}
           </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
