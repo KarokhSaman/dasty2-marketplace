@@ -18,18 +18,10 @@ function Wordmark() {
       to="/"
       dir="ltr"
       aria-label="Dasty2 Mndalan — home"
-      className="group inline-flex items-baseline gap-1.5 shrink-0 select-none"
+      className="group inline-flex items-center gap-1.5 shrink-0 select-none"
     >
-      <span className="font-display text-[18px] leading-none font-bold text-[var(--color-ember-600)] tracking-tight">
-        Dasty<span className="italic font-medium">2</span>
-      </span>
-      <span
-        aria-hidden
-        className="self-center w-1 h-1 rounded-full bg-[var(--color-ember-300)]/80 group-hover:bg-[var(--color-ember-500)] transition-colors"
-      />
-      <span className="text-[9px] font-semibold text-[var(--color-ink-soft)] tracking-[0.14em] uppercase">
-        Mndalan
-      </span>
+      <span className="text-lg font-bold text-[var(--color-ember-600)] tracking-tight">Dasty2</span>
+      <span className="text-lg font-medium text-[var(--color-ink-soft)]">Mndalan</span>
     </Link>
   );
 }
