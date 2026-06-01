@@ -40,8 +40,8 @@ export default function AdminSellersPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-5">
-        <h1 className="text-2xl font-bold text-gray-900">{m.adminSellers()}</h1>
-        <span className="text-sm text-gray-400">{sellers.length} {m.adminSellers().toLowerCase()}</span>
+        <h1 className="text-2xl font-bold text-[var(--color-ink)]">{m.adminSellers()}</h1>
+        <span className="text-sm text-[var(--color-ink-fade)]">{sellers.length} {m.adminSellers().toLowerCase()}</span>
       </div>
 
       {/* Search */}
@@ -51,12 +51,12 @@ export default function AdminSellersPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder={m.searchPlaceholder()}
-          className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-rose-300"
+          className="w-full border border-[var(--color-hairline)] rounded-xl px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-ember-300"
         />
       </div>
 
       {enriched.length === 0 && (
-        <div className="bg-white rounded-xl border border-gray-100 py-16 text-center text-gray-400">
+        <div className="bg-white rounded-xl border border-[var(--color-hairline)] py-16 text-center text-[var(--color-ink-fade)]">
           <p className="text-sm font-medium">{m.adminNoSellers()}</p>
         </div>
       )}
@@ -64,11 +64,11 @@ export default function AdminSellersPage() {
       <div className="space-y-3">
         {enriched.map((seller) => (
           <div key={seller._id} className={`bg-white rounded-xl border p-4 flex items-center gap-4 transition-colors ${
-            seller.isActive ? "border-gray-100" : "border-gray-200 opacity-60"
+            seller.isActive ? "border-[var(--color-hairline)]" : "border-[var(--color-hairline)] opacity-60"
           }`}>
             {/* Avatar */}
             <div className="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center shrink-0">
-              <span className="text-rose-600 font-bold text-sm">{seller.name?.[0]?.toUpperCase() ?? "?"}</span>
+              <span className="text-[var(--color-ember-600)] font-bold text-sm">{seller.name?.[0]?.toUpperCase() ?? "?"}</span>
             </div>
 
             {/* Info */}
@@ -76,14 +76,14 @@ export default function AdminSellersPage() {
               <div className="flex items-center gap-2">
                 <p className="text-sm font-semibold text-gray-800">{seller.name}</p>
                 <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                  seller.isActive ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"
+                  seller.isActive ? "bg-green-100 text-green-700" : "bg-[var(--color-ember-50)] text-[var(--color-ink-fade)]"
                 }`}>
                   {seller.isActive ? m.adminActive() : m.adminInactive()}
                 </span>
               </div>
               <div className="flex items-center gap-3 mt-0.5 flex-wrap">
                 {seller.email && (
-                  <span className="text-xs text-gray-400" dir="ltr">{seller.email}</span>
+                  <span className="text-xs text-[var(--color-ink-fade)]" dir="ltr">{seller.email}</span>
                 )}
                 {seller.phone && (
                   <a
@@ -95,8 +95,8 @@ export default function AdminSellersPage() {
                     {seller.phone}
                   </a>
                 )}
-                <span className="text-xs text-gray-400">{seller.city}{seller.address ? `, ${seller.address}` : ""}</span>
-                <span className="text-xs text-gray-400">
+                <span className="text-xs text-[var(--color-ink-fade)]">{seller.city}{seller.address ? `, ${seller.address}` : ""}</span>
+                <span className="text-xs text-[var(--color-ink-fade)]">
                   {seller.productCount} {m.adminProductCount()}
                 </span>
                 <span className="text-xs text-gray-300">
@@ -125,7 +125,7 @@ export default function AdminSellersPage() {
                   </button>
                   <button
                     onClick={() => setConfirmPromote(null)}
-                    className="text-xs font-semibold px-2 py-1.5 rounded-lg bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors"
+                    className="text-xs font-semibold px-2 py-1.5 rounded-lg bg-gray-100 text-[var(--color-ink-fade)] hover:bg-white/60 transition-colors"
                   >
                     {m.adminCancel()}
                   </button>
@@ -154,7 +154,7 @@ export default function AdminSellersPage() {
                 }}
                 className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${
                   seller.isActive
-                    ? "bg-gray-100 hover:bg-red-50 text-gray-500 hover:text-red-600"
+                    ? "bg-gray-100 hover:bg-red-50 text-[var(--color-ink-fade)] hover:text-red-600"
                     : "bg-green-50 hover:bg-green-100 text-green-600"
                 }`}
               >
@@ -175,7 +175,7 @@ export default function AdminSellersPage() {
                   </button>
                   <button
                     onClick={() => setConfirmDelete(null)}
-                    className="text-xs font-semibold px-2 py-1.5 rounded-lg bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors"
+                    className="text-xs font-semibold px-2 py-1.5 rounded-lg bg-gray-100 text-[var(--color-ink-fade)] hover:bg-white/60 transition-colors"
                   >
                     {m.adminCancel()}
                   </button>

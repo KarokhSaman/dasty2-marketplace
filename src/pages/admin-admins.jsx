@@ -61,10 +61,10 @@ export default function AdminAdminsPage() {
     <div>
       <div className="flex items-center justify-between gap-3 mb-5">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Admins</h1>
-          <p className="text-sm text-gray-400 mt-0.5">Accounts with admin access</p>
+          <h1 className="text-2xl font-bold text-[var(--color-ink)]">Admins</h1>
+          <p className="text-sm text-[var(--color-ink-fade)] mt-0.5">Accounts with admin access</p>
         </div>
-        <span className="text-sm text-gray-400 shrink-0">
+        <span className="text-sm text-[var(--color-ink-fade)] shrink-0">
           {admins.length} admin{admins.length === 1 ? "" : "s"}
         </span>
       </div>
@@ -75,12 +75,12 @@ export default function AdminAdminsPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search admins"
-          className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-rose-300"
+          className="w-full border border-[var(--color-hairline)] rounded-xl px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-ember-300"
         />
       </div>
 
       {visibleAdmins.length === 0 ? (
-        <div className="bg-white rounded-xl border border-gray-100 py-16 text-center text-gray-400">
+        <div className="bg-white rounded-xl border border-[var(--color-hairline)] py-16 text-center text-[var(--color-ink-fade)]">
           <p className="text-sm font-medium">No admins found</p>
         </div>
       ) : (
@@ -88,7 +88,7 @@ export default function AdminAdminsPage() {
           {visibleAdmins.map((admin) => (
             <div
               key={admin._id}
-              className="bg-white rounded-xl border border-gray-100 p-4 flex items-center gap-4"
+              className="bg-white rounded-xl border border-[var(--color-hairline)] p-4 flex items-center gap-4"
             >
               <div className="w-11 h-11 rounded-full bg-indigo-50 flex items-center justify-center shrink-0">
                 <span className="text-indigo-600 font-bold text-sm">{initials(admin)}</span>
@@ -103,7 +103,7 @@ export default function AdminAdminsPage() {
                     Admin
                   </span>
                   <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                    admin.isActive ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"
+                    admin.isActive ? "bg-green-100 text-green-700" : "bg-[var(--color-ember-50)] text-[var(--color-ink-fade)]"
                   }`}>
                     {admin.isActive ? "Active" : "Inactive"}
                   </span>
@@ -111,7 +111,7 @@ export default function AdminAdminsPage() {
 
                 <div className="flex items-center gap-3 mt-0.5 flex-wrap">
                   {admin.email && (
-                    <span className="text-xs text-gray-400" dir="ltr">
+                    <span className="text-xs text-[var(--color-ink-fade)]" dir="ltr">
                       {admin.email}
                     </span>
                   )}
@@ -128,7 +128,7 @@ export default function AdminAdminsPage() {
 
               <div className="shrink-0">
                 {currentUser?._id === admin._id ? (
-                  <span className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-gray-100 text-gray-500">
+                  <span className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-gray-100 text-[var(--color-ink-fade)]">
                     Current admin
                   </span>
                 ) : confirmDemote === admin._id ? (
@@ -151,7 +151,7 @@ export default function AdminAdminsPage() {
                     <button
                       type="button"
                       onClick={() => setConfirmDemote(null)}
-                      className="text-xs font-semibold px-2 py-1.5 rounded-lg bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors"
+                      className="text-xs font-semibold px-2 py-1.5 rounded-lg bg-gray-100 text-[var(--color-ink-fade)] hover:bg-white/60 transition-colors"
                     >
                       Cancel
                     </button>
@@ -160,7 +160,7 @@ export default function AdminAdminsPage() {
                   <button
                     type="button"
                     onClick={() => setConfirmDemote(admin._id)}
-                    className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
+                    className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-gray-100 text-[var(--color-ink-soft)] hover:bg-white/60 transition-colors"
                   >
                     Make seller
                   </button>

@@ -56,8 +56,8 @@ export default function AdminOffersPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">{m.adminOffersTitle()}</h1>
+    <div className="max-w-6xl mx-auto space-y-6">
+      <h1 className="text-2xl font-bold text-[var(--color-ink)]">{m.adminOffersTitle()}</h1>
 
       {/* ── Active offer ── */}
       {activeOffer ? (
@@ -88,7 +88,7 @@ export default function AdminOffersPage() {
           </div>
         </div>
       ) : (
-        <div className="bg-gray-100 rounded-2xl px-5 py-4 text-sm text-gray-500 flex items-center gap-2">
+        <div className="bg-gray-100 rounded-2xl px-5 py-4 text-sm text-[var(--color-ink-fade)] flex items-center gap-2">
           <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
           </svg>
@@ -97,7 +97,7 @@ export default function AdminOffersPage() {
       )}
 
       {/* ── Create new offer ── */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+      <div className="bg-white rounded-2xl border border-[var(--color-hairline)] shadow-sm p-6">
         <h2 className="text-base font-bold text-gray-800 mb-5">{m.adminOffersCreateTitle()}</h2>
 
         {success && (
@@ -111,22 +111,22 @@ export default function AdminOffersPage() {
 
         <form onSubmit={handleCreate} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">{m.adminOffersLabelTitle()} <span className="text-rose-500">*</span></label>
+            <label className="block text-sm font-medium text-[var(--color-ink)] mb-1.5">{m.adminOffersLabelTitle()} <span className="text-rose-500">*</span></label>
             <input value={title} onChange={e => setTitle(e.target.value)} required
               placeholder={m.adminOffersPlaceholderTitle()}
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300"/>
+              className="w-full border border-[var(--color-hairline)] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-ember-300"/>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">{m.adminOffersLabelDesc()}</label>
+            <label className="block text-sm font-medium text-[var(--color-ink)] mb-1.5">{m.adminOffersLabelDesc()}</label>
             <input value={description} onChange={e => setDescription(e.target.value)}
               placeholder={m.adminOffersPlaceholderDesc()}
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300"/>
+              className="w-full border border-[var(--color-hairline)] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-ember-300"/>
           </div>
 
           {/* Fee type toggle */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">{m.adminOffersFeeType()} <span className="text-rose-500">*</span></label>
+            <label className="block text-sm font-medium text-[var(--color-ink)] mb-2">{m.adminOffersFeeType()} <span className="text-rose-500">*</span></label>
             <div className="grid grid-cols-2 gap-3">
               {[
                 { val: "free",     label: m.adminOffersNoFeeLabel(), sub: m.adminOffersNoFeeSub() },
@@ -137,12 +137,12 @@ export default function AdminOffersPage() {
                   onClick={() => setType(opt.val)}
                   className={`text-start p-3.5 rounded-xl border-2 transition-colors ${
                     type === opt.val
-                      ? "border-rose-500 bg-rose-50"
-                      : "border-gray-200 hover:border-rose-300"
+                      ? "border-rose-500 bg-[var(--color-ember-50)]"
+                      : "border-[var(--color-hairline)] hover:border-rose-300"
                   }`}
                 >
                   <p className={`text-sm font-semibold ${type === opt.val ? "text-rose-700" : "text-gray-800"}`}>{opt.label}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">{opt.sub}</p>
+                  <p className="text-xs text-[var(--color-ink-fade)] mt-0.5">{opt.sub}</p>
                 </button>
               ))}
             </div>
@@ -150,26 +150,26 @@ export default function AdminOffersPage() {
 
           {type === "flat_fee" && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">{m.adminOffersFlatAmount()} <span className="text-rose-500">*</span></label>
+              <label className="block text-sm font-medium text-[var(--color-ink)] mb-1.5">{m.adminOffersFlatAmount()} <span className="text-rose-500">*</span></label>
               <input
                 type="number" min={0} value={flatFeeAmount}
                 onChange={e => setFlatFeeAmount(e.target.value)}
                 placeholder="2000" required
-                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300" dir="ltr"
+                className="w-full border border-[var(--color-hairline)] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-ember-300" dir="ltr"
               />
             </div>
           )}
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">{m.adminOffersStartDate()} <span className="text-rose-500">*</span></label>
+              <label className="block text-sm font-medium text-[var(--color-ink)] mb-1.5">{m.adminOffersStartDate()} <span className="text-rose-500">*</span></label>
               <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} required
-                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300"/>
+                className="w-full border border-[var(--color-hairline)] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-ember-300"/>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">{m.adminOffersEndDate()} <span className="text-rose-500">*</span></label>
+              <label className="block text-sm font-medium text-[var(--color-ink)] mb-1.5">{m.adminOffersEndDate()} <span className="text-rose-500">*</span></label>
               <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} required min={startDate}
-                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300"/>
+                className="w-full border border-[var(--color-hairline)] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-ember-300"/>
             </div>
           </div>
 
@@ -181,7 +181,7 @@ export default function AdminOffersPage() {
           </div>
 
           <button type="submit" disabled={submitting}
-            className="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold py-3 rounded-xl transition-colors disabled:opacity-50">
+            className="w-full bg-[var(--color-ember-600)] hover:bg-[var(--color-ember-700)] text-white font-semibold py-3 rounded-xl transition-colors disabled:opacity-50">
             {submitting ? m.adminOffersSubmitting() : m.adminOffersSubmit()}
           </button>
         </form>
@@ -189,8 +189,8 @@ export default function AdminOffersPage() {
 
       {/* ── Past offers ── */}
       {allOffers && allOffers.length > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest px-5 py-3 border-b border-gray-50">
+        <div className="bg-white rounded-2xl border border-[var(--color-hairline)] shadow-sm overflow-hidden">
+          <p className="text-xs font-semibold text-[var(--color-ink-fade)] uppercase tracking-widest px-5 py-3 border-b border-[var(--color-hairline)]">
             {m.adminOffersAllTitle()}
           </p>
           <div className="divide-y divide-gray-50">
@@ -204,10 +204,10 @@ export default function AdminOffersPage() {
                       <p className="text-sm font-semibold text-gray-800">{offer.title}</p>
                       <OfferTypeBadge type={offer.type} />
                       {isCurrent && <span className="text-[10px] font-bold bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full">{m.adminOffersBadgeLive()}</span>}
-                      {!offer.isActive && <span className="text-[10px] font-bold bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded-full">{m.adminOffersBadgeInactive()}</span>}
+                      {!offer.isActive && <span className="text-[10px] font-bold bg-gray-100 text-[var(--color-ink-fade)] px-1.5 py-0.5 rounded-full">{m.adminOffersBadgeInactive()}</span>}
                     </div>
-                    {offer.description && <p className="text-xs text-gray-400 mt-0.5">{offer.description}</p>}
-                    <p className="text-xs text-gray-400 mt-1">
+                    {offer.description && <p className="text-xs text-[var(--color-ink-fade)] mt-0.5">{offer.description}</p>}
+                    <p className="text-xs text-[var(--color-ink-fade)] mt-1">
                       {offer.type === "free" ? m.adminOffersNoFeeShort() : `${offer.flatFeeAmount?.toLocaleString()} IQD`}
                       {" · "}{formatDate(offer.startDate)} → {formatDate(offer.endDate)}
                     </p>
@@ -215,12 +215,12 @@ export default function AdminOffersPage() {
                   <div className="flex items-center gap-2 shrink-0">
                     {offer.isActive ? (
                       <button onClick={() => deactivateOffer({ id: offer._id })}
-                        className="text-xs text-gray-400 hover:text-red-500 border border-gray-200 hover:border-red-200 px-3 py-1.5 rounded-lg transition-colors">
+                        className="text-xs text-[var(--color-ink-fade)] hover:text-red-500 border border-[var(--color-hairline)] hover:border-red-200 px-3 py-1.5 rounded-lg transition-colors">
                         {m.adminOffersDeactivate()}
                       </button>
                     ) : (
                       <button onClick={() => reactivateOffer({ id: offer._id })}
-                        className="text-xs text-gray-400 hover:text-green-600 border border-gray-200 hover:border-green-200 px-3 py-1.5 rounded-lg transition-colors">
+                        className="text-xs text-[var(--color-ink-fade)] hover:text-green-600 border border-[var(--color-hairline)] hover:border-green-200 px-3 py-1.5 rounded-lg transition-colors">
                         {m.adminOffersReactivate()}
                       </button>
                     )}
@@ -229,7 +229,7 @@ export default function AdminOffersPage() {
                         <button onClick={() => { deleteOffer({ id: offer._id }); setConfirmDel(null); }}
                           className="text-xs bg-red-500 hover:bg-red-600 text-white font-semibold px-2 py-1.5 rounded-lg transition-colors">✓</button>
                         <button onClick={() => setConfirmDel(null)}
-                          className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-2 py-1.5 rounded-lg transition-colors">✕</button>
+                          className="text-xs bg-gray-100 hover:bg-white/60 text-[var(--color-ink-soft)] px-2 py-1.5 rounded-lg transition-colors">✕</button>
                       </div>
                     ) : (
                       <button onClick={() => setConfirmDel(offer._id)}

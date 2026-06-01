@@ -108,23 +108,33 @@ export default function AdminShell({ children }) {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50 pb-16 sm:pb-0">
+    <div className="min-h-screen flex flex-col">
+      {/* Atmospheric backdrop */}
+      <div
+        aria-hidden
+        className="fixed inset-x-0 top-0 h-[320px] pointer-events-none -z-10"
+        style={{
+          background:
+            "radial-gradient(120% 80% at 0% 0%, rgba(237,0,64,0.06) 0%, rgba(244,245,247,0) 58%)," +
+            "radial-gradient(90% 70% at 100% 0%, rgba(11,12,15,0.04) 0%, rgba(244,245,247,0) 55%)",
+        }}
+      />
 
       {/* ── Top bar ── */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-20 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between gap-2">
+      <header className="sticky top-0 z-40 bg-[var(--color-cream)] border-b border-[var(--color-hairline)] shadow-[0_1px_0_rgba(11,12,15,0.02)]">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
 
           {/* Left: logo + desktop nav */}
           <div className="flex items-center gap-2">
-            <Link to="/admin" dir="ltr" className="flex items-center gap-1.5 shrink-0">
-              <span className="text-lg font-bold text-rose-600 tracking-tight">Dasty2</span>
-              <span className="text-lg font-medium text-gray-600">Mndalan</span>
+            <Link to="/admin" dir="ltr" className="group inline-flex items-center gap-1.5 shrink-0 select-none">
+              <span className="text-lg font-bold text-[var(--color-ember-600)] tracking-tight">Dasty2</span>
+              <span className="text-lg font-medium text-[var(--color-ink-soft)]">Mndalan</span>
             </Link>
-            <div className="hidden sm:flex items-center gap-1 ms-1">
+            <div className="hidden xl:flex items-center gap-1 ms-2 ps-2 border-s border-[var(--color-hairline)]">
               {navTabs.map(tab => (
                 <Link key={tab.href} to={tab.href}
-                  className={`text-sm font-medium px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap ${
-                    tab.active ? "bg-rose-50 text-rose-600" : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                  className={`text-sm font-medium px-3.5 py-2 rounded-full transition-all duration-200 ${
+                    tab.active ? "bg-[var(--color-ember-50)] text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] hover:bg-white/60"
                   }`}>
                   {tab.label}
                 </Link>
@@ -139,12 +149,14 @@ export default function AdminShell({ children }) {
             {/* Bell */}
             <div ref={bellRef} className="relative">
               <button onClick={() => setShowNotifs(v => !v)}
-                className="relative p-2 text-gray-500 hover:text-rose-600 transition-colors">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                aria-label="Notifications"
+                aria-expanded={showNotifs}
+                className="relative inline-flex items-center justify-center w-8 h-8 rounded-full bg-white border border-[var(--color-hairline)] text-[var(--color-ink-soft)] hover:text-[var(--color-ember-600)] hover:border-[var(--color-ember-300)] transition-colors">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
                 </svg>
                 {unread > 0 && (
-                  <span className="absolute top-1 end-1 min-w-[1.1rem] h-[1.1rem] text-[10px] font-bold bg-rose-500 text-white rounded-full flex items-center justify-center">
+                  <span className="absolute -top-0.5 -end-0.5 min-w-[1rem] h-4 px-1 text-[9.5px] font-bold bg-[var(--color-ember-500)] text-white rounded-full flex items-center justify-center ring-2 ring-[var(--color-cream)]">
                     {unread > 9 ? "9+" : unread}
                   </span>
                 )}
@@ -164,20 +176,20 @@ export default function AdminShell({ children }) {
             <div ref={profileRef} className="relative">
               <button
                 onClick={() => setShowProfile(v => !v)}
-                className="w-8 h-8 rounded-full bg-rose-600 flex items-center justify-center text-white text-sm font-bold hover:bg-rose-700 transition-colors focus:outline-none focus:ring-2 focus:ring-rose-400 focus:ring-offset-2"
+                className="w-8 h-8 rounded-full bg-[var(--color-ember-600)] flex items-center justify-center text-white text-sm font-bold hover:bg-[var(--color-ember-700)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--color-ember-400)] focus:ring-offset-2"
               >
                 {adminEmail ? adminEmail[0].toUpperCase() : "A"}
               </button>
 
               {showProfile && (
-                <div className="absolute end-0 top-10 w-52 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden z-30">
-                  <div className="px-4 py-3 border-b border-gray-100">
-                    <p className="text-[10px] text-gray-400 uppercase tracking-widest font-semibold mb-0.5">Signed in as</p>
-                    <p className="text-xs font-semibold text-gray-800 truncate" dir="ltr">{adminEmail || "Admin"}</p>
+                <div className="absolute end-0 top-10 w-52 bg-white rounded-xl shadow-lg border border-[var(--color-hairline)] overflow-hidden z-30">
+                  <div className="px-4 py-3 border-b border-[var(--color-hairline)]">
+                    <p className="text-[10px] text-[var(--color-ink-fade)] uppercase tracking-widest font-semibold mb-0.5">Signed in as</p>
+                    <p className="text-xs font-semibold text-[var(--color-ink)] truncate" dir="ltr">{adminEmail || "Admin"}</p>
                   </div>
                   <button
                     onClick={handleSignOut}
-                    className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors font-medium"
+                    className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-[var(--color-ember-600)] hover:bg-[var(--color-ember-50)] transition-colors font-medium"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
@@ -192,37 +204,43 @@ export default function AdminShell({ children }) {
       </header>
 
       {/* ── Main content ── */}
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-6">
+      <main className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 md:px-7 xl:px-6 pt-3 pb-10 xl:pb-10">
         {isAuthenticated ? children : authTimedOut ? (
           <div className="mx-auto max-w-md py-20 text-center space-y-4">
-            <p className="text-sm font-medium text-gray-700">{m.errSessionExpired()}</p>
+            <p className="text-sm font-semibold text-[var(--color-ink)]">{m.errSessionExpired()}</p>
             <button
               type="button"
               onClick={handleSignOut}
-              className="inline-flex h-9 items-center justify-center rounded-lg bg-gray-900 px-4 text-sm font-semibold text-white hover:bg-gray-800"
+              className="inline-flex h-9 items-center justify-center rounded-lg bg-[var(--color-ink)] px-4 text-sm font-semibold text-white hover:opacity-90 transition-opacity"
             >
               {m.adminSignOut()}
             </button>
           </div>
         ) : (
           <div className="flex items-center justify-center py-24">
-            <div className="h-9 w-9 animate-spin rounded-full border-2 border-gray-200 border-t-rose-500" />
+            <div className="w-9 h-9 border-2 border-[var(--color-ember-200)] border-t-[var(--color-ember-500)] rounded-full animate-spin" />
           </div>
         )}
       </main>
 
-      {/* ── Mobile bottom nav ── */}
-      <nav className="sm:hidden fixed bottom-0 start-0 end-0 bg-white border-t border-gray-100 z-20 flex">
-        {navTabs.map(tab => (
-          <Link key={tab.href} to={tab.href}
-            className={`flex-1 min-w-0 flex flex-col items-center py-2.5 gap-0.5 transition-colors ${
-              tab.active ? "text-rose-600" : "text-gray-400"
-            }`}>
-            {tab.icon(tab.active)}
-            <span className="text-[10px] font-semibold leading-none truncate max-w-full px-0.5">{tab.shortLabel}</span>
-          </Link>
-        ))}
+      {/* ── Mobile bottom nav — iPad optimization ── */}
+      <div className="xl:hidden h-24" aria-hidden />
+      <nav className="xl:hidden fixed bottom-0 inset-x-0 z-30 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 pointer-events-none">
+        <div className="pointer-events-auto mx-auto max-w-md surface-frost rounded-[1.75rem] border border-[var(--color-hairline)] shadow-[0_18px_44px_-20px_rgba(11,12,15,0.22)] px-2 py-1.5 flex items-stretch gap-1">
+          {navTabs.map(tab => (
+            <Link key={tab.href} to={tab.href}
+              className={`flex-1 flex flex-col items-center justify-center gap-0.5 px-4 py-2 rounded-2xl transition-all duration-200 active:scale-95 ${
+                tab.active
+                  ? "text-[var(--color-ember-600)] bg-[var(--color-ember-50)]"
+                  : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]"
+              }`}>
+              {tab.icon(tab.active)}
+              <span className="text-[10px] font-semibold tracking-wide">{tab.shortLabel}</span>
+            </Link>
+          ))}
+        </div>
       </nav>
+
     </div>
   );
 }
