@@ -42,7 +42,7 @@ function SellerDesktopNav() {
       <Wordmark />
 
       {sellerId && (
-        <div className="hidden sm:flex items-center gap-1 ms-2 ps-2 border-s border-[var(--color-hairline)]">
+        <div className="hidden xl:flex items-center gap-1 ms-2 ps-2 border-s border-[var(--color-hairline)]">
           <Link to="/" className={`${linkBase} ${isHome ? "bg-[var(--color-ember-50)] text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] hover:bg-white/60"}`}>
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
@@ -184,8 +184,8 @@ function SmartBottomNav() {
   if (sellerId) {
     return (
       <>
-        <div className="sm:hidden h-24" aria-hidden />
-        <nav className="sm:hidden fixed bottom-0 inset-x-0 z-30 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 pointer-events-none">
+        <div className="xl:hidden h-24" aria-hidden />
+        <nav className="xl:hidden fixed bottom-0 inset-x-0 z-30 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 pointer-events-none">
           <div className="pointer-events-auto mx-auto max-w-md surface-frost rounded-[1.75rem] border border-[var(--color-hairline)] shadow-[0_18px_44px_-20px_rgba(11,12,15,0.22)] px-2 py-1.5 flex items-stretch gap-1">
             <Link to="/" onClick={handleHomeTap} className={`flex-1 ${tab(isHome)}`}>
               <svg className="w-5 h-5" fill={isHome ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
@@ -216,8 +216,8 @@ function SmartBottomNav() {
   // Anonymous buyer — Home / Account
   return (
     <>
-      <div className="sm:hidden h-24" aria-hidden />
-      <nav className="sm:hidden fixed bottom-0 inset-x-0 z-30 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 pointer-events-none">
+      <div className="xl:hidden h-24" aria-hidden />
+      <nav className="xl:hidden fixed bottom-0 inset-x-0 z-30 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 pointer-events-none">
         <div className="pointer-events-auto mx-auto max-w-md surface-frost rounded-[1.75rem] border border-[var(--color-hairline)] shadow-[0_18px_44px_-20px_rgba(11,12,15,0.22)] px-2 py-1.5 flex items-stretch gap-1">
           <Link to="/" onClick={handleHomeTap} className={`flex-1 ${tab(isHome)}`}>
             <svg className="w-5 h-5" fill={isHome ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
@@ -262,7 +262,7 @@ export default function PublicShell({ children }) {
         </div>
       </header>
 
-      <main className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 pt-3 pb-10 sm:pb-10">
+      <main className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 md:px-7 xl:px-6 pt-3 pb-10 sm:pb-10">
         {children}
       </main>
 

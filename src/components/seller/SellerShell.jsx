@@ -115,7 +115,7 @@ export default function SellerShell({ children }) {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Wordmark />
-            <div className="hidden sm:flex items-center gap-1 ms-2 ps-2 border-s border-[var(--color-hairline)]">
+            <div className="hidden xl:flex items-center gap-1 ms-2 ps-2 border-s border-[var(--color-hairline)]">
               <Link to="/" className={`${navLink} text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] hover:bg-white/60`}>
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
@@ -174,7 +174,7 @@ export default function SellerShell({ children }) {
       </header>
 
       {/* ── Main content ── */}
-      <main className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 pt-3 pb-10">
+      <main className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 md:px-7 xl:px-6 pt-3 pb-10">
         {/* Hold child pages (and their authed queries) until the Convex
             websocket is authenticated — server already gated via requireSellerFn. */}
         {isAuthenticated ? children : authTimedOut ? (
@@ -192,8 +192,8 @@ export default function SellerShell({ children }) {
       </main>
 
       {/* ── Mobile bottom nav — Home / Dashboard / FAB(Sell) / Account ── */}
-      <div className="sm:hidden h-24" aria-hidden />
-      <nav className="sm:hidden fixed bottom-0 inset-x-0 z-30 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 pointer-events-none">
+      <div className="xl:hidden h-24" aria-hidden />
+      <nav className="xl:hidden fixed bottom-0 inset-x-0 z-30 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 pointer-events-none">
         <div className="pointer-events-auto mx-auto max-w-md surface-frost rounded-[1.75rem] border border-[var(--color-hairline)] shadow-[0_18px_44px_-20px_rgba(11,12,15,0.22)] px-2 py-1.5 flex items-stretch gap-1">
           <Link to="/" onClick={handleHomeTap} className={`flex-1 ${tab(isHomeTab)}`}>
             <svg className="w-5 h-5" fill={isHomeTab ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
