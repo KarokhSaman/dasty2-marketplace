@@ -184,7 +184,7 @@ function SmartBottomNav() {
   if (sellerId) {
     return (
       <>
-        <div className="xl:hidden h-24" aria-hidden />
+        <div className="xl:hidden h-28 sm:h-32" aria-hidden />
         <nav className="xl:hidden fixed bottom-0 inset-x-0 z-30 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 pointer-events-none">
           <div className="pointer-events-auto mx-auto max-w-md surface-frost rounded-[1.75rem] border border-[var(--color-hairline)] shadow-[0_18px_44px_-20px_rgba(11,12,15,0.22)] px-2 py-1.5 flex items-stretch gap-1">
             <Link to="/" onClick={handleHomeTap} className={`flex-1 ${tab(isHome)}`}>
@@ -216,7 +216,7 @@ function SmartBottomNav() {
   // Anonymous buyer — Home / Account
   return (
     <>
-      <div className="xl:hidden h-24" aria-hidden />
+      <div className="xl:hidden h-28 sm:h-32" aria-hidden />
       <nav className="xl:hidden fixed bottom-0 inset-x-0 z-30 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 pointer-events-none">
         <div className="pointer-events-auto mx-auto max-w-md surface-frost rounded-[1.75rem] border border-[var(--color-hairline)] shadow-[0_18px_44px_-20px_rgba(11,12,15,0.22)] px-2 py-1.5 flex items-stretch gap-1">
           <Link to="/" onClick={handleHomeTap} className={`flex-1 ${tab(isHome)}`}>
