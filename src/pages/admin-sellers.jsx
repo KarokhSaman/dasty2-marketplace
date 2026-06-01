@@ -63,50 +63,67 @@ export default function AdminSellersPage() {
 
       <div className="space-y-3">
         {enriched.map((seller) => (
-          <div key={seller._id} className={`bg-white rounded-xl border p-4 flex items-center gap-4 transition-colors ${
+          <div key={seller._id} className={`bg-white rounded-xl border transition-colors overflow-hidden ${
             seller.isActive ? "border-[var(--color-hairline)]" : "border-[var(--color-hairline)] opacity-60"
           }`}>
-            {/* Avatar */}
-            <div className="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center shrink-0">
-              <span className="text-[var(--color-ember-600)] font-bold text-sm">{seller.name?.[0]?.toUpperCase() ?? "?"}</span>
-            </div>
-
-            {/* Info */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <p className="text-sm font-semibold text-gray-800">{seller.name}</p>
-                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+            {/* Header Section: Avatar + Name + Status */}
+            <div className="px-4 py-4 flex items-start gap-3 border-b border-[var(--color-hairline)]">
+              <div className="w-12 h-12 rounded-full bg-[var(--color-ember-50)] flex items-center justify-center shrink-0">
+                <span className="text-[var(--color-ember-600)] font-bold text-base">{seller.name?.[0]?.toUpperCase() ?? "?"}</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-[var(--color-ink)]">{seller.name}</p>
+                <span className={`inline-block text-xs px-2.5 py-1 rounded-full font-medium mt-1.5 ${
                   seller.isActive ? "bg-green-100 text-green-700" : "bg-[var(--color-ember-50)] text-[var(--color-ink-fade)]"
                 }`}>
                   {seller.isActive ? m.adminActive() : m.adminInactive()}
                 </span>
               </div>
-              <div className="flex items-center gap-3 mt-0.5 flex-wrap">
-                {seller.email && (
-                  <span className="text-xs text-[var(--color-ink-fade)]" dir="ltr">{seller.email}</span>
-                )}
-                {seller.phone && (
+            </div>
+
+            {/* Details Section: Contact Info */}
+            <div className="px-4 py-4 space-y-2.5 border-b border-[var(--color-hairline)]">
+              {seller.email && (
+                <div>
+                  <p className="text-[11px] font-semibold text-[var(--color-ink-fade)] uppercase tracking-wide mb-0.5">Email</p>
+                  <p className="text-sm text-[var(--color-ink)]" dir="ltr">{seller.email}</p>
+                </div>
+              )}
+              {seller.phone && (
+                <div>
+                  <p className="text-[11px] font-semibold text-[var(--color-ink-fade)] uppercase tracking-wide mb-0.5">Phone</p>
                   <a
                     href={`https://wa.me/${seller.phone.replace(/\D/g,"")}`}
                     target="_blank" rel="noopener noreferrer"
                     dir="ltr"
-                    className="text-xs text-green-600 hover:underline"
+                    className="text-sm text-green-600 hover:underline"
                   >
                     {seller.phone}
                   </a>
+                </div>
+              )}
+              {(seller.city || seller.address) && (
+                <div>
+                  <p className="text-[11px] font-semibold text-[var(--color-ink-fade)] uppercase tracking-wide mb-0.5">Address</p>
+                  <p className="text-sm text-[var(--color-ink)]">{seller.city}{seller.address ? `, ${seller.address}` : ""}</p>
+                </div>
+              )}
+              <div className="grid grid-cols-2 gap-4 pt-2">
+                <div>
+                  <p className="text-[11px] font-semibold text-[var(--color-ink-fade)] uppercase tracking-wide mb-0.5">Products</p>
+                  <p className="text-sm text-[var(--color-ink)] font-medium">{seller.productCount}</p>
+                </div>
+                {seller.registeredAt && (
+                  <div>
+                    <p className="text-[11px] font-semibold text-[var(--color-ink-fade)] uppercase tracking-wide mb-0.5">Joined</p>
+                    <p className="text-sm text-[var(--color-ink)] font-medium">{seller.registeredAt?.slice(0,10)}</p>
+                  </div>
                 )}
-                <span className="text-xs text-[var(--color-ink-fade)]">{seller.city}{seller.address ? `, ${seller.address}` : ""}</span>
-                <span className="text-xs text-[var(--color-ink-fade)]">
-                  {seller.productCount} {m.adminProductCount()}
-                </span>
-                <span className="text-xs text-gray-300">
-                  {seller.registeredAt?.slice(0,10)}
-                </span>
               </div>
             </div>
 
-            {/* Actions */}
-            <div className="flex flex-wrap items-center justify-end gap-2 shrink-0">
+            {/* Actions Section */}
+            <div className="px-4 py-3 flex items-center justify-between gap-2 flex-wrap">
               {confirmPromote === seller._id ? (
                 <div className="flex items-center gap-1">
                   <button
