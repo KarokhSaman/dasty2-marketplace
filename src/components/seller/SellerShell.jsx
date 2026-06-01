@@ -23,7 +23,7 @@ function Wordmark() {
         Dasty<span className="font-medium">2</span>
       </span>
       <span aria-hidden className="self-center w-1 h-1 rounded-full bg-[var(--color-ember-300)]/80" />
-      <span className="text-[9px] font-semibold text-[var(--color-ember-600)] tracking-[0.14em] uppercase">
+      <span className="text-[18px] font-semibold text-[var(--color-ember-600)] tracking-[0.14em]">
         Mndalan
       </span>
     </Link>

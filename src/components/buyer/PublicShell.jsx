@@ -27,7 +27,7 @@ function Wordmark() {
         aria-hidden
         className="self-center w-1 h-1 rounded-full bg-[var(--color-ember-300)]/80 group-hover:bg-[var(--color-ember-500)] transition-colors"
       />
-      <span className="text-[9px] font-semibold text-[var(--color-ember-600)] tracking-[0.14em] uppercase">
+      <span className="text-[18px] font-semibold text-[var(--color-ember-600)] tracking-[0.14em]">
         Mndalan
       </span>
     </Link>
