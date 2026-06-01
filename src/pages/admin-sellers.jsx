@@ -3,6 +3,7 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import * as m from "@/paraglide/messages";
 import { deleteSellerFn } from "@/lib/clerk-seller";
+import SellerActionsMenu from "@/components/admin/SellerActionsMenu";
 
 export default function AdminSellersPage() {
   const sellers       = useQuery(api.users.getAll);
@@ -11,8 +12,6 @@ export default function AdminSellersPage() {
   const setRole       = useMutation(api.users.setRole);
   const createLog     = useMutation(api.adminLogs.create);
   const [search, setSearch] = useState("");
-  const [confirmDelete, setConfirmDelete] = useState(null); // seller _id being confirmed
-  const [confirmPromote, setConfirmPromote] = useState(null); // seller _id being confirmed
 
   const enriched = useMemo(() => {
     if (!sellers || !products) return [];
@@ -123,44 +122,18 @@ export default function AdminSellersPage() {
             </div>
 
             {/* Actions Section */}
-            <div className="px-4 py-3 flex items-center justify-between gap-2 flex-wrap">
-              {confirmPromote === seller._id ? (
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={async () => {
-                      await setRole({ id: seller._id, role: "admin" });
-                      await createLog({
-                        action: "seller_promoted_to_admin",
-                        sellerName: seller.name,
-                        notes: seller.email || undefined,
-                      });
-                      setConfirmPromote(null);
-                    }}
-                    className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-gray-900 text-white hover:bg-gray-700 transition-colors"
-                  >
-                    Promote
-                  </button>
-                  <button
-                    onClick={() => setConfirmPromote(null)}
-                    className="text-xs font-semibold px-2 py-1.5 rounded-lg bg-gray-100 text-[var(--color-ink-fade)] hover:bg-white/60 transition-colors"
-                  >
-                    {m.adminCancel()}
-                  </button>
-                </div>
-              ) : (
-                <button
-                  onClick={() => {
-                    setConfirmDelete(null);
-                    setConfirmPromote(seller._id);
-                  }}
-                  className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors"
-                >
-                  Promote admin
-                </button>
-              )}
-
-              <button
-                onClick={async () => {
+            <div className="px-4 py-2 flex items-center justify-end">
+              <SellerActionsMenu
+                seller={seller}
+                onPromote={async () => {
+                  await setRole({ id: seller._id, role: "admin" });
+                  await createLog({
+                    action: "seller_promoted_to_admin",
+                    sellerName: seller.name,
+                    notes: seller.email || undefined,
+                  });
+                }}
+                onToggleActive={async () => {
                   const newActive = !seller.isActive;
                   await setActive({ id: seller._id, isActive: newActive });
                   await createLog({
@@ -169,48 +142,15 @@ export default function AdminSellersPage() {
                     notes: seller.email || undefined,
                   });
                 }}
-                className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${
-                  seller.isActive
-                    ? "bg-gray-100 hover:bg-red-50 text-[var(--color-ink-fade)] hover:text-red-600"
-                    : "bg-green-50 hover:bg-green-100 text-green-600"
-                }`}
-              >
-                {seller.isActive ? m.adminDeactivate() : m.adminActivate()}
-              </button>
-
-              {confirmDelete === seller._id ? (
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={async () => {
-                      await deleteSellerFn({ data: { sellerId: seller._id } });
-                      await createLog({ action: "seller_deleted", sellerName: seller.name, notes: seller.email || undefined });
-                      setConfirmDelete(null);
-                    }}
-                    className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors"
-                  >
-                    {m.adminDelete()}
-                  </button>
-                  <button
-                    onClick={() => setConfirmDelete(null)}
-                    className="text-xs font-semibold px-2 py-1.5 rounded-lg bg-gray-100 text-[var(--color-ink-fade)] hover:bg-white/60 transition-colors"
-                  >
-                    {m.adminCancel()}
-                  </button>
-                </div>
-              ) : (
-                <button
-                  onClick={() => {
-                    setConfirmPromote(null);
-                    setConfirmDelete(seller._id);
-                  }}
-                  className="p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors"
-                  title={m.adminDelete()}
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                </button>
-              )}
+                onDelete={async () => {
+                  await deleteSellerFn({ data: { sellerId: seller._id } });
+                  await createLog({
+                    action: "seller_deleted",
+                    sellerName: seller.name,
+                    notes: seller.email || undefined,
+                  });
+                }}
+              />
             </div>
           </div>
         ))}
