@@ -56,7 +56,7 @@ function InfoPanel() {
 
       <div className="relative mb-8">
         <p className="text-2xl font-bold tracking-tight mb-4">
-          <span className="text-[var(--color-ink)]">Dasty2</span> <span className="font-medium text-[var(--color-ember-600)]">Mndalan</span>
+          <span className="font-bold text-[var(--color-ember-600)]">Dasty2</span> <span className="font-medium text-[var(--color-ink-soft)]">Mndalan</span>
         </p>
         <h2 className="text-3xl font-display text-[var(--color-ink)] leading-tight">{m.loginHeroTitle()}</h2>
         <p className="text-[var(--color-ink-soft)] mt-3 text-sm leading-relaxed">{m.loginHeroSub()}</p>
