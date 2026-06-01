@@ -19,14 +19,12 @@ function Wordmark() {
       aria-label="Dasty2 Mndalan"
       className="group inline-flex items-center gap-2 shrink-0 select-none"
     >
-      <div className="flex flex-col leading-tight">
-        <span className="font-display text-[20px] font-bold text-[var(--color-ink)]">
-          Dasty<span className="text-[var(--color-ember-600)]">2</span>
-        </span>
-        <span className="text-[11px] font-semibold text-[var(--color-ember-600)] tracking-[0.2em] uppercase">
-          Mndalan
-        </span>
-      </div>
+      <span className="font-display text-[20px] leading-none font-bold text-[var(--color-ink)] tracking-tight">
+        Dasty<span className="text-[var(--color-ember-600)]">2</span>
+      </span>
+      <span className="text-[16px] font-semibold text-[var(--color-ember-600)] tracking-wide">
+        Mndalan
+      </span>
     </Link>
   );
 }
