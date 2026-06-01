@@ -24,7 +24,7 @@ export async function requireClerkAdmin() {
     {},
     convexServerOptions(token),
   ).catch(() => null);
-  if (!user || user.role !== "admin" || !user.isActive) return null;
+  if (!user || (user.role !== "admin" && user.role !== "super_admin") || !user.isActive) return null;
 
   return { userId, email: user.email ?? "", token };
 }
