@@ -76,23 +76,13 @@ export default function AdminSellersPage() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold text-[var(--color-ink)]">{seller.name}</p>
-                <div className="flex flex-wrap items-center gap-2 mt-1">
-                  <span className="inline-block text-xs px-2.5 py-1 rounded-full font-medium bg-[var(--color-ember-50)] text-[var(--color-ember-600)]">
-                    Seller
-                  </span>
-                  <span className={`inline-block text-xs px-2.5 py-1 rounded-full font-medium ${
-                    seller.isActive ? "bg-green-100 text-green-700" : "bg-[var(--color-hairline)] text-[var(--color-ink-fade)]"
-                  }`}>
-                    {seller.isActive ? m.adminActive() : m.adminInactive()}
-                  </span>
-                </div>
                 {seller.phone && (
                   <p className="text-xs text-[var(--color-ink-soft)] mt-1.5 truncate" dir="ltr">
                     {seller.phone}
                   </p>
                 )}
                 {(seller.city || seller.address) && (
-                  <p className="text-xs text-[var(--color-ink-fade)] mt-0.5 truncate">
+                  <p className="text-xs text-[var(--color-ink-fade)] mt-1 truncate">
                     {seller.city}{seller.address ? `, ${seller.address}` : ""}
                   </p>
                 )}
