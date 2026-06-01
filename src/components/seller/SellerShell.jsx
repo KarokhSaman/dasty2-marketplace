@@ -17,15 +17,16 @@ function Wordmark() {
       to="/seller"
       dir="ltr"
       aria-label="Dasty2 Mndalan"
-      className="group inline-flex items-baseline gap-1.5 shrink-0 select-none"
+      className="group inline-flex items-center gap-2 shrink-0 select-none"
     >
-      <span className="font-display text-[18px] leading-none text-[var(--color-ink)]">
-        Dasty<span className="font-medium">2</span>
-      </span>
-      <span aria-hidden className="self-center w-1 h-1 rounded-full bg-[var(--color-ember-300)]/80" />
-      <span className="text-[18px] font-semibold text-[var(--color-ember-600)] tracking-[0.14em]">
-        Mndalan
-      </span>
+      <div className="flex flex-col leading-tight">
+        <span className="font-display text-[20px] font-bold text-[var(--color-ink)]">
+          Dasty<span className="text-[var(--color-ember-600)]">2</span>
+        </span>
+        <span className="text-[11px] font-semibold text-[var(--color-ember-600)] tracking-[0.2em] uppercase">
+          Mndalan
+        </span>
+      </div>
     </Link>
   );
 }
