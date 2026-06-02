@@ -48,16 +48,12 @@ function SellerDesktopNav() {
           </svg>
           Home
         </Link>
-        {sellerId && (
-          <>
-            <Link to="/seller" className={`${linkBase} ${isDash ? "bg-[var(--color-ember-50)] text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] hover:bg-white/60"}`}>
-              Dashboard
-            </Link>
-            <Link to="/seller/account" className={`${linkBase} ${isAccount ? "bg-[var(--color-ember-50)] text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] hover:bg-white/60"}`}>
-              Account
-            </Link>
-          </>
-        )}
+        <Link to="/seller" className={`${linkBase} ${isDash ? "bg-[var(--color-ember-50)] text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] hover:bg-white/60"}`}>
+          Dashboard
+        </Link>
+        <Link to="/seller/account" className={`${linkBase} ${isAccount ? "bg-[var(--color-ember-50)] text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] hover:bg-white/60"}`}>
+          Account
+        </Link>
       </div>
     </div>
   );
