@@ -295,3 +295,17 @@ html[dir='rtl'] .font-display {
     animation: none !important;
   }
 }
+
+/* ── Date picker styling ─────────────────────────── */
+input[type="date"] {
+  accent-color: var(--color-ember-500);
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  filter: brightness(0.6);
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  filter: brightness(0.8);
+}
