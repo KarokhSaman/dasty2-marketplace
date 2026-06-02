@@ -54,7 +54,7 @@ export default function LocationPicker({ city, setCity, availableCities }) {
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full mt-2 bg-white border border-[var(--color-hairline)] rounded-2xl shadow-[0_18px_44px_-20px_rgba(11,12,15,0.28)] z-30 overflow-hidden min-w-[150px] scale-in origin-top">
+        <div className="absolute end-0 top-full mt-2 bg-white border border-[var(--color-hairline)] rounded-2xl shadow-[0_18px_44px_-20px_rgba(11,12,15,0.28)] z-50 overflow-hidden min-w-[150px] scale-in origin-top">
           <div className="py-1">
             {options.map((opt) => {
               const active = city === opt.value;
