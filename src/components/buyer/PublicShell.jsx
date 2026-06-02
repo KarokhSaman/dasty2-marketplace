@@ -48,12 +48,16 @@ function SellerDesktopNav() {
           </svg>
           Home
         </Link>
-        <Link to="/seller" className={`${linkBase} ${isDash ? "bg-[var(--color-ember-50)] text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] hover:bg-white/60"}`}>
-          Dashboard
-        </Link>
-        <Link to="/seller/account" className={`${linkBase} ${isAccount ? "bg-[var(--color-ember-50)] text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] hover:bg-white/60"}`}>
-          Account
-        </Link>
+        {sellerId && (
+          <>
+            <Link to="/seller" className={`${linkBase} ${isDash ? "bg-[var(--color-ember-50)] text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] hover:bg-white/60"}`}>
+              Dashboard
+            </Link>
+            <Link to="/seller/account" className={`${linkBase} ${isAccount ? "bg-[var(--color-ember-50)] text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] hover:bg-white/60"}`}>
+              Account
+            </Link>
+          </>
+        )}
       </div>
     </div>
   );
@@ -214,8 +218,8 @@ function SmartBottomNav() {
   // Anonymous buyer — Home / Account
   return (
     <>
-      <div className="xl:hidden h-28 sm:h-32" aria-hidden />
-      <nav className="xl:hidden fixed bottom-0 inset-x-0 z-30 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 pointer-events-none">
+      <div className="lg:hidden h-28 sm:h-32" aria-hidden />
+      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 pointer-events-none">
         <div className="pointer-events-auto mx-auto max-w-md surface-frost rounded-[1.75rem] border border-[var(--color-hairline)] shadow-[0_18px_44px_-20px_rgba(11,12,15,0.22)] px-2 py-1.5 flex items-stretch gap-1">
           <Link to="/" onClick={handleHomeTap} className={`flex-1 ${tab(isHome)}`}>
             <svg className="w-5 h-5" fill={isHome ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
