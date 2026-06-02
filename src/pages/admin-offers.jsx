@@ -162,16 +162,14 @@ export default function AdminOffersPage() {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-semibold text-[var(--color-ink)] mb-2.5">{m.adminOffersStartDate()} <span className="text-rose-500">*</span></label>
+              <label className="block text-sm font-medium text-[var(--color-ink)] mb-1.5">{m.adminOffersStartDate()} <span className="text-rose-500">*</span></label>
               <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} required
-                className="w-full border-2 border-[var(--color-hairline)] rounded-xl px-4 py-3 text-base focus:outline-none focus:border-[var(--color-ember-500)] focus:ring-2 focus:ring-[var(--color-ember-200)] transition-colors cursor-pointer"
-              />
+                className="w-full border border-[var(--color-hairline)] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-ember-300"/>
             </div>
             <div>
-              <label className="block text-sm font-semibold text-[var(--color-ink)] mb-2.5">{m.adminOffersEndDate()} <span className="text-rose-500">*</span></label>
+              <label className="block text-sm font-medium text-[var(--color-ink)] mb-1.5">{m.adminOffersEndDate()} <span className="text-rose-500">*</span></label>
               <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} required min={startDate}
-                className="w-full border-2 border-[var(--color-hairline)] rounded-xl px-4 py-3 text-base focus:outline-none focus:border-[var(--color-ember-500)] focus:ring-2 focus:ring-[var(--color-ember-200)] transition-colors cursor-pointer"
-              />
+                className="w-full border border-[var(--color-hairline)] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-ember-300"/>
             </div>
           </div>
 
