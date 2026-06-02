@@ -136,9 +136,7 @@ html[dir='rtl'] .font-display {
 }
 
 @utility surface-frost {
-  background: color-mix(in srgb, var(--color-paper) 72%, transparent);
-  backdrop-filter: saturate(140%) blur(20px);
-  -webkit-backdrop-filter: saturate(140%) blur(20px);
+  background: var(--color-cream);
 }
 
 @utility chip-base {

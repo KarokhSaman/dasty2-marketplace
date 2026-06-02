@@ -155,33 +155,32 @@ export default function AdminDashboard() {
             <div className="divide-y divide-gray-50">
               {visibleLogs.map(log => {
                 const meta = ACTION_META[log.action] ?? { label: log.action, color: "bg-gray-100 text-[var(--color-ink-soft)]" };
-                const initial = log.adminEmail[0]?.toUpperCase() ?? "?";
                 return (
                   <div key={log._id} className="px-4 py-3.5 flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-full bg-[var(--color-ember-100)] flex items-center justify-center text-sm font-bold text-[var(--color-ember-600)] shrink-0">
-                      {initial}
+                    <div className="w-8 h-8 rounded-full bg-rose-100 flex items-center justify-center text-xs font-bold text-[var(--color-ember-600)] shrink-0 mt-0.5">
+                      {log.adminEmail[0]?.toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap mb-1.5">
-                        <span className="font-semibold text-[var(--color-ink)]" dir="ltr">{log.adminEmail}</span>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs font-semibold text-[var(--color-ink)]" dir="ltr">{log.adminEmail}</span>
                         <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${meta.color}`}>
                           {meta.label}
                         </span>
                       </div>
                       {log.productTitle && (
-                        <p className="text-xs text-[var(--color-ink-soft)] truncate">
+                        <p className="text-xs text-[var(--color-ink-soft)] mt-0.5 truncate">
                           "{log.productTitle}"
                           {log.sellerName && <span className="text-[var(--color-ink-fade)]"> · {log.sellerName}</span>}
                           {log.price && <span className="text-[var(--color-ink-fade)]"> · {formatPrice(log.price)}</span>}
                         </p>
                       )}
                       {log.notes && (
-                        <p className="text-[11px] text-red-600 mt-1 bg-red-50 rounded-lg px-2 py-1 inline-block">
+                        <p className="text-[11px] text-red-500 mt-0.5 bg-red-50 rounded-lg px-2 py-1 inline-block">
                           Reason: {log.notes}
                         </p>
                       )}
                     </div>
-                    <span className="text-[10px] text-[var(--color-ink-fade)] shrink-0 whitespace-nowrap">{timeAgo(log.createdAt)}</span>
+                    <span className="text-[10px] text-[var(--color-ink-fade)] shrink-0 mt-1">{timeAgo(log.createdAt)}</span>
                   </div>
                 );
               })}
