@@ -22,7 +22,7 @@ export const CATEGORY_CONFIG = [
   },
   {
     value: "Carry Cot",
-    labels: { ckb: "كاري كۆت", ar: "سرير محمول (كاري كوت)", en: "Carry Cot" },
+    labels: { ckb: "كاری كۆت", ar: "سرير محمول (كاري كوت)", en: "Carry Cot" },
     bg: "bg-white",
     img: icon("carry-cot.png"),
   },
