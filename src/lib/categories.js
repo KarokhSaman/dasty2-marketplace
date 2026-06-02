@@ -10,7 +10,7 @@ export const CATEGORY_CONFIG = [
   },
   {
     value: "Strollers & Travel",
-    labels: { ckb: "عەرەبانەی منداڵ", ar: "عربات الأطفال", en: "Strollers" },
+    labels: { ckb: "عارەبانە", ar: "عربات الأطفال", en: "Strollers" },
     bg: "bg-white",
     img: icon("strollers.png"),
   },
@@ -28,7 +28,7 @@ export const CATEGORY_CONFIG = [
   },
   {
     value: "Bed",
-    labels: { ckb: "بێشکە و جێگای خەو", ar: "أسرة وأرائك", en: "Bed" },
+    labels: { ckb: "سیسەم", ar: "أسرة وأرائك", en: "Bed" },
     bg: "bg-white",
     img: icon("bed.png"),
   },
