@@ -164,7 +164,7 @@ export default function SellerShell({ children }) {
 
             <a
               href="/seller/add"
-              className="hidden sm:inline-flex items-center justify-center h-8 ps-2.5 pe-3 text-[11.5px] font-bold tracking-wide gap-1 rounded-full bg-[#ed0040] hover:bg-[#c80037] text-white transition-all active:scale-[0.98]"
+              className="inline-flex items-center justify-center h-8 ps-2.5 pe-3 text-[11.5px] font-bold tracking-wide gap-1 rounded-full bg-[#ed0040] hover:bg-[#c80037] text-white transition-all active:scale-[0.98]"
             >
               <PlusIcon className="w-3 h-3" />
               {m.sellNow()}
