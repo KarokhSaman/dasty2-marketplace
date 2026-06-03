@@ -127,9 +127,9 @@ function HeaderActions() {
           {/* Sell Now — all screen sizes */}
           <a
             href="/seller/add"
-            className="inline-flex items-center justify-center h-8 ps-2.5 pe-3 text-[11.5px] font-bold tracking-wide gap-1 rounded-full bg-[#ed0040] hover:bg-[#c80037] text-white transition-all active:scale-[0.98] whitespace-nowrap"
+            className="inline-flex items-center justify-center h-7 sm:h-8 ps-2 sm:ps-2.5 pe-2.5 sm:pe-3 text-[10px] sm:text-[11.5px] font-bold tracking-wide gap-0.5 sm:gap-1 rounded-full bg-[#ed0040] hover:bg-[#c80037] text-white transition-all active:scale-[0.98] whitespace-nowrap"
           >
-            <PlusIcon className="w-3 h-3" />
+            <PlusIcon className="w-2.5 sm:w-3 h-2.5 sm:h-3" />
             {m.sellNow()}
           </a>
         </>
