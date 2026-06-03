@@ -195,8 +195,10 @@ export default function SellerShell({ children }) {
       </main>
 
       {/* ── Mobile bottom nav — Home / Dashboard / FAB(Sell) / Account ── */}
-      <div className="lg:hidden h-28 sm:h-32" aria-hidden />
-      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 pointer-events-none">
+      {!isAddProduct && (
+        <>
+          <div className="lg:hidden h-28 sm:h-32" aria-hidden />
+          <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 pointer-events-none">
         <div className="pointer-events-auto mx-auto max-w-md surface-frost rounded-[1.75rem] border border-[var(--color-hairline)] shadow-[0_18px_44px_-20px_rgba(11,12,15,0.22)] px-2 py-1.5 flex items-stretch gap-1">
           <Link to="/" onClick={handleHomeTap} className={`flex-1 ${tab(isHomeTab)}`}>
             <svg className="w-5 h-5" fill={isHomeTab ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
@@ -219,7 +221,9 @@ export default function SellerShell({ children }) {
             <span className="text-[10px] font-semibold tracking-wide">{m.navAccount()}</span>
           </Link>
         </div>
-      </nav>
+          </nav>
+        </>
+      )}
     </div>
   );
 }
