@@ -24,6 +24,7 @@ export default function AdminOffersPage() {
   const deactivateOffer = useMutation(api.offers.deactivate);
   const reactivateOffer = useMutation(api.offers.reactivate);
   const deleteOffer     = useMutation(api.offers.deleteOffer);
+  const createLog       = useMutation(api.adminLogs.create);
 
   const today = new Date().toISOString().slice(0, 10);
 
@@ -50,6 +51,10 @@ export default function AdminOffersPage() {
       flatFeeAmount: type === "flat_fee" ? Number(flatFeeAmount) : undefined,
       startDate,
       endDate,
+    });
+    await createLog({
+      action: "offer_created",
+      notes: title.trim(),
     });
     setTitle(""); setDescription(""); setFlatFeeAmount(""); setEndDate("");
     setType("free");
@@ -253,8 +258,13 @@ export default function AdminOffersPage() {
             </p>
             <div className="flex gap-2">
               <button
-                onClick={() => {
-                  deactivateOffer({ id: confirmDeactivate });
+                onClick={async () => {
+                  const offer = allOffers?.find(o => o._id === confirmDeactivate);
+                  await deactivateOffer({ id: confirmDeactivate });
+                  await createLog({
+                    action: "offer_deactivated",
+                    notes: offer?.title || undefined,
+                  });
                   setConfirmDeactivate(null);
                 }}
                 className="flex-1 text-sm bg-[var(--color-ember-600)] hover:bg-[var(--color-ember-700)] text-white font-semibold py-2.5 rounded-xl transition-colors">
@@ -282,8 +292,13 @@ export default function AdminOffersPage() {
             </p>
             <div className="flex gap-2">
               <button
-                onClick={() => {
-                  reactivateOffer({ id: confirmReactivate });
+                onClick={async () => {
+                  const offer = allOffers?.find(o => o._id === confirmReactivate);
+                  await reactivateOffer({ id: confirmReactivate });
+                  await createLog({
+                    action: "offer_reactivated",
+                    notes: offer?.title || undefined,
+                  });
                   setConfirmReactivate(null);
                 }}
                 className="flex-1 text-sm bg-[var(--color-ember-600)] hover:bg-[var(--color-ember-700)] text-white font-semibold py-2.5 rounded-xl transition-colors">
@@ -311,8 +326,13 @@ export default function AdminOffersPage() {
             </p>
             <div className="flex gap-2">
               <button
-                onClick={() => {
-                  deleteOffer({ id: confirmDelete });
+                onClick={async () => {
+                  const offer = allOffers?.find(o => o._id === confirmDelete);
+                  await deleteOffer({ id: confirmDelete });
+                  await createLog({
+                    action: "offer_deleted",
+                    notes: offer?.title || undefined,
+                  });
                   setConfirmDelete(null);
                 }}
                 className="flex-1 text-sm bg-[var(--color-ember-600)] hover:bg-[var(--color-ember-700)] text-white font-semibold py-2.5 rounded-xl transition-colors">
