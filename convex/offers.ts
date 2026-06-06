@@ -109,7 +109,7 @@ export const deactivate = mutation({
     await ctx.db.insert("adminLogs", {
       adminEmail,
       action:       "offer_deactivated",
-      productTitle: offer?.title,
+      productTitle: `${offer?.title} (Deactivated)`,
       createdAt:    new Date().toISOString(),
     });
   },
@@ -135,7 +135,7 @@ export const reactivate = mutation({
     await ctx.db.insert("adminLogs", {
       adminEmail,
       action:       "offer_reactivated",
-      productTitle: offer?.title,
+      productTitle: `${offer?.title} (Reactivated)`,
       createdAt:    new Date().toISOString(),
     });
   },
