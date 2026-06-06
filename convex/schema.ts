@@ -14,6 +14,7 @@ export default defineSchema({
     title: v.string(),
     description: v.string(),
     category: v.string(),
+    brand: v.optional(v.string()),
     condition: conditionValidator,
     price: v.number(),
     profit: v.number(),

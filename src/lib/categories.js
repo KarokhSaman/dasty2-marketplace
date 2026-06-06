@@ -51,6 +51,12 @@ export const CATEGORY_CONFIG = [
     img: icon("highchairs.png"),
   },
   {
+    value: "Baby Walker",
+    labels: { ckb: "پێگرە / ڕەوڕەوە", ar: "مشاية الأطفال", en: "Baby Walker" },
+    bg: "bg-white",
+    img: icon("baby-walker.png"),
+  },
+  {
     value: "Toys & Play",
     labels: { ckb: "یارییەکان", ar: "الألعاب والترفيه", en: "Toys" },
     bg: "bg-white",

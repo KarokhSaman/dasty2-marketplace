@@ -17,6 +17,7 @@ import { useImageUpload } from "@/lib/useImageUpload";
 import { calculateProfit, formatPrice, formatPriceLocale, normalizeDigits } from "@/lib/utils";
 import CustomSelect from "@/components/ui/CustomSelect";
 import { CATEGORY_CONFIG, getCategoryLabel } from "@/lib/categories";
+import { getBrandOptions, hasBrandOption } from "@/lib/brands";
 
 const CATEGORIES = [
   "Strollers & Travel",
@@ -26,6 +27,7 @@ const CATEGORIES = [
   "Feeding & Nursing",
   "Bouncers & Swings",
   "High Chairs",
+  "Baby Walker",
   "Toys & Play",
   "Electronics & Monitors",
   "Other",
@@ -41,6 +43,7 @@ export default function AddProductPage() {
 
   const [title, setTitle]             = useState("");
   const [category, setCategory]       = useState("");
+  const [brand, setBrand]             = useState("");
   const [condition, setCondition]     = useState("new");
   const [price, setPrice]             = useState("");
   const [description, setDescription] = useState("");
@@ -97,6 +100,7 @@ export default function AddProductPage() {
       await addProduct({
         title: title.trim(),
         category,
+        brand: brand || undefined,
         condition,
         price: priceNum,
         description: description.trim(),
@@ -145,7 +149,10 @@ export default function AddProductPage() {
             <label className="block text-[13px] font-semibold text-[var(--color-ink)] mb-1.5">{m.fieldCategory()} <span className="text-rose-500">*</span></label>
             <CustomSelect
               value={category}
-              onChange={setCategory}
+              onChange={(newCategory) => {
+                setCategory(newCategory);
+                setBrand("");
+              }}
               placeholder={m.fieldCategoryPlaceholder()}
               error={errors.category}
               options={CATEGORIES.map(c => ({ value: c, label: getCategoryLabel(c, locale) }))}
@@ -163,6 +170,18 @@ export default function AddProductPage() {
             </div>
           </div>
         </div>
+
+        {hasBrandOption(category) && (
+          <div>
+            <label className="block text-[13px] font-semibold text-[var(--color-ink)] mb-1.5">Brand</label>
+            <CustomSelect
+              value={brand}
+              onChange={setBrand}
+              placeholder="Select a brand (optional)"
+              options={getBrandOptions(category).map(b => ({ value: b, label: b }))}
+            />
+          </div>
+        )}
 
         <div>
           <label className="block text-[13px] font-semibold text-[var(--color-ink)] mb-1.5">{m.fieldPrice()} <span className="text-rose-500">*</span></label>

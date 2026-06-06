@@ -198,6 +198,7 @@ export const add = mutation({
     title: v.string(),
     description: v.string(),
     category: categoryValidator,
+    brand: v.optional(v.string()),
     condition: conditionValidator,
     price: v.number(),
     photos: v.array(v.string()),

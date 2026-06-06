@@ -1,0 +1,120 @@
+// Brands available for baby product categories
+// These brands are optional when adding/editing products
+
+export const BRAND_OPTIONS = {
+  "Strollers & Travel": [
+    "Chicco",
+    "Graco",
+    "Cybex",
+    "Bugaboo",
+    "Joie",
+    "Maclaren",
+    "Phil & Teds",
+    "Silver Cross",
+    "Cosatto",
+    "Uppababy",
+    "Nuna",
+    "Other",
+  ],
+  "Car Seats": [
+    "Chicco",
+    "Graco",
+    "Cybex",
+    "Joie",
+    "Maxi-Cosi",
+    "Britax",
+    "Nuna",
+    "Clek",
+    "Doona",
+    "Uppababy",
+    "Other",
+  ],
+  "Carry Cot": [
+    "Chicco",
+    "Graco",
+    "Joie",
+    "Cybex",
+    "Nuna",
+    "Phil & Teds",
+    "Bugaboo",
+    "Other",
+  ],
+  "Bed": [
+    "Chicco",
+    "Graco",
+    "Babymore",
+    "SnuzPod",
+    "Tutti Bambini",
+    "Stokke",
+    "Uppababy",
+    "Other",
+  ],
+  "Feeding & Nursing": [
+    "Philips Avent",
+    "Tommee Tippee",
+    "Medela",
+    "Dr. Brown's",
+    "Chicco",
+    "MAM",
+    "Pigeon",
+    "NUK",
+    "Other",
+  ],
+  "Bouncers & Swings": [
+    "Chicco",
+    "Fisher-Price",
+    "Graco",
+    "Ingenuity",
+    "Joie",
+    "Babybjörn",
+    "4moms",
+    "Other",
+  ],
+  "High Chairs": [
+    "Chicco",
+    "Graco",
+    "Joie",
+    "Stokke",
+    "Nuna",
+    "Peg Perego",
+    "Cosatto",
+    "Other",
+  ],
+  "Toys & Play": [
+    "Fisher-Price",
+    "LEGO",
+    "Playskool",
+    "Bright Starts",
+    "Lamaze",
+    "VTech",
+    "Infantino",
+    "Tomy",
+    "Other",
+  ],
+  "Electronics & Monitors": [
+    "Philips Avent",
+    "Motorola",
+    "VTech",
+    "HelloBaby",
+    "Cocoo Care",
+    "Summer",
+    "Other",
+  ],
+  "Baby Walker": [
+    "Chicco",
+    "Fisher-Price",
+    "Bright Starts",
+    "Safety 1st",
+    "Joie",
+    "Babymoov",
+    "Other",
+  ],
+};
+
+export function getBrandOptions(category) {
+  return BRAND_OPTIONS[category] || [];
+}
+
+export function hasBrandOption(category) {
+  return !!BRAND_OPTIONS[category];
+}
