@@ -12,6 +12,7 @@ const useSearchParams = () => {
 import { api } from "@/convex/_generated/api";
 import * as m from "@/paraglide/messages";
 import { formatPrice } from "@/lib/utils";
+import ProductStatusMenu from "@/components/admin/ProductStatusMenu";
 
 const WHATSAPP = import.meta.env.VITE_WHATSAPP_NUMBER;
 
@@ -125,6 +126,28 @@ export default function AdminProductsPage() {
     await removeProduct({ id });
     await log("deleted", product);
     setConfirmDel(null);
+  }
+
+  async function handleStatusChange(product, newStatus) {
+    switch (newStatus) {
+      case "pending":
+        await updateStatus({ id: product._id, status: "pending" });
+        await log("status_changed_to_pending", product);
+        break;
+      case "approved":
+        await approve(product);
+        break;
+      case "rejected":
+        setRejectingId(product._id);
+        setRejectReason("");
+        break;
+      case "sold":
+        await markSold(product);
+        break;
+      case "paid":
+        await markPaid(product);
+        break;
+    }
   }
 
   if (!products) {
@@ -310,37 +333,8 @@ export default function AdminProductsPage() {
                 </div>
 
                 {/* Actions — desktop only */}
-                <div className="hidden sm:flex flex-col gap-1.5 shrink-0">
-                  {product.status === "pending" && (
-                    <>
-                      <button onClick={() => approve(product)}
-                        className="text-xs bg-green-500 hover:bg-green-600 text-white font-semibold px-3 py-1.5 rounded-lg transition-colors">
-                        {m.adminApprove()}
-                      </button>
-                      <button onClick={() => { setRejectingId(product._id); setRejectReason(""); }}
-                        className="text-xs bg-red-50 hover:bg-red-100 text-red-600 font-semibold px-3 py-1.5 rounded-lg transition-colors border border-red-100">
-                        {m.adminReject()}
-                      </button>
-                    </>
-                  )}
-                  {product.status === "approved" && (
-                    <button onClick={() => markSold(product)}
-                      className="text-xs bg-blue-50 hover:bg-blue-100 text-blue-600 font-semibold px-3 py-1.5 rounded-lg transition-colors border border-blue-100">
-                      {m.adminMarkSold()}
-                    </button>
-                  )}
-                  {product.status === "sold" && (
-                    <button onClick={() => markPaid(product)}
-                      className="text-xs bg-purple-50 hover:bg-purple-100 text-purple-600 font-semibold px-3 py-1.5 rounded-lg transition-colors border border-purple-100">
-                      {m.adminMarkPaid()}
-                    </button>
-                  )}
-                  {product.status === "rejected" && (
-                    <button onClick={() => approve(product)}
-                      className="text-xs bg-green-50 hover:bg-green-100 text-green-600 font-semibold px-3 py-1.5 rounded-lg transition-colors border border-green-100">
-                      {m.adminApprove()}
-                    </button>
-                  )}
+                <div className="hidden sm:flex items-center gap-2 shrink-0">
+                  <ProductStatusMenu product={product} onStatusChange={(newStatus) => handleStatusChange(product, newStatus)} />
                   {confirmDel === product._id ? (
                     <div className="flex gap-1">
                       <button onClick={() => deleteProduct(product._id)}
