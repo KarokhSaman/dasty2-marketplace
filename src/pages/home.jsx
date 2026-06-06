@@ -428,7 +428,7 @@ export default function HomePage() {
 
       {/* Featured Products Carousel - Sticky with Circular Cards */}
       {featuredFiltered.length > 0 && (
-        <div className={`sticky top-0 z-40 bg-white pt-3 pb-6 -mx-4 px-4 sm:mx-0 sm:px-0 ${animateEntrance ? "fade-up" : ""}`}>
+        <div className={`sticky top-0 z-40 bg-white pt-3 pb-3 -mx-4 px-4 sm:mx-0 sm:px-0 ${animateEntrance ? "fade-up" : ""}`}>
           <h2 className="text-sm font-bold text-[var(--color-ink)] mb-3 px-0.5">
             <span className="text-[var(--color-ember-600)] mr-1.5">🔥</span>VIP
           </h2>
@@ -498,7 +498,7 @@ export default function HomePage() {
 
       {/* Visual separator */}
       {featuredFiltered.length > 0 && (
-        <div className="flex items-center gap-3 my-6">
+        <div className="flex items-center gap-3 my-3">
           <div className="flex-1 h-px bg-[var(--color-hairline)]" />
           <p className="text-xs font-semibold text-[var(--color-ink-fade)] uppercase tracking-wide">All Products</p>
           <div className="flex-1 h-px bg-[var(--color-hairline)]" />
