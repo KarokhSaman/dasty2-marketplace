@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import * as m from "@/paraglide/messages";
+import BottomSheet from "@/components/ui/BottomSheet";
 
 function formatDate(d) {
   if (!d) return "";
@@ -26,15 +27,17 @@ export default function AdminOffersPage() {
 
   const today = new Date().toISOString().slice(0, 10);
 
-  const [title,         setTitle]         = useState("");
-  const [description,   setDescription]   = useState("");
-  const [type,          setType]           = useState("free");
-  const [flatFeeAmount, setFlatFeeAmount]  = useState("");
-  const [startDate,     setStartDate]      = useState(today);
-  const [endDate,       setEndDate]        = useState("");
-  const [submitting,    setSubmitting]     = useState(false);
-  const [success,       setSuccess]        = useState(false);
-  const [confirmDel,    setConfirmDel]     = useState(null);
+  const [title,              setTitle]              = useState("");
+  const [description,        setDescription]        = useState("");
+  const [type,               setType]               = useState("free");
+  const [flatFeeAmount,      setFlatFeeAmount]      = useState("");
+  const [startDate,          setStartDate]          = useState(today);
+  const [endDate,            setEndDate]            = useState("");
+  const [submitting,         setSubmitting]         = useState(false);
+  const [success,            setSuccess]            = useState(false);
+  const [confirmDel,         setConfirmDel]         = useState(null);
+  const [confirmDeactivate,  setConfirmDeactivate]  = useState(null);
+  const [confirmReactivate,  setConfirmReactivate]  = useState(null);
 
   async function handleCreate(e) {
     e.preventDefault();
@@ -80,7 +83,7 @@ export default function AdminOffersPage() {
               </p>
             </div>
             <button
-              onClick={() => deactivateOffer({ id: activeOffer._id })}
+              onClick={() => setConfirmDeactivate(activeOffer._id)}
               className="shrink-0 bg-white/20 hover:bg-white/30 text-white text-xs font-bold px-3 py-2 rounded-xl transition-colors"
             >
               {m.adminOffersDeactivate()}
@@ -214,12 +217,12 @@ export default function AdminOffersPage() {
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     {offer.isActive ? (
-                      <button onClick={() => deactivateOffer({ id: offer._id })}
+                      <button onClick={() => setConfirmDeactivate(offer._id)}
                         className="text-xs text-[var(--color-ink-fade)] hover:text-red-500 border border-[var(--color-hairline)] hover:border-red-200 px-3 py-1.5 rounded-lg transition-colors">
                         {m.adminOffersDeactivate()}
                       </button>
                     ) : (
-                      <button onClick={() => reactivateOffer({ id: offer._id })}
+                      <button onClick={() => setConfirmReactivate(offer._id)}
                         className="text-xs text-[var(--color-ink-fade)] hover:text-green-600 border border-[var(--color-hairline)] hover:border-green-200 px-3 py-1.5 rounded-lg transition-colors">
                         {m.adminOffersReactivate()}
                       </button>
@@ -245,6 +248,64 @@ export default function AdminOffersPage() {
             })}
           </div>
         </div>
+      )}
+
+      {/* Deactivate confirmation */}
+      {confirmDeactivate && (
+        <BottomSheet open={true} onClose={() => setConfirmDeactivate(null)}>
+          <div className="p-4 sm:p-3">
+            <p className="text-[13px] font-semibold text-[var(--color-ink)] mb-1">
+              Deactivate this offer?
+            </p>
+            <p className="text-xs text-[var(--color-ink-fade)] mb-3">
+              The offer will be deactivated and sellers will no longer see it.
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  deactivateOffer({ id: confirmDeactivate });
+                  setConfirmDeactivate(null);
+                }}
+                className="flex-1 text-sm bg-[var(--color-ember-600)] hover:bg-[var(--color-ember-700)] text-white font-semibold py-2.5 rounded-xl transition-colors">
+                Deactivate
+              </button>
+              <button
+                onClick={() => setConfirmDeactivate(null)}
+                className="flex-1 text-sm bg-[var(--color-cream-deep)] hover:bg-[var(--color-hairline)] text-[var(--color-ink)] py-2.5 rounded-xl transition-colors">
+                {m.adminCancel()}
+              </button>
+            </div>
+          </div>
+        </BottomSheet>
+      )}
+
+      {/* Reactivate confirmation */}
+      {confirmReactivate && (
+        <BottomSheet open={true} onClose={() => setConfirmReactivate(null)}>
+          <div className="p-4 sm:p-3">
+            <p className="text-[13px] font-semibold text-[var(--color-ink)] mb-1">
+              Reactivate this offer?
+            </p>
+            <p className="text-xs text-[var(--color-ink-fade)] mb-3">
+              The offer will be reactivated and sellers will see it again.
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  reactivateOffer({ id: confirmReactivate });
+                  setConfirmReactivate(null);
+                }}
+                className="flex-1 text-sm bg-[var(--color-ember-600)] hover:bg-[var(--color-ember-700)] text-white font-semibold py-2.5 rounded-xl transition-colors">
+                Reactivate
+              </button>
+              <button
+                onClick={() => setConfirmReactivate(null)}
+                className="flex-1 text-sm bg-[var(--color-cream-deep)] hover:bg-[var(--color-hairline)] text-[var(--color-ink)] py-2.5 rounded-xl transition-colors">
+                {m.adminCancel()}
+              </button>
+            </div>
+          </div>
+        </BottomSheet>
       )}
     </div>
   );
