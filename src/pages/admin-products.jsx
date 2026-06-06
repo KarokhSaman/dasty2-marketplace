@@ -458,7 +458,7 @@ export default function AdminProductsPage() {
 
       {/* Delete confirmation bottom sheet */}
       {confirmDel && (
-        <BottomSheet open={true} onClose={() => setConfirmDel(null)}>
+        <BottomSheet open={true} onClose={() => setConfirmDel(null)} title="Delete Product">
           <div className="p-4 sm:p-3">
             <p className="text-[13px] font-semibold text-[var(--color-ink)] mb-1">
               Delete this product?
