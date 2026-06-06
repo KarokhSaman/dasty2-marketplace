@@ -367,24 +367,24 @@ export default function HomePage() {
   useEffect(() => {
     if (!carouselRef.current || isHovering || featuredFiltered.length === 0) return;
 
+    const element = carouselRef.current;
+    const scrollAmount = 150; // Scroll by card width + gap
+
     const interval = setInterval(() => {
-      if (carouselRef.current) {
-        const element = carouselRef.current;
-        const scrollAmount = 150; // Scroll by card width + gap
+      if (element) {
         const oneSetWidth = element.scrollWidth / 2; // Width of one set of products
+
+        // Check if we've scrolled past the halfway point (reached cloned section)
+        // If so, reset to near the beginning for seamless loop
+        if (element.scrollLeft >= oneSetWidth - scrollAmount) {
+          element.scrollLeft = 0;
+        }
 
         // Auto-scroll
         element.scrollBy({
           left: scrollAmount,
           behavior: "smooth",
         });
-
-        // When reaching the cloned section, reset to beginning for seamless loop
-        setTimeout(() => {
-          if (element.scrollLeft >= oneSetWidth - 100) {
-            element.scrollLeft = 0;
-          }
-        }, 500); // After smooth scroll animation completes
       }
     }, 3000);
 
