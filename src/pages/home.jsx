@@ -406,7 +406,7 @@ export default function HomePage() {
                   className="shrink-0"
                 >
                   <div className="group cursor-pointer text-center">
-                    <div className="relative w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full overflow-hidden bg-gray-100 mb-2 mx-auto">
+                    <div className="relative w-22 h-22 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full overflow-hidden bg-gray-100 mb-2 mx-auto">
                       {p.photos?.[0] ? (
                         <img
                           src={p.photos[0]}
