@@ -363,7 +363,7 @@ export default function HomePage() {
   const [isHovering, setIsHovering] = useState(false);
   const carouselRef = useRef(null);
 
-  // Auto-scroll carousel every 3 seconds with looping
+  // Auto-scroll carousel every 3 seconds with infinite circular motion
   useEffect(() => {
     if (!carouselRef.current || isHovering || featuredFiltered.length === 0) return;
 
@@ -371,19 +371,20 @@ export default function HomePage() {
       if (carouselRef.current) {
         const element = carouselRef.current;
         const scrollAmount = 150; // Scroll by card width + gap
+        const oneSetWidth = element.scrollWidth / 2; // Width of one set of products
 
-        // Check if near the end, if so loop back to beginning
-        if (element.scrollLeft + element.clientWidth >= element.scrollWidth - 50) {
-          element.scrollTo({
-            left: 0,
-            behavior: "smooth",
-          });
-        } else {
-          element.scrollBy({
-            left: scrollAmount,
-            behavior: "smooth",
-          });
-        }
+        // Auto-scroll
+        element.scrollBy({
+          left: scrollAmount,
+          behavior: "smooth",
+        });
+
+        // When reaching the cloned section, reset to beginning for seamless loop
+        setTimeout(() => {
+          if (element.scrollLeft >= oneSetWidth - 100) {
+            element.scrollLeft = 0;
+          }
+        }, 500); // After smooth scroll animation completes
       }
     }, 3000);
 
@@ -438,9 +439,36 @@ export default function HomePage() {
             onMouseLeave={() => setIsHovering(false)}
           >
             <div className="flex gap-4 sm:gap-5">
+              {/* Original products */}
               {featuredFiltered.map((p) => (
                 <Link
-                  key={p._id}
+                  key={`${p._id}-1`}
+                  to={`/products/${p._id}`}
+                  className="shrink-0"
+                >
+                  <div className="group cursor-pointer text-center">
+                    <div className="relative w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full overflow-hidden bg-gray-100 mb-2 mx-auto">
+                      {p.photos?.[0] ? (
+                        <img
+                          src={p.photos[0]}
+                          alt={p.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gray-200" />
+                      )}
+                    </div>
+                    <p className="text-[10px] sm:text-xs text-[var(--color-ink-fade)] font-medium mb-0.5">{p.category}</p>
+                    <p className="text-xs sm:text-sm font-bold text-[var(--color-ember-600)]">
+                      {(p.price ?? 0).toLocaleString()} IQD
+                    </p>
+                  </div>
+                </Link>
+              ))}
+              {/* Cloned products for infinite loop */}
+              {featuredFiltered.map((p) => (
+                <Link
+                  key={`${p._id}-2`}
                   to={`/products/${p._id}`}
                   className="shrink-0"
                 >
