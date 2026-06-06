@@ -273,15 +273,15 @@ export default function HomePage() {
             <span className="text-[var(--color-ember-600)] mr-1.5">🔥</span>VIP
           </h2>
           <div className="overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
-            <div className="flex gap-2 sm:gap-3">
+            <div className="flex gap-3 sm:gap-4">
               {pinnedProducts.map((p) => (
                 <Link
                   key={p._id}
                   to={`/products/${p._id}`}
-                  className="shrink-0 w-28 sm:w-32 md:w-36"
+                  className="shrink-0"
                 >
-                  <div className="group cursor-pointer">
-                    <div className="relative h-28 sm:h-32 md:h-36 rounded-lg overflow-hidden bg-gray-100 mb-2">
+                  <div className="group cursor-pointer text-center">
+                    <div className="relative w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-full overflow-hidden bg-gray-100 mb-2 mx-auto">
                       {p.photos?.[0] ? (
                         <img
                           src={p.photos[0]}
@@ -292,7 +292,7 @@ export default function HomePage() {
                         <div className="w-full h-full bg-gray-200" />
                       )}
                     </div>
-                    <p className="text-xs font-medium text-[var(--color-ink)] line-clamp-2 mb-1">{p.title}</p>
+                    <p className="text-xs font-medium text-[var(--color-ink)] line-clamp-2 mb-0.5 max-w-[80px] sm:max-w-[96px] md:max-w-[112px]">{p.title}</p>
                     <p className="text-xs font-bold text-[var(--color-ember-600)]">
                       {(p.price ?? 0).toLocaleString()} IQD
                     </p>
