@@ -88,6 +88,7 @@ export default defineSchema({
     action:       v.string(),
     productId:    v.optional(v.string()),
     productTitle: v.optional(v.string()),
+    productCode:  v.optional(v.string()),
     sellerName:   v.optional(v.string()),
     price:        v.optional(v.number()),
     notes:        v.optional(v.string()),
