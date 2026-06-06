@@ -240,23 +240,12 @@ export default function HomePage() {
 
   return (
     <div className="pb-6">
-      <SearchRow
-        search={search}
-        setSearch={updateFilter("search")}
-        city={city}
-        setCity={updateFilter("city")}
-        availableCities={availableCities}
-        animate={animateEntrance}
-      />
-
-      <div className={`mb-3 ${animateEntrance ? "fade-up" : ""}`}>
-        <CategoryBar selected={category} onSelect={updateFilter("category")} />
-      </div>
-
-      {/* Pinned products carousel */}
+      {/* VIP Pinned products carousel - at the top */}
       {pinnedProducts.length > 0 && (
         <div className={`mb-6 ${animateEntrance ? "fade-up" : ""}`}>
-          <h2 className="text-sm font-bold text-[var(--color-ink)] mb-3 px-0.5">✨ Highlighted Products</h2>
+          <h2 className="text-sm font-bold text-[var(--color-ink)] mb-3 px-0.5">
+            <span className="text-[var(--color-ember-600)] mr-1.5">🔥</span>VIP
+          </h2>
           <div className="overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
             <div className="flex gap-2 sm:gap-3">
               {pinnedProducts.map((p) => (
@@ -288,6 +277,19 @@ export default function HomePage() {
           </div>
         </div>
       )}
+
+      <SearchRow
+        search={search}
+        setSearch={updateFilter("search")}
+        city={city}
+        setCity={updateFilter("city")}
+        availableCities={availableCities}
+        animate={animateEntrance}
+      />
+
+      <div className={`mb-3 ${animateEntrance ? "fade-up" : ""}`}>
+        <CategoryBar selected={category} onSelect={updateFilter("category")} />
+      </div>
 
       {!isLoading && (
         <MetaRow
