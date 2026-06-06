@@ -35,7 +35,7 @@ export default function AdminOffersPage() {
   const [endDate,            setEndDate]            = useState("");
   const [submitting,         setSubmitting]         = useState(false);
   const [success,            setSuccess]            = useState(false);
-  const [confirmDel,         setConfirmDel]         = useState(null);
+  const [confirmDelete,      setConfirmDelete]      = useState(null);
   const [confirmDeactivate,  setConfirmDeactivate]  = useState(null);
   const [confirmReactivate,  setConfirmReactivate]  = useState(null);
 
@@ -227,21 +227,12 @@ export default function AdminOffersPage() {
                         {m.adminOffersReactivate()}
                       </button>
                     )}
-                    {confirmDel === offer._id ? (
-                      <div className="flex items-center gap-1">
-                        <button onClick={() => { deleteOffer({ id: offer._id }); setConfirmDel(null); }}
-                          className="text-xs bg-red-500 hover:bg-red-600 text-white font-semibold px-2 py-1.5 rounded-lg transition-colors">✓</button>
-                        <button onClick={() => setConfirmDel(null)}
-                          className="text-xs bg-gray-100 hover:bg-white/60 text-[var(--color-ink-soft)] px-2 py-1.5 rounded-lg transition-colors">✕</button>
-                      </div>
-                    ) : (
-                      <button onClick={() => setConfirmDel(offer._id)}
-                        className="text-xs text-gray-300 hover:text-red-400 transition-colors p-1.5 rounded-lg hover:bg-red-50">
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                        </svg>
-                      </button>
-                    )}
+                    <button onClick={() => setConfirmDelete(offer._id)}
+                      className="text-xs text-gray-300 hover:text-red-400 transition-colors p-1.5 rounded-lg hover:bg-red-50">
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                      </svg>
+                    </button>
                   </div>
                 </div>
               );
@@ -300,6 +291,35 @@ export default function AdminOffersPage() {
               </button>
               <button
                 onClick={() => setConfirmReactivate(null)}
+                className="flex-1 text-sm bg-[var(--color-cream-deep)] hover:bg-[var(--color-hairline)] text-[var(--color-ink)] py-2.5 rounded-xl transition-colors">
+                {m.adminCancel()}
+              </button>
+            </div>
+          </div>
+        </BottomSheet>
+      )}
+
+      {/* Delete confirmation */}
+      {confirmDelete && (
+        <BottomSheet open={true} onClose={() => setConfirmDelete(null)}>
+          <div className="p-4 sm:p-3">
+            <p className="text-[13px] font-semibold text-[var(--color-ink)] mb-1">
+              Delete this offer?
+            </p>
+            <p className="text-xs text-[var(--color-ink-fade)] mb-3">
+              This action cannot be undone. The offer will be permanently deleted.
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  deleteOffer({ id: confirmDelete });
+                  setConfirmDelete(null);
+                }}
+                className="flex-1 text-sm bg-red-600 hover:bg-red-700 text-white font-semibold py-2.5 rounded-xl transition-colors">
+                Delete
+              </button>
+              <button
+                onClick={() => setConfirmDelete(null)}
                 className="flex-1 text-sm bg-[var(--color-cream-deep)] hover:bg-[var(--color-hairline)] text-[var(--color-ink)] py-2.5 rounded-xl transition-colors">
                 {m.adminCancel()}
               </button>
