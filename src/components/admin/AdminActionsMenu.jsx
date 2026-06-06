@@ -5,6 +5,9 @@ import BottomSheet from "@/components/ui/BottomSheet";
 export default function AdminActionsMenu({ admin, isCurrent, onPromoteToSuperAdmin, onDemoteToAdmin, onMakeSeller, onDelete }) {
   const [open, setOpen] = useState(false);
   const [confirmDel, setConfirmDel] = useState(false);
+  const [confirmPromote, setConfirmPromote] = useState(false);
+  const [confirmDemote, setConfirmDemote] = useState(false);
+  const [confirmMakeSeller, setConfirmMakeSeller] = useState(false);
   const isDesktop = useIsDesktop();
   const ref = useRef();
 
@@ -14,6 +17,9 @@ export default function AdminActionsMenu({ admin, isCurrent, onPromoteToSuperAdm
       if (ref.current && !ref.current.contains(e.target)) {
         setOpen(false);
         setConfirmDel(false);
+        setConfirmPromote(false);
+        setConfirmDemote(false);
+        setConfirmMakeSeller(false);
       }
     }
     document.addEventListener("mousedown", handler);
@@ -23,20 +29,98 @@ export default function AdminActionsMenu({ admin, isCurrent, onPromoteToSuperAdm
   const close = () => {
     setOpen(false);
     setConfirmDel(false);
+    setConfirmPromote(false);
+    setConfirmDemote(false);
+    setConfirmMakeSeller(false);
   };
 
   const rowCls = "flex items-center gap-3 w-full px-4 py-3 sm:py-2.5 text-[15px] sm:text-sm text-start transition-colors";
 
-  const actions = confirmDel ? (
+  const actions = confirmPromote ? (
     <div className="p-4 sm:p-3">
-      <p className="text-[13px] text-red-600 font-medium mb-3">Delete admin "{admin.name}"?</p>
+      <p className="text-[13px] font-semibold text-[var(--color-ink)] mb-1">Promote to Super Admin?</p>
+      <p className="text-xs text-[var(--color-ink-fade)] mb-3">
+        This admin will be promoted to Super Admin with full system access.
+      </p>
+      <div className="flex gap-2">
+        <button
+          onClick={() => {
+            onPromoteToSuperAdmin();
+            close();
+          }}
+          className="flex-1 text-sm bg-[var(--color-ember-600)] hover:bg-[var(--color-ember-700)] text-white font-semibold py-2.5 rounded-xl transition-colors"
+        >
+          Promote
+        </button>
+        <button
+          onClick={() => setConfirmPromote(false)}
+          className="flex-1 text-sm bg-[var(--color-cream-deep)] hover:bg-[var(--color-hairline)] text-[var(--color-ink)] py-2.5 rounded-xl transition-colors"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  ) : confirmDemote ? (
+    <div className="p-4 sm:p-3">
+      <p className="text-[13px] font-semibold text-[var(--color-ink)] mb-1">Demote to Admin?</p>
+      <p className="text-xs text-[var(--color-ink-fade)] mb-3">
+        This super admin will be downgraded to regular admin privileges.
+      </p>
+      <div className="flex gap-2">
+        <button
+          onClick={() => {
+            onDemoteToAdmin();
+            close();
+          }}
+          className="flex-1 text-sm bg-[var(--color-ember-600)] hover:bg-[var(--color-ember-700)] text-white font-semibold py-2.5 rounded-xl transition-colors"
+        >
+          Demote
+        </button>
+        <button
+          onClick={() => setConfirmDemote(false)}
+          className="flex-1 text-sm bg-[var(--color-cream-deep)] hover:bg-[var(--color-hairline)] text-[var(--color-ink)] py-2.5 rounded-xl transition-colors"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  ) : confirmMakeSeller ? (
+    <div className="p-4 sm:p-3">
+      <p className="text-[13px] font-semibold text-[var(--color-ink)] mb-1">Convert to Seller?</p>
+      <p className="text-xs text-[var(--color-ink-fade)] mb-3">
+        This admin will lose all admin access and become a seller.
+      </p>
+      <div className="flex gap-2">
+        <button
+          onClick={() => {
+            onMakeSeller();
+            close();
+          }}
+          className="flex-1 text-sm bg-[var(--color-ember-600)] hover:bg-[var(--color-ember-700)] text-white font-semibold py-2.5 rounded-xl transition-colors"
+        >
+          Convert
+        </button>
+        <button
+          onClick={() => setConfirmMakeSeller(false)}
+          className="flex-1 text-sm bg-[var(--color-cream-deep)] hover:bg-[var(--color-hairline)] text-[var(--color-ink)] py-2.5 rounded-xl transition-colors"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  ) : confirmDel ? (
+    <div className="p-4 sm:p-3">
+      <p className="text-[13px] font-semibold text-[var(--color-ink)] mb-1">Delete admin "{admin.name}"?</p>
+      <p className="text-xs text-[var(--color-ink-fade)] mb-3">
+        This action cannot be undone. The admin account will be permanently deleted.
+      </p>
       <div className="flex gap-2">
         <button
           onClick={() => {
             onDelete();
             close();
           }}
-          className="flex-1 text-sm bg-red-500 hover:bg-red-600 text-white font-semibold py-2.5 rounded-xl transition-colors"
+          className="flex-1 text-sm bg-[var(--color-ember-600)] hover:bg-[var(--color-ember-700)] text-white font-semibold py-2.5 rounded-xl transition-colors"
         >
           Delete
         </button>
@@ -52,10 +136,7 @@ export default function AdminActionsMenu({ admin, isCurrent, onPromoteToSuperAdm
     <div className="py-1">
       {admin.role === "super_admin" && (
         <button
-          onClick={() => {
-            onDemoteToAdmin();
-            close();
-          }}
+          onClick={() => setConfirmDemote(true)}
           className={`${rowCls} text-[var(--color-ink)] hover:bg-[var(--color-cream)]`}
         >
           <svg className="w-5 h-5 text-[var(--color-ink-fade)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -66,11 +147,8 @@ export default function AdminActionsMenu({ admin, isCurrent, onPromoteToSuperAdm
       )}
       {admin.role === "admin" && (
         <button
-          onClick={() => {
-            onPromoteToSuperAdmin();
-            close();
-          }}
-          className={`${rowCls} text-indigo-600 hover:bg-indigo-50`}
+          onClick={() => setConfirmPromote(true)}
+          className={`${rowCls} text-[var(--color-ink)] hover:bg-[var(--color-cream)]`}
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
@@ -80,10 +158,7 @@ export default function AdminActionsMenu({ admin, isCurrent, onPromoteToSuperAdm
       )}
 
       <button
-        onClick={() => {
-          onMakeSeller();
-          close();
-        }}
+        onClick={() => setConfirmMakeSeller(true)}
         className={`${rowCls} text-[var(--color-ink)] hover:bg-[var(--color-cream)]`}
       >
         <svg className="w-5 h-5 text-[var(--color-ink-fade)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
