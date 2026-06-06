@@ -469,7 +469,7 @@ export default function AdminProductsPage() {
             <div className="flex gap-2">
               <button
                 onClick={() => deleteProduct(confirmDel)}
-                className="flex-1 text-sm bg-red-500 hover:bg-red-600 text-white font-semibold py-2.5 rounded-xl transition-colors">
+                className="flex-1 text-sm bg-[var(--color-ember-600)] hover:bg-[var(--color-ember-700)] text-white font-semibold py-2.5 rounded-xl transition-colors">
                 Delete
               </button>
               <button
