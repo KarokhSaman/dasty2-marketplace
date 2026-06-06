@@ -114,7 +114,7 @@ export default function SellerActionsMenu({ seller, onPromote, onToggleActive, o
     <div className="py-1">
       <button
         onClick={() => setConfirmPromote(true)}
-        className={`${rowCls} text-indigo-600 hover:bg-indigo-50`}
+        className={`${rowCls} text-[var(--color-ink)] hover:bg-[var(--color-cream)]`}
       >
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
