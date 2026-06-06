@@ -339,7 +339,7 @@ export default function AdminProductsPage() {
               </div>
 
               {/* Actions — mobile only */}
-              <div className="flex sm:hidden items-center gap-2 mt-3 flex-wrap">
+              <div className="flex sm:hidden items-center gap-2 mt-4 flex-wrap">
                 <ProductStatusMenu product={product} onStatusChange={(newStatus) => handleStatusChange(product, newStatus)} />
 
                 {/* Feature button with popover */}
@@ -347,19 +347,19 @@ export default function AdminProductsPage() {
                   {product.featured ? (
                     <button
                       onClick={() => setConfirmFeature({ productId: product._id, action: 'unfeature' })}
-                      className="flex items-center gap-1 text-xs px-2 py-1.5 rounded-lg font-medium border-2 bg-amber-100 text-amber-700 border-amber-400 hover:bg-amber-200 hover:border-amber-500 transition-colors"
+                      className="flex items-center gap-0.5 text-xs px-1.5 py-1 rounded-lg font-medium border-2 bg-amber-100 text-amber-700 border-amber-400 hover:bg-amber-200 hover:border-amber-500 transition-colors whitespace-nowrap"
                     >
-                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
                       </svg>
-                      {product.featuredUntil ? `Until ${product.featuredUntil}` : "Featured"}
+                      <span className="text-[10px]">{product.featuredUntil ? `Until ${product.featuredUntil}` : "Featured"}</span>
                     </button>
                   ) : (
                     <button
                       onClick={() => setFeaturedPickerId(featuredPickerId === product._id ? null : product._id)}
-                      className="flex items-center gap-1 text-xs px-2 py-1.5 rounded-lg font-medium border-2 bg-white text-[var(--color-ink-fade)] border-amber-300 hover:bg-amber-50 hover:text-amber-600 hover:border-amber-400 transition-colors"
+                      className="flex items-center gap-0.5 text-xs px-1.5 py-1 rounded-lg font-medium border-2 bg-white text-[var(--color-ink-fade)] border-amber-300 hover:bg-amber-50 hover:text-amber-600 hover:border-amber-400 transition-colors whitespace-nowrap"
                     >
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
                       </svg>
                       Feature
@@ -394,7 +394,7 @@ export default function AdminProductsPage() {
                 </div>
 
                 <button onClick={() => setConfirmDel(product._id)}
-                  className="text-xs font-medium border-2 bg-white text-red-600 border-red-300 hover:bg-red-50 hover:border-red-500 hover:text-red-700 px-3 py-1.5 rounded-lg transition-colors ms-auto">
+                  className="text-xs font-medium border-2 bg-white text-red-600 border-red-300 hover:bg-red-50 hover:border-red-500 hover:text-red-700 px-2 py-1 rounded-lg transition-colors ms-auto whitespace-nowrap">
                   {m.adminDelete()}
                 </button>
               </div>
