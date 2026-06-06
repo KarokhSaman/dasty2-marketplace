@@ -91,12 +91,12 @@ export default function AdminLogsPage() {
                 <div key={log._id} className="px-4 py-3.5 flex items-start gap-3">
                   {/* Admin avatar */}
                   <div className="w-8 h-8 rounded-full bg-rose-100 flex items-center justify-center text-xs font-bold text-[var(--color-ember-600)] shrink-0 mt-0.5">
-                    {log.adminEmail[0]?.toUpperCase()}
+                    {log.adminEmail ? log.adminEmail[0]?.toUpperCase() : "?"}
                   </div>
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-xs font-semibold text-[var(--color-ink)]" dir="ltr">{log.adminEmail}</span>
+                      <span className="text-xs font-semibold text-[var(--color-ink)]" dir="ltr">{log.adminEmail || "Unknown Admin"}</span>
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${meta.color}`}>
                         {meta.label}
                       </span>
