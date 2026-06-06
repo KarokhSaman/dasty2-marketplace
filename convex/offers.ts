@@ -33,7 +33,17 @@ export const create = mutation({
     endDate:       v.string(),
   },
   handler: async (ctx, args) => {
-    const { email: adminEmail } = await requireAdmin(ctx);
+    const { identity, email: identityEmail } = await requireAdmin(ctx);
+
+    // Get email with database fallback
+    let adminEmail = identityEmail;
+    if (!adminEmail) {
+      const user = await ctx.db
+        .query("users")
+        .filter((q) => q.eq(q.field("clerkUserId"), identity?.userId))
+        .first();
+      adminEmail = user?.email ?? "";
+    }
 
     const offerId = await ctx.db.insert("offers", {
       ...args,
@@ -82,7 +92,18 @@ export const create = mutation({
 export const deactivate = mutation({
   args: { id: v.id("offers") },
   handler: async (ctx, { id }) => {
-    const { email: adminEmail } = await requireAdmin(ctx);
+    const { identity, email: identityEmail } = await requireAdmin(ctx);
+
+    // Get email with database fallback
+    let adminEmail = identityEmail;
+    if (!adminEmail) {
+      const user = await ctx.db
+        .query("users")
+        .filter((q) => q.eq(q.field("clerkUserId"), identity?.userId))
+        .first();
+      adminEmail = user?.email ?? "";
+    }
+
     const offer = await ctx.db.get(id);
     await ctx.db.patch(id, { isActive: false });
     await ctx.db.insert("adminLogs", {
@@ -97,7 +118,18 @@ export const deactivate = mutation({
 export const reactivate = mutation({
   args: { id: v.id("offers") },
   handler: async (ctx, { id }) => {
-    const { email: adminEmail } = await requireAdmin(ctx);
+    const { identity, email: identityEmail } = await requireAdmin(ctx);
+
+    // Get email with database fallback
+    let adminEmail = identityEmail;
+    if (!adminEmail) {
+      const user = await ctx.db
+        .query("users")
+        .filter((q) => q.eq(q.field("clerkUserId"), identity?.userId))
+        .first();
+      adminEmail = user?.email ?? "";
+    }
+
     const offer = await ctx.db.get(id);
     await ctx.db.patch(id, { isActive: true });
     await ctx.db.insert("adminLogs", {
@@ -112,7 +144,18 @@ export const reactivate = mutation({
 export const deleteOffer = mutation({
   args: { id: v.id("offers") },
   handler: async (ctx, { id }) => {
-    const { email: adminEmail } = await requireAdmin(ctx);
+    const { identity, email: identityEmail } = await requireAdmin(ctx);
+
+    // Get email with database fallback
+    let adminEmail = identityEmail;
+    if (!adminEmail) {
+      const user = await ctx.db
+        .query("users")
+        .filter((q) => q.eq(q.field("clerkUserId"), identity?.userId))
+        .first();
+      adminEmail = user?.email ?? "";
+    }
+
     const offer = await ctx.db.get(id);
     await ctx.db.delete(id);
     await ctx.db.insert("adminLogs", {
