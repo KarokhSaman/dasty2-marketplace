@@ -52,6 +52,7 @@ export default function AdminProductsPage() {
   const [expanded,     setExpanded]     = useState(null);
   const [confirmDel,   setConfirmDel]   = useState(null);
   const [confirmPhoto, setConfirmPhoto] = useState(null); // "productId:photoIndex"
+  const [confirmFeature, setConfirmFeature] = useState(null); // { productId, action: 'feature' | 'unfeature', duration }
 
   const statusLabels = {
     all:      m.adminAllStatus(),
@@ -283,10 +284,7 @@ export default function AdminProductsPage() {
                   <div className="relative">
                     {product.featured ? (
                       <button
-                        onClick={async () => {
-                          await setFeatured({ id: product._id, featured: false });
-                          await log("unfeatured", product);
-                        }}
+                        onClick={() => setConfirmFeature({ productId: product._id, action: 'unfeature' })}
                         className="flex items-center gap-1 text-xs px-2 py-1.5 rounded-lg font-medium border-2 bg-amber-100 text-amber-700 border-amber-400 hover:bg-amber-200 hover:border-amber-500 transition-colors"
                       >
                         <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
@@ -317,12 +315,11 @@ export default function AdminProductsPage() {
                           { label: "No expiry", days: null },
                         ].map(opt => (
                           <button key={opt.label}
-                            onClick={async () => {
+                            onClick={() => {
                               const until = opt.days
                                 ? new Date(Date.now() + opt.days * 864e5).toISOString().slice(0, 10)
                                 : undefined;
-                              await setFeatured({ id: product._id, featured: true, featuredUntil: until });
-                              await log("featured", product, opt.label);
+                              setConfirmFeature({ productId: product._id, action: 'feature', duration: opt.label, until });
                               setFeaturedPickerId(null);
                             }}
                             className="w-full text-start px-2 py-1.5 text-xs text-[var(--color-ink)] hover:bg-amber-50 hover:text-amber-700 rounded-lg transition-colors"
@@ -349,10 +346,7 @@ export default function AdminProductsPage() {
                 <div className="relative">
                   {product.featured ? (
                     <button
-                      onClick={async () => {
-                        await setFeatured({ id: product._id, featured: false });
-                        await log("unfeatured", product);
-                      }}
+                      onClick={() => setConfirmFeature({ productId: product._id, action: 'unfeature' })}
                       className="flex items-center gap-1 text-xs px-2 py-1.5 rounded-lg font-medium border-2 bg-amber-100 text-amber-700 border-amber-400 hover:bg-amber-200 hover:border-amber-500 transition-colors"
                     >
                       <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
@@ -383,12 +377,11 @@ export default function AdminProductsPage() {
                         { label: "No expiry", days: null },
                       ].map(opt => (
                         <button key={opt.label}
-                          onClick={async () => {
+                          onClick={() => {
                             const until = opt.days
                               ? new Date(Date.now() + opt.days * 864e5).toISOString().slice(0, 10)
                               : undefined;
-                            await setFeatured({ id: product._id, featured: true, featuredUntil: until });
-                            await log("featured", product, opt.label);
+                            setConfirmFeature({ productId: product._id, action: 'feature', duration: opt.label, until });
                             setFeaturedPickerId(null);
                           }}
                           className="w-full text-start px-2 py-1.5 text-xs text-[var(--color-ink)] hover:bg-amber-50 hover:text-amber-700 rounded-lg transition-colors"
@@ -521,6 +514,55 @@ export default function AdminProductsPage() {
               </button>
               <button
                 onClick={() => setConfirmDel(null)}
+                className="flex-1 text-sm bg-[var(--color-cream-deep)] hover:bg-[var(--color-hairline)] text-[var(--color-ink)] py-2.5 rounded-xl transition-colors">
+                {m.adminCancel()}
+              </button>
+            </div>
+          </div>
+        </BottomSheet>
+      )}
+
+      {/* Feature confirmation dialog */}
+      {confirmFeature && (
+        <BottomSheet open={true} onClose={() => setConfirmFeature(null)} title={confirmFeature.action === 'feature' ? 'Feature Product' : 'Unfeature Product'}>
+          <div className="p-4 sm:p-3">
+            {confirmFeature.action === 'feature' ? (
+              <>
+                <p className="text-[13px] font-semibold text-[var(--color-ink)] mb-1">
+                  Feature this product?
+                </p>
+                <p className="text-xs text-[var(--color-ink-fade)] mb-3">
+                  This product will be featured for {confirmFeature.duration || 'unlimited time'}.
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-[13px] font-semibold text-[var(--color-ink)] mb-1">
+                  Unfeature this product?
+                </p>
+                <p className="text-xs text-[var(--color-ink-fade)] mb-3">
+                  This product will no longer be featured.
+                </p>
+              </>
+            )}
+            <div className="flex gap-2">
+              <button
+                onClick={async () => {
+                  const product = products?.find(p => p._id === confirmFeature.productId);
+                  if (confirmFeature.action === 'feature') {
+                    await setFeatured({ id: confirmFeature.productId, featured: true, featuredUntil: confirmFeature.until });
+                    await log("featured", product, confirmFeature.duration);
+                  } else {
+                    await setFeatured({ id: confirmFeature.productId, featured: false });
+                    await log("unfeatured", product);
+                  }
+                  setConfirmFeature(null);
+                }}
+                className="flex-1 text-sm bg-[var(--color-ember-600)] hover:bg-[var(--color-ember-700)] text-white font-semibold py-2.5 rounded-xl transition-colors">
+                {confirmFeature.action === 'feature' ? 'Feature' : 'Unfeature'}
+              </button>
+              <button
+                onClick={() => setConfirmFeature(null)}
                 className="flex-1 text-sm bg-[var(--color-cream-deep)] hover:bg-[var(--color-hairline)] text-[var(--color-ink)] py-2.5 rounded-xl transition-colors">
                 {m.adminCancel()}
               </button>

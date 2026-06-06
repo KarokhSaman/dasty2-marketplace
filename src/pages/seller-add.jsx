@@ -173,11 +173,11 @@ export default function AddProductPage() {
 
         {hasBrandOption(category) && (
           <div>
-            <label className="block text-[13px] font-semibold text-[var(--color-ink)] mb-1.5">Brand</label>
+            <label className="block text-[13px] font-semibold text-[var(--color-ink)] mb-1.5">{m.fieldBrand()}</label>
             <CustomSelect
               value={brand}
               onChange={setBrand}
-              placeholder="Select a brand (optional)"
+              placeholder={m.fieldBrandPlaceholder()}
               options={getBrandOptions(category).map(b => ({ value: b, label: b }))}
             />
           </div>

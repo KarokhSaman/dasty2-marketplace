@@ -40,7 +40,7 @@ function SortIcon() {
 
 function SearchRow({ search, setSearch, city, setCity, availableCities, animate }) {
   return (
-    <div className={`relative z-30 flex items-stretch gap-2 mb-3 ${animate ? "fade-up" : ""}`}>
+    <div className={`relative z-[60] flex items-stretch gap-2 mb-3 ${animate ? "fade-up" : ""}`}>
       <SearchInput
         value={search}
         onChange={setSearch}
@@ -125,7 +125,7 @@ function BrandSelector({ brands, setBrands }) {
   const ref = useRef(null);
   const allBrands = getAllBrands();
   const selectedCount = brands.length;
-  const label = selectedCount > 0 ? `Brands (${selectedCount})` : "All Brands";
+  const label = selectedCount > 0 ? `${m.brandLabel()} (${selectedCount})` : m.allBrands();
   const isActive = selectedCount > 0;
 
   useEffect(() => {
@@ -193,9 +193,9 @@ function MetaRow({ condition, setCondition, sort, setSort, brands, setBrands, ha
   ];
 
   return (
-    <div className="relative z-20">
-      <div className="flex items-center justify-between gap-2 mb-2.5 px-0.5 h-7">
-        <div className="inline-flex items-center gap-2 min-w-0">
+    <div className="relative z-50">
+      <div className="flex items-center justify-between gap-1.5 mb-2.5 px-0.5 flex-wrap">
+        <div className="flex items-center gap-1.5 flex-wrap">
           <SegmentedControl
             variant="underline"
             value={condition}
@@ -206,16 +206,16 @@ function MetaRow({ condition, setCondition, sort, setSort, brands, setBrands, ha
             <button
               type="button"
               onClick={onReset}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-[var(--color-ember-300)] bg-[var(--color-ember-50)] text-[var(--color-ember-600)] hover:bg-[var(--color-ember-100)] hover:border-[var(--color-ember-400)] font-semibold text-[11px] whitespace-nowrap shrink-0 transition-all duration-200"
+              className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded-lg border border-[var(--color-ember-300)] bg-[var(--color-ember-50)] text-[var(--color-ember-600)] hover:bg-[var(--color-ember-100)] hover:border-[var(--color-ember-400)] font-semibold text-[9px] whitespace-nowrap shrink-0 transition-all duration-200"
             >
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.4} d="M6 18L18 6M6 6l12 12" />
               </svg>
-              Reset
+              <span className="hidden sm:inline">{m.filterReset()}</span>
             </button>
           )}
         </div>
-        <div className="inline-flex items-center gap-1 shrink-0 h-7">
+        <div className="inline-flex items-center gap-1 shrink-0">
           <BrandSelector brands={brands} setBrands={setBrands} />
           <SortMenu sort={sort} setSort={setSort} />
         </div>
@@ -369,6 +369,7 @@ export default function HomePage() {
 
     const element = carouselRef.current;
     const scrollAmount = 150; // Scroll by card width + gap
+    const isRTL = document.documentElement.dir === "rtl";
 
     const interval = setInterval(() => {
       if (element) {
@@ -376,13 +377,14 @@ export default function HomePage() {
 
         // Check if we've scrolled past the halfway point (reached cloned section)
         // If so, reset to near the beginning for seamless loop
-        if (element.scrollLeft >= oneSetWidth - scrollAmount) {
+        if (Math.abs(element.scrollLeft) >= oneSetWidth - scrollAmount) {
           element.scrollLeft = 0;
         }
 
-        // Auto-scroll
+        // Auto-scroll - direction depends on text direction
+        const scrollValue = isRTL ? -scrollAmount : scrollAmount;
         element.scrollBy({
-          left: scrollAmount,
+          left: scrollValue,
           behavior: "smooth",
         });
       }
@@ -407,7 +409,7 @@ export default function HomePage() {
         animate={animateEntrance}
       />
 
-      <div className={`mb-3 ${animateEntrance ? "fade-up" : ""}`}>
+      <div className={`mb-1 ${animateEntrance ? "fade-up" : ""}`}>
         <CategoryBar selected={category} onSelect={updateFilter("category")} />
       </div>
 
@@ -428,7 +430,7 @@ export default function HomePage() {
 
       {/* Featured Products Carousel - Sticky with Circular Cards */}
       {featuredFiltered.length > 0 && (
-        <div className={`sticky top-14 z-30 bg-white pt-3 pb-3 -mx-4 px-4 sm:mx-0 sm:px-0 ${animateEntrance ? "fade-up" : ""}`}>
+        <div className={`sticky top-14 z-30 bg-white pt-1 pb-3 -mx-4 px-4 sm:mx-0 sm:px-0 ${animateEntrance ? "fade-up" : ""}`}>
           <h2 className="text-sm font-bold text-[var(--color-ink)] mb-3 px-0.5">
             <span className="text-[var(--color-ember-600)] mr-1.5">🔥</span>VIP
           </h2>
@@ -447,7 +449,7 @@ export default function HomePage() {
                   className="shrink-0"
                 >
                   <div className="group cursor-pointer text-center">
-                    <div className="relative w-21 h-21 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full overflow-hidden bg-gray-100 mb-2 mx-auto">
+                    <div className="relative w-20 h-20 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-lg overflow-hidden bg-gray-100 mb-2 mx-auto">
                       {p.photos?.[0] ? (
                         <img
                           src={p.photos[0]}
@@ -473,7 +475,7 @@ export default function HomePage() {
                   className="shrink-0"
                 >
                   <div className="group cursor-pointer text-center">
-                    <div className="relative w-21 h-21 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full overflow-hidden bg-gray-100 mb-2 mx-auto">
+                    <div className="relative w-20 h-20 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-lg overflow-hidden bg-gray-100 mb-2 mx-auto">
                       {p.photos?.[0] ? (
                         <img
                           src={p.photos[0]}
@@ -498,7 +500,7 @@ export default function HomePage() {
 
       {/* Visual separator */}
       {featuredFiltered.length > 0 && (
-        <div className="flex items-center gap-3 my-3">
+        <div className="sticky top-56 z-40 bg-white flex items-center gap-3 my-0 py-2">
           <div className="flex-1 h-px bg-[var(--color-hairline)]" />
           <p className="text-xs font-semibold text-[var(--color-ink-fade)] uppercase tracking-wide">All Products</p>
           <div className="flex-1 h-px bg-[var(--color-hairline)]" />
@@ -514,7 +516,7 @@ export default function HomePage() {
       {!isLoading && allProducts.length === 0 && featuredFiltered.length === 0 && <EmptyState />}
 
       {allProducts.length > 0 && (
-        <div className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 ${animateEntrance ? "stagger" : ""}`}>
+        <div className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 mt-1 ${animateEntrance ? "stagger" : ""}`}>
           {allProducts.map((p) => (
             <ProductCard key={p._id} product={p} onSave={onSave} />
           ))}
