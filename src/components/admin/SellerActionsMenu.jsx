@@ -57,14 +57,17 @@ export default function SellerActionsMenu({ seller, onPromote, onToggleActive, o
     </div>
   ) : confirmDel ? (
     <div className="p-4 sm:p-3">
-      <p className="text-[13px] text-red-600 font-medium mb-3">Delete seller "{seller.name}"?</p>
+      <p className="text-[13px] font-semibold text-[var(--color-ink)] mb-1">Delete seller "{seller.name}"?</p>
+      <p className="text-xs text-[var(--color-ink-fade)] mb-3">
+        This action cannot be undone. The seller will be permanently deleted.
+      </p>
       <div className="flex gap-2">
         <button
           onClick={() => {
             onDelete();
             close();
           }}
-          className="flex-1 text-sm bg-red-500 hover:bg-red-600 text-white font-semibold py-2.5 rounded-xl transition-colors"
+          className="flex-1 text-sm bg-[var(--color-ember-600)] hover:bg-[var(--color-ember-700)] text-white font-semibold py-2.5 rounded-xl transition-colors"
         >
           {m.adminDelete()}
         </button>
