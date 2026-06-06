@@ -101,6 +101,12 @@ export const getFeatured = query({
           p.featured &&
           (!p.featuredUntil || p.featuredUntil >= today),
       )
+      .sort((a, b) => {
+        // Sort by featuredAt descending (newest first)
+        const aTime = a.featuredAt ? new Date(a.featuredAt).getTime() : 0;
+        const bTime = b.featuredAt ? new Date(b.featuredAt).getTime() : 0;
+        return bTime - aTime;
+      })
       .map(toPublic);
   },
 });
@@ -122,6 +128,12 @@ export const getPinned = query({
           p.pinned &&
           (!p.pinnedUntil || p.pinnedUntil >= today),
       )
+      .sort((a, b) => {
+        // Sort by pinnedAt descending (newest pinned first)
+        const aTime = a.pinnedAt ? new Date(a.pinnedAt).getTime() : 0;
+        const bTime = b.pinnedAt ? new Date(b.pinnedAt).getTime() : 0;
+        return bTime - aTime;
+      })
       .map(toPublic)
       .slice(0, 20); // Max 20 pinned products
   },
@@ -389,8 +401,10 @@ export const setFeatured = mutation({
     await ctx.db.patch(id, {
       featured,
       featuredUntil: featured ? featuredUntil : undefined,
+      featuredAt: featured ? new Date().toISOString() : undefined,
       pinned: featured ? false : undefined, // Remove pin when unfeatureing
       pinnedUntil: undefined,
+      pinnedAt: undefined,
     });
   },
 });
@@ -409,6 +423,7 @@ export const setPinned = mutation({
     await ctx.db.patch(id, {
       pinned,
       pinnedUntil: pinned ? product.featuredUntil : undefined,
+      pinnedAt: pinned ? new Date().toISOString() : undefined,
     });
   },
 });
