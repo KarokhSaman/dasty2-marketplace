@@ -13,7 +13,18 @@ export const create = mutation({
     notes:        v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const { email: adminEmail } = await requireAdmin(ctx);
+    const { identity, email: identityEmail } = await requireAdmin(ctx);
+
+    // Try to get email from identity, fall back to user email from database
+    let adminEmail = identityEmail;
+    if (!adminEmail) {
+      const user = await ctx.db
+        .query("users")
+        .filter((q) => q.eq(q.field("clerkUserId"), identity?.userId))
+        .unique();
+      adminEmail = user?.email ?? "";
+    }
+
     await ctx.db.insert("adminLogs", {
       ...args,
       adminEmail,
