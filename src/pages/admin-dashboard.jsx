@@ -167,9 +167,11 @@ export default function AdminDashboard() {
                           {meta.label}
                         </span>
                       </div>
-                      {(log.sellerName || log.productCode) && (
+                      {(log.productTitle || log.sellerName || log.productCode) && (
                         <p className="text-xs text-[var(--color-ink-soft)] mt-0.5 truncate">
-                          {log.sellerName && <span>"{log.sellerName}"</span>}
+                          {log.productTitle && <span>"{log.productTitle}"</span>}
+                          {log.productTitle && (log.sellerName || log.productCode) && <span className="text-[var(--color-ink-fade)]"> · </span>}
+                          {log.sellerName && <span>{log.sellerName}</span>}
                           {log.sellerName && log.productCode && <span className="text-[var(--color-ink-fade)]"> · </span>}
                           {log.productCode && <span className="text-[var(--color-ink-fade)]">{log.productCode}</span>}
                         </p>
