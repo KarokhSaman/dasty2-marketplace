@@ -184,9 +184,9 @@ function SmartBottomNav() {
   if (sellerId) {
     return (
       <>
-        <div className="lg:hidden h-16 sm:h-20" aria-hidden />
+        <div className="lg:hidden h-12 sm:h-16" aria-hidden />
         <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-white border-t border-[var(--color-hairline)]">
-          <div className="w-full px-4 sm:px-6 py-2 sm:py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] flex items-center justify-center gap-10">
+          <div className="w-full px-4 sm:px-6 py-1 sm:py-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] flex items-center justify-center gap-10">
             <Link to="/" onClick={handleHomeTap} className={`inline-flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg transition-all duration-200 ${isHome ? "text-[var(--color-ember-600)] bg-[var(--color-ember-50)]" : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]"}`}>
               <svg className="w-6 h-6" fill={isHome ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
@@ -216,9 +216,9 @@ function SmartBottomNav() {
   // Anonymous buyer — Home / Account
   return (
     <>
-      <div className="lg:hidden h-16 sm:h-20" aria-hidden />
+      <div className="lg:hidden h-12 sm:h-16" aria-hidden />
       <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-white border-t border-[var(--color-hairline)]">
-        <div className="w-full px-4 sm:px-6 py-2 sm:py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] flex items-center justify-center gap-30">
+        <div className="w-full px-4 sm:px-6 py-1 sm:py-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] flex items-center justify-center gap-30">
           <Link to="/" onClick={handleHomeTap} className={`inline-flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg transition-all duration-200 ${isHome ? "text-[var(--color-ember-600)] bg-[var(--color-ember-50)]" : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]"}`}>
             <svg className="w-6 h-6" fill={isHome ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
