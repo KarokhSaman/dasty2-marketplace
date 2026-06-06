@@ -88,6 +88,7 @@ export default function AdminProductsPage() {
       action,
       productId:    product?._id?.toString(),
       productTitle: product?.title,
+      productCode:  product?.seq,
       sellerName:   product?.sellerName,
       price:        product?.price,
       notes,
