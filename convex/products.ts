@@ -105,6 +105,28 @@ export const getFeatured = query({
   },
 });
 
+// Returns pinned products (max 20) for the buyer home page carousel
+export const getPinned = query({
+  args: {},
+  handler: async (ctx) => {
+    const today = new Date().toISOString().slice(0, 10);
+    const inactiveIds = await getInactiveSellerIds(ctx);
+    const all = await ctx.db
+      .query("products")
+      .withIndex("by_status", (q) => q.eq("status", "approved"))
+      .collect();
+    return all
+      .filter(
+        (p) =>
+          !inactiveIds.has(p.sellerId) &&
+          p.pinned &&
+          (!p.pinnedUntil || p.pinnedUntil >= today),
+      )
+      .map(toPublic)
+      .slice(0, 20); // Max 20 pinned products
+  },
+});
+
 // Paginated version — used by the buyer listing page
 export const getPublicPaginated = query({
   args: {

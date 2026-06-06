@@ -161,6 +161,10 @@ export default function HomePage() {
   const { data: liveFeatured } = useReactQuery(convexQuery(api.products.getFeatured, {}));
   const featuredProducts = liveFeatured ?? cachedFeatured ?? [];
 
+  // Pinned products for the top carousel
+  const { data: livePinned } = useReactQuery(convexQuery(api.products.getPinned, {}));
+  const pinnedProducts = livePinned ?? [];
+
   const { results: liveResults, status, loadMore } = usePaginatedQuery(
     api.products.getPublicPaginated,
     { category: category === "all" ? undefined : category },
@@ -248,6 +252,42 @@ export default function HomePage() {
       <div className={`mb-3 ${animateEntrance ? "fade-up" : ""}`}>
         <CategoryBar selected={category} onSelect={updateFilter("category")} />
       </div>
+
+      {/* Pinned products carousel */}
+      {pinnedProducts.length > 0 && (
+        <div className={`mb-6 ${animateEntrance ? "fade-up" : ""}`}>
+          <h2 className="text-sm font-bold text-[var(--color-ink)] mb-3 px-0.5">✨ Highlighted Products</h2>
+          <div className="overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
+            <div className="flex gap-2 sm:gap-3">
+              {pinnedProducts.map((p) => (
+                <Link
+                  key={p._id}
+                  to={`/products/${p._id}`}
+                  className="shrink-0 w-28 sm:w-32 md:w-36"
+                >
+                  <div className="group cursor-pointer">
+                    <div className="relative h-28 sm:h-32 md:h-36 rounded-lg overflow-hidden bg-gray-100 mb-2">
+                      {p.photos?.[0] ? (
+                        <img
+                          src={p.photos[0]}
+                          alt={p.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gray-200" />
+                      )}
+                    </div>
+                    <p className="text-xs font-medium text-[var(--color-ink)] line-clamp-2 mb-1">{p.title}</p>
+                    <p className="text-xs font-bold text-[var(--color-ember-600)]">
+                      {(p.price ?? 0).toLocaleString()} IQD
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {!isLoading && (
         <MetaRow
