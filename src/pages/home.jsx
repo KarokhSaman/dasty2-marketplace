@@ -161,22 +161,27 @@ function BrandSelector({ brands, setBrands }) {
         </svg>
       </button>
       {open && (
-        <div className="absolute end-0 top-full mt-2 bg-white border border-[var(--color-hairline)] rounded-2xl shadow-[0_18px_44px_-20px_rgba(11,12,15,0.28)] z-30 overflow-hidden min-w-[190px]">
-          <div className="max-h-64 overflow-y-auto">
-            {allBrands.map((brand) => (
-              <label
-                key={brand}
-                className="flex items-center gap-2 px-4 py-2.5 hover:bg-[var(--color-cream)] cursor-pointer text-sm text-[var(--color-ink)] transition-colors"
-              >
-                <input
-                  type="checkbox"
-                  checked={brands.includes(brand)}
-                  onChange={() => toggleBrand(brand)}
-                  className="w-4 h-4 rounded accent-[var(--color-ember-600)]"
-                />
-                <span>{brand}</span>
-              </label>
-            ))}
+        <div className="absolute end-0 top-full mt-2 bg-white border border-[var(--color-hairline)] rounded-2xl shadow-[0_18px_44px_-20px_rgba(11,12,15,0.28)] z-30 overflow-hidden min-w-[280px]">
+          <div className="max-h-80 overflow-y-auto p-3">
+            <div className="grid grid-cols-2 gap-2">
+              {allBrands.map((brand) => {
+                const isSelected = brands.includes(brand);
+                return (
+                  <button
+                    key={brand}
+                    type="button"
+                    onClick={() => toggleBrand(brand)}
+                    className={`px-3 py-2 rounded-lg text-xs font-medium text-center transition-all duration-200 ${
+                      isSelected
+                        ? "bg-[var(--color-ember-600)] text-white shadow-[0_2px_4px_rgba(237,0,64,0.2)]"
+                        : "bg-[var(--color-cream)] text-[var(--color-ink)] border border-[var(--color-hairline)] hover:bg-[var(--color-sand)]"
+                    }`}
+                  >
+                    {brand}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
@@ -202,18 +207,36 @@ function MetaRow({ condition, setCondition, sort, setSort, brands, setBrands, ha
             onChange={setCondition}
             options={conditionOptions}
           />
-          {hasActiveFilter && (
-            <button
-              type="button"
-              onClick={onReset}
-              className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded-lg border border-[var(--color-ember-300)] bg-[var(--color-ember-50)] text-[var(--color-ember-600)] hover:bg-[var(--color-ember-100)] hover:border-[var(--color-ember-400)] font-semibold text-[9px] whitespace-nowrap shrink-0 transition-all duration-200"
-            >
-              <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.4} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-              <span className="hidden sm:inline">{m.filterReset()}</span>
-            </button>
-          )}
+          {hasActiveFilter && (() => {
+            const isEnglish = typeof document !== "undefined" && document.documentElement.lang === "en";
+            if (isEnglish) {
+              return (
+                <button
+                  type="button"
+                  onClick={onReset}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-[var(--color-ember-300)] bg-[var(--color-ember-50)] text-[var(--color-ember-600)] hover:bg-[var(--color-ember-100)] hover:border-[var(--color-ember-400)] font-semibold text-[11px] whitespace-nowrap shrink-0 transition-all duration-200"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.4} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  {m.filterReset()}
+                </button>
+              );
+            } else {
+              return (
+                <button
+                  type="button"
+                  onClick={onReset}
+                  className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded-lg border border-[var(--color-ember-300)] bg-[var(--color-ember-50)] text-[var(--color-ember-600)] hover:bg-[var(--color-ember-100)] hover:border-[var(--color-ember-400)] font-semibold text-[9px] whitespace-nowrap shrink-0 transition-all duration-200"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.4} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  <span className="hidden sm:inline">{m.filterReset()}</span>
+                </button>
+              );
+            }
+          })()}
         </div>
         <div className="inline-flex items-center gap-1 shrink-0">
           <BrandSelector brands={brands} setBrands={setBrands} />
@@ -431,8 +454,13 @@ export default function HomePage() {
       {/* Featured Products Carousel - Sticky with Circular Cards */}
       {featuredFiltered.length > 0 && (
         <div className={`sticky top-14 z-30 bg-white pt-1 pb-3 -mx-4 px-4 sm:mx-0 sm:px-0 ${animateEntrance ? "fade-up" : ""}`}>
-          <h2 className="text-sm font-bold text-[var(--color-ink)] mb-3 px-0.5">
-            <span className="text-[var(--color-ember-600)] mr-1.5">🔥</span>VIP
+          <h2 className="text-sm font-bold text-[var(--color-ink)] mb-3 px-0.5 flex items-center gap-1.5">
+            <span className="inline-flex items-center justify-center shrink-0 w-4 h-4 rounded-full bg-[var(--color-ember-500)] text-white shadow-[0_2px_6px_-2px_rgba(237,0,64,0.6)]">
+              <svg className="w-2.5 h-2.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                <path d="M12 2l2.39 6.96H22l-6.18 4.49L18.18 22 12 17.27 5.82 22l2.36-8.55L2 8.96h7.61L12 2z" />
+              </svg>
+            </span>
+            VIP
           </h2>
           <div
             ref={carouselRef}
