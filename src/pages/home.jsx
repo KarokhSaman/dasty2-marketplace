@@ -444,7 +444,7 @@ export default function HomePage() {
                   className="shrink-0"
                 >
                   <div className="group cursor-pointer text-center">
-                    <div className="relative w-22 h-22 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full overflow-hidden bg-gray-100 mb-2 mx-auto">
+                    <div className="relative w-18 h-18 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full overflow-hidden bg-gray-100 mb-2 mx-auto">
                       {p.photos?.[0] ? (
                         <img
                           src={p.photos[0]}
@@ -455,8 +455,8 @@ export default function HomePage() {
                         <div className="w-full h-full bg-gray-200" />
                       )}
                     </div>
-                    <p className="text-[10px] sm:text-xs text-[var(--color-ink-fade)] font-medium mb-0.5">{p.category}</p>
-                    <p className="text-xs sm:text-sm font-bold text-[var(--color-ember-600)]">
+                    <p className="text-[9px] sm:text-[10px] text-[var(--color-ink-fade)] font-medium mb-0.5">{p.category}</p>
+                    <p className="text-[10px] sm:text-xs font-bold text-[var(--color-ember-600)]">
                       {(p.price ?? 0).toLocaleString()} IQD
                     </p>
                   </div>
