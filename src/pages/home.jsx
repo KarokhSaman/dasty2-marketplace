@@ -399,14 +399,15 @@ export default function HomePage() {
         />
       )}
 
-      {/* Sticky VIP/Pinned Carousel Section */}
-      {pinnedFiltered.length > 0 && (
+      {/* Combined Premium Carousel - One Section with VIP then Featured */}
+      {(pinnedFiltered.length > 0 || featuredOnly.length > 0) && (
         <div className={`sticky top-0 z-40 bg-white pt-3 pb-6 -mx-4 px-4 sm:mx-0 sm:px-0 mb-6 border-b border-[var(--color-hairline)] ${animateEntrance ? "fade-up" : ""}`}>
           <h2 className="text-sm font-bold text-[var(--color-ink)] mb-3 px-0.5">
-            <span className="text-[var(--color-ember-600)] mr-1.5">🔥</span>VIP
+            <span className="text-[var(--color-ember-600)] mr-1.5">🔥</span>Premium
           </h2>
           <div className="overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
             <div className="flex gap-4 sm:gap-5">
+              {/* VIP Products - Larger cards */}
               {pinnedFiltered.map((p) => (
                 <Link
                   key={p._id}
@@ -432,19 +433,7 @@ export default function HomePage() {
                   </div>
                 </Link>
               ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Featured Products Carousel - NOT sticky (scrolls away) */}
-      {featuredOnly.length > 0 && (
-        <div className={`mb-6 ${animateEntrance ? "fade-up" : ""}`}>
-          <h2 className="text-sm font-bold text-[var(--color-ink)] mb-3 px-0.5">
-            <span className="text-[var(--color-ember-500)] mr-1.5">⭐</span>Featured
-          </h2>
-          <div className="overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
-            <div className="flex gap-4 sm:gap-5">
+              {/* Featured Products - Smaller cards */}
               {featuredOnly.map((p) => (
                 <Link
                   key={p._id}
