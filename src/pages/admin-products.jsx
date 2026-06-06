@@ -458,21 +458,24 @@ export default function AdminProductsPage() {
 
       {/* Delete confirmation bottom sheet */}
       {confirmDel && (
-        <BottomSheet open={true} onClose={() => setConfirmDel(null)} title="Delete Product?">
-          <div className="px-4 py-4 space-y-4">
-            <p className="text-sm text-[var(--color-ink-soft)]">
-              Are you sure you want to delete this product? This action cannot be undone.
+        <BottomSheet open={true} onClose={() => setConfirmDel(null)}>
+          <div className="p-4 sm:p-3">
+            <p className="text-[13px] font-semibold text-[var(--color-ink)] mb-1">
+              Delete this product?
+            </p>
+            <p className="text-xs text-[var(--color-ink-fade)] mb-3">
+              This action cannot be undone. The product will be permanently deleted.
             </p>
             <div className="flex gap-2">
               <button
-                onClick={() => setConfirmDel(null)}
-                className="flex-1 px-4 py-3 rounded-xl border border-[var(--color-hairline)] text-[var(--color-ink)] font-semibold hover:bg-[var(--color-cream-deep)] transition-colors">
-                Cancel
+                onClick={() => deleteProduct(confirmDel)}
+                className="flex-1 text-sm bg-red-500 hover:bg-red-600 text-white font-semibold py-2.5 rounded-xl transition-colors">
+                Delete
               </button>
               <button
-                onClick={() => deleteProduct(confirmDel)}
-                className="flex-1 px-4 py-3 rounded-xl bg-red-500 hover:bg-red-600 text-white font-semibold transition-colors">
-                Delete
+                onClick={() => setConfirmDel(null)}
+                className="flex-1 text-sm bg-[var(--color-cream-deep)] hover:bg-[var(--color-hairline)] text-[var(--color-ink)] py-2.5 rounded-xl transition-colors">
+                {m.adminCancel()}
               </button>
             </div>
           </div>
