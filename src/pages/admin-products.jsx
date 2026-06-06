@@ -338,7 +338,7 @@ export default function AdminProductsPage() {
                   </div>
 
                   <button onClick={() => setConfirmDel(product._id)}
-                    className="text-xs text-[var(--color-ink-fade)] hover:text-red-500 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors">
+                    className="text-xs font-medium border-2 bg-white text-red-600 border-red-300 hover:bg-red-50 hover:border-red-500 hover:text-red-700 px-3 py-1.5 rounded-lg transition-colors">
                     {m.adminDelete()}
                   </button>
                 </div>
@@ -405,7 +405,7 @@ export default function AdminProductsPage() {
                 </div>
 
                 <button onClick={() => setConfirmDel(product._id)}
-                  className="text-xs text-[var(--color-ink-fade)] hover:text-red-500 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors ms-auto">
+                  className="text-xs font-medium border-2 bg-white text-red-600 border-red-300 hover:bg-red-50 hover:border-red-500 hover:text-red-700 px-3 py-1.5 rounded-lg transition-colors ms-auto">
                   {m.adminDelete()}
                 </button>
               </div>
