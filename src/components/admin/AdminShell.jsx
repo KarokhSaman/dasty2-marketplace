@@ -1,7 +1,7 @@
 import { Link, useLocation } from "@tanstack/react-router";
 const usePathname = () => useLocation({ select: (l) => l.pathname });
 import { useState, useRef, useEffect } from "react";
-import { useClerk } from "@clerk/tanstack-react-start";
+import { useClerk, useAuth } from "@clerk/tanstack-react-start";
 import { useQuery, useConvexAuth } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import * as m from "@/paraglide/messages";
@@ -20,10 +20,12 @@ export default function AdminShell({ children }) {
   const profileRef = useRef();
   const { signOut } = useClerk();
   const { isAuthenticated } = useConvexAuth();
+  const { userId } = useAuth();
 
+  // Fetch admin email on mount and when userId changes (admin switches)
   useEffect(() => {
     fetch("/api/admin/me").then(r => r.json()).then(d => setAdminEmail(d.email ?? ""));
-  }, []);
+  }, [userId]);
 
   useEffect(() => {
     if (isAuthenticated) {
