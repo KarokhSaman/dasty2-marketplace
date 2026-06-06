@@ -43,7 +43,7 @@ export default function SellerActionsMenu({ seller, onPromote, onToggleActive, o
             onPromote();
             close();
           }}
-          className="flex-1 text-sm bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl transition-colors"
+          className="flex-1 text-sm bg-[var(--color-ember-600)] hover:bg-[var(--color-ember-700)] text-white font-semibold py-2.5 rounded-xl transition-colors"
         >
           Promote
         </button>
