@@ -255,7 +255,7 @@ export default function PublicShell({ children }) {
         }}
       />
 
-      <header className="sticky top-0 z-40 bg-[var(--color-cream)] border-b border-[var(--color-hairline)] shadow-[0_1px_0_rgba(11,12,15,0.03)]">
+      <header className="sticky top-0 z-50 bg-[var(--color-cream)] border-b border-[var(--color-hairline)] shadow-[0_1px_0_rgba(11,12,15,0.03)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <SellerDesktopNav />
           <HeaderActions />
