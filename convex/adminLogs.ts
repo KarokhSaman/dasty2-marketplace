@@ -21,7 +21,7 @@ export const create = mutation({
       const user = await ctx.db
         .query("users")
         .filter((q) => q.eq(q.field("clerkUserId"), identity?.userId))
-        .unique();
+        .first();
       adminEmail = user?.email ?? "";
     }
 
