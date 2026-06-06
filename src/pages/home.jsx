@@ -362,7 +362,7 @@ export default function HomePage() {
   // All products: includes regular, featured, and pinned
   const allProducts = useMemo(() => applySort(results.filter((p) => matchesFilters(p, { skipCategory: true }))),
     [results, search, condition, sort, city, brands]);
-  const totalCount = premiumProducts.length + allProducts.length;
+  const totalCount = pinnedFiltered.length + featuredOnly.length + allProducts.length;
 
   const isLoading =
     status === "LoadingFirstPage" &&
