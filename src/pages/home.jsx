@@ -523,7 +523,7 @@ export default function HomePage() {
                 {isFeatured && (
                   <div className="absolute top-2.5 end-2.5 z-10">
                     <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-[var(--color-ember-500)] text-white shadow-md">
-                      <span className="text-lg">🔥</span>
+                      <span className="text-lg">⭐</span>
                     </span>
                   </div>
                 )}
