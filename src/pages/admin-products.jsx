@@ -237,66 +237,6 @@ export default function AdminProductsPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start gap-2 flex-wrap">
                     <p className="text-sm font-semibold text-gray-800 truncate">{product.title}</p>
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_STYLE[product.status]}`}>
-                      {statusLabels[product.status]}
-                    </span>
-                    {/* Featured button + duration picker */}
-                    <div className="relative">
-                      {product.featured ? (
-                        <button
-                          onClick={async () => {
-                            await setFeatured({ id: product._id, featured: false });
-                            await log("unfeatured", product);
-                          }}
-                          className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium border bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-200 transition-colors"
-                        >
-                          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
-                          </svg>
-                          {product.featuredUntil
-                            ? `Until ${product.featuredUntil}`
-                            : "Featured"}
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => setFeaturedPickerId(featuredPickerId === product._id ? null : product._id)}
-                          className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium border bg-gray-100 text-[var(--color-ink-fade)] border-[var(--color-hairline)] hover:bg-amber-50 hover:text-amber-500 hover:border-amber-200 transition-colors"
-                        >
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
-                          </svg>
-                          Feature
-                        </button>
-                      )}
-
-                      {/* Duration picker popover */}
-                      {featuredPickerId === product._id && (
-                        <div className="absolute start-0 top-full mt-1.5 z-30 bg-white border border-[var(--color-hairline)] rounded-xl shadow-lg p-2 min-w-[160px]">
-                          <p className="text-[10px] text-[var(--color-ink-fade)] font-semibold uppercase tracking-wide px-1 pb-1.5">Feature for</p>
-                          {[
-                            { label: "7 days",   days: 7  },
-                            { label: "14 days",  days: 14 },
-                            { label: "30 days",  days: 30 },
-                            { label: "No expiry", days: null },
-                          ].map(opt => (
-                            <button key={opt.label}
-                              onClick={async () => {
-                                const until = opt.days
-                                  ? new Date(Date.now() + opt.days * 864e5).toISOString().slice(0, 10)
-                                  : undefined;
-                                await setFeatured({ id: product._id, featured: true, featuredUntil: until });
-                                await log("featured", product, opt.label);
-                                setFeaturedPickerId(null);
-                                setPinningProductId(product._id);
-                              }}
-                              className="w-full text-start px-2 py-1.5 text-xs text-[var(--color-ink)] hover:bg-amber-50 hover:text-amber-700 rounded-lg transition-colors"
-                            >
-                              {opt.label}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
                   </div>
                   {/* Condition + seq */}
                   <p className="text-xs text-[var(--color-ink-fade)] mt-0.5 flex items-center gap-1.5">
@@ -340,6 +280,63 @@ export default function AdminProductsPage() {
                 {/* Actions — desktop only */}
                 <div className="hidden sm:flex items-center gap-2 shrink-0">
                   <ProductStatusMenu product={product} onStatusChange={(newStatus) => handleStatusChange(product, newStatus)} />
+
+                  {/* Feature button with popover */}
+                  <div className="relative">
+                    {product.featured ? (
+                      <button
+                        onClick={async () => {
+                          await setFeatured({ id: product._id, featured: false });
+                          await log("unfeatured", product);
+                        }}
+                        className="flex items-center gap-1 text-xs px-2 py-1.5 rounded-lg font-medium border bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-200 transition-colors"
+                      >
+                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
+                        </svg>
+                        {product.featuredUntil ? `Until ${product.featuredUntil}` : "Featured"}
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => setFeaturedPickerId(featuredPickerId === product._id ? null : product._id)}
+                        className="flex items-center gap-1 text-xs px-2 py-1.5 rounded-lg font-medium border bg-gray-100 text-[var(--color-ink-fade)] border-[var(--color-hairline)] hover:bg-amber-50 hover:text-amber-500 hover:border-amber-200 transition-colors"
+                      >
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
+                        </svg>
+                        Feature
+                      </button>
+                    )}
+
+                    {/* Duration picker popover */}
+                    {featuredPickerId === product._id && (
+                      <div className="absolute start-0 top-full mt-1.5 z-30 bg-white border border-[var(--color-hairline)] rounded-xl shadow-lg p-2 min-w-[160px]">
+                        <p className="text-[10px] text-[var(--color-ink-fade)] font-semibold uppercase tracking-wide px-1 pb-1.5">Feature for</p>
+                        {[
+                          { label: "7 days",   days: 7  },
+                          { label: "14 days",  days: 14 },
+                          { label: "30 days",  days: 30 },
+                          { label: "No expiry", days: null },
+                        ].map(opt => (
+                          <button key={opt.label}
+                            onClick={async () => {
+                              const until = opt.days
+                                ? new Date(Date.now() + opt.days * 864e5).toISOString().slice(0, 10)
+                                : undefined;
+                              await setFeatured({ id: product._id, featured: true, featuredUntil: until });
+                              await log("featured", product, opt.label);
+                              setFeaturedPickerId(null);
+                              setPinningProductId(product._id);
+                            }}
+                            className="w-full text-start px-2 py-1.5 text-xs text-[var(--color-ink)] hover:bg-amber-50 hover:text-amber-700 rounded-lg transition-colors"
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
                   <button onClick={() => setConfirmDel(product._id)}
                     className="text-xs text-[var(--color-ink-fade)] hover:text-red-500 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors">
                     {m.adminDelete()}
@@ -350,8 +347,65 @@ export default function AdminProductsPage() {
               {/* Actions — mobile only */}
               <div className="flex sm:hidden items-center gap-2 mt-3 flex-wrap">
                 <ProductStatusMenu product={product} onStatusChange={(newStatus) => handleStatusChange(product, newStatus)} />
+
+                {/* Feature button with popover */}
+                <div className="relative">
+                  {product.featured ? (
+                    <button
+                      onClick={async () => {
+                        await setFeatured({ id: product._id, featured: false });
+                        await log("unfeatured", product);
+                      }}
+                      className="flex items-center gap-1 text-xs px-2 py-1.5 rounded-lg font-medium border bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-200 transition-colors"
+                    >
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
+                      </svg>
+                      {product.featuredUntil ? `Until ${product.featuredUntil}` : "Featured"}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setFeaturedPickerId(featuredPickerId === product._id ? null : product._id)}
+                      className="flex items-center gap-1 text-xs px-2 py-1.5 rounded-lg font-medium border bg-gray-100 text-[var(--color-ink-fade)] border-[var(--color-hairline)] hover:bg-amber-50 hover:text-amber-500 hover:border-amber-200 transition-colors"
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
+                      </svg>
+                      Feature
+                    </button>
+                  )}
+
+                  {/* Duration picker popover */}
+                  {featuredPickerId === product._id && (
+                    <div className="absolute start-0 top-full mt-1.5 z-30 bg-white border border-[var(--color-hairline)] rounded-xl shadow-lg p-2 min-w-[160px]">
+                      <p className="text-[10px] text-[var(--color-ink-fade)] font-semibold uppercase tracking-wide px-1 pb-1.5">Feature for</p>
+                      {[
+                        { label: "7 days",   days: 7  },
+                        { label: "14 days",  days: 14 },
+                        { label: "30 days",  days: 30 },
+                        { label: "No expiry", days: null },
+                      ].map(opt => (
+                        <button key={opt.label}
+                          onClick={async () => {
+                            const until = opt.days
+                              ? new Date(Date.now() + opt.days * 864e5).toISOString().slice(0, 10)
+                              : undefined;
+                            await setFeatured({ id: product._id, featured: true, featuredUntil: until });
+                            await log("featured", product, opt.label);
+                            setFeaturedPickerId(null);
+                            setPinningProductId(product._id);
+                          }}
+                          className="w-full text-start px-2 py-1.5 text-xs text-[var(--color-ink)] hover:bg-amber-50 hover:text-amber-700 rounded-lg transition-colors"
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
                 <button onClick={() => setConfirmDel(product._id)}
-                  className="text-xs text-[var(--color-ink-fade)] hover:text-red-500 px-3 py-2 rounded-lg hover:bg-red-50 transition-colors ms-auto">
+                  className="text-xs text-[var(--color-ink-fade)] hover:text-red-500 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors ms-auto">
                   {m.adminDelete()}
                 </button>
               </div>
