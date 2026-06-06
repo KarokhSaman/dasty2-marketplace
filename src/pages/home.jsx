@@ -363,17 +363,27 @@ export default function HomePage() {
   const [isHovering, setIsHovering] = useState(false);
   const carouselRef = useRef(null);
 
-  // Auto-scroll carousel every 3 seconds
+  // Auto-scroll carousel every 3 seconds with looping
   useEffect(() => {
     if (!carouselRef.current || isHovering || featuredFiltered.length === 0) return;
 
     const interval = setInterval(() => {
       if (carouselRef.current) {
+        const element = carouselRef.current;
         const scrollAmount = 150; // Scroll by card width + gap
-        carouselRef.current.scrollBy({
-          left: scrollAmount,
-          behavior: "smooth",
-        });
+
+        // Check if near the end, if so loop back to beginning
+        if (element.scrollLeft + element.clientWidth >= element.scrollWidth - 50) {
+          element.scrollTo({
+            left: 0,
+            behavior: "smooth",
+          });
+        } else {
+          element.scrollBy({
+            left: scrollAmount,
+            behavior: "smooth",
+          });
+        }
       }
     }, 3000);
 
