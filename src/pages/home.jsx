@@ -291,15 +291,11 @@ export default function HomePage() {
                       ) : (
                         <div className="w-full h-full bg-gray-200" />
                       )}
-                      {/* Gradient overlay with category and price */}
-                      <div className="absolute inset-0 rounded-full bg-gradient-to-t from-black/60 via-black/30 to-transparent flex flex-col items-center justify-end pb-2">
-                        <p className="text-[10px] sm:text-xs text-gray-200 font-medium mb-0.5">{p.category}</p>
-                        <p className="text-xs sm:text-sm font-bold text-white">
-                          {(p.price ?? 0).toLocaleString()} IQD
-                        </p>
-                      </div>
                     </div>
-                    <p className="text-xs font-medium text-[var(--color-ink)] line-clamp-2 max-w-[96px] sm:max-w-[112px] md:max-w-[128px]">{p.title}</p>
+                    <p className="text-[10px] sm:text-xs text-[var(--color-ink-fade)] font-medium mb-0.5">{p.category}</p>
+                    <p className="text-xs sm:text-sm font-bold text-[var(--color-ember-600)]">
+                      {(p.price ?? 0).toLocaleString()} IQD
+                    </p>
                   </div>
                 </Link>
               ))}
