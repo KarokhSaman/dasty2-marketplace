@@ -7,6 +7,7 @@ export default function SellerActionsMenu({ seller, onPromote, onToggleActive, o
   const [open, setOpen] = useState(false);
   const [confirmDel, setConfirmDel] = useState(false);
   const [confirmPromote, setConfirmPromote] = useState(false);
+  const [confirmToggle, setConfirmToggle] = useState(false);
   const isDesktop = useIsDesktop();
   const ref = useRef();
 
@@ -17,6 +18,7 @@ export default function SellerActionsMenu({ seller, onPromote, onToggleActive, o
         setOpen(false);
         setConfirmDel(false);
         setConfirmPromote(false);
+        setConfirmToggle(false);
       }
     }
     document.addEventListener("mousedown", handler);
@@ -27,6 +29,7 @@ export default function SellerActionsMenu({ seller, onPromote, onToggleActive, o
     setOpen(false);
     setConfirmDel(false);
     setConfirmPromote(false);
+    setConfirmToggle(false);
   };
 
   const rowCls = "flex items-center gap-3 w-full px-4 py-3 sm:py-2.5 text-[15px] sm:text-sm text-start transition-colors";
@@ -49,6 +52,34 @@ export default function SellerActionsMenu({ seller, onPromote, onToggleActive, o
         </button>
         <button
           onClick={() => setConfirmPromote(false)}
+          className="flex-1 text-sm bg-[var(--color-cream-deep)] hover:bg-[var(--color-hairline)] text-[var(--color-ink)] py-2.5 rounded-xl transition-colors"
+        >
+          {m.adminCancel()}
+        </button>
+      </div>
+    </div>
+  ) : confirmToggle ? (
+    <div className="p-4 sm:p-3">
+      <p className="text-[13px] font-semibold text-[var(--color-ink)] mb-1">
+        {seller.isActive ? "Deactivate seller?" : "Activate seller?"}
+      </p>
+      <p className="text-xs text-[var(--color-ink-fade)] mb-3">
+        {seller.isActive
+          ? "This seller will no longer be able to list or manage products."
+          : "This seller will be able to list and manage products again."}
+      </p>
+      <div className="flex gap-2">
+        <button
+          onClick={() => {
+            onToggleActive();
+            close();
+          }}
+          className="flex-1 text-sm bg-[var(--color-ember-600)] hover:bg-[var(--color-ember-700)] text-white font-semibold py-2.5 rounded-xl transition-colors"
+        >
+          {seller.isActive ? m.adminDeactivate() : m.adminActivate()}
+        </button>
+        <button
+          onClick={() => setConfirmToggle(false)}
           className="flex-1 text-sm bg-[var(--color-cream-deep)] hover:bg-[var(--color-hairline)] text-[var(--color-ink)] py-2.5 rounded-xl transition-colors"
         >
           {m.adminCancel()}
@@ -97,10 +128,7 @@ export default function SellerActionsMenu({ seller, onPromote, onToggleActive, o
       </button>
 
       <button
-        onClick={() => {
-          onToggleActive();
-          close();
-        }}
+        onClick={() => setConfirmToggle(true)}
         className={`${rowCls} text-[var(--color-ink)] hover:bg-[var(--color-cream)]`}
       >
         <svg className="w-5 h-5 text-[var(--color-ink-fade)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
