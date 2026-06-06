@@ -273,7 +273,7 @@ export default function HomePage() {
             <span className="text-[var(--color-ember-600)] mr-1.5">🔥</span>VIP
           </h2>
           <div className="overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
-            <div className="flex gap-3 sm:gap-4">
+            <div className="flex gap-4 sm:gap-5">
               {pinnedProducts.map((p) => (
                 <Link
                   key={p._id}
@@ -281,7 +281,7 @@ export default function HomePage() {
                   className="shrink-0"
                 >
                   <div className="group cursor-pointer text-center">
-                    <div className="relative w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-full overflow-hidden bg-gray-100 mb-2 mx-auto">
+                    <div className="relative w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full overflow-hidden bg-gray-100 mb-2 mx-auto">
                       {p.photos?.[0] ? (
                         <img
                           src={p.photos[0]}
@@ -291,11 +291,15 @@ export default function HomePage() {
                       ) : (
                         <div className="w-full h-full bg-gray-200" />
                       )}
+                      {/* Gradient overlay with category and price */}
+                      <div className="absolute inset-0 rounded-full bg-gradient-to-t from-black/60 via-black/30 to-transparent flex flex-col items-center justify-end pb-2">
+                        <p className="text-[10px] sm:text-xs text-gray-200 font-medium mb-0.5">{p.category}</p>
+                        <p className="text-xs sm:text-sm font-bold text-white">
+                          {(p.price ?? 0).toLocaleString()} IQD
+                        </p>
+                      </div>
                     </div>
-                    <p className="text-xs font-medium text-[var(--color-ink)] line-clamp-2 mb-0.5 max-w-[80px] sm:max-w-[96px] md:max-w-[112px]">{p.title}</p>
-                    <p className="text-xs font-bold text-[var(--color-ember-600)]">
-                      {(p.price ?? 0).toLocaleString()} IQD
-                    </p>
+                    <p className="text-xs font-medium text-[var(--color-ink)] line-clamp-2 max-w-[96px] sm:max-w-[112px] md:max-w-[128px]">{p.title}</p>
                   </div>
                 </Link>
               ))}
