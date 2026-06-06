@@ -129,7 +129,7 @@ function MetaRow({ condition, setCondition, sort, setSort, brands, setBrands, ha
 
   return (
     <div className="relative z-20">
-      <div className="flex items-center justify-between gap-2 mb-2.5 px-0.5">
+      <div className="flex items-center justify-between gap-2 mb-2.5 px-0.5 h-7">
         <div className="min-w-0">
           <SegmentedControl
             variant="underline"
@@ -138,7 +138,7 @@ function MetaRow({ condition, setCondition, sort, setSort, brands, setBrands, ha
             options={conditionOptions}
           />
         </div>
-        <div className="inline-flex items-center gap-1 shrink-0">
+        <div className="inline-flex items-center gap-1 shrink-0 h-7">
           <BrandSelector brands={brands} setBrands={setBrands} />
           <SelectMenu
             value={sort}
@@ -148,7 +148,6 @@ function MetaRow({ condition, setCondition, sort, setSort, brands, setBrands, ha
             align="end"
             variant="ghost"
             title={m.sortBy().replace(":", "")}
-            className="text-xs py-1 px-2 h-7"
           />
         </div>
       </div>
