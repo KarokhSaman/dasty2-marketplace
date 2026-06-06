@@ -107,10 +107,11 @@ export default function ProductStatusMenu({ product, onStatusChange }) {
           setOpen((v) => !v);
           setConfirmStatus(null);
         }}
-        className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors border ${currentColor.bg} ${currentColor.text} border-current`}
+        className={`text-xs font-semibold px-4 py-2 rounded-lg transition-colors border flex items-center gap-2 ${currentColor.bg} ${currentColor.text} border-current hover:opacity-80`}
         title="Click to change status"
       >
-        {STATUS_LABELS[product.status]()}
+        <span>Status:</span>
+        <span className="font-bold">{STATUS_LABELS[product.status]()}</span>
       </button>
 
       {/* Desktop: anchored dropdown */}

@@ -353,36 +353,7 @@ export default function AdminProductsPage() {
 
               {/* Actions — mobile only */}
               <div className="flex sm:hidden items-center gap-2 mt-3 flex-wrap">
-                {product.status === "pending" && (
-                  <>
-                    <button onClick={() => approve(product)}
-                      className="text-xs bg-green-500 hover:bg-green-600 text-white font-semibold px-4 py-2 rounded-lg transition-colors">
-                      {m.adminApprove()}
-                    </button>
-                    <button onClick={() => { setRejectingId(product._id); setRejectReason(""); }}
-                      className="text-xs bg-red-50 hover:bg-red-100 text-red-600 font-semibold px-4 py-2 rounded-lg transition-colors border border-red-100">
-                      {m.adminReject()}
-                    </button>
-                  </>
-                )}
-                {product.status === "approved" && (
-                  <button onClick={() => markSold(product)}
-                    className="text-xs bg-blue-50 hover:bg-blue-100 text-blue-600 font-semibold px-4 py-2 rounded-lg transition-colors border border-blue-100">
-                    {m.adminMarkSold()}
-                  </button>
-                )}
-                {product.status === "sold" && (
-                  <button onClick={() => markPaid(product)}
-                    className="text-xs bg-purple-50 hover:bg-purple-100 text-purple-600 font-semibold px-4 py-2 rounded-lg transition-colors border border-purple-100">
-                    {m.adminMarkPaid()}
-                  </button>
-                )}
-                {product.status === "rejected" && (
-                  <button onClick={() => approve(product)}
-                    className="text-xs bg-green-50 hover:bg-green-100 text-green-600 font-semibold px-4 py-2 rounded-lg transition-colors border border-green-100">
-                    {m.adminApprove()}
-                  </button>
-                )}
+                <ProductStatusMenu product={product} onStatusChange={(newStatus) => handleStatusChange(product, newStatus)} />
                 {confirmDel === product._id ? (
                   <div className="flex gap-1.5 ms-auto">
                     <button onClick={() => deleteProduct(product._id)}
