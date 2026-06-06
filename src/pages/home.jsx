@@ -240,7 +240,33 @@ export default function HomePage() {
 
   return (
     <div className="pb-6">
-      {/* VIP Pinned products carousel - at the top */}
+      <SearchRow
+        search={search}
+        setSearch={updateFilter("search")}
+        city={city}
+        setCity={updateFilter("city")}
+        availableCities={availableCities}
+        animate={animateEntrance}
+      />
+
+      <div className={`mb-3 ${animateEntrance ? "fade-up" : ""}`}>
+        <CategoryBar selected={category} onSelect={updateFilter("category")} />
+      </div>
+
+      {!isLoading && (
+        <MetaRow
+          condition={condition}
+          setCondition={updateFilter("condition")}
+          sort={sort}
+          setSort={updateFilter("sort")}
+          hasActiveFilter={
+            condition !== "all" || city !== "all" || sort !== "default" || category !== "all" || search !== ""
+          }
+          onReset={() => setFilters(INITIAL_FILTERS)}
+        />
+      )}
+
+      {/* VIP Pinned products carousel - under filters */}
       {pinnedProducts.length > 0 && (
         <div className={`mb-6 ${animateEntrance ? "fade-up" : ""}`}>
           <h2 className="text-sm font-bold text-[var(--color-ink)] mb-3 px-0.5">
@@ -276,32 +302,6 @@ export default function HomePage() {
             </div>
           </div>
         </div>
-      )}
-
-      <SearchRow
-        search={search}
-        setSearch={updateFilter("search")}
-        city={city}
-        setCity={updateFilter("city")}
-        availableCities={availableCities}
-        animate={animateEntrance}
-      />
-
-      <div className={`mb-3 ${animateEntrance ? "fade-up" : ""}`}>
-        <CategoryBar selected={category} onSelect={updateFilter("category")} />
-      </div>
-
-      {!isLoading && (
-        <MetaRow
-          condition={condition}
-          setCondition={updateFilter("condition")}
-          sort={sort}
-          setSort={updateFilter("sort")}
-          hasActiveFilter={
-            condition !== "all" || city !== "all" || sort !== "default" || category !== "all" || search !== ""
-          }
-          onReset={() => setFilters(INITIAL_FILTERS)}
-        />
       )}
 
       {isLoading && (
