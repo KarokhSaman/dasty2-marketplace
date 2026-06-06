@@ -336,38 +336,20 @@ export default function AdminProductsPage() {
                 {/* Actions — desktop only */}
                 <div className="hidden sm:flex items-center gap-2 shrink-0">
                   <ProductStatusMenu product={product} onStatusChange={(newStatus) => handleStatusChange(product, newStatus)} />
-                  {confirmDel === product._id ? (
-                    <div className="flex gap-1">
-                      <button onClick={() => deleteProduct(product._id)}
-                        className="text-xs bg-red-500 hover:bg-red-600 text-white font-semibold px-2 py-1.5 rounded-lg transition-colors">✓</button>
-                      <button onClick={() => setConfirmDel(null)}
-                        className="text-xs bg-gray-100 hover:bg-white/60 text-[var(--color-ink-soft)] px-2 py-1.5 rounded-lg transition-colors">✕</button>
-                    </div>
-                  ) : (
-                    <button onClick={() => setConfirmDel(product._id)}
-                      className="text-xs text-[var(--color-ink-fade)] hover:text-red-500 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors">
-                      {m.adminDelete()}
-                    </button>
-                  )}
+                  <button onClick={() => setConfirmDel(product._id)}
+                    className="text-xs text-[var(--color-ink-fade)] hover:text-red-500 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors">
+                    {m.adminDelete()}
+                  </button>
                 </div>
               </div>
 
               {/* Actions — mobile only */}
               <div className="flex sm:hidden items-center gap-2 mt-3 flex-wrap">
                 <ProductStatusMenu product={product} onStatusChange={(newStatus) => handleStatusChange(product, newStatus)} />
-                {confirmDel === product._id ? (
-                  <div className="flex gap-1.5 ms-auto">
-                    <button onClick={() => deleteProduct(product._id)}
-                      className="text-xs bg-red-500 hover:bg-red-600 text-white font-semibold px-3 py-2 rounded-lg transition-colors">✓</button>
-                    <button onClick={() => setConfirmDel(null)}
-                      className="text-xs bg-gray-100 hover:bg-white/60 text-[var(--color-ink-soft)] px-3 py-2 rounded-lg transition-colors">✕</button>
-                  </div>
-                ) : (
-                  <button onClick={() => setConfirmDel(product._id)}
-                    className="text-xs text-[var(--color-ink-fade)] hover:text-red-500 px-3 py-2 rounded-lg hover:bg-red-50 transition-colors ms-auto">
-                    {m.adminDelete()}
-                  </button>
-                )}
+                <button onClick={() => setConfirmDel(product._id)}
+                  className="text-xs text-[var(--color-ink-fade)] hover:text-red-500 px-3 py-2 rounded-lg hover:bg-red-50 transition-colors ms-auto">
+                  {m.adminDelete()}
+                </button>
               </div>
             </div>
 
@@ -472,6 +454,37 @@ export default function AdminProductsPage() {
           </div>
         ))}
       </div>
+
+      {/* Delete confirmation modal */}
+      {confirmDel && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm mx-auto">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-bold text-[var(--color-ink)]">Delete Product?</h3>
+            </div>
+            <p className="text-sm text-[var(--color-ink-soft)] mb-6">
+              Are you sure you want to delete this product? This action cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmDel(null)}
+                className="flex-1 px-4 py-2.5 rounded-lg border border-[var(--color-hairline)] text-[var(--color-ink)] font-semibold hover:bg-[var(--color-cream-deep)] transition-colors">
+                Cancel
+              </button>
+              <button
+                onClick={() => deleteProduct(confirmDel)}
+                className="flex-1 px-4 py-2.5 rounded-lg bg-red-500 hover:bg-red-600 text-white font-semibold transition-colors">
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
