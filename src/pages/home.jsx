@@ -6,7 +6,7 @@ import { useState, useMemo, useRef, useEffect, useLayoutEffect } from "react";
 import ProductCard from "@/components/buyer/ProductCard";
 import CategoryBar from "@/components/buyer/CategoryBar";
 import LocationPicker from "@/components/buyer/LocationPicker";
-import { SearchInput, SegmentedControl, SelectMenu, Skeleton } from "@/components/ui";
+import { SearchInput, SegmentedControl, Skeleton } from "@/components/ui";
 import { Link } from "@tanstack/react-router";
 import * as m from "@/paraglide/messages";
 import { getCategorySearchStrings } from "@/lib/categories";
@@ -53,6 +53,72 @@ function SearchRow({ search, setSearch, city, setCity, availableCities, animate 
   );
 }
 
+/** Sort dropdown with icon only */
+function SortMenu({ sort, setSort }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const isActive = sort !== "default";
+
+  const sortOptions = [
+    { value: "default",    label: m.sortDefault() },
+    { value: "price_asc",  label: "↑ " + m.sortPriceLow() },
+    { value: "price_desc", label: "↓ " + m.sortPriceHigh() },
+  ];
+
+  useEffect(() => {
+    if (!open) return;
+    function handleClickOutside(e) {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [open]);
+
+  const currentOption = sortOptions.find(o => o.value === sort) || sortOptions[0];
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen(!open)}
+        className={`inline-flex items-center justify-center w-7 h-7 rounded-full border transition-all duration-200 ${
+          isActive
+            ? "border-[var(--color-ember-400)] bg-[var(--color-ember-50)] text-[var(--color-ember-600)]"
+            : "border-transparent bg-[var(--color-sand)] hover:bg-[var(--color-ember-50)] text-[var(--color-ink)]"
+        }`}
+        title={currentOption?.label}
+      >
+        <SortIcon />
+      </button>
+      {open && (
+        <div className="absolute end-0 top-full mt-2 bg-white border border-[var(--color-hairline)] rounded-2xl shadow-[0_18px_44px_-20px_rgba(11,12,15,0.28)] z-30 overflow-hidden min-w-[190px]">
+          {sortOptions.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => {
+                setSort(opt.value);
+                setOpen(false);
+              }}
+              className={`flex items-center justify-between gap-4 w-full px-4 py-2.5 text-sm text-start whitespace-nowrap transition-colors ${
+                sort === opt.value
+                  ? "bg-[var(--color-ember-50)] text-[var(--color-ember-600)] font-semibold"
+                  : "text-[var(--color-ink)] hover:bg-[var(--color-cream)]"
+              }`}
+            >
+              {opt.label}
+              {sort === opt.value && (
+                <svg className="w-3.5 h-3.5 text-[var(--color-ember-500)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                </svg>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /** Brand multi-select dropdown component */
 function BrandSelector({ brands, setBrands }) {
   const [open, setOpen] = useState(false);
@@ -60,6 +126,7 @@ function BrandSelector({ brands, setBrands }) {
   const allBrands = getAllBrands();
   const selectedCount = brands.length;
   const label = selectedCount > 0 ? `Brands (${selectedCount})` : "All Brands";
+  const isActive = selectedCount > 0;
 
   useEffect(() => {
     if (!open) return;
@@ -82,7 +149,11 @@ function BrandSelector({ brands, setBrands }) {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen(!open)}
-        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-transparent bg-[var(--color-sand)] hover:bg-[var(--color-ember-50)] text-[var(--color-ink)] transition-all duration-200 text-[11.5px] font-semibold whitespace-nowrap"
+        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all duration-200 text-[11.5px] font-semibold whitespace-nowrap ${
+          isActive
+            ? "border-[var(--color-ember-400)] bg-[var(--color-ember-50)] text-[var(--color-ember-600)]"
+            : "border-transparent bg-[var(--color-sand)] hover:bg-[var(--color-ember-50)] text-[var(--color-ink)]"
+        }`}
       >
         {label}
         <svg className={`w-3 h-3 transition-transform duration-200 ${open ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -121,50 +192,34 @@ function MetaRow({ condition, setCondition, sort, setSort, brands, setBrands, ha
     { value: "used", label: m.conditionUsed() },
   ];
 
-  const sortOptions = [
-    { value: "default",    label: m.sortDefault() },
-    { value: "price_asc",  label: "↑ " + m.sortPriceLow() },
-    { value: "price_desc", label: "↓ " + m.sortPriceHigh() },
-  ];
-
   return (
     <div className="relative z-20">
       <div className="flex items-center justify-between gap-2 mb-2.5 px-0.5 h-7">
-        <div className="min-w-0">
+        <div className="inline-flex items-center gap-2 min-w-0">
           <SegmentedControl
             variant="underline"
             value={condition}
             onChange={setCondition}
             options={conditionOptions}
           />
+          {hasActiveFilter && (
+            <button
+              type="button"
+              onClick={onReset}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-[var(--color-ember-300)] bg-[var(--color-ember-50)] text-[var(--color-ember-600)] hover:bg-[var(--color-ember-100)] hover:border-[var(--color-ember-400)] font-semibold text-[11px] whitespace-nowrap shrink-0 transition-all duration-200"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.4} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              Reset
+            </button>
+          )}
         </div>
         <div className="inline-flex items-center gap-1 shrink-0 h-7">
           <BrandSelector brands={brands} setBrands={setBrands} />
-          <SelectMenu
-            value={sort}
-            options={sortOptions}
-            onChange={setSort}
-            leadingIcon={<SortIcon />}
-            align="end"
-            variant="ghost"
-            title={m.sortBy().replace(":", "")}
-          />
+          <SortMenu sort={sort} setSort={setSort} />
         </div>
       </div>
-      {hasActiveFilter && (
-        <div className="flex gap-1 mb-2">
-          <button
-            type="button"
-            onClick={onReset}
-            className="inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--color-ember-600)] hover:text-[var(--color-ember-700)] whitespace-nowrap"
-          >
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.4} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-            Reset
-          </button>
-        </div>
-      )}
     </div>
   );
 }
