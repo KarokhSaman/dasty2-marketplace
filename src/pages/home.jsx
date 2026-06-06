@@ -359,8 +359,26 @@ export default function HomePage() {
     [results, search, condition, sort, city, brands]);
   const totalCount = allProducts.length;
 
-  // Hover state for carousel
+  // Hover state for carousel and ref for auto-scroll
   const [isHovering, setIsHovering] = useState(false);
+  const carouselRef = useRef(null);
+
+  // Auto-scroll carousel every 3 seconds
+  useEffect(() => {
+    if (!carouselRef.current || isHovering || featuredFiltered.length === 0) return;
+
+    const interval = setInterval(() => {
+      if (carouselRef.current) {
+        const scrollAmount = 150; // Scroll by card width + gap
+        carouselRef.current.scrollBy({
+          left: scrollAmount,
+          behavior: "smooth",
+        });
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [isHovering, featuredFiltered.length]);
 
   const isLoading =
     status === "LoadingFirstPage" &&
@@ -404,6 +422,7 @@ export default function HomePage() {
             <span className="text-[var(--color-ember-600)] mr-1.5">🔥</span>VIP
           </h2>
           <div
+            ref={carouselRef}
             className="overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0"
             onMouseEnter={() => setIsHovering(true)}
             onMouseLeave={() => setIsHovering(false)}
