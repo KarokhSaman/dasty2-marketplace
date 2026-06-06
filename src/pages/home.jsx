@@ -490,7 +490,7 @@ export default function HomePage() {
                   className="shrink-0"
                 >
                   <div className="group cursor-pointer text-center">
-                    <div className="relative w-20 h-20 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-lg overflow-hidden bg-gray-100 mb-2 mx-auto">
+                    <div className="relative w-20 h-16 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-lg overflow-hidden bg-gray-100 mb-2 mx-auto">
                       {p.photos?.[0] ? (
                         <img
                           src={p.photos[0]}
@@ -516,7 +516,7 @@ export default function HomePage() {
                   className="shrink-0"
                 >
                   <div className="group cursor-pointer text-center">
-                    <div className="relative w-20 h-20 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-lg overflow-hidden bg-gray-100 mb-2 mx-auto">
+                    <div className="relative w-20 h-16 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-lg overflow-hidden bg-gray-100 mb-2 mx-auto">
                       {p.photos?.[0] ? (
                         <img
                           src={p.photos[0]}
@@ -541,7 +541,7 @@ export default function HomePage() {
 
       {/* Visual separator */}
       {featuredFiltered.length > 0 && (
-        <div className="sticky top-56 z-40 bg-white flex items-center gap-3 my-0 py-2">
+        <div className="sticky top-[206px] z-40 bg-white flex items-center gap-3 my-0 py-2">
           <div className="flex-1 h-px bg-[var(--color-hairline)]" />
           <p className="text-xs font-semibold text-[var(--color-ink-fade)] uppercase tracking-wide">All Products</p>
           <div className="flex-1 h-px bg-[var(--color-hairline)]" />
