@@ -24,20 +24,7 @@ export default function AdminShell({ children }) {
 
   // Fetch admin email on mount and when userId changes (admin switches)
   useEffect(() => {
-    const fetchAndCheckAdmin = async () => {
-      const res = await fetch("/api/admin/me");
-      const data = await res.json();
-      const newEmail = data.email ?? "";
-
-      // If admin email changed (different admin logged in), reload to refresh Convex token
-      if (adminEmail && adminEmail !== newEmail) {
-        window.location.reload();
-      } else {
-        setAdminEmail(newEmail);
-      }
-    };
-
-    fetchAndCheckAdmin();
+    fetch("/api/admin/me").then(r => r.json()).then(d => setAdminEmail(d.email ?? ""));
   }, [userId]);
 
   useEffect(() => {

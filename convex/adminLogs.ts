@@ -25,6 +25,9 @@ export const create = mutation({
       adminEmail = user?.email ?? "";
     }
 
+    // Debug: Log the userId and email being used
+    console.log(`[AdminLog] userId: ${identity?.userId}, email: ${adminEmail}, action: ${args.action}`);
+
     await ctx.db.insert("adminLogs", {
       ...args,
       adminEmail,
