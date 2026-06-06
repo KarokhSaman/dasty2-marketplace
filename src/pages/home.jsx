@@ -515,21 +515,9 @@ export default function HomePage() {
 
       {allProducts.length > 0 && (
         <div className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 ${animateEntrance ? "stagger" : ""}`}>
-          {allProducts.map((p) => {
-            const isFeatured = featuredFiltered.some(f => f._id === p._id);
-            return (
-              <div key={p._id} className="relative">
-                <ProductCard product={p} onSave={onSave} />
-                {isFeatured && (
-                  <div className="absolute top-2.5 end-2.5 z-10">
-                    <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-[var(--color-ember-500)] text-white shadow-md">
-                      <span className="text-lg">⭐</span>
-                    </span>
-                  </div>
-                )}
-              </div>
-            );
-          })}
+          {allProducts.map((p) => (
+            <ProductCard key={p._id} product={p} onSave={onSave} />
+          ))}
         </div>
       )}
 
