@@ -107,7 +107,7 @@ export default function ProductStatusMenu({ product, onStatusChange }) {
           setOpen((v) => !v);
           setConfirmStatus(null);
         }}
-        className={`text-xs font-semibold px-4 py-2 rounded-lg transition-colors border flex items-center gap-2 ${currentColor.bg} ${currentColor.text} border-current hover:opacity-80`}
+        className={`text-xs font-semibold px-4 py-1 sm:py-1.5 rounded-lg transition-colors border flex items-center gap-2 ${currentColor.bg} ${currentColor.text} border-current hover:opacity-80`}
         title="Click to change status"
       >
         <span>Status:</span>

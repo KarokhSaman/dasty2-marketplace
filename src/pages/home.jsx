@@ -393,23 +393,36 @@ export default function HomePage() {
     const element = carouselRef.current;
     const scrollAmount = 150; // Scroll by card width + gap
     const isRTL = document.documentElement.dir === "rtl";
+    let lastScrollWidth = 0;
 
     const interval = setInterval(() => {
       if (element) {
-        const oneSetWidth = element.scrollWidth / 2; // Width of one set of products
+        // Recalculate scrollWidth each interval to account for images loading
+        const currentScrollWidth = element.scrollWidth;
 
-        // Check if we've scrolled past the halfway point (reached cloned section)
-        // If so, reset to near the beginning for seamless loop
-        if (Math.abs(element.scrollLeft) >= oneSetWidth - scrollAmount) {
-          element.scrollLeft = 0;
+        // Only use the width if it's stable (hasn't changed recently, meaning images are loaded)
+        if (currentScrollWidth > 0 && currentScrollWidth !== lastScrollWidth) {
+          lastScrollWidth = currentScrollWidth;
+          return; // Skip this scroll, wait for next interval when width stabilizes
         }
 
-        // Auto-scroll - direction depends on text direction
-        const scrollValue = isRTL ? -scrollAmount : scrollAmount;
-        element.scrollBy({
-          left: scrollValue,
-          behavior: "smooth",
-        });
+        lastScrollWidth = currentScrollWidth;
+        const oneSetWidth = currentScrollWidth / 2;
+
+        // Get current scroll position
+        const currentScroll = Math.abs(element.scrollLeft);
+
+        // Reset to beginning if we've scrolled past halfway point
+        if (currentScroll >= oneSetWidth - scrollAmount) {
+          element.scrollLeft = 0;
+        } else {
+          // Auto-scroll - direction depends on text direction
+          const scrollValue = isRTL ? -scrollAmount : scrollAmount;
+          element.scrollBy({
+            left: scrollValue,
+            behavior: "smooth",
+          });
+        }
       }
     }, 3000);
 
