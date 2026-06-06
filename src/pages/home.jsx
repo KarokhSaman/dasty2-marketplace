@@ -53,6 +53,66 @@ function SearchRow({ search, setSearch, city, setCity, availableCities, animate 
   );
 }
 
+/** Brand multi-select dropdown component */
+function BrandSelector({ brands, setBrands }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const allBrands = getAllBrands();
+  const selectedCount = brands.length;
+  const label = selectedCount > 0 ? `Brands (${selectedCount})` : "All Brands";
+
+  useEffect(() => {
+    if (!open) return;
+    function handleClickOutside(e) {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [open]);
+
+  const toggleBrand = (brand) => {
+    if (brands.includes(brand)) {
+      setBrands(brands.filter(b => b !== brand));
+    } else {
+      setBrands([...brands, brand]);
+    }
+  };
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen(!open)}
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-transparent bg-[var(--color-sand)] hover:bg-[var(--color-ember-50)] text-[var(--color-ink)] transition-all duration-200 text-[11.5px] font-semibold whitespace-nowrap"
+      >
+        {label}
+        <svg className={`w-3 h-3 transition-transform duration-200 ${open ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      {open && (
+        <div className="absolute end-0 top-full mt-2 bg-white border border-[var(--color-hairline)] rounded-2xl shadow-[0_18px_44px_-20px_rgba(11,12,15,0.28)] z-30 overflow-hidden min-w-[190px]">
+          <div className="max-h-64 overflow-y-auto">
+            {allBrands.map((brand) => (
+              <label
+                key={brand}
+                className="flex items-center gap-2 px-4 py-2.5 hover:bg-[var(--color-cream)] cursor-pointer text-sm text-[var(--color-ink)] transition-colors"
+              >
+                <input
+                  type="checkbox"
+                  checked={brands.includes(brand)}
+                  onChange={() => toggleBrand(brand)}
+                  className="w-4 h-4 rounded accent-[var(--color-ember-600)]"
+                />
+                <span>{brand}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /** Single row: condition tabs (left) + filters (right). Count lives in FloatingCount. */
 function MetaRow({ condition, setCondition, sort, setSort, brands, setBrands, hasActiveFilter, onReset }) {
   const conditionOptions = [
@@ -67,13 +127,6 @@ function MetaRow({ condition, setCondition, sort, setSort, brands, setBrands, ha
     { value: "price_desc", label: "↓ " + m.sortPriceHigh() },
   ];
 
-  const allBrands = getAllBrands();
-  const brandOptions = allBrands.map(b => ({ value: b, label: b }));
-
-  const brandsArray = Array.isArray(brands) ? brands : (brands ? [brands] : []);
-  const selectedBrandCount = brandsArray.length > 0 ? brandsArray.length : 0;
-  const brandButtonLabel = selectedBrandCount > 0 ? `Brands (${selectedBrandCount})` : "All Brands";
-
   return (
     <div className="relative z-20">
       <div className="flex items-center justify-between gap-2 mb-2.5 px-0.5">
@@ -86,22 +139,7 @@ function MetaRow({ condition, setCondition, sort, setSort, brands, setBrands, ha
           />
         </div>
         <div className="inline-flex items-center gap-1 shrink-0">
-          <SelectMenu
-            value={JSON.stringify(brandsArray)}
-            options={brandOptions}
-            onChange={(val) => {
-              const brand = JSON.parse(val);
-              if (brandsArray.includes(brand)) {
-                setBrands(brandsArray.filter(b => b !== brand));
-              } else {
-                setBrands([...brandsArray, brand]);
-              }
-            }}
-            align="end"
-            variant="ghost"
-            title={brandButtonLabel}
-            className="text-xs py-1 px-2 h-7"
-          />
+          <BrandSelector brands={brands} setBrands={setBrands} />
           <SelectMenu
             value={sort}
             options={sortOptions}
