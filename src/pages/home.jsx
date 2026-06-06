@@ -80,7 +80,7 @@ function SortMenu({ sort, setSort }) {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen(!open)}
-        className={`inline-flex items-center justify-center w-7 h-7 rounded-full border transition-all duration-200 ${
+        className={`inline-flex items-center justify-center h-7 px-1.5 rounded-full border transition-all duration-200 ${
           isActive
             ? "border-[var(--color-ember-400)] bg-[var(--color-ember-50)] text-[var(--color-ember-600)]"
             : "border-transparent bg-[var(--color-sand)] hover:bg-[var(--color-ember-50)] text-[var(--color-ink)]"
