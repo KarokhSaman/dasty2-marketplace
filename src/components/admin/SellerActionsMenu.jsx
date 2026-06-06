@@ -33,7 +33,7 @@ export default function SellerActionsMenu({ seller, onPromote, onToggleActive, o
 
   const actions = confirmPromote ? (
     <div className="p-4 sm:p-3">
-      <p className="text-[13px] font-semibold text-[var(--color-ink)] mb-2">Promote to Admin?</p>
+      <p className="text-[13px] font-semibold text-[var(--color-ink)] mb-1">Promote to Admin?</p>
       <p className="text-xs text-[var(--color-ink-fade)] mb-3">
         This seller will no longer have seller access. They can only access the admin dashboard.
       </p>
@@ -43,7 +43,7 @@ export default function SellerActionsMenu({ seller, onPromote, onToggleActive, o
             onPromote();
             close();
           }}
-          className="flex-1 text-sm bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-xl transition-colors"
+          className="flex-1 text-sm bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl transition-colors"
         >
           Promote
         </button>
