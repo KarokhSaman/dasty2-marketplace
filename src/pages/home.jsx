@@ -304,6 +304,15 @@ export default function HomePage() {
         </div>
       )}
 
+      {/* Visual separator */}
+      {pinnedProducts.length > 0 && (
+        <div className="flex items-center gap-3 my-6">
+          <div className="flex-1 h-px bg-[var(--color-hairline)]" />
+          <p className="text-xs font-semibold text-[var(--color-ink-fade)] uppercase tracking-wide">All Products</p>
+          <div className="flex-1 h-px bg-[var(--color-hairline)]" />
+        </div>
+      )}
+
       {isLoading && (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
           {Array.from({ length: 8 }).map((_, i) => <Skeleton.ProductCard key={i} />)}
