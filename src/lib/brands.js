@@ -142,3 +142,13 @@ export function getBrandOptions(category) {
 export function hasBrandOption(category) {
   return !!BRAND_OPTIONS[category];
 }
+
+export function getAllBrands() {
+  const brands = new Set();
+  Object.values(BRAND_OPTIONS).forEach((categoryBrands) => {
+    categoryBrands.forEach((brand) => {
+      if (brand !== "Other") brands.add(brand);
+    });
+  });
+  return Array.from(brands).sort();
+}

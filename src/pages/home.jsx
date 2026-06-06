@@ -10,6 +10,7 @@ import { SearchInput, SegmentedControl, SelectMenu, Skeleton } from "@/component
 import { Link } from "@tanstack/react-router";
 import * as m from "@/paraglide/messages";
 import { getCategorySearchStrings } from "@/lib/categories";
+import { getAllBrands } from "@/lib/brands";
 import { seedProductCache } from "@/lib/productCache";
 import { useGlobalSellerSession } from "@/lib/SellerSessionContext";
 import {
@@ -52,8 +53,8 @@ function SearchRow({ search, setSearch, city, setCity, availableCities, animate 
   );
 }
 
-/** Single row: condition tabs (left) + reset + sort (right). Count lives in FloatingCount. */
-function MetaRow({ condition, setCondition, sort, setSort, hasActiveFilter, onReset }) {
+/** Single row: condition tabs (left) + filters (right). Count lives in FloatingCount. */
+function MetaRow({ condition, setCondition, sort, setSort, brands, setBrands, hasActiveFilter, onReset }) {
   const conditionOptions = [
     { value: "all",  label: m.allItems() },
     { value: "new",  label: m.conditionNew() },
@@ -66,18 +67,55 @@ function MetaRow({ condition, setCondition, sort, setSort, hasActiveFilter, onRe
     { value: "price_desc", label: "↓ " + m.sortPriceHigh() },
   ];
 
+  const allBrands = getAllBrands();
+  const brandOptions = allBrands.map(b => ({ value: b, label: b }));
+
+  const brandsArray = Array.isArray(brands) ? brands : (brands ? [brands] : []);
+  const selectedBrandCount = brandsArray.length > 0 ? brandsArray.length : 0;
+  const brandButtonLabel = selectedBrandCount > 0 ? `Brands (${selectedBrandCount})` : "All Brands";
+
   return (
-    <div className="relative z-20 flex items-center justify-between gap-2 mb-2.5 px-0.5">
-      <div className="min-w-0">
-        <SegmentedControl
-          variant="underline"
-          value={condition}
-          onChange={setCondition}
-          options={conditionOptions}
-        />
+    <div className="relative z-20">
+      <div className="flex items-center justify-between gap-2 mb-2.5 px-0.5">
+        <div className="min-w-0">
+          <SegmentedControl
+            variant="underline"
+            value={condition}
+            onChange={setCondition}
+            options={conditionOptions}
+          />
+        </div>
+        <div className="inline-flex items-center gap-1 shrink-0">
+          <SelectMenu
+            value={JSON.stringify(brandsArray)}
+            options={brandOptions}
+            onChange={(val) => {
+              const brand = JSON.parse(val);
+              if (brandsArray.includes(brand)) {
+                setBrands(brandsArray.filter(b => b !== brand));
+              } else {
+                setBrands([...brandsArray, brand]);
+              }
+            }}
+            align="end"
+            variant="ghost"
+            title={brandButtonLabel}
+            className="text-xs py-1 px-2 h-7"
+          />
+          <SelectMenu
+            value={sort}
+            options={sortOptions}
+            onChange={setSort}
+            leadingIcon={<SortIcon />}
+            align="end"
+            variant="ghost"
+            title={m.sortBy().replace(":", "")}
+            className="text-xs py-1 px-2 h-7"
+          />
+        </div>
       </div>
-      <div className="inline-flex items-center gap-2 shrink-0">
-        {hasActiveFilter && (
+      {hasActiveFilter && (
+        <div className="flex gap-1 mb-2">
           <button
             type="button"
             onClick={onReset}
@@ -88,17 +126,8 @@ function MetaRow({ condition, setCondition, sort, setSort, hasActiveFilter, onRe
             </svg>
             Reset
           </button>
-        )}
-        <SelectMenu
-          value={sort}
-          options={sortOptions}
-          onChange={setSort}
-          leadingIcon={<SortIcon />}
-          align="end"
-          variant="ghost"
-          title={m.sortBy().replace(":", "")}
-        />
-      </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -130,13 +159,13 @@ function EndDivider({ label }) {
 
 // ── Filters state ──────────────────────────────────────────
 const INITIAL_FILTERS = {
-  search: "", category: "all", condition: "all", sort: "default", city: "all",
+  search: "", category: "all", condition: "all", sort: "default", city: "all", brands: [],
 };
 
 export default function HomePage() {
   const { sellerId, ready } = useGlobalSellerSession();
   const [filters, setFilters] = useState(INITIAL_FILTERS);
-  const { search, category, condition, sort, city } = filters;
+  const { search, category, condition, sort, city, brands } = filters;
   const updateFilter = (key) => (value) => setFilters((f) => ({ ...f, [key]: value }));
   const sentinelRef = useRef(null);
 
@@ -151,6 +180,7 @@ export default function HomePage() {
       setAnimateEntrance(true);
     }
   }, []);
+
 
   const { initialItems, cachedFeatured, cachedResults, saveState } =
     useHomeStatePersistence(filters, setFilters, DEFAULT_PAGE_SIZE);
@@ -218,7 +248,8 @@ export default function HomePage() {
     const matchCond   = condition === "all" || p.condition === condition;
     const matchCity   = city === "all" || p.city === city;
     const matchCat    = skipCategory ? true : (category === "all" || p.category === category);
-    return matchSearch && matchCond && matchCity && matchCat;
+    const matchBrand  = brands.length === 0 || (p.brand && brands.includes(p.brand));
+    return matchSearch && matchCond && matchCity && matchCat && matchBrand;
   };
 
   const applySort = (list) => {
@@ -259,8 +290,10 @@ export default function HomePage() {
           setCondition={updateFilter("condition")}
           sort={sort}
           setSort={updateFilter("sort")}
+          brands={brands}
+          setBrands={updateFilter("brands")}
           hasActiveFilter={
-            condition !== "all" || city !== "all" || sort !== "default" || category !== "all" || search !== ""
+            condition !== "all" || city !== "all" || sort !== "default" || category !== "all" || search !== "" || brands.length > 0
           }
           onReset={() => setFilters(INITIAL_FILTERS)}
         />
