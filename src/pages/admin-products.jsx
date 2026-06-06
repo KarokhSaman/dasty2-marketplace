@@ -36,6 +36,7 @@ export default function AdminProductsPage() {
   const removeProduct       = useMutation(api.products.remove);
   const adminUpdatePhotos   = useMutation(api.products.adminUpdatePhotos);
   const setFeatured         = useMutation(api.products.setFeatured);
+  const setPinned           = useMutation(api.products.setPinned);
   const createNotif     = useMutation(api.notifications.create);
   const createLog       = useMutation(api.adminLogs.create);
 
@@ -45,6 +46,7 @@ export default function AdminProductsPage() {
   }, []);
 
   const [featuredPickerId, setFeaturedPickerId] = useState(null);
+  const [pinningProductId, setPinningProductId] = useState(null);
   const [tab,          setTab]          = useState(searchParams.get("tab") ?? "pending");
   const [search,       setSearch]       = useState("");
   const [rejectingId,  setRejectingId]  = useState(focusId ?? null);
@@ -285,6 +287,7 @@ export default function AdminProductsPage() {
                                 await setFeatured({ id: product._id, featured: true, featuredUntil: until });
                                 await log("featured", product, opt.label);
                                 setFeaturedPickerId(null);
+                                setPinningProductId(product._id);
                               }}
                               className="w-full text-start px-2 py-1.5 text-xs text-[var(--color-ink)] hover:bg-amber-50 hover:text-amber-700 rounded-lg transition-colors"
                             >
@@ -468,6 +471,37 @@ export default function AdminProductsPage() {
               </button>
               <button
                 onClick={() => setConfirmDel(null)}
+                className="flex-1 text-sm bg-[var(--color-cream-deep)] hover:bg-[var(--color-hairline)] text-[var(--color-ink)] py-2.5 rounded-xl transition-colors">
+                {m.adminCancel()}
+              </button>
+            </div>
+          </div>
+        </BottomSheet>
+      )}
+
+      {/* Pin to top confirmation */}
+      {pinningProductId && (
+        <BottomSheet open={true} onClose={() => setPinningProductId(null)}>
+          <div className="p-4 sm:p-3">
+            <p className="text-[13px] font-semibold text-[var(--color-ink)] mb-1">
+              Pin this product to top?
+            </p>
+            <p className="text-xs text-[var(--color-ink-fade)] mb-3">
+              This product will appear as the first item on the buyer home page for the feature duration.
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={async () => {
+                  const product = products.find(p => p._id === pinningProductId);
+                  await setPinned({ id: pinningProductId, pinned: true });
+                  await log("pinned_to_top", product);
+                  setPinningProductId(null);
+                }}
+                className="flex-1 text-sm bg-[var(--color-ember-600)] hover:bg-[var(--color-ember-700)] text-white font-semibold py-2.5 rounded-xl transition-colors">
+                Pin to Top
+              </button>
+              <button
+                onClick={() => setPinningProductId(null)}
                 className="flex-1 text-sm bg-[var(--color-cream-deep)] hover:bg-[var(--color-hairline)] text-[var(--color-ink)] py-2.5 rounded-xl transition-colors">
                 {m.adminCancel()}
               </button>

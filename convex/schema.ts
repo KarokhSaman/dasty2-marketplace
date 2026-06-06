@@ -25,6 +25,8 @@ export default defineSchema({
     sellerPhone: v.string(),
     featured:      v.optional(v.boolean()),
     featuredUntil: v.optional(v.string()), // "YYYY-MM-DD" — undefined means indefinite
+    pinned:        v.optional(v.boolean()),
+    pinnedUntil:   v.optional(v.string()), // "YYYY-MM-DD" — undefined means indefinite
     views: v.optional(v.number()),
     notes: v.optional(v.string()),
     approvedBy: v.optional(v.string()),

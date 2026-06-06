@@ -367,6 +367,26 @@ export const setFeatured = mutation({
     await ctx.db.patch(id, {
       featured,
       featuredUntil: featured ? featuredUntil : undefined,
+      pinned: featured ? false : undefined, // Remove pin when unfeatureing
+      pinnedUntil: undefined,
+    });
+  },
+});
+
+export const setPinned = mutation({
+  args: {
+    id:    v.id("products"),
+    pinned: v.boolean(),
+  },
+  handler: async (ctx, { id, pinned }) => {
+    await requireAdmin(ctx);
+    const product = await ctx.db.get(id);
+    if (!product) return;
+
+    // Pin duration matches feature duration
+    await ctx.db.patch(id, {
+      pinned,
+      pinnedUntil: pinned ? product.featuredUntil : undefined,
     });
   },
 });
