@@ -391,9 +391,9 @@ export default function HomePage() {
         />
       )}
 
-      {/* VIP Pinned products carousel - under filters */}
+      {/* VIP Pinned products carousel - STICKY */}
       {pinnedProducts.length > 0 && (
-        <div className={`mb-6 ${animateEntrance ? "fade-up" : ""}`}>
+        <div className={`sticky top-0 z-40 bg-white pt-3 pb-6 -mx-4 px-4 sm:mx-0 sm:px-0 mb-6 border-b border-[var(--color-hairline)] ${animateEntrance ? "fade-up" : ""}`}>
           <h2 className="text-sm font-bold text-[var(--color-ink)] mb-3 px-0.5">
             <span className="text-[var(--color-ember-600)] mr-1.5">🔥</span>VIP
           </h2>
@@ -429,8 +429,46 @@ export default function HomePage() {
         </div>
       )}
 
+      {/* Featured products carousel - scrollable */}
+      {featured.length > 0 && (
+        <div className={`mb-6 ${animateEntrance ? "fade-up" : ""}`}>
+          <h2 className="text-sm font-bold text-[var(--color-ink)] mb-3 px-0.5">
+            <span className="text-[var(--color-ember-500)] mr-1.5">⭐</span>Featured
+          </h2>
+          <div className="overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
+            <div className="flex gap-4 sm:gap-5">
+              {featured.map((p) => (
+                <Link
+                  key={p._id}
+                  to={`/products/${p._id}`}
+                  className="shrink-0"
+                >
+                  <div className="group cursor-pointer text-center">
+                    <div className="relative w-22 h-22 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full overflow-hidden bg-gray-100 mb-2 mx-auto">
+                      {p.photos?.[0] ? (
+                        <img
+                          src={p.photos[0]}
+                          alt={p.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gray-200" />
+                      )}
+                    </div>
+                    <p className="text-[10px] sm:text-xs text-[var(--color-ink-fade)] font-medium mb-0.5">{p.category}</p>
+                    <p className="text-xs sm:text-sm font-bold text-[var(--color-ember-600)]">
+                      {(p.price ?? 0).toLocaleString()} IQD
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Visual separator */}
-      {pinnedProducts.length > 0 && (
+      {(pinnedProducts.length > 0 || featured.length > 0) && (
         <div className="flex items-center gap-3 my-6">
           <div className="flex-1 h-px bg-[var(--color-hairline)]" />
           <p className="text-xs font-semibold text-[var(--color-ink-fade)] uppercase tracking-wide">All Products</p>
@@ -444,11 +482,10 @@ export default function HomePage() {
         </div>
       )}
 
-      {!isLoading && totalCount === 0 && <EmptyState />}
+      {!isLoading && regular.length === 0 && featured.length === 0 && <EmptyState />}
 
-      {totalCount > 0 && (
+      {regular.length > 0 && (
         <div className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 ${animateEntrance ? "stagger" : ""}`}>
-          {featured.map((p) => <ProductCard key={p._id} product={p} onSave={onSave} />)}
           {regular.map((p)  => <ProductCard key={p._id} product={p} onSave={onSave} />)}
         </div>
       )}
