@@ -14,6 +14,7 @@ export const BRAND_OPTIONS = {
     "Cosatto",
     "Uppababy",
     "Nuna",
+    "Kidilo",
     "Other",
   ],
   "Car Seats": [
@@ -27,6 +28,7 @@ export const BRAND_OPTIONS = {
     "Clek",
     "Doona",
     "Uppababy",
+    "Kidilo",
     "Other",
   ],
   "Carry Cot": [
@@ -37,6 +39,7 @@ export const BRAND_OPTIONS = {
     "Nuna",
     "Phil & Teds",
     "Bugaboo",
+    "Kidilo",
     "Other",
   ],
   "Bed": [
@@ -47,6 +50,7 @@ export const BRAND_OPTIONS = {
     "Tutti Bambini",
     "Stokke",
     "Uppababy",
+    "Kidilo",
     "Other",
   ],
   "Feeding & Nursing": [
@@ -58,6 +62,7 @@ export const BRAND_OPTIONS = {
     "MAM",
     "Pigeon",
     "NUK",
+    "Kidilo",
     "Other",
   ],
   "Bouncers & Swings": [
@@ -68,6 +73,7 @@ export const BRAND_OPTIONS = {
     "Joie",
     "Babybjörn",
     "4moms",
+    "Kidilo",
     "Other",
   ],
   "High Chairs": [
@@ -78,6 +84,7 @@ export const BRAND_OPTIONS = {
     "Nuna",
     "Peg Perego",
     "Cosatto",
+    "Kidilo",
     "Other",
   ],
   "Toys & Play": [
@@ -89,6 +96,7 @@ export const BRAND_OPTIONS = {
     "VTech",
     "Infantino",
     "Tomy",
+    "Kidilo",
     "Other",
   ],
   "Electronics & Monitors": [
@@ -98,6 +106,7 @@ export const BRAND_OPTIONS = {
     "HelloBaby",
     "Cocoo Care",
     "Summer",
+    "Kidilo",
     "Other",
   ],
   "Baby Walker": [
@@ -107,6 +116,7 @@ export const BRAND_OPTIONS = {
     "Safety 1st",
     "Joie",
     "Babymoov",
+    "Kidilo",
     "Other",
   ],
 };
