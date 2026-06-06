@@ -346,23 +346,31 @@ export default function HomePage() {
   const applySort = (list) => {
     if (sort === "price_asc")  return [...list].sort((a, b) => a.price - b.price);
     if (sort === "price_desc") return [...list].sort((a, b) => b.price - a.price);
-    return list;
+    // Default: sort by publication date (newest first)
+    return [...list].sort((a, b) => new Date(b.dateAdded) - new Date(a.dateAdded));
   };
 
-  // VIP (pinned) products only - these will be sticky
-  const pinnedIds = useMemo(() => new Set(pinnedProducts.map((p) => p._id)), [pinnedProducts]);
-  const pinnedFiltered = useMemo(() => applySort(pinnedProducts.filter((p) => matchesFilters(p, { skipCategory: true }))),
-    [pinnedProducts, search, condition, sort, city, brands]);
-
-  // Featured products only - these will NOT be sticky
+  // Featured products for carousel
   const featuredFiltered = useMemo(() => applySort(featuredProducts.filter((p) => matchesFilters(p, { skipCategory: true }))),
     [featuredProducts, search, condition, sort, city, brands]);
-  const featuredOnly = useMemo(() => featuredFiltered.filter(f => !pinnedIds.has(f._id)), [featuredFiltered, pinnedIds]);
 
   // All products: includes regular, featured, and pinned
   const allProducts = useMemo(() => applySort(results.filter((p) => matchesFilters(p, { skipCategory: true }))),
     [results, search, condition, sort, city, brands]);
-  const totalCount = pinnedFiltered.length + featuredOnly.length + allProducts.length;
+  const totalCount = allProducts.length;
+
+  // Auto-slide carousel state
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [isHovering, setIsHovering] = useState(false);
+
+  // Auto-slide effect
+  useEffect(() => {
+    if (featuredFiltered.length === 0 || isHovering) return;
+    const interval = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % featuredFiltered.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [featuredFiltered.length, isHovering]);
 
   const isLoading =
     status === "LoadingFirstPage" &&
@@ -399,81 +407,69 @@ export default function HomePage() {
         />
       )}
 
-      {/* Premium Carousel - Sticky VIP Section */}
-      {pinnedFiltered.length > 0 && (
-        <div className={`sticky top-0 z-40 bg-white pt-3 pb-6 -mx-4 px-4 sm:mx-0 sm:px-0 border-b border-[var(--color-hairline)] ${animateEntrance ? "fade-up" : ""}`}>
-          <h2 className="text-sm font-bold text-[var(--color-ink)] mb-3 px-0.5">
-            <span className="text-[var(--color-ember-600)] mr-1.5">🔥</span>Premium
-          </h2>
-          <div className="overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
-            <div className="flex gap-4 sm:gap-5">
-              {pinnedFiltered.map((p) => (
+      {/* Featured Products Carousel - Sticky Auto-slide */}
+      {featuredFiltered.length > 0 && (
+        <div className={`sticky top-0 z-40 bg-white border-b border-[var(--color-hairline)] ${animateEntrance ? "fade-up" : ""}`}
+          onMouseEnter={() => setIsHovering(true)}
+          onMouseLeave={() => setIsHovering(false)}
+        >
+          <div className="relative w-full aspect-[16/9] sm:aspect-[4/3] overflow-hidden bg-gray-100">
+            {/* Carousel items with slide transition */}
+            <div className="relative w-full h-full">
+              {featuredFiltered.map((p, idx) => (
                 <Link
                   key={p._id}
                   to={`/products/${p._id}`}
-                  className="shrink-0"
+                  className={`absolute inset-0 transition-opacity duration-700 ${
+                    idx === currentSlide ? "opacity-100" : "opacity-0"
+                  }`}
                 >
-                  <div className="group cursor-pointer text-center">
-                    <div className="relative w-22 h-22 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full overflow-hidden bg-gray-100 mb-2 mx-auto">
-                      {p.photos?.[0] ? (
-                        <img
-                          src={p.photos[0]}
-                          alt={p.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gray-200" />
-                      )}
+                  <div className="w-full h-full relative">
+                    {p.photos?.[0] ? (
+                      <img
+                        src={p.photos[0]}
+                        alt={p.title}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gray-200" />
+                    )}
+                    {/* Gradient overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                    {/* Product info overlay */}
+                    <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 text-white">
+                      <p className="text-sm sm:text-lg font-semibold mb-1">{p.title}</p>
+                      <p className="text-xs sm:text-sm text-gray-200 mb-2">{p.category}</p>
+                      <p className="text-lg sm:text-2xl font-bold">{(p.price ?? 0).toLocaleString()} IQD</p>
                     </div>
-                    <p className="text-[10px] sm:text-xs text-[var(--color-ink-fade)] font-medium mb-0.5">{p.category}</p>
-                    <p className="text-xs sm:text-sm font-bold text-[var(--color-ember-600)]">
-                      {(p.price ?? 0).toLocaleString()} IQD
-                    </p>
                   </div>
                 </Link>
               ))}
             </div>
-          </div>
-        </div>
-      )}
 
-      {/* Featured Products - NOT sticky (scrolls away) */}
-      {featuredOnly.length > 0 && (
-        <div className="bg-white pt-3 pb-6 -mx-4 px-4 sm:mx-0 sm:px-0 mb-6">
-          <div className="overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
-            <div className="flex gap-4 sm:gap-5">
-              {featuredOnly.map((p) => (
-                <Link
-                  key={p._id}
-                  to={`/products/${p._id}`}
-                  className="shrink-0"
-                >
-                  <div className="group cursor-pointer text-center">
-                    <div className="relative w-18 h-18 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full overflow-hidden bg-gray-100 mb-2 mx-auto">
-                      {p.photos?.[0] ? (
-                        <img
-                          src={p.photos[0]}
-                          alt={p.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gray-200" />
-                      )}
-                    </div>
-                    <p className="text-[9px] sm:text-[10px] text-[var(--color-ink-fade)] font-medium mb-0.5">{p.category}</p>
-                    <p className="text-[10px] sm:text-xs font-bold text-[var(--color-ember-600)]">
-                      {(p.price ?? 0).toLocaleString()} IQD
-                    </p>
-                  </div>
-                </Link>
-              ))}
-            </div>
+            {/* Carousel indicators */}
+            {featuredFiltered.length > 1 && (
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+                {featuredFiltered.map((_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setCurrentSlide(idx)}
+                    className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                      idx === currentSlide
+                        ? "bg-white w-6"
+                        : "bg-white/50 hover:bg-white/75"
+                    }`}
+                    aria-label={`Go to slide ${idx + 1}`}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
 
       {/* Visual separator */}
-      {(pinnedFiltered.length > 0 || featuredOnly.length > 0) && (
+      {featuredFiltered.length > 0 && (
         <div className="flex items-center gap-3 my-6">
           <div className="flex-1 h-px bg-[var(--color-hairline)]" />
           <p className="text-xs font-semibold text-[var(--color-ink-fade)] uppercase tracking-wide">All Products</p>
@@ -487,11 +483,25 @@ export default function HomePage() {
         </div>
       )}
 
-      {!isLoading && allProducts.length === 0 && pinnedFiltered.length === 0 && featuredOnly.length === 0 && <EmptyState />}
+      {!isLoading && allProducts.length === 0 && featuredFiltered.length === 0 && <EmptyState />}
 
       {allProducts.length > 0 && (
         <div className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 ${animateEntrance ? "stagger" : ""}`}>
-          {allProducts.map((p)  => <ProductCard key={p._id} product={p} onSave={onSave} />)}
+          {allProducts.map((p) => {
+            const isFeatured = featuredFiltered.some(f => f._id === p._id);
+            return (
+              <div key={p._id} className="relative">
+                <ProductCard product={p} onSave={onSave} />
+                {isFeatured && (
+                  <div className="absolute top-2.5 end-2.5 z-10">
+                    <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-[var(--color-ember-500)] text-white shadow-md">
+                      <span className="text-lg">🔥</span>
+                    </span>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 
