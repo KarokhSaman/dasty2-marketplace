@@ -224,18 +224,18 @@ export default function AdminShell({ children }) {
       </main>
 
       {/* ── Mobile bottom nav — iPad optimization ── */}
-      <div className="lg:hidden h-28 sm:h-32" aria-hidden />
-      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 pointer-events-none">
-        <div className="pointer-events-auto mx-auto max-w-md surface-frost rounded-[1.75rem] border border-[var(--color-hairline)] shadow-[0_18px_44px_-20px_rgba(11,12,15,0.22)] px-2 py-1.5 flex items-stretch gap-1">
+      <div className="lg:hidden h-16 sm:h-20" aria-hidden />
+      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-white border-t border-[var(--color-hairline)]">
+        <div className="w-full px-4 sm:px-6 py-2 sm:py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] flex items-center justify-between">
           {navTabs.map(tab => (
             <Link key={tab.href} to={tab.href}
-              className={`flex-1 flex flex-col items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg sm:rounded-2xl transition-all duration-200 active:scale-95 ${
+              className={`flex-1 flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded-lg transition-all duration-200 ${
                 tab.active
                   ? "text-[var(--color-ember-600)] bg-[var(--color-ember-50)]"
                   : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]"
               }`}>
-              <div className="w-4 h-4 sm:w-5 sm:h-5">{tab.icon(tab.active)}</div>
-              <span className="text-[9px] sm:text-xs font-semibold leading-tight">{tab.shortLabel}</span>
+              <div className="w-6 h-6 flex items-center justify-center">{tab.icon(tab.active)}</div>
+              <span className="text-[10px] font-semibold leading-tight text-center w-full">{tab.shortLabel}</span>
             </Link>
           ))}
         </div>

@@ -194,31 +194,31 @@ export default function SellerShell({ children }) {
         )}
       </main>
 
-      {/* ── Mobile bottom nav — Home / Dashboard / FAB(Sell) / Account ── */}
+      {/* ── Mobile bottom nav — Home / Dashboard / Account ── */}
       {!isAddProduct && (
         <>
-          <div className="lg:hidden h-28 sm:h-32" aria-hidden />
-          <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 pointer-events-none">
-        <div className="pointer-events-auto mx-auto max-w-md surface-frost rounded-[1.75rem] border border-[var(--color-hairline)] shadow-[0_18px_44px_-20px_rgba(11,12,15,0.22)] px-2 py-1.5 flex items-stretch gap-1">
-          <Link to="/" onClick={handleHomeTap} className={`flex-1 ${tab(isHomeTab)}`}>
-            <svg className="w-5 h-5" fill={isHomeTab ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+          <div className="lg:hidden h-16 sm:h-20" aria-hidden />
+          <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-white border-t border-[var(--color-hairline)]">
+        <div className="w-full px-4 sm:px-6 py-2 sm:py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] flex items-center justify-center gap-10">
+          <Link to="/" onClick={handleHomeTap} className={`inline-flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg transition-all duration-200 ${isHomeTab ? "text-[var(--color-ember-600)] bg-[var(--color-ember-50)]" : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]"}`}>
+            <svg className="w-6 h-6" fill={isHomeTab ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
             </svg>
-            <span className="text-[10px] font-semibold tracking-wide">{m.navHome()}</span>
+            <span className="text-[10px] font-semibold">{m.navHome()}</span>
           </Link>
 
-          <Link to="/seller" className={`flex-1 ${tab(isDash)}`}>
-            <svg className="w-5 h-5" fill={isDash ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+          <Link to="/seller" className={`inline-flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg transition-all duration-200 ${isDash ? "text-[var(--color-ember-600)] bg-[var(--color-ember-50)]" : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]"}`}>
+            <svg className="w-6 h-6" fill={isDash ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
             </svg>
-            <span className="text-[10px] font-semibold tracking-wide">{m.sellerDashboard()}</span>
+            <span className="text-[10px] font-semibold">{m.sellerDashboard()}</span>
           </Link>
 
-          <Link to="/seller/account" className={`flex-1 ${tab(isAccount)}`}>
-            <svg className="w-5 h-5" fill={isAccount ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+          <Link to="/seller/account" className={`inline-flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg transition-all duration-200 ${isAccount ? "text-[var(--color-ember-600)] bg-[var(--color-ember-50)]" : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]"}`}>
+            <svg className="w-6 h-6" fill={isAccount ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
-            <span className="text-[10px] font-semibold tracking-wide">{m.navAccount()}</span>
+            <span className="text-[10px] font-semibold">{m.navAccount()}</span>
           </Link>
         </div>
           </nav>

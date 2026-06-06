@@ -45,8 +45,8 @@ export const CATEGORY_CONFIG = [
     img: icon("bassinet.png"),
   },
   {
-    value: "Feeding & Nursing",
-    labels: { ckb: "شیردۆش", ar: "مستلزمات التغذية والرضاعة", en: "Feeding" },
+    value: "Breast Pump",
+    labels: { ckb: "شیردۆش", ar: "شفاط الحليب", en: "Breast Pump" },
     bg: "bg-white",
     img: icon("feeding.png"),
   },
