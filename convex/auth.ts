@@ -10,7 +10,13 @@ export async function requireIdentity(ctx: Ctx) {
 }
 
 export function identityEmail(identity: Awaited<ReturnType<typeof requireIdentity>>) {
-  return identity.email?.toLowerCase() ?? "";
+  // Try multiple possible email fields from Clerk identity
+  return (
+    identity.email?.toLowerCase() ??
+    (identity as any).emailAddress?.toLowerCase() ??
+    (identity as any).claims?.email?.toLowerCase() ??
+    ""
+  );
 }
 
 export async function getCurrentUser(ctx: Ctx) {
