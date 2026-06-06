@@ -8,6 +8,7 @@ const ACTION_META = {
   marked_sold:       { label: "Marked Sold",       color: "bg-blue-100 text-blue-700"    },
   marked_paid:       { label: "Marked Paid",       color: "bg-purple-100 text-purple-700"},
   deleted:           { label: "Deleted",           color: "bg-gray-100 text-[var(--color-ink-soft)]"    },
+  photo_removed:     { label: "Photo Removed",     color: "bg-orange-100 text-orange-600"},
   seller_deleted:    { label: "Seller Deleted",    color: "bg-red-100 text-red-700"      },
   seller_deactivated:{ label: "Seller Deactivated",color: "bg-orange-100 text-orange-700"},
   seller_activated:  { label: "Seller Activated",  color: "bg-green-100 text-green-700"  },
