@@ -151,38 +151,6 @@ function SmartBottomNav() {
   const pathname = usePathname();
   const { sellerId, ready } = useGlobalSellerSession();
   const lastHomeTap = useRef(0);
-  const [isNavVisible, setIsNavVisible] = useState(true);
-  const lastScrollY = useRef(0);
-  const scrollTimeoutRef = useRef(null);
-
-  // Detect scroll direction and hide/show nav
-  useEffect(() => {
-    let ticking = false;
-
-    const handleScroll = () => {
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          const currentScrollY = window.scrollY;
-          const scrollDiff = currentScrollY - lastScrollY.current;
-
-          // Hide nav when scrolling down, show when scrolling up
-          // Require at least 10px difference to avoid micro-movements
-          if (scrollDiff > 10) {
-            setIsNavVisible(false);
-          } else if (scrollDiff < -10) {
-            setIsNavVisible(true);
-          }
-
-          lastScrollY.current = currentScrollY;
-          ticking = false;
-        });
-        ticking = true;
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   const handleHomeTap = useCallback((e) => {
     if (pathname === "/") {
@@ -216,28 +184,28 @@ function SmartBottomNav() {
   if (sellerId) {
     return (
       <>
-        <div className={`lg:hidden transition-all duration-300 ${isNavVisible ? "h-20 sm:h-24" : "h-12 sm:h-14"}`} aria-hidden />
-        <nav className={`lg:hidden fixed bottom-0 left-1/2 -translate-x-1/2 z-30 bg-white border border-[var(--color-hairline)] transition-all duration-300 ${isNavVisible ? "rounded-3xl mb-4" : "rounded-2xl mb-2"}`}>
-          <div className={`flex items-center justify-center transition-all duration-300 ${isNavVisible ? "gap-8 py-3 px-6" : "gap-4 py-2 px-4"} pb-[max(0.25rem,env(safe-area-inset-bottom))]`}>
-            <Link to="/" onClick={handleHomeTap} className={`inline-flex flex-col items-center transition-all duration-300 ${isNavVisible ? "gap-0.5 px-3 py-1.5" : "gap-0 px-2 py-1"} rounded-lg border-b-2 ${isHome ? "text-[var(--color-ember-600)] border-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] border-transparent"}`}>
-              <svg className={`transition-all duration-300 ${isNavVisible ? "w-6 h-6" : "w-5 h-5"}`} fill={isHome ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+        <div className="lg:hidden h-20 sm:h-24" aria-hidden />
+        <nav className="lg:hidden fixed bottom-0 left-1/2 -translate-x-1/2 z-30 bg-white border border-[var(--color-hairline)] rounded-3xl mb-4">
+          <div className="flex items-center justify-center gap-8 py-3 px-6 pb-[max(0.25rem,env(safe-area-inset-bottom))]">
+            <Link to="/" onClick={handleHomeTap} className={`inline-flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg border-b-2 ${isHome ? "text-[var(--color-ember-600)] border-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] border-transparent"}`}>
+              <svg className="w-6 h-6" fill={isHome ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
               </svg>
-              <span className={`font-semibold transition-all duration-300 ${isNavVisible ? "text-[10px]" : "text-[8px]"}`}>Home</span>
+              <span className="text-[10px] font-semibold">Home</span>
             </Link>
 
-            <Link to="/seller" className={`inline-flex flex-col items-center transition-all duration-300 ${isNavVisible ? "gap-0.5 px-3 py-1.5" : "gap-0 px-2 py-1"} rounded-lg border-b-2 ${isDash ? "text-[var(--color-ember-600)] border-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] border-transparent"}`}>
-              <svg className={`transition-all duration-300 ${isNavVisible ? "w-6 h-6" : "w-5 h-5"}`} fill={isDash ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+            <Link to="/seller" className={`inline-flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg border-b-2 ${isDash ? "text-[var(--color-ember-600)] border-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] border-transparent"}`}>
+              <svg className="w-6 h-6" fill={isDash ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
               </svg>
-              <span className={`font-semibold transition-all duration-300 ${isNavVisible ? "text-[10px]" : "text-[8px]"}`}>Dashboard</span>
+              <span className="text-[10px] font-semibold">Dashboard</span>
             </Link>
 
-            <Link to="/seller/account" className={`inline-flex flex-col items-center transition-all duration-300 ${isNavVisible ? "gap-0.5 px-3 py-1.5" : "gap-0 px-2 py-1"} rounded-lg border-b-2 ${isAccount ? "text-[var(--color-ember-600)] border-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] border-transparent"}`}>
-              <svg className={`transition-all duration-300 ${isNavVisible ? "w-6 h-6" : "w-5 h-5"}`} fill={isAccount ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+            <Link to="/seller/account" className={`inline-flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg border-b-2 ${isAccount ? "text-[var(--color-ember-600)] border-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] border-transparent"}`}>
+              <svg className="w-6 h-6" fill={isAccount ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
               </svg>
-              <span className={`font-semibold transition-all duration-300 ${isNavVisible ? "text-[10px]" : "text-[8px]"}`}>Account</span>
+              <span className="text-[10px] font-semibold">Account</span>
             </Link>
           </div>
         </nav>
@@ -248,21 +216,21 @@ function SmartBottomNav() {
   // Anonymous buyer — Home / Account
   return (
     <>
-      <div className={`lg:hidden transition-all duration-300 ${isNavVisible ? "h-20 sm:h-24" : "h-12 sm:h-14"}`} aria-hidden />
-      <nav className={`lg:hidden fixed bottom-0 left-1/2 -translate-x-1/2 z-30 bg-white border border-[var(--color-hairline)] transition-all duration-300 ${isNavVisible ? "rounded-3xl mb-4" : "rounded-2xl mb-2"}`}>
-        <div className={`flex items-center justify-center transition-all duration-300 ${isNavVisible ? "gap-8 py-3 px-6" : "gap-4 py-2 px-4"} pb-[max(0.25rem,env(safe-area-inset-bottom))]`}>
-          <Link to="/" onClick={handleHomeTap} className={`inline-flex flex-col items-center transition-all duration-300 ${isNavVisible ? "gap-0.5 px-3 py-1.5" : "gap-0 px-2 py-1"} rounded-lg border-b-2 ${isHome ? "text-[var(--color-ember-600)] border-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] border-transparent"}`}>
-            <svg className={`transition-all duration-300 ${isNavVisible ? "w-6 h-6" : "w-5 h-5"}`} fill={isHome ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+      <div className="lg:hidden h-20 sm:h-24" aria-hidden />
+      <nav className="lg:hidden fixed bottom-0 left-1/2 -translate-x-1/2 z-30 bg-white border border-[var(--color-hairline)] rounded-3xl mb-4">
+        <div className="flex items-center justify-center gap-8 py-3 px-6 pb-[max(0.25rem,env(safe-area-inset-bottom))]">
+          <Link to="/" onClick={handleHomeTap} className={`inline-flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg border-b-2 ${isHome ? "text-[var(--color-ember-600)] border-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] border-transparent"}`}>
+            <svg className="w-6 h-6" fill={isHome ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
             </svg>
-            <span className={`font-semibold transition-all duration-300 ${isNavVisible ? "text-[10px]" : "text-[8px]"}`}>Home</span>
+            <span className="text-[10px] font-semibold">Home</span>
           </Link>
 
-          <Link to="/account" className={`inline-flex flex-col items-center transition-all duration-300 ${isNavVisible ? "gap-0.5 px-3 py-1.5" : "gap-0 px-2 py-1"} rounded-lg border-b-2 ${isAccount ? "text-[var(--color-ember-600)] border-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] border-transparent"}`}>
-            <svg className={`transition-all duration-300 ${isNavVisible ? "w-6 h-6" : "w-5 h-5"}`} fill={isAccount ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+          <Link to="/account" className={`inline-flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg border-b-2 ${isAccount ? "text-[var(--color-ember-600)] border-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] border-transparent"}`}>
+            <svg className="w-6 h-6" fill={isAccount ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
             </svg>
-            <span className={`font-semibold transition-all duration-300 ${isNavVisible ? "text-[10px]" : "text-[8px]"}`}>Account</span>
+            <span className="text-[10px] font-semibold">Account</span>
           </Link>
         </div>
       </nav>

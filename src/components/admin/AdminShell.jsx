@@ -16,10 +16,8 @@ export default function AdminShell({ children }) {
   const [showProfile, setShowProfile] = useState(false);
   const [adminEmail, setAdminEmail] = useState("");
   const [authTimedOut, setAuthTimedOut] = useState(false);
-  const [isNavVisible, setIsNavVisible] = useState(true);
   const bellRef = useRef();
   const profileRef = useRef();
-  const lastScrollY = useRef(0);
   const { signOut } = useClerk();
   const { isAuthenticated } = useConvexAuth();
   const { userId } = useAuth();
@@ -28,34 +26,6 @@ export default function AdminShell({ children }) {
   useEffect(() => {
     fetch("/api/admin/me").then(r => r.json()).then(d => setAdminEmail(d.email ?? ""));
   }, [userId]);
-
-  // Detect scroll direction and hide/show nav
-  useEffect(() => {
-    let ticking = false;
-
-    const handleScroll = () => {
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          const currentScrollY = window.scrollY;
-          const scrollDiff = currentScrollY - lastScrollY.current;
-
-          // Hide nav when scrolling down, show when scrolling up
-          if (scrollDiff > 10) {
-            setIsNavVisible(false);
-          } else if (scrollDiff < -10) {
-            setIsNavVisible(true);
-          }
-
-          lastScrollY.current = currentScrollY;
-          ticking = false;
-        });
-        ticking = true;
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -256,18 +226,18 @@ export default function AdminShell({ children }) {
       </main>
 
       {/* ── Mobile bottom nav — iPad optimization ── */}
-      <div className={`lg:hidden transition-all duration-300 ${isNavVisible ? "h-20 sm:h-24" : "h-12 sm:h-14"}`} aria-hidden />
-      <nav className={`lg:hidden fixed bottom-0 left-1/2 -translate-x-1/2 z-30 bg-white border border-[var(--color-hairline)] transition-all duration-300 ${isNavVisible ? "rounded-3xl mb-4" : "rounded-2xl mb-2"}`}>
-        <div className={`flex items-center justify-center transition-all duration-300 ${isNavVisible ? "gap-4 py-3 px-4" : "gap-2 py-2 px-2"} pb-[max(0.25rem,env(safe-area-inset-bottom))]`}>
+      <div className="lg:hidden h-20 sm:h-24" aria-hidden />
+      <nav className="lg:hidden fixed bottom-0 left-1/2 -translate-x-1/2 z-30 bg-white border border-[var(--color-hairline)] rounded-3xl mb-4">
+        <div className="flex items-center justify-center gap-4 py-3 px-4 pb-[max(0.25rem,env(safe-area-inset-bottom))]">
           {navTabs.map(tab => (
             <Link key={tab.href} to={tab.href}
-              className={`flex flex-col items-center justify-center transition-all duration-300 ${isNavVisible ? "gap-0.5 px-2 py-1.5" : "gap-0 px-1 py-1"} rounded-lg border-b-2 ${
+              className={`flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded-lg border-b-2 ${
                 tab.active
                   ? "text-[var(--color-ember-600)] border-[var(--color-ember-600)]"
                   : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] border-transparent"
               }`}>
-              <div className={`flex items-center justify-center transition-all duration-300 ${isNavVisible ? "w-6 h-6" : "w-5 h-5"}`}>{tab.icon(tab.active)}</div>
-              <span className={`font-semibold leading-tight text-center w-full transition-all duration-300 ${isNavVisible ? "text-[10px]" : "text-[8px]"}`}>{tab.shortLabel}</span>
+              <div className="flex items-center justify-center w-6 h-6">{tab.icon(tab.active)}</div>
+              <span className="text-[10px] font-semibold leading-tight text-center w-full">{tab.shortLabel}</span>
             </Link>
           ))}
         </div>
