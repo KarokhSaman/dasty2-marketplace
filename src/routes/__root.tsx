@@ -51,7 +51,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
     return {
       meta: [
         { charSet: 'utf-8' },
-        { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+        { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' },
         { title: 'Dasty2 Mndalan — Baby Products Erbil' },
         {
           name: 'description',
@@ -120,7 +120,7 @@ function RootDocument({
       <head>
         <HeadContent />
       </head>
-      <body className="antialiased bg-cream text-ink min-h-screen">
+      <body className="antialiased bg-cream text-ink min-h-screen-dvh">
         {children}
         <Scripts />
       </body>
