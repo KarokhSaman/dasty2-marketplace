@@ -198,7 +198,7 @@ export default function SellerShell({ children }) {
       {!isAddProduct && (
         <>
           <div className="lg:hidden h-20 sm:h-24" aria-hidden />
-          <nav className="lg:hidden fixed inset-x-0 z-30 bg-white/70 backdrop-blur-md border-t border-white/50" style={{ bottom: 0 }}>
+          <nav className="lg:hidden fixed inset-x-0 z-30 bg-white border-t border-[var(--color-hairline)]" style={{ bottom: 0 }}>
         <div className="flex items-center w-full py-1.5 px-4 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
           <Link to="/" onClick={handleHomeTap} className={`flex flex-1 flex-col items-center gap-0.5 py-1 transition-all`}>
             <svg className={`w-6 h-6 transition-all ${isHomeTab ? "text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)]"}`} fill={isHomeTab ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
