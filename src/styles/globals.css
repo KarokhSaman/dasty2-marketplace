@@ -122,7 +122,7 @@ html[dir='rtl'] .font-display {
 /* Fix viewport expansion on Chrome mobile toolbar hide/show */
 @supports (height: 100dvh) {
   html, body {
-    height: 100dvh;
+    min-height: 100dvh;
   }
 }
 
