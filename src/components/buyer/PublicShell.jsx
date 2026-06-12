@@ -235,16 +235,16 @@ function SmartBottomNav() {
   return (
     <>
       <div className="lg:hidden h-20 sm:h-24" aria-hidden />
-      <nav className="lg:hidden fixed bottom-0 left-1/2 -translate-x-1/2 z-30 bg-white border border-[var(--color-hairline)] rounded-3xl mb-4">
-        <div className="flex items-center justify-center gap-8 py-3 px-6 pb-[max(0.25rem,env(safe-area-inset-bottom))]">
-          <Link to="/" onClick={handleHomeTap} className={`inline-flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg border-b-2 ${isHome ? "text-[var(--color-ember-600)] border-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] border-transparent"}`}>
+      <nav ref={navRef} className="lg:hidden fixed inset-x-0 z-30 bg-white border-t border-[var(--color-hairline)]" style={{ position: "fixed !important", bottom: "0 !important", left: "0 !important", right: "0 !important", height: "70px !important", maxHeight: "70px !important", minHeight: "70px !important", overflow: "hidden !important", contain: "layout paint", willChange: "height" }}>
+        <div className="flex items-center justify-around gap-4 py-3 px-4 h-full w-full" style={{ contain: "layout paint" }}>
+          <Link to="/" onClick={handleHomeTap} className={`inline-flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg border-b-2 flex-shrink-0 flex-grow-0 ${isHome ? "text-[var(--color-ember-600)] border-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] border-transparent"}`}>
             <svg className="w-6 h-6" fill={isHome ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
             </svg>
             <span className="text-[10px] font-semibold">Home</span>
           </Link>
 
-          <Link to="/account" className={`inline-flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg border-b-2 ${isAccount ? "text-[var(--color-ember-600)] border-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] border-transparent"}`}>
+          <Link to="/account" className={`inline-flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg border-b-2 flex-shrink-0 flex-grow-0 ${isAccount ? "text-[var(--color-ember-600)] border-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] border-transparent"}`}>
             <svg className="w-6 h-6" fill={isAccount ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
             </svg>
