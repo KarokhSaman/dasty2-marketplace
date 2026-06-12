@@ -552,7 +552,7 @@ export default function HomePage() {
 
       {/* Visual separator (hidden on mobile) */}
       {featuredFiltered.length > 0 && (
-        <div className="hidden sm:flex sticky top-[206px] z-40 bg-white items-center gap-3 my-0 py-2">
+        <div className="hidden sm:flex sticky sm:top-[280px] md:top-[340px] lg:top-[360px] z-40 bg-white items-center gap-3 my-0 py-2">
           <div className="flex-1 h-px bg-[var(--color-hairline)]" />
           <p className="text-xs font-semibold text-[var(--color-ink-fade)] uppercase tracking-wide">All Products</p>
           <div className="flex-1 h-px bg-[var(--color-hairline)]" />
