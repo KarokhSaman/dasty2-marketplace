@@ -119,6 +119,17 @@ html[dir='rtl'] .font-display {
   }
 }
 
+/* Fix viewport expansion on Chrome mobile toolbar hide/show */
+html, body {
+  height: 100dvh;
+  overflow: hidden;
+}
+
+main {
+  height: 100%;
+  overflow-y: auto;
+}
+
 @utility scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
