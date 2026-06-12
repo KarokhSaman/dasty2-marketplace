@@ -18,7 +18,6 @@ export default function AdminShell({ children }) {
   const [authTimedOut, setAuthTimedOut] = useState(false);
   const bellRef = useRef();
   const profileRef = useRef();
-  const navRef = useRef();
   const { signOut } = useClerk();
   const { isAuthenticated } = useConvexAuth();
   const { userId } = useAuth();
@@ -48,23 +47,6 @@ export default function AdminShell({ children }) {
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, [showProfile]);
-
-  useEffect(() => {
-    const nav = navRef.current;
-    if (!nav) return;
-
-    const lockedHeight = 70;
-    const observer = new ResizeObserver(() => {
-      if (nav.offsetHeight !== lockedHeight) {
-        nav.style.setProperty('height', `${lockedHeight}px`, 'important');
-        nav.style.setProperty('maxHeight', `${lockedHeight}px`, 'important');
-        nav.style.setProperty('minHeight', `${lockedHeight}px`, 'important');
-        nav.style.setProperty('overflow', 'hidden', 'important');
-      }
-    });
-    observer.observe(nav);
-    return () => observer.disconnect();
-  }, []);
 
   const notifications = useQuery(
     api.notifications.getBySeller,
@@ -245,11 +227,11 @@ export default function AdminShell({ children }) {
 
       {/* ── Mobile bottom nav — iPad optimization ── */}
       <div className="lg:hidden h-20 sm:h-24" aria-hidden />
-      <nav ref={navRef} className="lg:hidden fixed inset-x-0 z-30 bg-white border-t border-[var(--color-hairline)]" style={{ position: "fixed !important", bottom: "0 !important", left: "0 !important", right: "0 !important", height: "70px !important", maxHeight: "70px !important", minHeight: "70px !important", overflow: "hidden !important", contain: "layout paint", willChange: "height" }}>
-        <div className="flex items-center justify-around gap-4 py-3 px-4 h-full w-full" style={{ contain: "layout paint" }}>
+      <nav className="lg:hidden fixed inset-x-0 z-30 bg-white border-t border-[var(--color-hairline)]" style={{ bottom: 0 }}>
+        <div className="flex items-center justify-center gap-4 py-3 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           {navTabs.map(tab => (
             <Link key={tab.href} to={tab.href}
-              className={`flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded-lg border-b-2 flex-shrink-0 flex-grow-0 ${
+              className={`flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded-lg border-b-2 ${
                 tab.active
                   ? "text-[var(--color-ember-600)] border-[var(--color-ember-600)]"
                   : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] border-transparent"

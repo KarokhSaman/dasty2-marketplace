@@ -146,13 +146,11 @@ function HeaderActions() {
   );
 }
 
-
-// ── Shell ─────────────────────────────────────────────────
-export default function PublicShell({ children }) {
+// ── Floating bottom nav ───────────────────────────────────
+function SmartBottomNav() {
   const pathname = usePathname();
   const { sellerId, ready } = useGlobalSellerSession();
   const lastHomeTap = useRef(0);
-  const navRef = useRef(null);
 
   const handleHomeTap = useCallback((e) => {
     if (pathname === "/") {
@@ -165,30 +163,85 @@ export default function PublicShell({ children }) {
     }
   }, [pathname]);
 
-  useEffect(() => {
-    const nav = navRef.current;
-    if (!nav) return;
-
-    const lockedHeight = 70;
-    const observer = new ResizeObserver(() => {
-      if (nav.offsetHeight !== lockedHeight) {
-        nav.style.setProperty('height', `${lockedHeight}px`, 'important');
-        nav.style.setProperty('maxHeight', `${lockedHeight}px`, 'important');
-        nav.style.setProperty('minHeight', `${lockedHeight}px`, 'important');
-        nav.style.setProperty('overflow', 'hidden', 'important');
-      }
-    });
-    observer.observe(nav);
-    return () => observer.disconnect();
-  }, []);
-
   if (!ready) return null;
+
+  // Product detail page renders its own sticky bottom CTA (WhatsApp).
+  // Hide the global nav there so the two don't stack.
+  if (pathname.startsWith("/products/")) return null;
 
   const isHome    = pathname === "/";
   const isAccount = pathname === "/account" || pathname === "/seller/account";
   const isDash    = pathname === "/seller";
-  const isProductDetail = pathname.startsWith("/products/");
 
+  const tab = (active) =>
+    `flex flex-col items-center justify-center gap-0.5 px-4 py-2 rounded-2xl transition-all duration-200 active:scale-95 ${
+      active
+        ? "text-[var(--color-ember-600)] bg-[var(--color-ember-50)]"
+        : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]"
+    }`;
+
+  // Logged-in sellers: Home / Dashboard / FAB(Sell) / Account
+  if (sellerId) {
+    return (
+      <>
+        <div className="lg:hidden h-20 sm:h-24" aria-hidden />
+        <nav className="lg:hidden fixed inset-x-0 z-30 bg-white border-t border-[var(--color-hairline)]" style={{ bottom: 0 }}>
+          <div className="flex items-center justify-center gap-8 py-3 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+            <Link to="/" onClick={handleHomeTap} className={`inline-flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg border-b-2 ${isHome ? "text-[var(--color-ember-600)] border-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] border-transparent"}`}>
+              <svg className="w-6 h-6" fill={isHome ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+              </svg>
+              <span className="text-[10px] font-semibold">Home</span>
+            </Link>
+
+            <Link to="/seller" className={`inline-flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg border-b-2 ${isDash ? "text-[var(--color-ember-600)] border-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] border-transparent"}`}>
+              <svg className="w-6 h-6" fill={isDash ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
+              </svg>
+              <span className="text-[10px] font-semibold">Dashboard</span>
+            </Link>
+
+            <Link to="/seller/account" className={`inline-flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg border-b-2 ${isAccount ? "text-[var(--color-ember-600)] border-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] border-transparent"}`}>
+              <svg className="w-6 h-6" fill={isAccount ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+              </svg>
+              <span className="text-[10px] font-semibold">Account</span>
+            </Link>
+          </div>
+        </nav>
+      </>
+    );
+  }
+
+  // Anonymous buyer — Home / Account
+  return (
+    <>
+      <div className="lg:hidden h-20 sm:h-24" aria-hidden />
+      <nav className="lg:hidden fixed inset-x-0 z-30 bg-white border-t border-[var(--color-hairline)]" style={{ bottom: 0 }}>
+        <div className="flex items-center justify-center gap-8 py-3 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          <Link to="/" onClick={handleHomeTap} className={`inline-flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg border-b-2 ${isHome ? "text-[var(--color-ember-600)] border-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] border-transparent"}`}>
+            <svg className="w-6 h-6" fill={isHome ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+            </svg>
+            <span className="text-[10px] font-semibold">Home</span>
+          </Link>
+
+          <Link to="/account" className={`inline-flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg border-b-2 ${isAccount ? "text-[var(--color-ember-600)] border-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] border-transparent"}`}>
+            <svg className="w-6 h-6" fill={isAccount ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+            </svg>
+            <span className="text-[10px] font-semibold">Account</span>
+          </Link>
+        </div>
+      </nav>
+    </>
+  );
+}
+
+function HomeScrollRestorer() { return null; }
+
+// ── Shell ─────────────────────────────────────────────────
+export default function PublicShell({ children }) {
   return (
     <div className="min-h-screen-dvh flex flex-col">
       {/* Atmospheric backdrop — sits behind everything */}
@@ -213,52 +266,8 @@ export default function PublicShell({ children }) {
         {children}
       </main>
 
-      {!isProductDetail && (
-        <>
-          <div className="lg:hidden h-20 sm:h-24" aria-hidden />
-          <nav ref={navRef} className="lg:hidden fixed inset-x-0 z-30 bg-white border-t border-[var(--color-hairline)]" style={{ position: "fixed !important", bottom: "0 !important", left: "0 !important", right: "0 !important", height: "70px !important", maxHeight: "70px !important", minHeight: "70px !important", overflow: "hidden !important", contain: "layout paint", willChange: "height" }}>
-        <div className="flex items-center justify-around gap-4 py-3 px-4 h-full w-full" style={{ contain: "layout paint" }}>
-          {sellerId ? (
-            <>
-              <Link to="/" onClick={handleHomeTap} className={`inline-flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg border-b-2 flex-shrink-0 flex-grow-0 ${isHome ? "text-[var(--color-ember-600)] border-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] border-transparent"}`}>
-                <svg className="w-6 h-6" fill={isHome ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
-                </svg>
-                <span className="text-[10px] font-semibold">Home</span>
-              </Link>
-              <Link to="/seller" className={`inline-flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg border-b-2 flex-shrink-0 flex-grow-0 ${isDash ? "text-[var(--color-ember-600)] border-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] border-transparent"}`}>
-                <svg className="w-6 h-6" fill={isDash ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
-                </svg>
-                <span className="text-[10px] font-semibold">Dashboard</span>
-              </Link>
-              <Link to="/seller/account" className={`inline-flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg border-b-2 flex-shrink-0 flex-grow-0 ${isAccount ? "text-[var(--color-ember-600)] border-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] border-transparent"}`}>
-                <svg className="w-6 h-6" fill={isAccount ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                </svg>
-                <span className="text-[10px] font-semibold">Account</span>
-              </Link>
-            </>
-          ) : (
-            <>
-              <Link to="/" onClick={handleHomeTap} className={`inline-flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg border-b-2 flex-shrink-0 flex-grow-0 ${isHome ? "text-[var(--color-ember-600)] border-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] border-transparent"}`}>
-                <svg className="w-6 h-6" fill={isHome ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
-                </svg>
-                <span className="text-[10px] font-semibold">Home</span>
-              </Link>
-              <Link to="/account" className={`inline-flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg border-b-2 flex-shrink-0 flex-grow-0 ${isAccount ? "text-[var(--color-ember-600)] border-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] border-transparent"}`}>
-                <svg className="w-6 h-6" fill={isAccount ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                </svg>
-                <span className="text-[10px] font-semibold">Account</span>
-              </Link>
-            </>
-          )}
-        </div>
-          </nav>
-        </>
-      )}
+      <HomeScrollRestorer />
+      <SmartBottomNav />
 
       <footer className="hidden sm:block border-t border-[var(--color-hairline)] bg-white/40 mt-12 py-8">
         <p className="text-center text-sm text-[var(--color-ink-fade)]">

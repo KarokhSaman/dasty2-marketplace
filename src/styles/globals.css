@@ -122,15 +122,15 @@ html[dir='rtl'] .font-display {
 /* Fix viewport expansion on Chrome mobile toolbar hide/show */
 @supports (height: 100dvh) {
   html, body {
-    min-height: 100dvh;
+    height: 100dvh;
   }
 }
 
-/* Stabilize fixed bottom nav on viewport resize */
+/* Fixed full-width bottom nav */
 @media (max-width: 1023px) {
-  nav.lg\:hidden[class*="fixed"] {
-    will-change: transform;
-    transform: translateZ(0);
+  nav.lg\:hidden {
+    left: 0;
+    right: 0;
   }
 }
 
