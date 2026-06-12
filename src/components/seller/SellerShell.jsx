@@ -216,7 +216,7 @@ export default function SellerShell({ children }) {
       {!isAddProduct && (
         <>
           <div className="lg:hidden h-20 sm:h-24" aria-hidden />
-          <nav ref={navRef} className="lg:hidden fixed left-1/2 -translate-x-1/2 z-30 bg-white border border-[var(--color-hairline)] rounded-3xl" style={{ bottom: "1rem !important", height: "70px !important", maxHeight: "70px !important", minHeight: "70px !important", overflow: "hidden !important", contain: "layout paint", willChange: "height" }}>
+          <nav ref={navRef} className="lg:hidden fixed left-1/2 -translate-x-1/2 z-30 bg-white border border-[var(--color-hairline)] rounded-3xl" style={{ position: "fixed !important", top: "auto !important", bottom: "1rem !important", left: "50% !important", transform: "translateX(-50%) !important", height: "70px !important", maxHeight: "70px !important", minHeight: "70px !important", overflow: "hidden !important", contain: "layout paint", willChange: "height" }}>
         <div className="flex items-center justify-center gap-8 py-3 px-6 h-full" style={{ contain: "layout paint" }}>
           <Link to="/" onClick={handleHomeTap} className={`inline-flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg border-b-2 flex-shrink-0 flex-grow-0 ${isHomeTab ? "text-[var(--color-ember-600)] border-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] border-transparent"}`}>
             <svg className="w-6 h-6" fill={isHomeTab ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
