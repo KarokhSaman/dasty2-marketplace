@@ -99,7 +99,7 @@ export default function SellerShell({ children }) {
     }`;
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen-dvh flex flex-col">
       {/* Atmospheric backdrop */}
       <div
         aria-hidden

@@ -243,7 +243,7 @@ function HomeScrollRestorer() { return null; }
 // ── Shell ─────────────────────────────────────────────────
 export default function PublicShell({ children }) {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen-dvh flex flex-col">
       {/* Atmospheric backdrop — sits behind everything */}
       <div
         aria-hidden
