@@ -231,9 +231,9 @@ export default function AdminShell({ children }) {
         <div className="flex items-center w-full py-1.5 px-4 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
           {navTabs.map(tab => (
             <Link key={tab.href} to={tab.href}
-              className={`flex flex-1 flex-col items-center gap-0.5 py-1 border-b-2 transition-all ${tab.active ? "border-[var(--color-ember-600)]" : "border-transparent"}`}>
+              className={`flex flex-1 flex-col items-center gap-0.5 py-1 transition-all`}>
               <div className={`flex items-center justify-center w-6 h-6 transition-all ${tab.active ? "text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)]"}`}>{tab.icon(tab.active)}</div>
-              <span className={`text-[9px] font-semibold leading-tight text-center w-full transition-all ${tab.active ? "text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)]"}`}>{tab.shortLabel}</span>
+              <span className={`text-[9px] font-bold leading-tight text-center w-full transition-all ${tab.active ? "text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)]"}`}>{tab.shortLabel}</span>
             </Link>
           ))}
         </div>
