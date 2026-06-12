@@ -44,6 +44,7 @@ export default function SellerShell({ children }) {
   const [showNotifs, setShowNotifs] = useState(false);
   const [authTimedOut, setAuthTimedOut] = useState(false);
   const bellRef = useRef();
+  const navRef = useRef();
 
   // When Clerk invalidates the session (e.g. admin deleted the account),
   // clear context and navigate to login immediately so the shell doesn't linger.
@@ -71,6 +72,21 @@ export default function SellerShell({ children }) {
       navigate({ to: "/seller/login", replace: true });
     });
   }, [navigate, setSellerId]);
+
+  useEffect(() => {
+    const nav = navRef.current;
+    if (!nav) return;
+
+    const lockedHeight = 70;
+    const observer = new ResizeObserver(() => {
+      if (nav.offsetHeight !== lockedHeight) {
+        nav.style.height = `${lockedHeight}px`;
+        nav.style.maxHeight = `${lockedHeight}px`;
+      }
+    });
+    observer.observe(nav);
+    return () => observer.disconnect();
+  }, []);
 
   const notifications = useQuery(api.notifications.getBySeller, isAuthenticated && sellerId ? { sellerId } : "skip");
   const unread = (notifications ?? []).filter((n) => !n.read).length;
@@ -198,7 +214,7 @@ export default function SellerShell({ children }) {
       {!isAddProduct && (
         <>
           <div className="lg:hidden h-20 sm:h-24" aria-hidden />
-          <nav className="lg:hidden fixed left-1/2 -translate-x-1/2 z-30 bg-white border border-[var(--color-hairline)] rounded-3xl overflow-hidden" style={{ bottom: "1rem", height: "70px", maxHeight: "70px", contain: "layout paint", willChange: "height" }}>
+          <nav ref={navRef} className="lg:hidden fixed left-1/2 -translate-x-1/2 z-30 bg-white border border-[var(--color-hairline)] rounded-3xl overflow-hidden" style={{ bottom: "1rem", height: "70px", maxHeight: "70px", contain: "layout paint", willChange: "height" }}>
         <div className="flex items-center justify-center gap-8 py-3 px-6 h-full" style={{ contain: "layout paint" }}>
           <Link to="/" onClick={handleHomeTap} className={`inline-flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg border-b-2 flex-shrink-0 flex-grow-0 ${isHomeTab ? "text-[var(--color-ember-600)] border-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] border-transparent"}`}>
             <svg className="w-6 h-6" fill={isHomeTab ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">

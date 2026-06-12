@@ -151,6 +151,7 @@ function SmartBottomNav() {
   const pathname = usePathname();
   const { sellerId, ready } = useGlobalSellerSession();
   const lastHomeTap = useRef(0);
+  const navRef = useRef(null);
 
   const handleHomeTap = useCallback((e) => {
     if (pathname === "/") {
@@ -162,6 +163,21 @@ function SmartBottomNav() {
       lastHomeTap.current = now;
     }
   }, [pathname]);
+
+  useEffect(() => {
+    const nav = navRef.current;
+    if (!nav) return;
+
+    const lockedHeight = 70;
+    const observer = new ResizeObserver(() => {
+      if (nav.offsetHeight !== lockedHeight) {
+        nav.style.height = `${lockedHeight}px`;
+        nav.style.maxHeight = `${lockedHeight}px`;
+      }
+    });
+    observer.observe(nav);
+    return () => observer.disconnect();
+  }, []);
 
   if (!ready) return null;
 
@@ -185,7 +201,7 @@ function SmartBottomNav() {
     return (
       <>
         <div className="lg:hidden h-20 sm:h-24" aria-hidden />
-        <nav className="lg:hidden fixed left-1/2 -translate-x-1/2 z-30 bg-white border border-[var(--color-hairline)] rounded-3xl overflow-hidden" style={{ bottom: "1rem", height: "70px", maxHeight: "70px", contain: "layout paint", willChange: "height" }}>
+        <nav ref={navRef} className="lg:hidden fixed left-1/2 -translate-x-1/2 z-30 bg-white border border-[var(--color-hairline)] rounded-3xl overflow-hidden" style={{ bottom: "1rem", height: "70px", maxHeight: "70px", contain: "layout paint", willChange: "height" }}>
           <div className="flex items-center justify-center gap-8 py-3 px-6 h-full" style={{ contain: "layout paint" }}>
             <Link to="/" onClick={handleHomeTap} className={`inline-flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg border-b-2 flex-shrink-0 flex-grow-0 ${isHome ? "text-[var(--color-ember-600)] border-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] border-transparent"}`}>
               <svg className="w-6 h-6" fill={isHome ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
