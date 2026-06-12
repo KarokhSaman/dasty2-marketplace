@@ -16,8 +16,10 @@ export default function AdminShell({ children }) {
   const [showProfile, setShowProfile] = useState(false);
   const [adminEmail, setAdminEmail] = useState("");
   const [authTimedOut, setAuthTimedOut] = useState(false);
+  const [isNavVisible, setIsNavVisible] = useState(true);
   const bellRef = useRef();
   const profileRef = useRef();
+  const lastScrollY = useRef(0);
   const { signOut } = useClerk();
   const { isAuthenticated } = useConvexAuth();
   const { userId } = useAuth();
@@ -26,6 +28,34 @@ export default function AdminShell({ children }) {
   useEffect(() => {
     fetch("/api/admin/me").then(r => r.json()).then(d => setAdminEmail(d.email ?? ""));
   }, [userId]);
+
+  // Detect scroll direction and hide/show nav
+  useEffect(() => {
+    let ticking = false;
+
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const currentScrollY = window.scrollY;
+          const scrollDiff = currentScrollY - lastScrollY.current;
+
+          // Hide nav when scrolling down, show when scrolling up
+          if (scrollDiff > 10) {
+            setIsNavVisible(false);
+          } else if (scrollDiff < -10) {
+            setIsNavVisible(true);
+          }
+
+          lastScrollY.current = currentScrollY;
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -226,8 +256,8 @@ export default function AdminShell({ children }) {
       </main>
 
       {/* ── Mobile bottom nav — iPad optimization ── */}
-      <div className="lg:hidden h-16 sm:h-20" aria-hidden />
-      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-white border-t border-[var(--color-hairline)]">
+      <div className={`lg:hidden h-16 sm:h-20 transition-all duration-300 ${isNavVisible ? "opacity-100" : "opacity-0 pointer-events-none"}`} aria-hidden />
+      <nav className={`lg:hidden fixed bottom-0 inset-x-0 z-30 bg-white border-t border-[var(--color-hairline)] transition-transform duration-300 ${isNavVisible ? "translate-y-0" : "translate-y-full"}`}>
         <div className="w-full px-4 sm:px-6 py-2 sm:py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] flex items-center justify-between">
           {navTabs.map(tab => (
             <Link key={tab.href} to={tab.href}
