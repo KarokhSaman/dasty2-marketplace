@@ -198,8 +198,8 @@ export default function SellerShell({ children }) {
       {!isAddProduct && (
         <>
           <div className="lg:hidden h-20 sm:h-24" aria-hidden />
-          <nav className="lg:hidden fixed left-1/2 -translate-x-1/2 z-30 bg-white border border-[var(--color-hairline)] rounded-3xl" style={{ bottom: "max(1rem, env(safe-area-inset-bottom))" }}>
-        <div className="flex items-center justify-center gap-8 py-3 px-6 pb-[max(0.25rem,env(safe-area-inset-bottom))]">
+          <nav className="lg:hidden fixed left-1/2 -translate-x-1/2 z-30 bg-white border border-[var(--color-hairline)] rounded-3xl" style={{ bottom: "1rem", height: "fit-content" }}>
+        <div className="flex items-center justify-center gap-8 py-3 px-6">
           <Link to="/" onClick={handleHomeTap} className={`inline-flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg border-b-2 ${isHomeTab ? "text-[var(--color-ember-600)] border-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] border-transparent"}`}>
             <svg className="w-6 h-6" fill={isHomeTab ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
