@@ -200,21 +200,21 @@ export default function SellerShell({ children }) {
           <div className="lg:hidden h-20 sm:h-24" aria-hidden />
           <nav className="lg:hidden fixed inset-x-0 z-30 bg-white/70 backdrop-blur-md border-t border-white/50" style={{ bottom: 0 }}>
         <div className="flex items-center w-full py-1.5 px-4 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
-          <Link to="/" onClick={handleHomeTap} className={`flex flex-1 flex-col items-center gap-0.5 py-1 border-2 rounded-lg transition-all ${isHomeTab ? "border-[var(--color-ember-50)]" : "border-transparent"}`}>
+          <Link to="/" onClick={handleHomeTap} className={`flex flex-1 flex-col items-center gap-0.5 py-1 border-b-2 transition-all ${isHomeTab ? "border-[var(--color-ember-600)]" : "border-transparent"}`}>
             <svg className={`w-6 h-6 transition-all ${isHomeTab ? "text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)]"}`} fill={isHomeTab ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
             </svg>
             <span className={`text-[9px] font-semibold transition-all ${isHomeTab ? "text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)]"}`}>{m.navHome()}</span>
           </Link>
 
-          <Link to="/seller" className={`flex flex-1 flex-col items-center gap-0.5 py-1 border-2 rounded-lg transition-all ${isDash ? "border-[var(--color-ember-50)]" : "border-transparent"}`}>
+          <Link to="/seller" className={`flex flex-1 flex-col items-center gap-0.5 py-1 border-b-2 transition-all ${isDash ? "border-[var(--color-ember-600)]" : "border-transparent"}`}>
             <svg className={`w-6 h-6 transition-all ${isDash ? "text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)]"}`} fill={isDash ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
             </svg>
             <span className={`text-[9px] font-semibold transition-all ${isDash ? "text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)]"}`}>{m.sellerDashboard()}</span>
           </Link>
 
-          <Link to="/seller/account" className={`flex flex-1 flex-col items-center gap-0.5 py-1 border-2 rounded-lg transition-all ${isAccount ? "border-[var(--color-ember-50)]" : "border-transparent"}`}>
+          <Link to="/seller/account" className={`flex flex-1 flex-col items-center gap-0.5 py-1 border-b-2 transition-all ${isAccount ? "border-[var(--color-ember-600)]" : "border-transparent"}`}>
             <svg className={`w-6 h-6 transition-all ${isAccount ? "text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)]"}`} fill={isAccount ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
