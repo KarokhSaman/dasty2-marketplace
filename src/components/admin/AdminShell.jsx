@@ -231,13 +231,15 @@ export default function AdminShell({ children }) {
         <div className="flex items-center justify-center gap-4 py-3 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           {navTabs.map(tab => (
             <Link key={tab.href} to={tab.href}
-              className={`flex flex-col items-center justify-center gap-0.5 w-12 h-12 rounded-full transition-all ${
+              className={`flex flex-col items-center gap-1 transition-all`}>
+              <div className={`inline-flex items-center justify-center w-10 h-10 rounded-full transition-all ${
                 tab.active
-                  ? "text-[var(--color-ember-600)] bg-[var(--color-ember-50)]"
-                  : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]"
+                  ? "bg-[var(--color-ember-50)]"
+                  : ""
               }`}>
-              <div className="flex items-center justify-center w-6 h-6">{tab.icon(tab.active)}</div>
-              <span className="text-[10px] font-semibold leading-tight text-center w-full">{tab.shortLabel}</span>
+                <div className={`flex items-center justify-center w-6 h-6 transition-all ${tab.active ? "text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)]"}`}>{tab.icon(tab.active)}</div>
+              </div>
+              <span className={`text-[9px] font-semibold leading-tight text-center w-full transition-all ${tab.active ? "text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)]"}`}>{tab.shortLabel}</span>
             </Link>
           ))}
         </div>
