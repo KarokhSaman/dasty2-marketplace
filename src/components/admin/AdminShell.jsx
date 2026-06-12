@@ -227,14 +227,14 @@ export default function AdminShell({ children }) {
 
       {/* ── Mobile bottom nav — iPad optimization ── */}
       <div className="lg:hidden h-20 sm:h-24" aria-hidden />
-      <nav className="lg:hidden fixed inset-x-0 z-30 bg-white border-t border-[var(--color-hairline)]" style={{ bottom: 0 }}>
+      <nav className="lg:hidden fixed inset-x-0 z-30 bg-white/70 backdrop-blur-md border-t border-white/50" style={{ bottom: 0 }}>
         <div className="flex items-center justify-center gap-4 py-3 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           {navTabs.map(tab => (
             <Link key={tab.href} to={tab.href}
-              className={`flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded-lg border-b-2 ${
+              className={`flex flex-col items-center justify-center gap-0.5 px-2 py-2 rounded-full transition-all ${
                 tab.active
-                  ? "text-[var(--color-ember-600)] border-[var(--color-ember-600)]"
-                  : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] border-transparent"
+                  ? "text-white bg-[var(--color-ember-600)]"
+                  : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]"
               }`}>
               <div className="flex items-center justify-center w-6 h-6">{tab.icon(tab.active)}</div>
               <span className="text-[10px] font-semibold leading-tight text-center w-full">{tab.shortLabel}</span>
