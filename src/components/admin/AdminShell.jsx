@@ -231,9 +231,9 @@ export default function AdminShell({ children }) {
         <div className="flex items-center justify-center gap-4 py-3 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           {navTabs.map(tab => (
             <Link key={tab.href} to={tab.href}
-              className={`flex flex-col items-center justify-center gap-0.5 px-2 py-2 rounded-full transition-all ${
+              className={`flex flex-col items-center justify-center gap-0.5 w-12 h-12 rounded-full transition-all ${
                 tab.active
-                  ? "text-white bg-[var(--color-ember-600)]"
+                  ? "text-[var(--color-ember-600)] bg-[var(--color-ember-50)]"
                   : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]"
               }`}>
               <div className="flex items-center justify-center w-6 h-6">{tab.icon(tab.active)}</div>
