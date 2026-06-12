@@ -231,8 +231,8 @@ export default function AdminShell({ children }) {
         <div className="flex items-center w-full py-3 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           {navTabs.map(tab => (
             <Link key={tab.href} to={tab.href}
-              className={`flex flex-1 flex-col items-center gap-1 transition-all`}>
-              <div className={`inline-flex items-center justify-center w-10 h-10 rounded-full transition-all ${
+              className={`flex flex-1 flex-col items-center gap-0 transition-all`}>
+              <div className={`inline-flex items-center justify-center w-12 h-12 rounded-full transition-all ${
                 tab.active
                   ? "bg-[var(--color-ember-50)]"
                   : ""
