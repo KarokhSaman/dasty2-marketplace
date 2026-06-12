@@ -256,18 +256,18 @@ export default function AdminShell({ children }) {
       </main>
 
       {/* ── Mobile bottom nav — iPad optimization ── */}
-      <div className={`lg:hidden h-16 sm:h-20 transition-all duration-300 ${isNavVisible ? "opacity-100" : "opacity-0 pointer-events-none"}`} aria-hidden />
-      <nav className={`lg:hidden fixed bottom-0 inset-x-0 z-30 bg-white border-t border-[var(--color-hairline)] transition-transform duration-300 ${isNavVisible ? "translate-y-0" : "translate-y-full"}`}>
-        <div className="w-full px-4 sm:px-6 py-2 sm:py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] flex items-center justify-between">
+      <div className={`lg:hidden transition-all duration-300 ${isNavVisible ? "h-20 sm:h-24" : "h-12 sm:h-14"}`} aria-hidden />
+      <nav className={`lg:hidden fixed bottom-0 left-1/2 -translate-x-1/2 z-30 bg-white border border-[var(--color-hairline)] transition-all duration-300 ${isNavVisible ? "rounded-3xl mb-4" : "rounded-2xl mb-2"}`}>
+        <div className={`flex items-center justify-center transition-all duration-300 ${isNavVisible ? "gap-4 py-3 px-4" : "gap-2 py-2 px-2"} pb-[max(0.25rem,env(safe-area-inset-bottom))]`}>
           {navTabs.map(tab => (
             <Link key={tab.href} to={tab.href}
-              className={`flex-1 flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded-lg transition-all duration-200 ${
+              className={`flex flex-col items-center justify-center transition-all duration-300 ${isNavVisible ? "gap-0.5 px-2 py-1.5" : "gap-0 px-1 py-1"} rounded-lg ${
                 tab.active
                   ? "text-[var(--color-ember-600)] bg-[var(--color-ember-50)]"
                   : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]"
               }`}>
-              <div className="w-6 h-6 flex items-center justify-center">{tab.icon(tab.active)}</div>
-              <span className="text-[10px] font-semibold leading-tight text-center w-full">{tab.shortLabel}</span>
+              <div className={`flex items-center justify-center transition-all duration-300 ${isNavVisible ? "w-6 h-6" : "w-5 h-5"}`}>{tab.icon(tab.active)}</div>
+              <span className={`font-semibold leading-tight text-center w-full transition-all duration-300 ${isNavVisible ? "text-[10px]" : "text-[8px]"}`}>{tab.shortLabel}</span>
             </Link>
           ))}
         </div>
