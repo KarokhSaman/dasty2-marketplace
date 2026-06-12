@@ -120,14 +120,18 @@ html[dir='rtl'] .font-display {
 }
 
 /* Fix viewport expansion on Chrome mobile toolbar hide/show */
-html, body {
-  height: 100dvh;
-  overflow: hidden;
+@supports (height: 100dvh) {
+  html, body {
+    height: 100dvh;
+  }
 }
 
-main {
-  height: 100%;
-  overflow-y: auto;
+/* Stabilize fixed elements on viewport resize */
+@media (max-width: 1023px) {
+  nav[class*="fixed"][class*="bottom-0"] {
+    will-change: transform;
+    transform: translateZ(0);
+  }
 }
 
 @utility scrollbar-hide {
