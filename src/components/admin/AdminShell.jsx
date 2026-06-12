@@ -245,8 +245,8 @@ export default function AdminShell({ children }) {
 
       {/* ── Mobile bottom nav — iPad optimization ── */}
       <div className="lg:hidden h-20 sm:h-24" aria-hidden />
-      <nav ref={navRef} className="lg:hidden fixed left-1/2 -translate-x-1/2 z-30 bg-white border border-[var(--color-hairline)] rounded-3xl" style={{ position: "fixed !important", top: "auto !important", bottom: "1rem !important", left: "50% !important", transform: "translateX(-50%) !important", height: "70px !important", maxHeight: "70px !important", minHeight: "70px !important", overflow: "hidden !important", contain: "layout paint", willChange: "height" }}>
-        <div className="flex items-center justify-center gap-4 py-3 px-4 h-full" style={{ contain: "layout paint" }}>
+      <nav ref={navRef} className="lg:hidden fixed inset-x-0 z-30 bg-white border-t border-[var(--color-hairline)]" style={{ position: "fixed !important", bottom: "0 !important", left: "0 !important", right: "0 !important", height: "70px !important", maxHeight: "70px !important", minHeight: "70px !important", overflow: "hidden !important", contain: "layout paint", willChange: "height" }}>
+        <div className="flex items-center justify-around gap-4 py-3 px-4 h-full w-full" style={{ contain: "layout paint" }}>
           {navTabs.map(tab => (
             <Link key={tab.href} to={tab.href}
               className={`flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded-lg border-b-2 flex-shrink-0 flex-grow-0 ${
