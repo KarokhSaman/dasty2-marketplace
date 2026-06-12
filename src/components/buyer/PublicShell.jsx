@@ -185,7 +185,7 @@ function SmartBottomNav() {
     return (
       <>
         <div className="lg:hidden h-20 sm:h-24" aria-hidden />
-        <nav className="lg:hidden fixed bottom-0 left-1/2 -translate-x-1/2 z-30 bg-white border border-[var(--color-hairline)] rounded-3xl mb-4">
+        <nav className="lg:hidden fixed left-1/2 -translate-x-1/2 z-30 bg-white border border-[var(--color-hairline)] rounded-3xl" style={{ bottom: "max(1rem, env(safe-area-inset-bottom))" }}>
           <div className="flex items-center justify-center gap-8 py-3 px-6 pb-[max(0.25rem,env(safe-area-inset-bottom))]">
             <Link to="/" onClick={handleHomeTap} className={`inline-flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg border-b-2 ${isHome ? "text-[var(--color-ember-600)] border-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] border-transparent"}`}>
               <svg className="w-6 h-6" fill={isHome ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">

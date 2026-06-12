@@ -126,9 +126,9 @@ html[dir='rtl'] .font-display {
   }
 }
 
-/* Stabilize fixed elements on viewport resize */
+/* Stabilize fixed bottom nav on viewport resize */
 @media (max-width: 1023px) {
-  nav[class*="fixed"][class*="bottom-0"] {
+  nav.lg\:hidden[class*="fixed"] {
     will-change: transform;
     transform: translateZ(0);
   }

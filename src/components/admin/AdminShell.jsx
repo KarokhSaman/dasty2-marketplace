@@ -227,7 +227,7 @@ export default function AdminShell({ children }) {
 
       {/* ── Mobile bottom nav — iPad optimization ── */}
       <div className="lg:hidden h-20 sm:h-24" aria-hidden />
-      <nav className="lg:hidden fixed bottom-0 left-1/2 -translate-x-1/2 z-30 bg-white border border-[var(--color-hairline)] rounded-3xl mb-4">
+      <nav className="lg:hidden fixed left-1/2 -translate-x-1/2 z-30 bg-white border border-[var(--color-hairline)] rounded-3xl" style={{ bottom: "max(1rem, env(safe-area-inset-bottom))" }}>
         <div className="flex items-center justify-center gap-4 py-3 px-4 pb-[max(0.25rem,env(safe-area-inset-bottom))]">
           {navTabs.map(tab => (
             <Link key={tab.href} to={tab.href}
