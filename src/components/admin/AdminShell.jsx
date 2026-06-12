@@ -261,10 +261,10 @@ export default function AdminShell({ children }) {
         <div className={`flex items-center justify-center transition-all duration-300 ${isNavVisible ? "gap-4 py-3 px-4" : "gap-2 py-2 px-2"} pb-[max(0.25rem,env(safe-area-inset-bottom))]`}>
           {navTabs.map(tab => (
             <Link key={tab.href} to={tab.href}
-              className={`flex flex-col items-center justify-center transition-all duration-300 ${isNavVisible ? "gap-0.5 px-2 py-1.5" : "gap-0 px-1 py-1"} rounded-lg ${
+              className={`flex flex-col items-center justify-center transition-all duration-300 ${isNavVisible ? "gap-0.5 px-2 py-1.5" : "gap-0 px-1 py-1"} rounded-lg border-b-2 ${
                 tab.active
-                  ? "text-[var(--color-ember-600)] bg-[var(--color-ember-50)]"
-                  : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]"
+                  ? "text-[var(--color-ember-600)] border-[var(--color-ember-600)]"
+                  : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] border-transparent"
               }`}>
               <div className={`flex items-center justify-center transition-all duration-300 ${isNavVisible ? "w-6 h-6" : "w-5 h-5"}`}>{tab.icon(tab.active)}</div>
               <span className={`font-semibold leading-tight text-center w-full transition-all duration-300 ${isNavVisible ? "text-[10px]" : "text-[8px]"}`}>{tab.shortLabel}</span>
