@@ -1,5 +1,5 @@
 import { usePaginatedQuery } from "convex/react";
-import { useQuery as useReactQuery } from "@tanstack/react-query";
+import { useQuery as useReactQuery, useQueryClient } from "@tanstack/react-query";
 import { convexQuery } from "@convex-dev/react-query";
 import { api } from "@/convex/_generated/api";
 import { useState, useMemo, useRef, useEffect, useLayoutEffect } from "react";
@@ -303,9 +303,18 @@ export default function HomePage() {
   // Featured is non-paginated → prefetched in the route loader (SSR + intent
   // preload) via React Query, still live-reactive. The paginated feed below
   // stays on usePaginatedQuery (convexQuery has no pagination).
-  // Refetch every 60 seconds to rotate featured products with same position
-  const { data: liveFeatured } = useReactQuery(convexQuery(api.products.getFeatured, {}), { refetchInterval: 60000 });
+  const queryClient = useQueryClient();
+  const { data: liveFeatured } = useReactQuery(convexQuery(api.products.getFeatured, {}));
   const featuredProducts = liveFeatured ?? cachedFeatured ?? [];
+
+  // Refetch featured products every 60 seconds to rotate products at same position
+  useEffect(() => {
+    if (typeof window === "undefined") return; // Skip on server
+    const interval = setInterval(() => {
+      queryClient.invalidateQueries({ queryKey: [api.products.getFeatured.name] });
+    }, 60000);
+    return () => clearInterval(interval);
+  }, [queryClient]);
 
   // Pinned products for the top carousel
   const { data: livePinned } = useReactQuery(convexQuery(api.products.getPinned, {}));
