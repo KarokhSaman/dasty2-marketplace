@@ -303,7 +303,8 @@ export default function HomePage() {
   // Featured is non-paginated → prefetched in the route loader (SSR + intent
   // preload) via React Query, still live-reactive. The paginated feed below
   // stays on usePaginatedQuery (convexQuery has no pagination).
-  const { data: liveFeatured } = useReactQuery(convexQuery(api.products.getFeatured, {}));
+  // Refetch every 60 seconds to rotate featured products with same position
+  const { data: liveFeatured } = useReactQuery(convexQuery(api.products.getFeatured, {}), { refetchInterval: 60000 });
   const featuredProducts = liveFeatured ?? cachedFeatured ?? [];
 
   // Pinned products for the top carousel
