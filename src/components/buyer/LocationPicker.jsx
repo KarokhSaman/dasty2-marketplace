@@ -40,13 +40,13 @@ export default function LocationPicker({ city, setCity, availableCities }) {
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className={`h-10 inline-flex items-center gap-1.5 px-3 rounded-xl border text-[13px] font-semibold whitespace-nowrap transition-colors tap ${
+        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all duration-200 text-[11.5px] font-semibold whitespace-nowrap ${
           isActive || open
-            ? "border-[var(--color-ember-500)] bg-[var(--color-ember-500)] text-white"
-            : "border-[var(--color-hairline)] bg-white text-[var(--color-ink)] hover:border-[var(--color-ember-300)]"
+            ? "border-[var(--color-ember-400)] bg-[var(--color-ember-50)] text-[var(--color-ember-600)]"
+            : "border-transparent bg-[var(--color-sand)] hover:bg-[var(--color-ember-50)] text-[var(--color-ink)]"
         }`}
       >
-        <PinIcon className="w-4 h-4 shrink-0" />
+        <PinIcon className="w-3.5 h-3.5 shrink-0" />
         <span className="max-w-[6rem] truncate">{currentLabel}</span>
         <svg className={`w-3 h-3 shrink-0 transition-transform ${open ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
@@ -54,8 +54,8 @@ export default function LocationPicker({ city, setCity, availableCities }) {
       </button>
 
       {open && (
-        <div className="absolute end-0 top-full mt-2 bg-white border border-[var(--color-hairline)] rounded-2xl shadow-[0_18px_44px_-20px_rgba(11,12,15,0.28)] z-50 overflow-hidden min-w-[150px] scale-in origin-top">
-          <div className="py-1">
+        <div className="absolute start-0 top-full mt-2 bg-white border border-[var(--color-hairline)] rounded-2xl shadow-[0_18px_44px_-20px_rgba(11,12,15,0.28)] z-[60] overflow-hidden min-w-[150px] scale-in origin-top">
+          <div className="max-h-40 overflow-y-auto">
             {options.map((opt) => {
               const active = city === opt.value;
               return (
@@ -63,7 +63,7 @@ export default function LocationPicker({ city, setCity, availableCities }) {
                   key={opt.value}
                   type="button"
                   onClick={() => { setCity(opt.value); setOpen(false); }}
-                  className={`flex items-center justify-between gap-3 w-full px-4 py-2.5 text-sm text-start whitespace-nowrap transition-colors ${
+                  className={`flex items-center justify-between gap-3 w-full px-3 py-2 text-xs text-start whitespace-nowrap transition-colors ${
                     active
                       ? "bg-[var(--color-ember-50)] text-[var(--color-ember-600)] font-semibold"
                       : "text-[var(--color-ink)] hover:bg-[var(--color-cream)]"

@@ -17,6 +17,7 @@ import { useImageUpload } from "@/lib/useImageUpload";
 import { calculateProfit, formatPrice, normalizeDigits } from "@/lib/utils";
 import CustomSelect from "@/components/ui/CustomSelect";
 import { getCategoryLabel } from "@/lib/categories";
+import { getBrandOptions, hasBrandOption } from "@/lib/brands";
 
 const CATEGORIES = [
   "Strollers & Travel",
@@ -45,6 +46,7 @@ export default function RepostPage() {
   // Form state
   const [title, setTitle]             = useState("");
   const [category, setCategory]       = useState("");
+  const [brand, setBrand]             = useState("");
   const [condition, setCondition]     = useState("new");
   const [price, setPrice]             = useState("");
   const [description, setDescription] = useState("");
@@ -60,6 +62,7 @@ export default function RepostPage() {
     if (!source || ready) return;
     setTitle(source.title ?? "");
     setCategory(source.category ?? "");
+    setBrand(source.brand ?? "");
     setCondition(source.condition ?? "new");
     setPrice(String(source.price ?? ""));
     setDescription(source.description ?? "");
@@ -105,6 +108,7 @@ export default function RepostPage() {
       await addProduct({
         title: title.trim(),
         category,
+        brand: brand || undefined,
         condition,
         price: priceNum,
         description: description.trim(),
@@ -212,16 +216,38 @@ export default function RepostPage() {
             <label className="block text-[13px] font-semibold text-[var(--color-ink)] mb-1.5">
               {m.fieldCondition()} <span className="text-rose-500">*</span>
             </label>
-            <div className="flex rounded-xl border border-[var(--color-hairline)] overflow-hidden">
-              {["new","used"].map((c) => (
+            <div className="flex rounded-xl border border-[var(--color-hairline)] overflow-hidden h-10">
+              {["new","likenew","used"].map((c) => (
                 <button key={c} type="button" onClick={() => setCondition(c)}
-                  className={`flex-1 py-2.5 text-sm font-medium transition-colors ${condition === c ? "bg-[var(--color-ember-500)] text-white" : "text-[var(--color-ink)] hover:bg-[var(--color-cream)]"}`}>
-                  {c === "new" ? m.conditionNew() : m.conditionUsed()}
+                  className={`flex-1 text-xs font-medium transition-colors flex items-center justify-center ${condition === c ? "bg-[var(--color-ember-500)] text-white" : "text-[var(--color-ink)] hover:bg-[var(--color-cream)]"}`}>
+                  {c === "new" ? m.conditionNew() : c === "likenew" ? m.conditionLikeNew() : m.conditionUsed()}
                 </button>
               ))}
             </div>
           </div>
         </div>
+
+        {hasBrandOption(category) && (
+          <div>
+            <label className="block text-[13px] font-semibold text-[var(--color-ink)] mb-1.5">{m.fieldBrand()}</label>
+            <div className="relative">
+              <CustomSelect
+                value={brand}
+                onChange={setBrand}
+                placeholder={m.fieldBrandPlaceholder()}
+                options={[...getBrandOptions(category).map(b => ({ value: b, label: b })), { value: "Other", label: "Other" }]}
+              />
+              {brand && (
+                <button type="button" onClick={() => setBrand("")}
+                  className="absolute end-3 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded-full bg-[var(--color-cream-deep)] hover:bg-[var(--color-cream-deep)] text-[var(--color-ink-fade)] hover:text-[var(--color-ink-soft)] transition-colors">
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Price */}
         <div>

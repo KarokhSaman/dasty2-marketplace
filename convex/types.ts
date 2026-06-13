@@ -25,6 +25,7 @@ export type ProductStatus = typeof productStatusValidator.type;
 
 export const conditionValidator = v.union(
   v.literal("new"),
+  v.literal("likenew"),
   v.literal("used"),
 );
 export type Condition = typeof conditionValidator.type;

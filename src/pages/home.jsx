@@ -6,7 +6,7 @@ import { useState, useMemo, useRef, useEffect, useLayoutEffect } from "react";
 import ProductCard from "@/components/buyer/ProductCard";
 import CategoryBar from "@/components/buyer/CategoryBar";
 import LocationPicker from "@/components/buyer/LocationPicker";
-import { SearchInput, SegmentedControl, Skeleton } from "@/components/ui";
+import { SegmentedControl, Skeleton } from "@/components/ui";
 import { Link } from "@tanstack/react-router";
 import * as m from "@/paraglide/messages";
 import { getCategorySearchStrings } from "@/lib/categories";
@@ -38,17 +38,16 @@ function SortIcon() {
   );
 }
 
-function SearchRow({ search, setSearch, city, setCity, availableCities, animate }) {
+
+/** Row with City filter (left) and Brand + Sort filters (right) */
+function FiltersRow({ city, setCity, availableCities, brands, setBrands, sort, setSort }) {
   return (
-    <div className={`relative z-[60] flex items-stretch gap-2 mb-3 ${animate ? "fade-up" : ""}`}>
-      <SearchInput
-        value={search}
-        onChange={setSearch}
-        placeholder={m.searchPlaceholder()}
-        clearLabel="Clear search"
-        className="flex-1"
-      />
+    <div className={`flex items-center justify-between gap-2 mb-2.5 px-0.5`}>
       <LocationPicker city={city} setCity={setCity} availableCities={availableCities} />
+      <div className="inline-flex items-center gap-1 shrink-0">
+        <BrandSelector brands={brands} setBrands={setBrands} />
+        <SortMenu sort={sort} setSort={setSort} />
+      </div>
     </div>
   );
 }
@@ -75,12 +74,13 @@ function SortMenu({ sort, setSort }) {
   }, [open]);
 
   const currentOption = sortOptions.find(o => o.value === sort) || sortOptions[0];
+  const sortArrow = isActive ? (sort === "price_asc" ? "↑" : "↓") : null;
 
   return (
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen(!open)}
-        className={`inline-flex items-center justify-center h-7 px-1.5 rounded-full border transition-all duration-200 ${
+        className={`inline-flex items-center justify-center gap-0.5 h-7 px-1.5 rounded-full border transition-all duration-200 ${
           isActive
             ? "border-[var(--color-ember-400)] bg-[var(--color-ember-50)] text-[var(--color-ember-600)]"
             : "border-transparent bg-[var(--color-sand)] hover:bg-[var(--color-ember-50)] text-[var(--color-ink)]"
@@ -88,23 +88,25 @@ function SortMenu({ sort, setSort }) {
         title={currentOption?.label}
       >
         <SortIcon />
+        {sortArrow && <span className="text-xs font-bold">{sortArrow}</span>}
       </button>
       {open && (
-        <div className="absolute end-0 top-full mt-2 bg-white border border-[var(--color-hairline)] rounded-2xl shadow-[0_18px_44px_-20px_rgba(11,12,15,0.28)] z-30 overflow-hidden min-w-[190px]">
-          {sortOptions.map((opt) => (
-            <button
-              key={opt.value}
-              type="button"
-              onClick={() => {
-                setSort(opt.value);
-                setOpen(false);
-              }}
-              className={`flex items-center justify-between gap-4 w-full px-4 py-2.5 text-sm text-start whitespace-nowrap transition-colors ${
-                sort === opt.value
-                  ? "bg-[var(--color-ember-50)] text-[var(--color-ember-600)] font-semibold"
-                  : "text-[var(--color-ink)] hover:bg-[var(--color-cream)]"
-              }`}
-            >
+        <div className="absolute end-0 top-full mt-2 bg-white border border-[var(--color-hairline)] rounded-2xl shadow-[0_18px_44px_-20px_rgba(11,12,15,0.28)] z-[60] overflow-hidden min-w-[150px]">
+          <div className="max-h-48 overflow-y-auto">
+            {sortOptions.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => {
+                  setSort(opt.value);
+                  setOpen(false);
+                }}
+                className={`flex items-center justify-between gap-3 w-full px-3 py-2 text-xs text-start whitespace-nowrap transition-colors ${
+                  sort === opt.value
+                    ? "bg-[var(--color-ember-50)] text-[var(--color-ember-600)] font-semibold"
+                    : "text-[var(--color-ink)] hover:bg-[var(--color-cream)]"
+                }`}
+              >
               {opt.label}
               {sort === opt.value && (
                 <svg className="w-3.5 h-3.5 text-[var(--color-ember-500)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -112,7 +114,8 @@ function SortMenu({ sort, setSort }) {
                 </svg>
               )}
             </button>
-          ))}
+            ))}
+          </div>
         </div>
       )}
     </div>
@@ -138,10 +141,14 @@ function BrandSelector({ brands, setBrands }) {
   }, [open]);
 
   const toggleBrand = (brand) => {
-    if (brands.includes(brand)) {
-      setBrands(brands.filter(b => b !== brand));
+    if (brand === "all") {
+      setBrands([]);
     } else {
-      setBrands([...brands, brand]);
+      if (brands.includes(brand)) {
+        setBrands(brands.filter(b => b !== brand));
+      } else {
+        setBrands([...brands, brand]);
+      }
     }
   };
 
@@ -161,27 +168,31 @@ function BrandSelector({ brands, setBrands }) {
         </svg>
       </button>
       {open && (
-        <div className="absolute end-0 top-full mt-2 bg-white border border-[var(--color-hairline)] rounded-2xl shadow-[0_18px_44px_-20px_rgba(11,12,15,0.28)] z-30 overflow-hidden min-w-[280px]">
-          <div className="max-h-80 overflow-y-auto p-3">
-            <div className="grid grid-cols-2 gap-2">
-              {allBrands.map((brand) => {
-                const isSelected = brands.includes(brand);
-                return (
-                  <button
-                    key={brand}
-                    type="button"
-                    onClick={() => toggleBrand(brand)}
-                    className={`px-3 py-2 rounded-lg text-xs font-medium text-center transition-all duration-200 ${
-                      isSelected
-                        ? "bg-[var(--color-ember-600)] text-white shadow-[0_2px_4px_rgba(237,0,64,0.2)]"
-                        : "bg-[var(--color-cream)] text-[var(--color-ink)] border border-[var(--color-hairline)] hover:bg-[var(--color-sand)]"
-                    }`}
-                  >
-                    {brand}
-                  </button>
-                );
-              })}
-            </div>
+        <div className="absolute end-0 top-full mt-2 bg-white border border-[var(--color-hairline)] rounded-2xl shadow-[0_18px_44px_-20px_rgba(11,12,15,0.28)] z-[60] overflow-hidden min-w-[150px]">
+          <div className="max-h-48 overflow-y-auto">
+            {[{ value: "all", label: m.allBrands() }, ...allBrands.map(b => ({ value: b, label: b })), { value: "Other", label: "Other" }].map((item) => {
+              const isAllBrands = item.value === "all";
+              const isSelected = isAllBrands ? brands.length === 0 : brands.includes(item.value);
+              return (
+                <button
+                  key={item.value}
+                  type="button"
+                  onClick={() => toggleBrand(item.value)}
+                  className={`flex items-center justify-between gap-3 w-full px-3 py-2 text-xs text-start whitespace-nowrap transition-colors ${
+                    isSelected
+                      ? "bg-[var(--color-ember-50)] text-[var(--color-ember-600)] font-semibold"
+                      : "text-[var(--color-ink)] hover:bg-[var(--color-cream)]"
+                  }`}
+                >
+                  {item.label}
+                  {isSelected && (
+                    <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
@@ -189,59 +200,36 @@ function BrandSelector({ brands, setBrands }) {
   );
 }
 
-/** Single row: condition tabs (left) + filters (right). Count lives in FloatingCount. */
-function MetaRow({ condition, setCondition, sort, setSort, brands, setBrands, hasActiveFilter, onReset }) {
+/** Row: condition tabs (left) + reset button (right) */
+function ConditionRow({ condition, setCondition, hasActiveFilter, onReset }) {
   const conditionOptions = [
     { value: "all",  label: m.allItems() },
     { value: "new",  label: m.conditionNew() },
+    { value: "likenew", label: m.conditionLikeNew() },
     { value: "used", label: m.conditionUsed() },
   ];
 
   return (
     <div className="relative z-50">
-      <div className="flex items-center justify-between gap-1.5 mb-2.5 px-0.5 flex-wrap">
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <SegmentedControl
-            variant="underline"
-            value={condition}
-            onChange={setCondition}
-            options={conditionOptions}
-          />
-          {hasActiveFilter && (() => {
-            const isEnglish = typeof document !== "undefined" && document.documentElement.lang === "en";
-            if (isEnglish) {
-              return (
-                <button
-                  type="button"
-                  onClick={onReset}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-[var(--color-ember-300)] bg-[var(--color-ember-50)] text-[var(--color-ember-600)] hover:bg-[var(--color-ember-100)] hover:border-[var(--color-ember-400)] font-semibold text-[11px] whitespace-nowrap shrink-0 transition-all duration-200"
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.4} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                  {m.filterReset()}
-                </button>
-              );
-            } else {
-              return (
-                <button
-                  type="button"
-                  onClick={onReset}
-                  className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded-lg border border-[var(--color-ember-300)] bg-[var(--color-ember-50)] text-[var(--color-ember-600)] hover:bg-[var(--color-ember-100)] hover:border-[var(--color-ember-400)] font-semibold text-[9px] whitespace-nowrap shrink-0 transition-all duration-200"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.4} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                  <span className="hidden sm:inline">{m.filterReset()}</span>
-                </button>
-              );
-            }
-          })()}
-        </div>
-        <div className="inline-flex items-center gap-1 shrink-0">
-          <BrandSelector brands={brands} setBrands={setBrands} />
-          <SortMenu sort={sort} setSort={setSort} />
-        </div>
+      <div className="flex items-center justify-between gap-1.5 mb-2.5 px-0.5">
+        <SegmentedControl
+          variant="underline"
+          value={condition}
+          onChange={setCondition}
+          options={conditionOptions}
+        />
+        {hasActiveFilter && (
+          <button
+            type="button"
+            onClick={onReset}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-[var(--color-ember-300)] bg-[var(--color-ember-50)] text-[var(--color-ember-600)] hover:bg-[var(--color-ember-100)] hover:border-[var(--color-ember-400)] font-semibold text-[11px] whitespace-nowrap shrink-0 transition-all duration-200"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.4} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            {m.filterReset()}
+          </button>
+        )}
       </div>
     </div>
   );
@@ -487,27 +475,24 @@ export default function HomePage() {
 
   return (
     <div className="pb-6">
-      <SearchRow
-        search={search}
-        setSearch={updateFilter("search")}
-        city={city}
-        setCity={updateFilter("city")}
-        availableCities={availableCities}
-        animate={animateEntrance}
-      />
-
       <div className={`mb-1 ${animateEntrance ? "fade-up" : ""}`}>
         <CategoryBar selected={category} onSelect={updateFilter("category")} />
       </div>
 
+      <FiltersRow
+        city={city}
+        setCity={updateFilter("city")}
+        availableCities={availableCities}
+        brands={brands}
+        setBrands={updateFilter("brands")}
+        sort={sort}
+        setSort={updateFilter("sort")}
+      />
+
       {!isLoading && (
-        <MetaRow
+        <ConditionRow
           condition={condition}
           setCondition={updateFilter("condition")}
-          sort={sort}
-          setSort={updateFilter("sort")}
-          brands={brands}
-          setBrands={updateFilter("brands")}
           hasActiveFilter={
             condition !== "all" || city !== "all" || sort !== "default" || category !== "all" || search !== "" || brands.length > 0
           }
