@@ -84,7 +84,7 @@ export const getPublic = query({
   },
 });
 
-// Always returns currently-featured products regardless of their pagination position
+// Returns featured products sorted by position (1-10) with rotation for same-position products
 export const getFeatured = query({
   args: {},
   handler: async (ctx) => {
@@ -94,20 +94,46 @@ export const getFeatured = query({
       .query("products")
       .withIndex("by_status", (q) => q.eq("status", "approved"))
       .collect();
-    return all
-      .filter(
-        (p) =>
-          !inactiveIds.has(p.sellerId) &&
-          p.featured &&
-          (!p.featuredUntil || p.featuredUntil >= today),
-      )
-      .sort((a, b) => {
-        // Sort by featuredAt descending (newest first)
-        const aTime = a.featuredAt ? new Date(a.featuredAt).getTime() : 0;
-        const bTime = b.featuredAt ? new Date(b.featuredAt).getTime() : 0;
-        return bTime - aTime;
-      })
-      .map(toPublic);
+
+    const featured = all.filter(
+      (p) =>
+        !inactiveIds.has(p.sellerId) &&
+        p.featured &&
+        (!p.featuredUntil || p.featuredUntil >= today),
+    );
+
+    // Split into positioned and unpositioned products
+    const positioned = featured.filter((p) => p.featuredPosition !== undefined);
+    const unpositioned = featured.filter((p) => p.featuredPosition === undefined);
+
+    // Sort positioned by position (1-10), apply rotation within each position
+    const sortedPositioned = [];
+    for (let pos = 1; pos <= 10; pos++) {
+      const productsAtPosition = positioned
+        .filter((p) => p.featuredPosition === pos)
+        .sort((a, b) => a._id.localeCompare(b._id)); // Deterministic stable sort by ID
+
+      if (productsAtPosition.length > 0) {
+        // Calculate rotation offset based on current time (rotate every 60 seconds)
+        const rotationOffset = Math.floor(Date.now() / 60000) % productsAtPosition.length;
+        // Rotate array by offset
+        const rotated = [
+          ...productsAtPosition.slice(rotationOffset),
+          ...productsAtPosition.slice(0, rotationOffset),
+        ];
+        sortedPositioned.push(...rotated);
+      }
+    }
+
+    // Sort unpositioned by featuredAt descending (newest first)
+    const sortedUnpositioned = unpositioned.sort((a, b) => {
+      const aTime = a.featuredAt ? new Date(a.featuredAt).getTime() : 0;
+      const bTime = b.featuredAt ? new Date(b.featuredAt).getTime() : 0;
+      return bTime - aTime;
+    });
+
+    // Return positioned first, then unpositioned
+    return [...sortedPositioned, ...sortedUnpositioned].map(toPublic);
   },
 });
 
@@ -393,16 +419,19 @@ export const adminUpdatePhotos = mutation({
 
 export const setFeatured = mutation({
   args: {
-    id:            v.id("products"),
-    featured:      v.boolean(),
-    featuredUntil: v.optional(v.string()), // "YYYY-MM-DD"
+    id:                v.id("products"),
+    featured:          v.boolean(),
+    featuredUntil:     v.optional(v.string()), // "YYYY-MM-DD"
+    featuredPosition:  v.optional(v.number()), // 1-10 or undefined
   },
-  handler: async (ctx, { id, featured, featuredUntil }) => {
+  handler: async (ctx, { id, featured, featuredUntil, featuredPosition }) => {
     await requireAdmin(ctx);
+    const validatedPosition = featuredPosition && featuredPosition >= 1 && featuredPosition <= 10 ? featuredPosition : undefined;
     await ctx.db.patch(id, {
       featured,
       featuredUntil: featured ? featuredUntil : undefined,
       featuredAt: featured ? new Date().toISOString() : undefined,
+      featuredPosition: featured ? validatedPosition : undefined,
       pinned: featured ? false : undefined, // Remove pin when unfeatureing
       pinnedUntil: undefined,
       pinnedAt: undefined,
