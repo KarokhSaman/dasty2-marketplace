@@ -280,7 +280,8 @@ const INITIAL_FILTERS = {
 export default function HomePage() {
   const { sellerId, ready } = useGlobalSellerSession();
   const [filters, setFilters] = useState(INITIAL_FILTERS);
-  const [rotationTick, setRotationTick] = useState(0); // Trigger re-render every 20 seconds
+  const [rotationTick, setRotationTick] = useState(0); // Trigger re-render every 15 seconds
+  const [isRotating, setIsRotating] = useState(false); // Animation state
   const { search, category, condition, sort, city, brands } = filters;
   const updateFilter = (key) => (value) => setFilters((f) => ({ ...f, [key]: value }));
   const sentinelRef = useRef(null);
@@ -322,8 +323,8 @@ export default function HomePage() {
         .sort((a, b) => a._id.localeCompare(b._id));
 
       if (atPos.length > 0) {
-        // Calculate rotation offset based on current time (rotate every 20 seconds)
-        const offset = Math.floor(Date.now() / 20000) % atPos.length;
+        // Calculate rotation offset based on current time (rotate every 15 seconds)
+        const offset = Math.floor(Date.now() / 15000) % atPos.length;
         rotated.push(...[...atPos.slice(offset), ...atPos.slice(0, offset)]);
       }
     }
@@ -333,14 +334,23 @@ export default function HomePage() {
 
   const featuredProducts = applyClientRotation(rawFeaturedProducts);
 
-  // Update rotationTick every 20 seconds to trigger re-renders (which recalculates rotation)
+  // Update rotationTick every 15 seconds to trigger re-renders (which recalculates rotation)
   useEffect(() => {
     if (category !== "all") return;
     const interval = setInterval(() => {
       setRotationTick(t => t + 1);
-    }, 20000); // 20 seconds
+    }, 15000); // 15 seconds
     return () => clearInterval(interval);
   }, [category]);
+
+  // Trigger animation on rotation
+  useEffect(() => {
+    if (rotationTick > 0 && category === "all") {
+      setIsRotating(true);
+      const timer = setTimeout(() => setIsRotating(false), 600); // 600ms animation duration
+      return () => clearTimeout(timer);
+    }
+  }, [rotationTick, category]);
 
   const { results: liveResults, status, loadMore } = usePaginatedQuery(
     api.products.getPublicPaginated,
@@ -507,7 +517,7 @@ export default function HomePage() {
 
       {/* Featured Products Carousel - Sticky with Circular Cards (hidden on mobile) */}
       {featuredFiltered.length > 0 && category === "all" && (
-        <div className={`hidden sm:block sticky top-14 z-30 bg-white pt-1 pb-3 -mx-4 px-4 sm:mx-0 sm:px-0 ${animateEntrance ? "fade-up" : ""}`}>
+        <div className={`hidden sm:block sticky top-14 z-30 bg-white pt-1 pb-3 -mx-4 px-4 sm:mx-0 sm:px-0 transition-all duration-600 ${animateEntrance ? "fade-up" : ""} ${isRotating ? "opacity-80 scale-95" : "opacity-100 scale-100"}`}>
           <h2 className="text-sm font-bold text-[var(--color-ink)] mb-3 px-0.5 flex items-center gap-1.5">
             <span className="inline-flex items-center justify-center shrink-0 w-4 h-4 rounded-full bg-[var(--color-ember-500)] text-white shadow-[0_2px_6px_-2px_rgba(237,0,64,0.6)]">
               <svg className="w-2.5 h-2.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
