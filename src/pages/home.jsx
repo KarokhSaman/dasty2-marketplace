@@ -280,7 +280,7 @@ const INITIAL_FILTERS = {
 export default function HomePage() {
   const { sellerId, ready } = useGlobalSellerSession();
   const [filters, setFilters] = useState(INITIAL_FILTERS);
-  const [rotationTick, setRotationTick] = useState(0); // Trigger refetch every 25s
+  const [rotationTick, setRotationTick] = useState(0); // Trigger re-render every 20 seconds
   const { search, category, condition, sort, city, brands } = filters;
   const updateFilter = (key) => (value) => setFilters((f) => ({ ...f, [key]: value }));
   const sentinelRef = useRef(null);
@@ -307,7 +307,7 @@ export default function HomePage() {
   const { data: liveFeatured } = useReactQuery(convexQuery(api.products.getFeatured, {}));
   const rawFeaturedProducts = liveFeatured ?? cachedFeatured ?? [];
 
-  // Apply client-side rotation logic every 25 seconds when category is "all"
+  // Apply client-side rotation logic every 20 seconds when category is "all"
   const applyClientRotation = (products) => {
     if (category !== "all" || !products.length) return products;
 
