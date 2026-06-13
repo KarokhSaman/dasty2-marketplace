@@ -137,34 +137,6 @@ export const getFeatured = query({
   },
 });
 
-// Returns pinned products (max 20) for the buyer home page carousel
-export const getPinned = query({
-  args: {},
-  handler: async (ctx) => {
-    const today = new Date().toISOString().slice(0, 10);
-    const inactiveIds = await getInactiveSellerIds(ctx);
-    const all = await ctx.db
-      .query("products")
-      .withIndex("by_status", (q) => q.eq("status", "approved"))
-      .collect();
-    return all
-      .filter(
-        (p) =>
-          !inactiveIds.has(p.sellerId) &&
-          p.pinned &&
-          (!p.pinnedUntil || p.pinnedUntil >= today),
-      )
-      .sort((a, b) => {
-        // Sort by pinnedAt descending (newest pinned first)
-        const aTime = a.pinnedAt ? new Date(a.pinnedAt).getTime() : 0;
-        const bTime = b.pinnedAt ? new Date(b.pinnedAt).getTime() : 0;
-        return bTime - aTime;
-      })
-      .map(toPublic)
-      .slice(0, 20); // Max 20 pinned products
-  },
-});
-
 // Paginated version — used by the buyer listing page
 export const getPublicPaginated = query({
   args: {
@@ -432,28 +404,7 @@ export const setFeatured = mutation({
       featuredUntil: featured ? featuredUntil : undefined,
       featuredAt: featured ? new Date().toISOString() : undefined,
       featuredPosition: featured ? validatedPosition : undefined,
-      pinned: featured ? false : undefined, // Remove pin when unfeatureing
-      pinnedUntil: undefined,
-      pinnedAt: undefined,
     });
   },
 });
 
-export const setPinned = mutation({
-  args: {
-    id:    v.id("products"),
-    pinned: v.boolean(),
-  },
-  handler: async (ctx, { id, pinned }) => {
-    await requireAdmin(ctx);
-    const product = await ctx.db.get(id);
-    if (!product) return;
-
-    // Pin duration matches feature duration
-    await ctx.db.patch(id, {
-      pinned,
-      pinnedUntil: pinned ? product.featuredUntil : undefined,
-      pinnedAt: pinned ? new Date().toISOString() : undefined,
-    });
-  },
-});

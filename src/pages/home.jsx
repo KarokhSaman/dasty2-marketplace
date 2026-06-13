@@ -342,10 +342,6 @@ export default function HomePage() {
     return () => clearInterval(interval);
   }, [category]);
 
-  // Pinned products for the top carousel
-  const { data: livePinned } = useReactQuery(convexQuery(api.products.getPinned, {}));
-  const pinnedProducts = livePinned ?? [];
-
   const { results: liveResults, status, loadMore } = usePaginatedQuery(
     api.products.getPublicPaginated,
     { category: category === "all" ? undefined : category },
