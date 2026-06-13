@@ -541,16 +541,38 @@ export default function AdminProductsPage() {
                   <label className="text-xs font-semibold text-[var(--color-ink)] block mb-2">
                     Feature Position (Optional)
                   </label>
-                  <select
-                    value={featuredPosition ? String(featuredPosition) : ''}
-                    onChange={(e) => setFeaturedPosition(e.target.value ? parseInt(e.target.value, 10) : null)}
-                    className="w-full text-sm px-3 py-2 border border-[var(--color-hairline)] rounded-lg bg-white text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-ember-400)]"
-                  >
-                    <option value="">None (date-sorted at end)</option>
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(pos => (
-                      <option key={pos} value={String(pos)}>{pos}</option>
-                    ))}
-                  </select>
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setFeaturedPosition(featuredPosition === null ? 1 : null)}
+                      className="w-full text-sm px-3 py-2 border border-[var(--color-hairline)] rounded-lg bg-white text-[var(--color-ink)] text-start focus:outline-none focus:ring-2 focus:ring-[var(--color-ember-400)] hover:bg-[var(--color-cream)]"
+                    >
+                      {featuredPosition ? `Position #${featuredPosition}` : 'None (date-sorted at end)'}
+                    </button>
+                    {featuredPosition !== null && (
+                      <div className="absolute top-full left-0 right-0 mt-1 max-h-48 overflow-y-auto bg-white border border-[var(--color-hairline)] rounded-lg shadow-lg z-50">
+                        <button
+                          type="button"
+                          onClick={() => setFeaturedPosition(null)}
+                          className="w-full text-start px-3 py-2 text-sm hover:bg-[var(--color-cream)] border-b border-[var(--color-hairline)]"
+                        >
+                          None (date-sorted at end)
+                        </button>
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(pos => (
+                          <button
+                            key={pos}
+                            type="button"
+                            onClick={() => setFeaturedPosition(pos)}
+                            className={`w-full text-start px-3 py-2 text-sm hover:bg-[var(--color-cream)] ${
+                              featuredPosition === pos ? "bg-[var(--color-ember-50)] text-[var(--color-ember-600)] font-semibold" : ""
+                            } ${pos < 10 ? "border-b border-[var(--color-hairline)]" : ""}`}
+                          >
+                            Position #{pos}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                   <p className="text-[10px] text-[var(--color-ink-fade)] mt-1.5">
                     1 = first in carousel, 10 = last. Products at same position rotate fairly.
                   </p>
