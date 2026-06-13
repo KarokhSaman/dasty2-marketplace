@@ -307,12 +307,11 @@ export default function HomePage() {
   const { data: liveFeatured } = useReactQuery(convexQuery(api.products.getFeatured, {}));
   const featuredProducts = liveFeatured ?? cachedFeatured ?? [];
 
-  // Refetch featured products every 60 seconds to rotate products at same position
+  // Refetch featured products every 25 seconds to rotate products at same position
   useEffect(() => {
-    if (typeof window === "undefined") return; // Skip on server
     const interval = setInterval(() => {
       queryClient.invalidateQueries({ queryKey: [api.products.getFeatured.name] });
-    }, 60000);
+    }, 25000); // 25 seconds
     return () => clearInterval(interval);
   }, [queryClient]);
 
