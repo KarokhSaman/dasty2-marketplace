@@ -46,6 +46,7 @@ export default function AdminProductsPage() {
 
   const [featuredPickerId, setFeaturedPickerId] = useState(null);
   const [featuredPosition, setFeaturedPosition] = useState(null); // Selected position 1-10 or null
+  const [isPositionDropdownOpen, setIsPositionDropdownOpen] = useState(false);
   const [tab,          setTab]          = useState(searchParams.get("tab") ?? "pending");
   const [search,       setSearch]       = useState("");
   const [rejectingId,  setRejectingId]  = useState(focusId ?? null);
@@ -544,16 +545,19 @@ export default function AdminProductsPage() {
                   <div className="relative">
                     <button
                       type="button"
-                      onClick={() => setFeaturedPosition(featuredPosition === null ? 1 : null)}
+                      onClick={() => setIsPositionDropdownOpen(!isPositionDropdownOpen)}
                       className="w-full text-sm px-3 py-2 border border-[var(--color-hairline)] rounded-lg bg-white text-[var(--color-ink)] text-start focus:outline-none focus:ring-2 focus:ring-[var(--color-ember-400)] hover:bg-[var(--color-cream)]"
                     >
                       {featuredPosition ? `Position #${featuredPosition}` : 'None (date-sorted at end)'}
                     </button>
-                    {featuredPosition !== null && (
+                    {isPositionDropdownOpen && (
                       <div className="absolute top-full left-0 right-0 mt-1 max-h-48 overflow-y-auto bg-white border border-[var(--color-hairline)] rounded-lg shadow-lg z-50">
                         <button
                           type="button"
-                          onClick={() => setFeaturedPosition(null)}
+                          onClick={() => {
+                            setFeaturedPosition(null);
+                            setIsPositionDropdownOpen(false);
+                          }}
                           className="w-full text-start px-3 py-2 text-sm hover:bg-[var(--color-cream)] border-b border-[var(--color-hairline)]"
                         >
                           None (date-sorted at end)
@@ -562,7 +566,10 @@ export default function AdminProductsPage() {
                           <button
                             key={pos}
                             type="button"
-                            onClick={() => setFeaturedPosition(pos)}
+                            onClick={() => {
+                              setFeaturedPosition(pos);
+                              setIsPositionDropdownOpen(false);
+                            }}
                             className={`w-full text-start px-3 py-2 text-sm hover:bg-[var(--color-cream)] ${
                               featuredPosition === pos ? "bg-[var(--color-ember-50)] text-[var(--color-ember-600)] font-semibold" : ""
                             } ${pos < 10 ? "border-b border-[var(--color-hairline)]" : ""}`}
