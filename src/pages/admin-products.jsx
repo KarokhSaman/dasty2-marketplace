@@ -544,11 +544,11 @@ export default function AdminProductsPage() {
                   <select
                     value={featuredPosition ? String(featuredPosition) : ''}
                     onChange={(e) => setFeaturedPosition(e.target.value ? parseInt(e.target.value, 10) : null)}
-                    className="w-full text-sm px-3 py-2 border border-[var(--color-hairline)] rounded-lg bg-white text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-ember-400)]"
+                    className="w-full text-sm px-4 py-3 border border-[var(--color-hairline)] rounded-xl bg-white text-[var(--color-ink)] hover:border-[var(--color-ember-300)] focus:outline-none focus:ring-2 focus:ring-[var(--color-ember-400)] focus:ring-offset-2 transition-all cursor-pointer appearance-none bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23617986%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%226 9 12 15 18 9%22></polyline></svg>')] bg-no-repeat bg-right-4 bg-center pr-10"
                   >
-                    <option value="">None (date-sorted at end)</option>
+                    <option value="" className="bg-white">None (date-sorted at end)</option>
                     {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(pos => (
-                      <option key={pos} value={String(pos)}>{pos}</option>
+                      <option key={pos} value={String(pos)} className="bg-white">{pos}</option>
                     ))}
                   </select>
                   <p className="text-[10px] text-[var(--color-ink-fade)] mt-1.5">
