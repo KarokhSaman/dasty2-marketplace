@@ -373,21 +373,17 @@ export default function HomePage() {
     return [...list].sort((a, b) => new Date(b.dateAdded) - new Date(a.dateAdded));
   };
 
-  // Featured products for carousel
-  const featuredFiltered = useMemo(() => applySort(featuredProducts.filter((p) => matchesFilters(p, { skipCategory: true }))),
-    [featuredProducts, search, condition, sort, city, brands]);
+  // Featured products for carousel — preserve position-based order from getFeatured query
+  const featuredFiltered = useMemo(() => featuredProducts.filter((p) => matchesFilters(p, { skipCategory: true })),
+    [featuredProducts, search, condition, city, brands]);
 
-  // All products: featured products on top (sorted by when featured), then regular products
+  // All products: featured products on top (position-based order), then regular products
   const allProducts = useMemo(() => {
     const featured = featuredProducts.filter((p) => matchesFilters(p, { skipCategory: true }));
     const featuredIds = new Set(featured.map(p => p._id));
     const regular = results.filter((p) => matchesFilters(p, { skipCategory: true }) && !featuredIds.has(p._id));
-    // Featured products sorted by featuredAt date (newest feature first), then regular products
-    const sortedFeatured = [...featured].sort((a, b) => {
-      const dateA = a.featuredAt ? new Date(a.featuredAt).getTime() : 0;
-      const dateB = b.featuredAt ? new Date(b.featuredAt).getTime() : 0;
-      return dateB - dateA; // Newest featured first
-    });
+    // Featured products preserve position-based order from getFeatured query, then regular products
+    const sortedFeatured = featured; // Already sorted by position in getFeatured query
     const combined = [...sortedFeatured, ...applySort(regular)];
     return combined;
   }, [featuredProducts, results, search, condition, sort, city, brands]);

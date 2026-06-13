@@ -542,13 +542,13 @@ export default function AdminProductsPage() {
                     Feature Position (Optional)
                   </label>
                   <select
-                    value={featuredPosition ?? 'none'}
-                    onChange={(e) => setFeaturedPosition(e.target.value === 'none' ? null : parseInt(e.target.value))}
+                    value={featuredPosition ? String(featuredPosition) : ''}
+                    onChange={(e) => setFeaturedPosition(e.target.value ? parseInt(e.target.value, 10) : null)}
                     className="w-full text-sm px-3 py-2 border border-[var(--color-hairline)] rounded-lg bg-white text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-ember-400)]"
                   >
-                    <option value="none">None (date-sorted at end)</option>
+                    <option value="">None (date-sorted at end)</option>
                     {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(pos => (
-                      <option key={pos} value={pos}>{pos}</option>
+                      <option key={pos} value={String(pos)}>{pos}</option>
                     ))}
                   </select>
                   <p className="text-[10px] text-[var(--color-ink-fade)] mt-1.5">
