@@ -280,6 +280,7 @@ const INITIAL_FILTERS = {
 export default function HomePage() {
   const { sellerId, ready } = useGlobalSellerSession();
   const [filters, setFilters] = useState(INITIAL_FILTERS);
+  const [rotationTick, setRotationTick] = useState(0); // Trigger refetch every 25s
   const { search, category, condition, sort, city, brands } = filters;
   const updateFilter = (key) => (value) => setFilters((f) => ({ ...f, [key]: value }));
   const sentinelRef = useRef(null);
@@ -303,17 +304,25 @@ export default function HomePage() {
   // Featured is non-paginated → prefetched in the route loader (SSR + intent
   // preload) via React Query, still live-reactive. The paginated feed below
   // stays on usePaginatedQuery (convexQuery has no pagination).
-  const queryClient = useQueryClient();
-  const { data: liveFeatured } = useReactQuery(convexQuery(api.products.getFeatured, {}));
+  // Include rotationTick in dependency to trigger refetch every 25 seconds
+  const { data: liveFeatured } = useReactQuery(convexQuery(api.products.getFeatured, {}), { gcTime: 0 });
   const featuredProducts = liveFeatured ?? cachedFeatured ?? [];
 
-  // Refetch featured products every 25 seconds to rotate products at same position
+  // Update rotationTick every 25 seconds to trigger featured products refetch
   useEffect(() => {
     const interval = setInterval(() => {
-      queryClient.invalidateQueries({ queryKey: [api.products.getFeatured.name] });
+      setRotationTick(t => t + 1);
     }, 25000); // 25 seconds
     return () => clearInterval(interval);
-  }, [queryClient]);
+  }, []);
+
+  // When rotationTick changes, refetch featured products
+  useEffect(() => {
+    if (rotationTick > 0) {
+      const queryClient = useQueryClient();
+      queryClient?.refetchQueries();
+    }
+  }, [rotationTick]);
 
   // Pinned products for the top carousel
   const { data: livePinned } = useReactQuery(convexQuery(api.products.getPinned, {}));
@@ -481,7 +490,7 @@ export default function HomePage() {
       )}
 
       {/* Featured Products Carousel - Sticky with Circular Cards (hidden on mobile) */}
-      {featuredFiltered.length > 0 && (
+      {featuredFiltered.length > 0 && category === "all" && (
         <div className={`hidden sm:block sticky top-14 z-30 bg-white pt-1 pb-3 -mx-4 px-4 sm:mx-0 sm:px-0 ${animateEntrance ? "fade-up" : ""}`}>
           <h2 className="text-sm font-bold text-[var(--color-ink)] mb-3 px-0.5 flex items-center gap-1.5">
             <span className="inline-flex items-center justify-center shrink-0 w-4 h-4 rounded-full bg-[var(--color-ember-500)] text-white shadow-[0_2px_6px_-2px_rgba(237,0,64,0.6)]">
