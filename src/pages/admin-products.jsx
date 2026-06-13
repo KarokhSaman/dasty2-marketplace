@@ -572,7 +572,9 @@ export default function AdminProductsPage() {
                   try {
                     const product = products?.find(p => p._id === confirmFeature.productId);
                     if (confirmFeature.action === 'feature') {
-                      await setFeatured({ id: confirmFeature.productId, featured: true, featuredUntil: confirmFeature.until, featuredPosition });
+                      // Convert null to undefined for Convex optional validator
+                      const positionArg = featuredPosition === null ? undefined : featuredPosition;
+                      await setFeatured({ id: confirmFeature.productId, featured: true, featuredUntil: confirmFeature.until, featuredPosition: positionArg });
                       await log("featured", product, confirmFeature.duration + (featuredPosition ? ` - Position #${featuredPosition}` : ''));
                     } else {
                       await setFeatured({ id: confirmFeature.productId, featured: false });
