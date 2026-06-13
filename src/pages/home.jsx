@@ -1,5 +1,5 @@
 import { usePaginatedQuery } from "convex/react";
-import { useQuery as useReactQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery as useReactQuery } from "@tanstack/react-query";
 import { convexQuery } from "@convex-dev/react-query";
 import { api } from "@/convex/_generated/api";
 import { useState, useMemo, useRef, useEffect, useLayoutEffect } from "react";
@@ -304,28 +304,43 @@ export default function HomePage() {
   // Featured is non-paginated → prefetched in the route loader (SSR + intent
   // preload) via React Query, still live-reactive. The paginated feed below
   // stays on usePaginatedQuery (convexQuery has no pagination).
-  // Only enable real-time rotation when category is "all"
-  const queryClient = useQueryClient();
   const { data: liveFeatured } = useReactQuery(convexQuery(api.products.getFeatured, {}));
-  const featuredProducts = liveFeatured ?? cachedFeatured ?? [];
+  const rawFeaturedProducts = liveFeatured ?? cachedFeatured ?? [];
 
-  // Update rotationTick every 25 seconds, but only refetch when category is "all"
+  // Apply client-side rotation logic every 25 seconds when category is "all"
+  const applyClientRotation = (products) => {
+    if (category !== "all" || !products.length) return products;
+
+    // Group by position
+    const positioned = products.filter(p => p.featuredPosition !== undefined);
+    const unpositioned = products.filter(p => p.featuredPosition === undefined);
+
+    const rotated = [];
+    for (let pos = 1; pos <= 10; pos++) {
+      const atPos = positioned
+        .filter(p => p.featuredPosition === pos)
+        .sort((a, b) => a._id.localeCompare(b._id));
+
+      if (atPos.length > 0) {
+        // Calculate rotation offset based on current time
+        const offset = Math.floor(Date.now() / 25000) % atPos.length;
+        rotated.push(...[...atPos.slice(offset), ...atPos.slice(0, offset)]);
+      }
+    }
+
+    return [...rotated, ...unpositioned];
+  };
+
+  const featuredProducts = applyClientRotation(rawFeaturedProducts);
+
+  // Update rotationTick every 25 seconds to trigger re-renders (which recalculates rotation)
   useEffect(() => {
-    if (category !== "all") return; // Skip rotation for other categories
-
+    if (category !== "all") return;
     const interval = setInterval(() => {
       setRotationTick(t => t + 1);
-    }, 25000); // 25 seconds
+    }, 25000);
     return () => clearInterval(interval);
   }, [category]);
-
-  // When rotationTick changes and category is "all", invalidate queries to refetch
-  useEffect(() => {
-    if (rotationTick > 0 && category === "all") {
-      // Invalidate all queries to force refetch with new rotation
-      queryClient?.invalidateQueries();
-    }
-  }, [rotationTick, category, queryClient]);
 
   // Pinned products for the top carousel - only fetch when category is "all"
   const { data: livePinned } = useReactQuery(convexQuery(api.products.getPinned, {}));
