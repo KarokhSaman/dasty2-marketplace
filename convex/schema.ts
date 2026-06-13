@@ -28,6 +28,9 @@ export default defineSchema({
     featuredUntil: v.optional(v.string()), // "YYYY-MM-DD" — undefined means indefinite
     featuredAt:    v.optional(v.string()), // ISO timestamp when featured
     featuredPosition: v.optional(v.number()), // 1-10 position in carousel, undefined = date-sorted
+    pinned:        v.optional(v.boolean()), // Deprecated - kept for backward compatibility with existing data
+    pinnedUntil:   v.optional(v.string()), // Deprecated - kept for backward compatibility
+    pinnedAt:      v.optional(v.string()), // Deprecated - kept for backward compatibility
     views: v.optional(v.number()),
     notes: v.optional(v.string()),
     approvedBy: v.optional(v.string()),
