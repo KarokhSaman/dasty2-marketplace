@@ -347,7 +347,7 @@ export default function HomePage() {
   useEffect(() => {
     if (rotationTick > 0 && category === "all") {
       setIsRotating(true);
-      const timer = setTimeout(() => setIsRotating(false), 600); // 600ms animation duration
+      const timer = setTimeout(() => setIsRotating(false), 1000); // 1000ms smooth animation
       return () => clearTimeout(timer);
     }
   }, [rotationTick, category]);
@@ -517,7 +517,7 @@ export default function HomePage() {
 
       {/* Featured Products Carousel - Sticky with Circular Cards (hidden on mobile) */}
       {featuredFiltered.length > 0 && category === "all" && (
-        <div className={`hidden sm:block sticky top-14 z-30 bg-white pt-1 pb-3 -mx-4 px-4 sm:mx-0 sm:px-0 transition-all duration-600 ${animateEntrance ? "fade-up" : ""} ${isRotating ? "opacity-80 scale-95" : "opacity-100 scale-100"}`}>
+        <div className={`hidden sm:block sticky top-14 z-30 bg-white pt-1 pb-3 -mx-4 px-4 sm:mx-0 sm:px-0 transition-all duration-1000 ease-in-out ${animateEntrance ? "fade-up" : ""} ${isRotating ? "opacity-90 scale-[0.98]" : "opacity-100 scale-100"}`}>
           <h2 className="text-sm font-bold text-[var(--color-ink)] mb-3 px-0.5 flex items-center gap-1.5">
             <span className="inline-flex items-center justify-center shrink-0 w-4 h-4 rounded-full bg-[var(--color-ember-500)] text-white shadow-[0_2px_6px_-2px_rgba(237,0,64,0.6)]">
               <svg className="w-2.5 h-2.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
