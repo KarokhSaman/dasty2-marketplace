@@ -130,8 +130,11 @@ export default function RepostPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-[var(--color-ink-fade)]">
         <p className="text-lg font-medium">{m.notFound()}</p>
-        <button onClick={() => router.navigate({ to: "/seller" })} className="mt-4 text-sm text-rose-500 hover:underline">
-          ← {m.sellerDashboard()}
+        <button onClick={() => router.navigate({ to: "/seller" })} className="mt-4 text-sm text-rose-600 hover:underline flex items-center gap-1">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          {m.back()}
         </button>
       </div>
     );
@@ -147,8 +150,11 @@ export default function RepostPage() {
           </svg>
         </div>
         <p className="text-[var(--color-ink)] font-medium max-w-sm">{m.repostSuccess()}</p>
-        <button onClick={() => router.navigate({ to: "/seller" })} className="mt-6 text-sm text-rose-600 hover:underline">
-          ← {m.sellerDashboard()}
+        <button onClick={() => router.navigate({ to: "/seller" })} className="mt-6 text-sm text-rose-600 hover:underline flex items-center gap-1">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          {m.back()}
         </button>
       </div>
     );
@@ -157,8 +163,11 @@ export default function RepostPage() {
   // ── Form ──────────────────────────────────────────────────
   return (
     <div className="max-w-2xl mx-auto">
-      <button onClick={() => router.navigate({ to: "/seller" })} className="text-sm text-[var(--color-ink-fade)] hover:text-rose-600 transition-colors mb-3">
-        ← {m.sellerDashboard()}
+      <button onClick={() => router.navigate({ to: "/seller" })} className="mb-4 text-sm text-rose-600 hover:underline flex items-center gap-1">
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+        </svg>
+        {m.back()}
       </button>
 
       <h1 className="font-display text-[22px] text-[var(--color-ink)] mb-2">{m.repostPageTitle()}</h1>
