@@ -114,8 +114,8 @@ export const getFeatured = query({
         .sort((a, b) => a._id.localeCompare(b._id)); // Deterministic stable sort by ID
 
       if (productsAtPosition.length > 0) {
-        // Calculate rotation offset based on current time (rotate every 15 seconds)
-        const rotationOffset = Math.floor(Date.now() / 15000) % productsAtPosition.length;
+        // Calculate rotation offset based on current time (rotate every 10 seconds)
+        const rotationOffset = Math.floor(Date.now() / 10000) % productsAtPosition.length;
         // Rotate array by offset
         const rotated = [
           ...productsAtPosition.slice(rotationOffset),

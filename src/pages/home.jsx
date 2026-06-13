@@ -323,8 +323,8 @@ export default function HomePage() {
         .sort((a, b) => a._id.localeCompare(b._id));
 
       if (atPos.length > 0) {
-        // Calculate rotation offset based on current time (rotate every 15 seconds)
-        const offset = Math.floor(Date.now() / 15000) % atPos.length;
+        // Calculate rotation offset based on current time (rotate every 10 seconds)
+        const offset = Math.floor(Date.now() / 10000) % atPos.length;
         rotated.push(...[...atPos.slice(offset), ...atPos.slice(0, offset)]);
       }
     }
@@ -334,12 +334,12 @@ export default function HomePage() {
 
   const featuredProducts = applyClientRotation(rawFeaturedProducts);
 
-  // Update rotationTick every 15 seconds to trigger re-renders (which recalculates rotation)
+  // Update rotationTick every 10 seconds to trigger re-renders (which recalculates rotation)
   useEffect(() => {
     if (category !== "all") return;
     const interval = setInterval(() => {
       setRotationTick(t => t + 1);
-    }, 15000); // 15 seconds
+    }, 10000); // 10 seconds
     return () => clearInterval(interval);
   }, [category]);
 
