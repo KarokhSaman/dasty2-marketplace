@@ -304,28 +304,32 @@ export default function HomePage() {
   // Featured is non-paginated → prefetched in the route loader (SSR + intent
   // preload) via React Query, still live-reactive. The paginated feed below
   // stays on usePaginatedQuery (convexQuery has no pagination).
+  // Only enable real-time rotation when category is "all"
   const queryClient = useQueryClient();
   const { data: liveFeatured } = useReactQuery(convexQuery(api.products.getFeatured, {}));
   const featuredProducts = liveFeatured ?? cachedFeatured ?? [];
 
-  // Update rotationTick every 25 seconds to trigger featured products refetch
+  // Update rotationTick every 25 seconds, but only refetch when category is "all"
   useEffect(() => {
+    if (category !== "all") return; // Skip rotation for other categories
+
     const interval = setInterval(() => {
       setRotationTick(t => t + 1);
     }, 25000); // 25 seconds
     return () => clearInterval(interval);
-  }, []);
+  }, [category]);
 
-  // When rotationTick changes, refetch featured products
+  // When rotationTick changes and category is "all", invalidate queries to refetch
   useEffect(() => {
-    if (rotationTick > 0) {
-      queryClient?.refetchQueries();
+    if (rotationTick > 0 && category === "all") {
+      // Invalidate all queries to force refetch with new rotation
+      queryClient?.invalidateQueries();
     }
-  }, [rotationTick, queryClient]);
+  }, [rotationTick, category, queryClient]);
 
-  // Pinned products for the top carousel
+  // Pinned products for the top carousel - only fetch when category is "all"
   const { data: livePinned } = useReactQuery(convexQuery(api.products.getPinned, {}));
-  const pinnedProducts = livePinned ?? [];
+  const pinnedProducts = category === "all" ? (livePinned ?? []) : [];
 
   const { results: liveResults, status, loadMore } = usePaginatedQuery(
     api.products.getPublicPaginated,
