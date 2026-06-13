@@ -322,8 +322,8 @@ export default function HomePage() {
         .sort((a, b) => a._id.localeCompare(b._id));
 
       if (atPos.length > 0) {
-        // Calculate rotation offset based on current time
-        const offset = Math.floor(Date.now() / 25000) % atPos.length;
+        // Calculate rotation offset based on current time (rotate every 20 seconds)
+        const offset = Math.floor(Date.now() / 20000) % atPos.length;
         rotated.push(...[...atPos.slice(offset), ...atPos.slice(0, offset)]);
       }
     }
@@ -333,18 +333,18 @@ export default function HomePage() {
 
   const featuredProducts = applyClientRotation(rawFeaturedProducts);
 
-  // Update rotationTick every 25 seconds to trigger re-renders (which recalculates rotation)
+  // Update rotationTick every 20 seconds to trigger re-renders (which recalculates rotation)
   useEffect(() => {
     if (category !== "all") return;
     const interval = setInterval(() => {
       setRotationTick(t => t + 1);
-    }, 25000);
+    }, 20000); // 20 seconds
     return () => clearInterval(interval);
   }, [category]);
 
-  // Pinned products for the top carousel - only fetch when category is "all"
+  // Pinned products for the top carousel
   const { data: livePinned } = useReactQuery(convexQuery(api.products.getPinned, {}));
-  const pinnedProducts = category === "all" ? (livePinned ?? []) : [];
+  const pinnedProducts = livePinned ?? [];
 
   const { results: liveResults, status, loadMore } = usePaginatedQuery(
     api.products.getPublicPaginated,
