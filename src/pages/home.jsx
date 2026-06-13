@@ -413,16 +413,18 @@ export default function HomePage() {
   const featuredFiltered = useMemo(() => featuredProducts.filter((p) => matchesFilters(p, { skipCategory: true })),
     [featuredProducts, search, condition, city, brands]);
 
-  // All products: featured products on top (position-based order), then regular products
+  // All products: featured products on top, then regular products
   const allProducts = useMemo(() => {
-    const featured = featuredProducts.filter((p) => matchesFilters(p, { skipCategory: true }));
+    // When category is "all", show featured with rotation at top. Otherwise filter by category.
+    const skipCat = category === "all";
+    const featured = featuredProducts.filter((p) => matchesFilters(p, { skipCategory: skipCat }));
     const featuredIds = new Set(featured.map(p => p._id));
-    const regular = results.filter((p) => matchesFilters(p, { skipCategory: true }) && !featuredIds.has(p._id));
-    // Featured products preserve position-based order from getFeatured query, then regular products
+    const regular = results.filter((p) => matchesFilters(p, { skipCategory: skipCat }) && !featuredIds.has(p._id));
+    // Featured products on top (rotation only when category is "all"), then regular products
     const sortedFeatured = featured; // Already sorted by position in getFeatured query
     const combined = [...sortedFeatured, ...applySort(regular)];
     return combined;
-  }, [featuredProducts, results, search, condition, sort, city, brands]);
+  }, [featuredProducts, results, search, condition, sort, city, category, brands]);
   const totalCount = allProducts.length;
 
   // Hover state for carousel and ref for auto-scroll
