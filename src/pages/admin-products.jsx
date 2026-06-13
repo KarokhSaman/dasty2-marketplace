@@ -45,6 +45,7 @@ export default function AdminProductsPage() {
   }, []);
 
   const [featuredPickerId, setFeaturedPickerId] = useState(null);
+  const [featuredPosition, setFeaturedPosition] = useState(null); // Selected position 1-10 or null
   const [tab,          setTab]          = useState(searchParams.get("tab") ?? "pending");
   const [search,       setSearch]       = useState("");
   const [rejectingId,  setRejectingId]  = useState(focusId ?? null);
@@ -290,7 +291,7 @@ export default function AdminProductsPage() {
                         <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
                           <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
                         </svg>
-                        {product.featuredUntil ? `Until ${product.featuredUntil}` : "Featured"}
+                        {product.featuredPosition ? `Featured — Pos #${product.featuredPosition}` : product.featuredUntil ? `Featured — Until ${product.featuredUntil}` : "Featured"}
                       </button>
                     ) : (
                       <button
@@ -352,7 +353,7 @@ export default function AdminProductsPage() {
                       <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
                       </svg>
-                      <span className="text-[10px]">{product.featuredUntil ? `Until ${product.featuredUntil}` : "Featured"}</span>
+                      <span className="text-[10px]">{product.featuredPosition ? `Pos #${product.featuredPosition}` : product.featuredUntil ? `Until ${product.featuredUntil}` : "Featured"}</span>
                     </button>
                   ) : (
                     <button
@@ -524,7 +525,7 @@ export default function AdminProductsPage() {
 
       {/* Feature confirmation dialog */}
       {confirmFeature && (
-        <BottomSheet open={true} onClose={() => setConfirmFeature(null)} title={confirmFeature.action === 'feature' ? 'Feature Product' : 'Unfeature Product'}>
+        <BottomSheet open={true} onClose={() => { setConfirmFeature(null); setFeaturedPosition(null); }} title={confirmFeature.action === 'feature' ? 'Feature Product — Choose Position' : 'Unfeature Product'}>
           <div className="p-4 sm:p-3">
             {confirmFeature.action === 'feature' ? (
               <>
@@ -533,7 +534,27 @@ export default function AdminProductsPage() {
                 </p>
                 <p className="text-xs text-[var(--color-ink-fade)] mb-3">
                   This product will be featured for {confirmFeature.duration || 'unlimited time'}.
+                  {featuredPosition && featuredPosition !== 'none' ? ` Position: #${featuredPosition}` : ' Position: Auto (date-sorted)'}
                 </p>
+
+                <div className="mb-4">
+                  <label className="text-xs font-semibold text-[var(--color-ink)] block mb-2">
+                    Feature Position (Optional)
+                  </label>
+                  <select
+                    value={featuredPosition ?? 'none'}
+                    onChange={(e) => setFeaturedPosition(e.target.value === 'none' ? null : parseInt(e.target.value))}
+                    className="w-full text-sm px-3 py-2 border border-[var(--color-hairline)] rounded-lg bg-white text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-ember-400)]"
+                  >
+                    <option value="none">None (date-sorted at end)</option>
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(pos => (
+                      <option key={pos} value={pos}>{pos}</option>
+                    ))}
+                  </select>
+                  <p className="text-[10px] text-[var(--color-ink-fade)] mt-1.5">
+                    1 = first in carousel, 10 = last. Products at same position rotate fairly.
+                  </p>
+                </div>
               </>
             ) : (
               <>
@@ -550,13 +571,14 @@ export default function AdminProductsPage() {
                 onClick={async () => {
                   const product = products?.find(p => p._id === confirmFeature.productId);
                   if (confirmFeature.action === 'feature') {
-                    await setFeatured({ id: confirmFeature.productId, featured: true, featuredUntil: confirmFeature.until });
-                    await log("featured", product, confirmFeature.duration);
+                    await setFeatured({ id: confirmFeature.productId, featured: true, featuredUntil: confirmFeature.until, featuredPosition });
+                    await log("featured", product, confirmFeature.duration + (featuredPosition ? ` - Position #${featuredPosition}` : ''));
                   } else {
                     await setFeatured({ id: confirmFeature.productId, featured: false });
                     await log("unfeatured", product);
                   }
                   setConfirmFeature(null);
+                  setFeaturedPosition(null);
                 }}
                 className="flex-1 text-sm bg-[var(--color-ember-600)] hover:bg-[var(--color-ember-700)] text-white font-semibold py-2.5 rounded-xl transition-colors">
                 {confirmFeature.action === 'feature' ? 'Feature' : 'Unfeature'}
