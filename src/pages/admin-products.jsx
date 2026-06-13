@@ -544,11 +544,11 @@ export default function AdminProductsPage() {
                   <select
                     value={featuredPosition ? String(featuredPosition) : ''}
                     onChange={(e) => setFeaturedPosition(e.target.value ? parseInt(e.target.value, 10) : null)}
-                    className="w-full text-sm px-4 py-3 border border-[var(--color-hairline)] rounded-xl bg-white text-[var(--color-ink)] hover:border-[var(--color-ember-300)] focus:outline-none focus:ring-2 focus:ring-[var(--color-ember-400)] focus:ring-offset-2 transition-all cursor-pointer appearance-none bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23617986%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%226 9 12 15 18 9%22></polyline></svg>')] bg-no-repeat bg-right-4 bg-center pr-10"
+                    className="w-full text-sm px-3 py-2 border border-[var(--color-hairline)] rounded-lg bg-white text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-ember-400)]"
                   >
-                    <option value="" className="bg-white">None (date-sorted at end)</option>
+                    <option value="">None (date-sorted at end)</option>
                     {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(pos => (
-                      <option key={pos} value={String(pos)} className="bg-white">{pos}</option>
+                      <option key={pos} value={String(pos)}>{pos}</option>
                     ))}
                   </select>
                   <p className="text-[10px] text-[var(--color-ink-fade)] mt-1.5">
@@ -569,16 +569,21 @@ export default function AdminProductsPage() {
             <div className="flex gap-2">
               <button
                 onClick={async () => {
-                  const product = products?.find(p => p._id === confirmFeature.productId);
-                  if (confirmFeature.action === 'feature') {
-                    await setFeatured({ id: confirmFeature.productId, featured: true, featuredUntil: confirmFeature.until, featuredPosition });
-                    await log("featured", product, confirmFeature.duration + (featuredPosition ? ` - Position #${featuredPosition}` : ''));
-                  } else {
-                    await setFeatured({ id: confirmFeature.productId, featured: false });
-                    await log("unfeatured", product);
+                  try {
+                    const product = products?.find(p => p._id === confirmFeature.productId);
+                    if (confirmFeature.action === 'feature') {
+                      await setFeatured({ id: confirmFeature.productId, featured: true, featuredUntil: confirmFeature.until, featuredPosition });
+                      await log("featured", product, confirmFeature.duration + (featuredPosition ? ` - Position #${featuredPosition}` : ''));
+                    } else {
+                      await setFeatured({ id: confirmFeature.productId, featured: false });
+                      await log("unfeatured", product);
+                    }
+                    setConfirmFeature(null);
+                    setFeaturedPosition(null);
+                  } catch (error) {
+                    console.error("Feature action failed:", error);
+                    alert("Action failed: " + (error.message || "Unknown error"));
                   }
-                  setConfirmFeature(null);
-                  setFeaturedPosition(null);
                 }}
                 className="flex-1 text-sm bg-[var(--color-ember-600)] hover:bg-[var(--color-ember-700)] text-white font-semibold py-2.5 rounded-xl transition-colors">
                 {confirmFeature.action === 'feature' ? 'Feature' : 'Unfeature'}
