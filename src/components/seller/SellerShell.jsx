@@ -121,13 +121,13 @@ export default function SellerShell({ children }) {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                 </svg>
-                {m.navHome()}
+                Home
               </Link>
               <Link to="/seller" className={`${navLink} ${isDash ? "bg-[var(--color-ember-50)] text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] hover:bg-white/60"}`}>
-                {m.sellerDashboard()}
+                Dashboard
               </Link>
               <Link to="/seller/account" className={`${navLink} ${isAccount ? "bg-[var(--color-ember-50)] text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] hover:bg-white/60"}`}>
-                {m.navAccount()}
+                Account
               </Link>
             </div>
           </div>
@@ -204,21 +204,21 @@ export default function SellerShell({ children }) {
             <svg className={`w-6 h-6 transition-all ${isHomeTab ? "text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)]"}`} fill={isHomeTab ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
             </svg>
-            <span className={`text-[9px] font-bold transition-all ${isHomeTab ? "text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)]"}`}>{m.navHome()}</span>
+            <span className={`text-[9px] font-bold transition-all ${isHomeTab ? "text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)]"}`}>Home</span>
           </Link>
 
           <Link to="/seller" className={`flex flex-1 flex-col items-center gap-0.5 py-1 transition-all`}>
             <svg className={`w-6 h-6 transition-all ${isDash ? "text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)]"}`} fill={isDash ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
             </svg>
-            <span className={`text-[9px] font-bold transition-all ${isDash ? "text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)]"}`}>{m.sellerDashboard()}</span>
+            <span className={`text-[9px] font-bold transition-all ${isDash ? "text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)]"}`}>Dashboard</span>
           </Link>
 
           <Link to="/seller/account" className={`flex flex-1 flex-col items-center gap-0.5 py-1 transition-all`}>
             <svg className={`w-6 h-6 transition-all ${isAccount ? "text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)]"}`} fill={isAccount ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
-            <span className={`text-[9px] font-bold transition-all ${isAccount ? "text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)]"}`}>{m.navAccount()}</span>
+            <span className={`text-[9px] font-bold transition-all ${isAccount ? "text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)]"}`}>Account</span>
           </Link>
         </div>
           </nav>
