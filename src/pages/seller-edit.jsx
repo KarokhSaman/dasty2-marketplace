@@ -14,7 +14,7 @@ import * as m from "@/paraglide/messages";
 import { getLocale } from "@/paraglide/runtime";
 import { useSellerSession } from "@/lib/useSellerSession";
 import { useImageUpload } from "@/lib/useImageUpload";
-import { calculateProfit, formatPrice } from "@/lib/utils";
+import { calculateProfit, formatPrice, normalizeDigits } from "@/lib/utils";
 import CustomSelect from "@/components/ui/CustomSelect";
 import { getCategoryLabel } from "@/lib/categories";
 
@@ -67,7 +67,8 @@ export default function EditProductPage() {
     setPhotos(product.photos ?? []);
   }, [product]);
 
-  const profit = calculateProfit(Number(price));
+  const priceNum = Number(normalizeDigits(price).replace(/[^\d]/g, "")) || 0;
+  const profit = calculateProfit(priceNum);
 
   async function uploadFile(file) {
     setUploading((n) => n + 1);
@@ -90,7 +91,7 @@ export default function EditProductPage() {
     const errs = {};
     if (!title.trim())                          errs.title    = true;
     if (!category)                              errs.category = true;
-    if (!price || Number(price) < 5000)         errs.price    = true;
+    if (!price || priceNum < 5000)              errs.price    = true;
     if (photos.length === 0 && uploading === 0) errs.photos   = true;
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -106,7 +107,7 @@ export default function EditProductPage() {
         title: title.trim(),
         category,
         condition,
-        price: Number(price),
+        price: priceNum,
         description: description.trim(),
         photos,
       });
@@ -131,8 +132,11 @@ export default function EditProductPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-[var(--color-ink-fade)]">
         <p className="text-lg font-medium">{m.notFound()}</p>
-        <button onClick={() => router.navigate({ to: "/seller" })} className="mt-4 text-sm text-rose-500 hover:underline">
-          ← {m.sellerDashboard()}
+        <button onClick={() => router.navigate({ to: "/seller" })} className="mt-4 text-sm text-rose-600 hover:underline flex items-center gap-1">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          {m.back()}
         </button>
       </div>
     );
@@ -143,8 +147,11 @@ export default function EditProductPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-[var(--color-ink-fade)]">
         <p className="text-lg font-medium">{m.cannotEdit()}</p>
-        <button onClick={() => router.navigate({ to: "/seller" })} className="mt-4 text-sm text-rose-500 hover:underline">
-          ← {m.sellerDashboard()}
+        <button onClick={() => router.navigate({ to: "/seller" })} className="mt-4 text-sm text-rose-600 hover:underline flex items-center gap-1">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          {m.back()}
         </button>
       </div>
     );
@@ -233,11 +240,17 @@ export default function EditProductPage() {
             {m.fieldPrice()} <span className="text-rose-500">*</span>
           </label>
           <input
-            type="number" value={price} onChange={(e) => setPrice(e.target.value)}
-            placeholder={m.fieldPricePlaceholder()} min={0} dir="ltr"
-            className={`w-full rounded-xl border bg-white px-4 py-2.5 text-[var(--color-ink)] placeholder:text-[var(--color-ink-fade)] focus:outline-none focus:ring-4 transition ${errors.price ? "border-red-400 bg-red-50" : "border-[var(--color-hairline)] focus:border-[var(--color-ember-300)] focus:ring-[var(--color-ember-100)]/50"}`}
+            type="text" inputMode="decimal"
+            dir={locale === "en" ? "ltr" : "rtl"}
+            value={price}
+            onChange={(e) => {
+              const val = e.target.value.replace(/[^\d٠-٩۰-۹]/g, "");
+              setPrice(val);
+            }}
+            placeholder={m.fieldPricePlaceholder()}
+            className={`w-full rounded-xl border bg-white px-4 py-2.5 text-[var(--color-ink)] placeholder:text-[var(--color-ink-fade)] focus:outline-none focus:ring-4 transition ${locale === "en" ? "pr-10" : "pl-10"} ${errors.price ? "border-red-400 bg-red-50" : "border-[var(--color-hairline)] focus:border-[var(--color-ember-300)] focus:ring-[var(--color-ember-100)]/50"}`}
           />
-          {price && Number(price) >= 5000 && profit > 0 && (
+          {price && priceNum >= 5000 && profit > 0 && (
             <p className="mt-2 text-sm text-amber-700 bg-amber-50 rounded-lg px-3 py-2">
               {m.profitLabel()} <span className="font-bold">{formatPrice(profit)}</span>
             </p>
