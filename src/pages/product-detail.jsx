@@ -181,7 +181,7 @@ function RelatedCard({ product }) {
             className="absolute top-2 start-2 backdrop-blur-md shadow-sm"
             dot
           >
-            {product.condition === "new" ? m.badgeNew() : m.badgeUsed()}
+            {product.condition === "new" ? m.badgeNew() : product.condition === "likenew" ? m.conditionLikeNew() : m.badgeUsed()}
           </Chip>
         </div>
         <div className="px-3 py-2.5">
@@ -362,8 +362,13 @@ export default function ProductDetailPage() {
           {/* Quick chips */}
           <div className="flex flex-wrap items-center gap-2 mb-4">
             <Chip tone={isNew ? "success" : "warning"} dot>
-              {isNew ? m.badgeNew() : m.badgeUsed()}
+              {isNew ? m.badgeNew() : product.condition === "likenew" ? m.conditionLikeNew() : m.badgeUsed()}
             </Chip>
+            {product.brand && (
+              <Chip tone="neutral">
+                {product.brand}
+              </Chip>
+            )}
             {cityLabel && (
               <Chip tone="neutral" leadingIcon={<PinIcon className="w-3 h-3" />}>
                 {cityLabel}
