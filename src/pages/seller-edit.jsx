@@ -167,8 +167,11 @@ export default function EditProductPage() {
           </svg>
         </div>
         <p className="text-[var(--color-ink)] font-medium max-w-sm">{m.productSubmitted()}</p>
-        <button onClick={() => router.navigate({ to: "/seller" })} className="mt-6 text-sm text-rose-600 hover:underline">
-          ← {m.sellerDashboard()}
+        <button onClick={() => router.navigate({ to: "/seller" })} className="mt-6 text-sm text-rose-600 hover:underline flex items-center gap-1">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          {m.back()}
         </button>
       </div>
     );
@@ -177,8 +180,11 @@ export default function EditProductPage() {
   return (
     <div className="max-w-2xl mx-auto">
       <div className="flex items-center gap-3 mb-2">
-        <button onClick={() => router.navigate({ to: "/seller" })} className="text-sm text-[var(--color-ink-fade)] hover:text-rose-600 transition-colors">
-          ← {m.sellerDashboard()}
+        <button onClick={() => router.navigate({ to: "/seller" })} className="text-sm text-rose-600 hover:underline flex items-center gap-1">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          {m.back()}
         </button>
       </div>
 
@@ -223,11 +229,11 @@ export default function EditProductPage() {
             <label className="block text-[13px] font-semibold text-[var(--color-ink)] mb-1.5">
               {m.fieldCondition()} <span className="text-rose-500">*</span>
             </label>
-            <div className="flex rounded-xl border border-[var(--color-hairline)] overflow-hidden">
-              {["new","used"].map((c) => (
+            <div className="flex rounded-xl border border-[var(--color-hairline)] overflow-hidden h-10">
+              {["new","likenew","used"].map((c) => (
                 <button key={c} type="button" onClick={() => setCondition(c)}
-                  className={`flex-1 py-2.5 text-sm font-medium transition-colors ${condition === c ? "bg-[var(--color-ember-500)] text-white" : "text-[var(--color-ink)] hover:bg-[var(--color-cream)]"}`}>
-                  {c === "new" ? m.conditionNew() : m.conditionUsed()}
+                  className={`flex-1 text-xs font-medium transition-colors flex items-center justify-center ${condition === c ? "bg-[var(--color-ember-500)] text-white" : "text-[var(--color-ink)] hover:bg-[var(--color-cream)]"}`}>
+                  {c === "new" ? m.conditionNew() : c === "likenew" ? m.conditionLikeNew() : m.conditionUsed()}
                 </button>
               ))}
             </div>
