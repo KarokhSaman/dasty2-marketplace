@@ -177,7 +177,7 @@ function RelatedCard({ product }) {
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
           ) : <ImagePlaceholder size="sm" />}
           <Chip
-            tone={product.condition === "new" ? "success" : "warning"}
+            tone={product.condition === "new" ? "success" : product.condition === "likenew" ? "neutral" : "warning"}
             className="absolute top-2 start-2 backdrop-blur-md shadow-sm"
             dot
           >
@@ -361,7 +361,7 @@ export default function ProductDetailPage() {
 
           {/* Quick chips */}
           <div className="flex flex-wrap items-center gap-2 mb-4">
-            <Chip tone={isNew ? "success" : "warning"} dot>
+            <Chip tone={isNew ? "success" : product.condition === "likenew" ? "neutral" : "warning"} dot>
               {isNew ? m.badgeNew() : product.condition === "likenew" ? m.conditionLikeNew() : m.badgeUsed()}
             </Chip>
             {product.brand && (

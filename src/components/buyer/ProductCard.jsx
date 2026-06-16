@@ -77,11 +77,11 @@ export default function ProductCard({ product, onSave }) {
 
           {/* Only one chip on the image: condition. */}
           <Chip
-            tone={product.condition === "new" ? "success" : "warning"}
+            tone={product.condition === "new" ? "success" : product.condition === "likenew" ? "neutral" : "warning"}
             dot
             className="absolute top-2.5 start-2.5 backdrop-blur-md shadow-sm"
           >
-            {product.condition === "new" ? m.badgeNew() : m.badgeUsed()}
+            {product.condition === "new" ? m.badgeNew() : product.condition === "likenew" ? m.conditionLikeNew() : m.badgeUsed()}
           </Chip>
 
           {/* Featured indicator: small star pill, top-end */}
