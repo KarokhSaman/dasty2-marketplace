@@ -218,10 +218,10 @@ export default function RepostPage() {
             <label className="block text-[13px] font-semibold text-[var(--color-ink)] mb-1.5">
               {m.fieldCondition()} <span className="text-rose-500">*</span>
             </label>
-            <div className="flex rounded-xl border border-[var(--color-hairline)] overflow-hidden h-10">
+            <div className="flex gap-1.5">
               {["new","likenew","used"].map((c) => (
                 <button key={c} type="button" onClick={() => setCondition(c)}
-                  className={`flex-1 text-xs font-medium transition-colors flex items-center justify-center ${condition === c ? "bg-[var(--color-ember-500)] text-white" : "text-[var(--color-ink)] hover:bg-[var(--color-cream)]"}`}>
+                  className={`flex-1 h-10 px-3 text-xs font-medium transition-colors rounded-xl border flex items-center justify-center ${condition === c ? "bg-[var(--color-ember-500)] text-white border-[var(--color-ember-500)]" : "border-[var(--color-hairline)] text-[var(--color-ink)] hover:border-[var(--color-ember-300)] hover:bg-[var(--color-cream)]"}`}>
                   {c === "new" ? m.conditionNew() : c === "likenew" ? m.conditionLikeNew() : m.conditionUsed()}
                 </button>
               ))}
