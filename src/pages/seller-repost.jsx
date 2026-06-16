@@ -16,21 +16,10 @@ import { useSellerSession } from "@/lib/useSellerSession";
 import { useImageUpload } from "@/lib/useImageUpload";
 import { calculateProfit, formatPrice, normalizeDigits } from "@/lib/utils";
 import CustomSelect from "@/components/ui/CustomSelect";
-import { getCategoryLabel } from "@/lib/categories";
+import { CATEGORY_CONFIG, getCategoryLabel } from "@/lib/categories";
 import { getBrandOptions, hasBrandOption } from "@/lib/brands";
 
-const CATEGORIES = [
-  "Strollers & Travel",
-  "Car Seats",
-  "Carry Cot",
-  "Bed",
-  "Feeding & Nursing",
-  "Bouncers & Swings",
-  "High Chairs",
-  "Toys & Play",
-  "Electronics & Monitors",
-  "Other",
-];
+const CATEGORIES = CATEGORY_CONFIG.filter(c => c.value !== "all").map(c => c.value);
 
 const MAX_PHOTOS = 5;
 

@@ -19,19 +19,7 @@ import CustomSelect from "@/components/ui/CustomSelect";
 import { CATEGORY_CONFIG, getCategoryLabel } from "@/lib/categories";
 import { getBrandOptions, hasBrandOption } from "@/lib/brands";
 
-const CATEGORIES = [
-  "Strollers & Travel",
-  "Car Seats",
-  "Carry Cot",
-  "Bed",
-  "Feeding & Nursing",
-  "Bouncers & Swings",
-  "High Chairs",
-  "Baby Walker",
-  "Toys & Play",
-  "Electronics & Monitors",
-  "Other",
-];
+const CATEGORIES = CATEGORY_CONFIG.filter(c => c.value !== "all").map(c => c.value);
 
 export default function AddProductPage() {
   const locale = getLocale();
