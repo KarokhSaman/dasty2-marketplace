@@ -39,7 +39,9 @@ export default function CategoryBar({ selected, onSelect }) {
               </div>
 
               <span
-                className={`text-[10.5px] font-semibold text-center leading-[1.15] max-w-[70px] whitespace-nowrap transition-colors ${
+                className={`text-[10.5px] font-semibold text-center leading-[1.15] max-w-[70px] transition-colors ${
+                  locale === "en" ? "whitespace-nowrap" : ""
+                } ${
                   isActive ? "text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)] group-hover:text-[var(--color-ink)]"
                 }`}
               >
