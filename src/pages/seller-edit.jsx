@@ -202,7 +202,7 @@ export default function EditProductPage() {
         <p className="text-sm text-amber-700">{m.editNote()}</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form id="edit-product-form" onSubmit={handleSubmit} className="space-y-5">
         {/* Title */}
         <div>
           <label className="block text-[13px] font-semibold text-[var(--color-ink)] mb-1.5">
@@ -331,10 +331,20 @@ export default function EditProductPage() {
         </div>
 
         <button type="submit" disabled={submitting || uploading > 0}
-          className="w-full bg-[var(--color-ember-500)] hover:bg-[var(--color-ember-600)] active:bg-[var(--color-ember-700)] text-white font-semibold py-3.5 rounded-full active:scale-[0.98] transition disabled:opacity-50">
+          className="hidden sm:block w-full bg-[var(--color-ember-500)] hover:bg-[var(--color-ember-600)] active:bg-[var(--color-ember-700)] text-white font-semibold py-3.5 rounded-full active:scale-[0.98] transition disabled:opacity-50">
           {submitting ? m.submitting() : uploading > 0 ? m.uploading() : m.editProductBtn()}
         </button>
       </form>
+
+      {/* Mobile sticky submit button */}
+      <div className="sm:hidden fixed inset-x-0 bottom-0 z-30 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 pointer-events-none">
+        <div className="pointer-events-auto mx-auto max-w-md surface-frost rounded-[1.75rem] border border-[var(--color-hairline)] shadow-[0_18px_44px_-20px_rgba(11,12,15,0.22)] p-3">
+          <button form="edit-product-form" type="submit" disabled={submitting || uploading > 0}
+            className="w-full bg-[var(--color-ember-500)] hover:bg-[var(--color-ember-600)] active:bg-[var(--color-ember-700)] text-white font-semibold py-3 rounded-full active:scale-[0.98] transition disabled:opacity-50 text-[15px]">
+            {submitting ? m.submitting() : uploading > 0 ? m.uploading() : m.editProductBtn()}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
