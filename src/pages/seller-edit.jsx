@@ -17,6 +17,7 @@ import { useImageUpload } from "@/lib/useImageUpload";
 import { calculateProfit, formatPrice, normalizeDigits } from "@/lib/utils";
 import CustomSelect from "@/components/ui/CustomSelect";
 import { getCategoryLabel } from "@/lib/categories";
+import { getBrandOptions, hasBrandOption } from "@/lib/brands";
 
 const CATEGORIES = [
   "Strollers & Travel",
@@ -47,6 +48,7 @@ export default function EditProductPage() {
   // Form state — initialised from product once loaded
   const [title, setTitle]             = useState("");
   const [category, setCategory]       = useState("");
+  const [brand, setBrand]             = useState("");
   const [condition, setCondition]     = useState("new");
   const [price, setPrice]             = useState("");
   const [description, setDescription] = useState("");
@@ -61,6 +63,7 @@ export default function EditProductPage() {
     if (!product) return;
     setTitle(product.title ?? "");
     setCategory(product.category ?? "");
+    setBrand(product.brand ?? "");
     setCondition(product.condition ?? "new");
     setPrice(String(product.price ?? ""));
     setDescription(product.description ?? "");
@@ -106,6 +109,7 @@ export default function EditProductPage() {
         id,
         title: title.trim(),
         category,
+        brand: brand || undefined,
         condition,
         price: priceNum,
         description: description.trim(),
@@ -239,6 +243,28 @@ export default function EditProductPage() {
             </div>
           </div>
         </div>
+
+        {hasBrandOption(category) && (
+          <div>
+            <label className="block text-[13px] font-semibold text-[var(--color-ink)] mb-1.5">{m.fieldBrand()}</label>
+            <div className="relative">
+              <CustomSelect
+                value={brand}
+                onChange={setBrand}
+                placeholder={m.fieldBrandPlaceholder()}
+                options={[...getBrandOptions(category).map(b => ({ value: b, label: b })), { value: "Other", label: "Other" }]}
+              />
+              {brand && (
+                <button type="button" onClick={() => setBrand("")}
+                  className="absolute end-3 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded-full bg-[var(--color-cream-deep)] hover:bg-[var(--color-cream-deep)] text-[var(--color-ink-fade)] hover:text-[var(--color-ink-soft)] transition-colors">
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Price */}
         <div>
