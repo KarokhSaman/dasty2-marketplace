@@ -15,7 +15,7 @@ export default function CategoryBar({ selected, onSelect }) {
             <button
               key={cat.value}
               onClick={() => onSelect(cat.value)}
-              className="flex flex-col items-center gap-1.5 shrink-0 group focus:outline-none"
+              className="flex flex-col items-center gap-1.5 shrink-0 group focus:outline-none w-14 sm:w-16"
               aria-pressed={isActive}
             >
               <div
