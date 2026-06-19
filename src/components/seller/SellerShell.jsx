@@ -121,13 +121,13 @@ export default function SellerShell({ children }) {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                 </svg>
-                Home
+                {m.navHome()}
               </Link>
               <Link to="/seller" className={`${navLink} ${isDash ? "bg-[var(--color-ember-50)] text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] hover:bg-white/60"}`}>
-                Dashboard
+                {m.sellerDashboard()}
               </Link>
               <Link to="/seller/account" className={`${navLink} ${isAccount ? "bg-[var(--color-ember-50)] text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] hover:bg-white/60"}`}>
-                Account
+                {m.navAccount()}
               </Link>
             </div>
           </div>
