@@ -163,7 +163,7 @@ export default function SellerAccountPage() {
           <div>
             <label className="block text-xs font-medium text-[var(--color-ink-soft)] mb-1">{m.loginPhoneLabel()}</label>
             <input value={phone} onChange={e => setPhone(e.target.value)} required dir="ltr"
-              className="w-full rounded-xl border border-[var(--color-hairline)] bg-white px-4 py-2.5 text-[var(--color-ink)] placeholder:text-[var(--color-ink-fade)] focus:outline-none focus:border-[var(--color-ember-300)] focus:ring-4 focus:ring-[var(--color-ember-100)]/50 transition" />
+              className="w-full rounded-xl border border-[var(--color-hairline)] bg-white px-4 py-2.5 text-end text-[var(--color-ink)] placeholder:text-[var(--color-ink-fade)] focus:outline-none focus:border-[var(--color-ember-300)] focus:ring-4 focus:ring-[var(--color-ember-100)]/50 transition" />
           </div>
           <div>
             <label className="block text-xs font-medium text-[var(--color-ink-soft)] mb-1">{m.registerCityLabel()}</label>
