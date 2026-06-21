@@ -120,7 +120,7 @@ function RootDocument({
       <head>
         <HeadContent />
       </head>
-      <body className="antialiased bg-cream text-ink min-h-screen-dvh">
+      <body className="antialiased bg-cream text-ink min-h-screen-dvh" suppressHydrationWarning>
         {children}
         <Scripts />
       </body>
