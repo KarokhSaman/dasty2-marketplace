@@ -414,15 +414,22 @@ export const cleanupExpiredFeatured = mutation({
   args: {},
   handler: async (ctx) => {
     const today = new Date().toISOString().slice(0, 10);
+    console.log(`[Cleanup] Running at ${today}`);
+
     const products = await ctx.db
       .query("products")
       .filter((q) => q.eq(q.field("featured"), true))
       .collect();
 
+    console.log(`[Cleanup] Found ${products.length} featured products`);
+
     let unfeatureCount = 0;
     for (const product of products) {
+      console.log(`[Cleanup] Checking ${product._id}: featuredUntil=${product.featuredUntil}`);
+
       // If product has an expiration date and it's in the past, unfeatured it
       if (product.featuredUntil && product.featuredUntil < today) {
+        console.log(`[Cleanup] Unfeaturing ${product._id} (expired: ${product.featuredUntil} < ${today})`);
         await ctx.db.patch(product._id, {
           featured: false,
           featuredUntil: undefined,
@@ -432,7 +439,8 @@ export const cleanupExpiredFeatured = mutation({
       }
     }
 
-    return { unfeatureCount };
+    console.log(`[Cleanup] Unfeatured ${unfeatureCount} products`);
+    return { unfeatureCount, today };
   },
 });
 
