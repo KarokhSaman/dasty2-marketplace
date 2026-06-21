@@ -127,7 +127,7 @@ export default function RepostPage() {
         <p className="text-lg font-medium">{m.notFound()}</p>
         <button onClick={() => router.navigate({ to: "/seller" })} className="mt-4 text-sm text-rose-600 hover:underline flex items-center gap-1">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={locale === "en" ? "M15 19l-7-7 7-7" : "M9 19l7-7-7-7"} />
           </svg>
           {m.back()}
         </button>
@@ -147,7 +147,7 @@ export default function RepostPage() {
         <p className="text-[var(--color-ink)] font-medium max-w-sm">{m.repostSuccess()}</p>
         <button onClick={() => router.navigate({ to: "/seller" })} className="mt-6 text-sm text-rose-600 hover:underline flex items-center gap-1">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={locale === "en" ? "M15 19l-7-7 7-7" : "M9 19l7-7-7-7"} />
           </svg>
           {m.back()}
         </button>
