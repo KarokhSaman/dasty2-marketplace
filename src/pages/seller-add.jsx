@@ -32,7 +32,7 @@ export default function AddProductPage() {
   const [title, setTitle]             = useState("");
   const [category, setCategory]       = useState("");
   const [brand, setBrand]             = useState("");
-  const [condition, setCondition]     = useState("new");
+  const [condition, setCondition]     = useState("used");
   const [price, setPrice]             = useState("");
   const [description, setDescription] = useState("");
   const [photos, setPhotos]           = useState([]);
