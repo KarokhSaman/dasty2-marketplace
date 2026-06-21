@@ -409,3 +409,30 @@ export const setFeatured = mutation({
   },
 });
 
+// Automatically unfeatured products with expired featuredUntil dates
+export const cleanupExpiredFeatured = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const today = new Date().toISOString().slice(0, 10);
+    const products = await ctx.db
+      .query("products")
+      .filter((q) => q.eq(q.field("featured"), true))
+      .collect();
+
+    let unfeatureCount = 0;
+    for (const product of products) {
+      // If product has an expiration date and it's in the past, unfeatured it
+      if (product.featuredUntil && product.featuredUntil < today) {
+        await ctx.db.patch(product._id, {
+          featured: false,
+          featuredUntil: undefined,
+          featuredPosition: undefined,
+        });
+        unfeatureCount++;
+      }
+    }
+
+    return { unfeatureCount };
+  },
+});
+
