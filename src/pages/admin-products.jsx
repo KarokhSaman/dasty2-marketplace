@@ -56,6 +56,8 @@ export default function AdminProductsPage() {
   const [confirmDel,   setConfirmDel]   = useState(null);
   const [confirmPhoto, setConfirmPhoto] = useState(null); // "productId:photoIndex"
   const [confirmFeature, setConfirmFeature] = useState(null); // { productId, action: 'feature' | 'unfeature', duration }
+  const [isCleaningUp, setIsCleaningUp] = useState(false);
+  const [cleanupMessage, setCleanupMessage] = useState("");
 
   const statusLabels = {
     all:      m.adminAllStatus(),
@@ -163,9 +165,6 @@ export default function AdminProductsPage() {
       </div>
     );
   }
-
-  const [isCleaningUp, setIsCleaningUp] = useState(false);
-  const [cleanupMessage, setCleanupMessage] = useState("");
 
   const handleCleanup = async () => {
     try {
