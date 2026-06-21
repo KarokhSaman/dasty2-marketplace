@@ -9,8 +9,9 @@ import LocationPicker from "@/components/buyer/LocationPicker";
 import { SegmentedControl, Skeleton } from "@/components/ui";
 import { Link } from "@tanstack/react-router";
 import * as m from "@/paraglide/messages";
-import { getCategorySearchStrings } from "@/lib/categories";
+import { getCategorySearchStrings, getCategoryLabel } from "@/lib/categories";
 import { getAllBrands } from "@/lib/brands";
+import { getLocale } from "@/paraglide/runtime";
 import { seedProductCache } from "@/lib/productCache";
 import { useGlobalSellerSession } from "@/lib/SellerSessionContext";
 import {
@@ -267,6 +268,7 @@ const INITIAL_FILTERS = {
 
 export default function HomePage() {
   const { sellerId, ready } = useGlobalSellerSession();
+  const locale = getLocale();
   const [filters, setFilters] = useState(INITIAL_FILTERS);
   const [rotationTick, setRotationTick] = useState(0); // Trigger re-render every 15 seconds
   const [isRotating, setIsRotating] = useState(false); // Animation state
@@ -537,7 +539,7 @@ export default function HomePage() {
                         <div className="w-full h-full bg-gray-200" />
                       )}
                     </div>
-                    <p className="text-[10px] sm:text-xs text-[var(--color-ink-fade)] font-medium mb-0.5">{p.category}</p>
+                    <p className="text-[10px] sm:text-xs text-[var(--color-ink-fade)] font-medium mb-0.5">{getCategoryLabel(p.category, locale)}</p>
                     <p className="text-xs sm:text-sm font-bold text-[var(--color-ember-600)]">
                       {(p.price ?? 0).toLocaleString()} IQD
                     </p>
@@ -563,7 +565,7 @@ export default function HomePage() {
                         <div className="w-full h-full bg-gray-200" />
                       )}
                     </div>
-                    <p className="text-[10px] sm:text-xs text-[var(--color-ink-fade)] font-medium mb-0.5">{p.category}</p>
+                    <p className="text-[10px] sm:text-xs text-[var(--color-ink-fade)] font-medium mb-0.5">{getCategoryLabel(p.category, locale)}</p>
                     <p className="text-xs sm:text-sm font-bold text-[var(--color-ember-600)]">
                       {(p.price ?? 0).toLocaleString()} IQD
                     </p>
