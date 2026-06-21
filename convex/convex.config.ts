@@ -6,7 +6,7 @@ import { api } from "./_generated/api";
 const app = defineApp();
 app.use(r2);
 
-// Run cleanup of expired featured products daily at 1 AM UTC
-crons.interval("cleanup-expired-featured", { minutes: 1440 }, api.products.cleanupExpiredFeatured);
+// Run cleanup of expired featured products every minute for testing (change to { minutes: 1440 } for daily in production)
+crons.interval("cleanup-expired-featured", { minutes: 1 }, api.products.cleanupExpiredFeatured);
 
 export default app;
