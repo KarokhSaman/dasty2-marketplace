@@ -36,7 +36,6 @@ export default function AdminProductsPage() {
   const removeProduct       = useMutation(api.products.remove);
   const adminUpdatePhotos   = useMutation(api.products.adminUpdatePhotos);
   const setFeatured         = useMutation(api.products.setFeatured);
-  const cleanupExpired      = useMutation(api.products.cleanupExpiredFeatured);
   const createNotif     = useMutation(api.notifications.create);
   const createLog       = useMutation(api.adminLogs.create);
 
@@ -56,8 +55,6 @@ export default function AdminProductsPage() {
   const [confirmDel,   setConfirmDel]   = useState(null);
   const [confirmPhoto, setConfirmPhoto] = useState(null); // "productId:photoIndex"
   const [confirmFeature, setConfirmFeature] = useState(null); // { productId, action: 'feature' | 'unfeature', duration }
-  const [isCleaningUp, setIsCleaningUp] = useState(false);
-  const [cleanupMessage, setCleanupMessage] = useState("");
 
   const statusLabels = {
     all:      m.adminAllStatus(),
@@ -166,37 +163,9 @@ export default function AdminProductsPage() {
     );
   }
 
-  const handleCleanup = async () => {
-    try {
-      setIsCleaningUp(true);
-      setCleanupMessage("");
-      const result = await cleanupExpired();
-      setCleanupMessage(`✓ Unfeatured ${result.unfeatureCount} expired products`);
-      setTimeout(() => setCleanupMessage(""), 3000);
-    } catch (error) {
-      setCleanupMessage(`✗ Error: ${error.message}`);
-    } finally {
-      setIsCleaningUp(false);
-    }
-  };
-
   return (
     <div>
-      <div className="flex items-center justify-between mb-5">
-        <h1 className="text-2xl font-bold text-[var(--color-ink)]">{m.adminProducts()}</h1>
-        <button
-          onClick={handleCleanup}
-          disabled={isCleaningUp}
-          className="px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50"
-        >
-          {isCleaningUp ? "Cleaning..." : "Cleanup Expired"}
-        </button>
-      </div>
-      {cleanupMessage && (
-        <div className={`mb-4 p-3 rounded-lg text-sm ${cleanupMessage.startsWith("✓") ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
-          {cleanupMessage}
-        </div>
-      )}
+      <h1 className="text-2xl font-bold text-[var(--color-ink)] mb-5">{m.adminProducts()}</h1>
 
       {/* Search */}
       <div className="relative mb-4">
