@@ -9,6 +9,9 @@
     "required": ["CLERK_SECRET_KEY", "RESEND_API_KEY"]
   },
   "upload_source_maps": true,
+  "triggers": {
+    "crons": ["0 1 * * *"]
+  },
   "observability": {
     "enabled": true,
     "logs": {
