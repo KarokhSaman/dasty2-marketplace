@@ -5,11 +5,12 @@ import tailwindcss from '@tailwindcss/vite'
 import { paraglideVitePlugin } from '@inlang/paraglide-js'
 import { cloudflare } from '@cloudflare/vite-plugin'
 
-const useDashboardEnv = process.env.CLOUDFLARE_USE_DASHBOARD_ENV === 'true'
+// Use .cloudflare-env for Cloudflare builds (indicated by CF_PAGES or explicit flag)
+const isCloudflare = process.env.CF_PAGES === '1' || process.env.CLOUDFLARE_USE_DASHBOARD_ENV === 'true'
 
 export default defineConfig({
   server: { port: 3000 },
-  envDir: useDashboardEnv ? './.cloudflare-env' : undefined,
+  envDir: isCloudflare ? './.cloudflare-env' : undefined,
   resolve: { tsconfigPaths: true },
   plugins: [
     paraglideVitePlugin({
