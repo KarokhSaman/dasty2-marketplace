@@ -1,18 +1,7 @@
 import { useState } from "react";
-import { useMutation } from "convex/react";
-import { useRouter, useParams, useLocation, useSearch } from "@tanstack/react-router";
-const usePathname = () => useLocation({ select: (l) => l.pathname });
-const useSearchParams = () => {
-  const s = useSearch({ strict: false }) || {};
-  return {
-    get: (k) => (s[k] ?? null),
-    getAll: (k) => (Array.isArray(s[k]) ? s[k] : s[k] != null ? [s[k]] : []),
-  };
-};
-import { useClerk } from "@clerk/tanstack-react-start";
+import { useMutation, useQuery, useConvexAuth } from "convex/react";
+import { useRouter } from "@tanstack/react-router";
 import { api } from "@/convex/_generated/api";
-import { useSellerSession, clearSellerSession } from "@/lib/useSellerSession";
-import { useGlobalSellerSession } from "@/lib/SellerSessionContext";
 import * as m from "@/paraglide/messages";
 import { getLocale } from "@/paraglide/runtime";
 
@@ -34,6 +23,7 @@ const FEE_TIERS = [
 function MenuItem({ icon, label, sub, onClick, danger, chevron = true }) {
   return (
     <button
+      type="button"
       onClick={onClick}
       className={`w-full flex items-center gap-4 px-4 py-3.5 hover:bg-[var(--color-cream)] transition-colors text-start ${danger ? "text-red-500" : "text-[var(--color-ink)]"}`}
     >
@@ -60,24 +50,23 @@ function SectionLabel({ label }) {
 export default function SellerAccountPage() {
   const router = useRouter();
   const locale = getLocale();
-  const { signOut } = useClerk();
-  const { setSellerId } = useGlobalSellerSession();
-  const { seller, loading } = useSellerSession();
+  const { isLoading, isAuthenticated } = useConvexAuth();
+  const seller = useQuery(api.users.getCurrentSeller, isAuthenticated ? {} : "skip");
+  const loading = isLoading || (isAuthenticated && seller === undefined);
   const updateProfile = useMutation(api.users.updateProfile);
 
   const [editing, setEditing]   = useState(false);
   const [showHow, setShowHow]   = useState(false);
   const [showFees, setShowFees] = useState(false);
+  const [showAbout, setShowAbout] = useState(false);
 
   const [name, setName]       = useState("");
-  const [phone, setPhone]     = useState("");
   const [city, setCity]       = useState("");
   const [address, setAddress] = useState("");
   const [saving, setSaving]   = useState(false);
 
   function startEdit() {
     setName(seller.name);
-    setPhone(seller.phone ?? "");
     setCity(seller.city ?? "Erbil");
     setAddress(seller.address ?? "");
     setEditing(true);
@@ -86,16 +75,14 @@ export default function SellerAccountPage() {
   async function handleSave(e) {
     e.preventDefault();
     setSaving(true);
-    await updateProfile({ name: name.trim(), phone: phone.trim(), city, address: address.trim() });
+    await updateProfile({ name: name.trim(), city, address: address.trim() });
     setSaving(false);
     setEditing(false);
   }
 
   async function handleLogout() {
-    await clearSellerSession();
-    setSellerId(null);
-    await signOut();
-    router.navigate({ to: "/", replace: true });
+    await fetch("/api/auth/logout", { method: "POST" });
+    window.location.href = "/";
   }
 
   if (loading || !seller) {
@@ -139,6 +126,7 @@ export default function SellerAccountPage() {
               </svg>
               <span className="truncate">{seller.city}{seller.address ? ` · ${seller.address}` : ""}</span>
             </p>
+            <p className="text-[var(--color-ink-soft)] text-xs mt-0.5" dir="ltr">{seller.phone}</p>
             {seller.email && (
               <p className="text-[var(--color-ink-soft)] text-xs mt-0.5 flex items-center gap-1">
                 <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -159,11 +147,6 @@ export default function SellerAccountPage() {
             <label className="block text-xs font-medium text-[var(--color-ink-soft)] mb-1">{m.registerNameLabel()}</label>
             <input value={name} onChange={e => setName(e.target.value)} required
               className="w-full rounded-xl border border-[var(--color-hairline)] bg-white px-4 py-2.5 text-[var(--color-ink)] placeholder:text-[var(--color-ink-fade)] focus:outline-none focus:border-[var(--color-ember-300)] focus:ring-4 focus:ring-[var(--color-ember-100)]/50 transition" />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-[var(--color-ink-soft)] mb-1">{m.loginPhoneLabel()}</label>
-            <input value={phone} onChange={e => setPhone(e.target.value)} required dir="ltr"
-              className="w-full rounded-xl border border-[var(--color-hairline)] bg-white px-4 py-2.5 text-end text-[var(--color-ink)] placeholder:text-[var(--color-ink-fade)] focus:outline-none focus:border-[var(--color-ember-300)] focus:ring-4 focus:ring-[var(--color-ember-100)]/50 transition" />
           </div>
           <div>
             <label className="block text-xs font-medium text-[var(--color-ink-soft)] mb-1">{m.registerCityLabel()}</label>
@@ -275,9 +258,14 @@ export default function SellerAccountPage() {
         <MenuItem
           label={m.acctAboutTitle()}
           sub={m.acctAboutMarketplace()}
-          onClick={() => {}}
+          onClick={() => setShowAbout(v => !v)}
           icon={<svg className="w-4 h-4 text-[var(--color-ink-soft)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>}
         />
+        {showAbout && (
+          <div className="px-4 py-4 bg-[var(--color-cream)] border-t border-[var(--color-hairline)]">
+            <p className="text-sm text-[var(--color-ink-soft)] leading-relaxed">{m.acctAppDesc()}</p>
+          </div>
+        )}
         <div className="border-t border-[var(--color-hairline)]" />
         <MenuItem
           label={m.acctContactTitle()}

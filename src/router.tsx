@@ -40,6 +40,9 @@ export function getRouter() {
     defaultViewTransition: true,
     context: { queryClient, convexClient: convex, convexQueryClient },
     scrollRestoration: true,
+    // Localized roots are `/en/` and `/ar/`. Removing their trailing slash
+    // produces `/en` or `/ar`, which Paraglide cannot de-localize to `/`.
+    trailingSlash: 'preserve',
     // The Convex auth provider lives in __root.tsx and wraps
     // the whole app — no second ConvexProvider needed here.
     rewrite: {

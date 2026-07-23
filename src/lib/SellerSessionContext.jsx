@@ -1,6 +1,13 @@
-import { createContext, useCallback, useContext, useState, useEffect } from "react";
-import { useAuth } from "@clerk/tanstack-react-start";
+import { createContext, useContext, useMemo } from "react";
+import { useConvexAuth, useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
 
+// Global seller session, now sourced from the VerifySpeed JWT session over the
+// authenticated Convex connection (no more Clerk hook or /api/seller/me fetch).
+// `sellerId` is derived from the live `getCurrentSeller` query — it stays in sync
+// reactively. The setter/refresh are compatibility no-ops kept so existing call
+// sites don't break; login/logout do a hard navigation, re-running the query with
+// the fresh cookie.
 const SellerSessionCtx = createContext({
   sellerId: null,
   setSellerId: () => {},
@@ -10,65 +17,30 @@ const SellerSessionCtx = createContext({
 });
 
 export function SellerSessionProvider({ children }) {
-  const [sellerId, setSellerId] = useState(null);
-  const [ready, setReady]       = useState(false);
-  const [authError, setAuthError] = useState(null);
-  const [refreshKey, setRefreshKey] = useState(0);
-  const { isLoaded, isSignedIn } = useAuth();
-  const refreshSellerSession = useCallback(() => {
-    setRefreshKey((key) => key + 1);
-  }, []);
+  const { isLoading, isAuthenticated } = useConvexAuth();
 
-  useEffect(() => {
-    if (!isLoaded) return;
-    if (!isSignedIn) {
-      setSellerId(null);
-      setAuthError(null);
-      setReady(true);
-      return;
-    }
+  const seller = useQuery(
+    api.users.getCurrentSeller,
+    isAuthenticated ? {} : "skip",
+  );
 
-    let cancelled = false;
-    setReady(false);
-    setAuthError(null);
-    fetch("/api/seller/me", { cache: "no-store" })
-      .then(r => r.json())
-      .then(d => {
-        if (cancelled) return;
-        setSellerId(d.sellerId ?? null);
-        setAuthError(d.error ?? null);
-        setReady(true);
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setAuthError("seller_session_failed");
-        setReady(true);
-      });
+  // Ready once we know the auth state and (if authenticated) the query resolved.
+  const ready = !isLoading && (!isAuthenticated || seller !== undefined);
+  const sellerId = seller?._id ?? null;
 
-    return () => {
-      cancelled = true;
-    };
-  }, [isLoaded, isSignedIn, refreshKey]);
-
-  useEffect(() => {
-    if (!isSignedIn) return;
-
-    const refreshIfVisible = () => {
-      if (document.visibilityState === "visible") refreshSellerSession();
-    };
-
-    window.addEventListener("focus", refreshSellerSession);
-    document.addEventListener("visibilitychange", refreshIfVisible);
-    return () => {
-      window.removeEventListener("focus", refreshSellerSession);
-      document.removeEventListener("visibilitychange", refreshIfVisible);
-    };
-  }, [isSignedIn, refreshSellerSession]);
+  const value = useMemo(
+    () => ({
+      sellerId,
+      setSellerId: () => {},
+      ready,
+      authError: null,
+      refreshSellerSession: () => {},
+    }),
+    [sellerId, ready],
+  );
 
   return (
-    <SellerSessionCtx.Provider
-      value={{ sellerId, setSellerId, ready, authError, refreshSellerSession }}
-    >
+    <SellerSessionCtx.Provider value={value}>
       {children}
     </SellerSessionCtx.Provider>
   );

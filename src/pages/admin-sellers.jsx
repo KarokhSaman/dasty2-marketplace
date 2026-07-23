@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import * as m from "@/paraglide/messages";
-import { deleteSellerFn } from "@/lib/clerk-seller";
 import SellerActionsMenu from "@/components/admin/SellerActionsMenu";
 
 export default function AdminSellersPage() {
@@ -10,6 +9,7 @@ export default function AdminSellersPage() {
   const products      = useQuery(api.products.getAll);
   const setActive     = useMutation(api.users.setActive);
   const setRole       = useMutation(api.users.setRole);
+  const deleteSeller  = useMutation(api.users.deleteSeller);
   const createLog     = useMutation(api.adminLogs.create);
   const [search, setSearch] = useState("");
   const [expandedSeller, setExpandedSeller] = useState(null);
@@ -122,7 +122,7 @@ export default function AdminSellersPage() {
                     });
                   }}
                   onDelete={async () => {
-                    await deleteSellerFn({ data: { sellerId: seller._id } });
+                    await deleteSeller({ id: seller._id });
                     await createLog({
                       action: "seller_deleted",
                       sellerName: seller.name,

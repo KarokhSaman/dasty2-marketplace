@@ -39,10 +39,8 @@ export default function AdminProductsPage() {
   const createNotif     = useMutation(api.notifications.create);
   const createLog       = useMutation(api.adminLogs.create);
 
-  const [adminEmail, setAdminEmail] = useState("");
-  useEffect(() => {
-    fetch("/api/admin/me").then(r => r.json()).then(d => setAdminEmail(d.email ?? "admin"));
-  }, []);
+  const me = useQuery(api.users.getCurrent);
+  const adminEmail = me?.email ?? "admin";
 
   const [featuredPickerId, setFeaturedPickerId] = useState(null);
   const [featuredPosition, setFeaturedPosition] = useState(null); // Selected position 1-10 or null

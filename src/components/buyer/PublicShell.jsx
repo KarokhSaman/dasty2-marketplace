@@ -30,6 +30,7 @@ function Wordmark() {
 function SellerDesktopNav() {
   const { sellerId } = useGlobalSellerSession();
   const pathname = usePathname();
+  const isAuthPage = /\/(?:seller|admin)\/login\/?$/.test(pathname);
 
   const isHome    = pathname === "/";
   const isDash    = pathname === "/seller";
@@ -41,22 +42,24 @@ function SellerDesktopNav() {
     <div className="flex items-center gap-2">
       <Wordmark />
 
-      <div className="hidden lg:flex items-center gap-1 ms-2 ps-2 border-s border-[var(--color-hairline)]">
+      {!isAuthPage && (
+        <div className="hidden lg:flex items-center gap-1 ms-2 ps-2 border-s border-[var(--color-hairline)]">
         <Link to="/" className={`${linkBase} ${isHome ? "bg-[var(--color-ember-50)] text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] hover:bg-white/60"}`}>
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
           </svg>
-          Home
+          {m.navHome()}
         </Link>
         {sellerId && (
           <Link to="/seller" className={`${linkBase} ${isDash ? "bg-[var(--color-ember-50)] text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] hover:bg-white/60"}`}>
-            Dashboard
+            {m.sellerDashboard()}
           </Link>
         )}
         <Link to={sellerId ? "/seller/account" : "/account"} className={`${linkBase} ${isAccount ? "bg-[var(--color-ember-50)] text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] hover:bg-white/60"}`}>
-          Account
+          {m.navAccount()}
         </Link>
-      </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -71,10 +74,12 @@ function PlusIcon({ className = "w-3.5 h-3.5" }) {
 }
 
 function HeaderActions() {
+  const pathname                      = usePathname();
   const { sellerId, ready }         = useGlobalSellerSession();
   const { isAuthenticated }         = useConvexAuth();
   const [showNotifs, setShowNotifs] = useState(false);
   const bellRef = useRef();
+  const isAuthPage = /\/(?:seller|admin)\/login\/?$/.test(pathname);
 
   const notifications = useQuery(
     api.notifications.getBySeller,
@@ -94,7 +99,7 @@ function HeaderActions() {
     <div className="flex items-center gap-2">
       <LocaleSwitcher />
 
-      {sellerId ? (
+      {isAuthPage ? null : sellerId ? (
         <>
           {/* Notification bell */}
           <div ref={bellRef} className="relative">
@@ -165,6 +170,8 @@ function SmartBottomNav() {
 
   if (!ready) return null;
 
+  if (/\/(?:seller|admin)\/login\/?$/.test(pathname)) return null;
+
   // Product detail page renders its own sticky bottom CTA (WhatsApp).
   // Hide the global nav there so the two don't stack.
   if (pathname.startsWith("/products/")) return null;
@@ -191,21 +198,21 @@ function SmartBottomNav() {
               <svg className={`w-6 h-6 transition-all ${isHome ? "text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)]"}`} fill={isHome ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
               </svg>
-              <span className={`text-[9px] font-bold transition-all ${isHome ? "text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)]"}`}>Home</span>
+              <span className={`text-[9px] font-bold transition-all ${isHome ? "text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)]"}`}>{m.navHome()}</span>
             </Link>
 
             <Link to="/seller" className={`flex flex-1 flex-col items-center gap-0.5 py-1 transition-all`}>
               <svg className={`w-6 h-6 transition-all ${isDash ? "text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)]"}`} fill={isDash ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
               </svg>
-              <span className={`text-[9px] font-bold transition-all ${isDash ? "text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)]"}`}>Dashboard</span>
+              <span className={`text-[9px] font-bold transition-all ${isDash ? "text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)]"}`}>{m.sellerDashboard()}</span>
             </Link>
 
             <Link to="/seller/account" className={`flex flex-1 flex-col items-center gap-0.5 py-1 transition-all`}>
               <svg className={`w-6 h-6 transition-all ${isAccount ? "text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)]"}`} fill={isAccount ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
               </svg>
-              <span className={`text-[9px] font-bold transition-all ${isAccount ? "text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)]"}`}>Account</span>
+              <span className={`text-[9px] font-bold transition-all ${isAccount ? "text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)]"}`}>{m.navAccount()}</span>
             </Link>
           </div>
         </nav>
@@ -223,14 +230,14 @@ function SmartBottomNav() {
             <svg className={`w-6 h-6 transition-all ${isHome ? "text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)]"}`} fill={isHome ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
             </svg>
-            <span className={`text-[9px] font-bold transition-all ${isHome ? "text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)]"}`}>Home</span>
+            <span className={`text-[9px] font-bold transition-all ${isHome ? "text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)]"}`}>{m.navHome()}</span>
           </Link>
 
           <Link to="/account" className={`flex flex-1 flex-col items-center gap-0.5 py-1 transition-all`}>
             <svg className={`w-6 h-6 transition-all ${isAccount ? "text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)]"}`} fill={isAccount ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
             </svg>
-            <span className={`text-[9px] font-bold transition-all ${isAccount ? "text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)]"}`}>Account</span>
+            <span className={`text-[9px] font-bold transition-all ${isAccount ? "text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)]"}`}>{m.navAccount()}</span>
           </Link>
         </div>
       </nav>
@@ -242,6 +249,9 @@ function HomeScrollRestorer() { return null; }
 
 // ── Shell ─────────────────────────────────────────────────
 export default function PublicShell({ children }) {
+  const pathname = usePathname();
+  const isAuthPage = /\/(?:seller|admin)\/login\/?$/.test(pathname);
+
   return (
     <div className="min-h-screen-dvh flex flex-col">
       {/* Atmospheric backdrop — sits behind everything */}
@@ -262,18 +272,23 @@ export default function PublicShell({ children }) {
         </div>
       </header>
 
-      <main className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 md:px-7 xl:px-6 pt-3 pb-10 sm:pb-10">
+      <main className={isAuthPage
+        ? "flex-1 min-h-0 w-full"
+        : "flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 md:px-7 xl:px-6 pt-3 pb-10 sm:pb-10"
+      }>
         {children}
       </main>
 
       <HomeScrollRestorer />
       <SmartBottomNav />
 
-      <footer className="hidden sm:block border-t border-[var(--color-hairline)] bg-white/40 mt-12 py-8">
-        <p className="text-center text-sm text-[var(--color-ink-fade)]">
-          © {new Date().getFullYear()} <span className="font-display font-semibold"><span className="text-[var(--color-ink)]">Dasty2</span> <span className="text-[var(--color-ember-600)]">Mndalan</span></span> — {m.footerText()}
-        </p>
-      </footer>
+      {!isAuthPage && (
+        <footer className="hidden sm:block border-t border-[var(--color-hairline)] bg-white/40 mt-12 py-8">
+          <p className="text-center text-sm text-[var(--color-ink-fade)]">
+            © {new Date().getFullYear()} <span className="font-display font-semibold"><span className="text-[var(--color-ink)]">Dasty2</span> <span className="text-[var(--color-ember-600)]">Mndalan</span></span> — {m.footerText()}
+          </p>
+        </footer>
+      )}
     </div>
   );
 }

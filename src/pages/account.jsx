@@ -1,9 +1,8 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { useAuth, useClerk, useUser } from "@clerk/tanstack-react-start";
+import { useConvexAuth, useQuery } from "convex/react";
 import * as m from "@/paraglide/messages";
-import { useGlobalSellerSession } from "@/lib/SellerSessionContext";
-import { clearLocalClerkAuth } from "@/lib/clerkAuthReset";
+import { api } from "@/convex/_generated/api";
 
 const FEE_TIERS = [
   { range: "5,000 – 9,000",       fee: "2,000" },
@@ -19,7 +18,7 @@ const FEE_TIERS = [
 
 function MenuItem({ icon, label, sub, onClick, chevron = true, iconBg = "bg-[var(--color-cream-deep)]" }) {
   return (
-    <button onClick={onClick}
+    <button type="button" onClick={onClick}
       className="w-full flex items-center gap-4 px-4 py-3.5 hover:bg-[var(--color-cream)] transition-colors text-start">
       <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${iconBg}`}>{icon}</div>
       <div className="flex-1 min-w-0">
@@ -42,22 +41,21 @@ function SectionLabel({ label }) {
 export default function BuyerAccountPage() {
   const [showHow, setShowHow]   = useState(false);
   const [showFees, setShowFees] = useState(false);
-  const { isLoaded, isSignedIn } = useAuth();
-  const { user } = useUser();
-  const clerk = useClerk();
-  const {
-    sellerId,
-    setSellerId,
-    ready: sellerReady,
-    authError: sellerAuthError,
-  } = useGlobalSellerSession();
-  const email = user?.primaryEmailAddress?.emailAddress ?? "";
-  const displayName = user?.fullName || email;
+  const [showAbout, setShowAbout] = useState(false);
+  const { isLoading, isAuthenticated } = useConvexAuth();
+  const seller = useQuery(api.users.getCurrentSeller, isAuthenticated ? {} : "skip");
+  const sellerReady = !isLoading && (!isAuthenticated || seller !== undefined);
+  const sellerId = seller?._id ?? null;
+  // Buyers are anonymous — "signed in" here means a seller session exists.
+  const isSignedIn = !!sellerId;
+  const isLoaded = sellerReady;
+  const email = seller?.email ?? "";
+  const displayName = seller?.name || email;
   const signedInInitial = (displayName || "D").trim().charAt(0).toUpperCase();
 
   async function handleSignOut() {
-    setSellerId(null);
-    await clearLocalClerkAuth(clerk, ["/api/seller/logout", "/api/admin/logout"]);
+    await fetch("/api/auth/logout", { method: "POST" });
+    window.location.href = "/";
   }
 
   const howSteps = [
@@ -116,23 +114,7 @@ export default function BuyerAccountPage() {
               </Link>
             )}
 
-            {sellerReady && sellerAuthError && (
-              <div className="w-full flex items-start gap-4 px-4 py-3.5 text-start">
-                <div className="w-9 h-9 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
-                  <svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                  </svg>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-[var(--color-ink)]">Seller auth needs setup</p>
-                  <p className="text-xs text-[var(--color-ink-fade)] mt-0.5">
-                    Clerk is signed in, but Convex is not accepting the session token yet.
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {sellerReady && !sellerAuthError && !sellerId && (
+            {sellerReady && !sellerId && (
               <Link to="/seller/login" className="w-full flex items-center gap-4 px-4 py-3.5 hover:bg-[var(--color-cream)] transition-colors text-start">
                 <div className="w-9 h-9 rounded-xl bg-[var(--color-ember-50)] flex items-center justify-center shrink-0">
                   <svg className="w-4 h-4 text-[var(--color-ember-500)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/></svg>
@@ -241,10 +223,15 @@ export default function BuyerAccountPage() {
         <MenuItem
           label={m.acctAboutTitle()}
           sub={m.acctAboutSub()}
-          onClick={() => {}}
+          onClick={() => setShowAbout(v => !v)}
           iconBg="bg-[var(--color-cream-deep)]"
           icon={<svg className="w-4 h-4 text-[var(--color-ink-soft)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>}
         />
+        {showAbout && (
+          <div className="px-4 py-4 bg-[var(--color-cream)] border-t border-[var(--color-hairline)]">
+            <p className="text-sm text-[var(--color-ink-soft)] leading-relaxed">{m.acctAppDesc()}</p>
+          </div>
+        )}
         <div className="border-t border-gray-50"/>
         <MenuItem
           label={m.acctContactTitle()}

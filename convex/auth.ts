@@ -1,4 +1,4 @@
-import type { Doc } from "./_generated/dataModel";
+import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 
 type Ctx = QueryCtx | MutationCtx;
@@ -10,38 +10,18 @@ export async function requireIdentity(ctx: Ctx) {
 }
 
 export function identityEmail(identity: Awaited<ReturnType<typeof requireIdentity>>) {
-  // Try multiple possible email fields from Clerk identity
-  return (
-    identity.email?.toLowerCase() ??
-    (identity as any).emailAddress?.toLowerCase() ??
-    (identity as any).claims?.email?.toLowerCase() ??
-    ""
-  );
+  // VerifySpeed session JWTs carry phone/role, not email — this is usually
+  // empty now. Kept so admin-log helpers can still prefer an identity email
+  // when one is present, falling back to the user doc's email.
+  return identity.email?.toLowerCase() ?? "";
 }
 
+// Session JWTs (minted in convex/authActions.ts) set `sub` = the Convex
+// `users._id`, so the current user is a direct document lookup by subject.
 export async function getCurrentUser(ctx: Ctx) {
   const identity = await ctx.auth.getUserIdentity();
   if (!identity) return { identity: null, user: null };
-
-  // Try clerkUserId first (stable across sessions), then fall back to clerkTokenIdentifier
-  let user = null;
-  if (identity.userId) {
-    user = await ctx.db
-      .query("users")
-      .withIndex("by_clerkUserId", (q) =>
-        q.eq("clerkUserId", identity.userId),
-      )
-      .unique();
-  }
-
-  if (!user) {
-    user = await ctx.db
-      .query("users")
-      .withIndex("by_clerkTokenIdentifier", (q) =>
-        q.eq("clerkTokenIdentifier", identity.tokenIdentifier),
-      )
-      .unique();
-  }
+  const user = await ctx.db.get(identity.subject as Id<"users">);
   return { identity, user };
 }
 
@@ -60,17 +40,17 @@ export function isSuperAdminUser(user: Doc<"users"> | null) {
 }
 
 export async function requireAdmin(ctx: Ctx) {
-  const identity = await requireIdentity(ctx);
-  const { user } = await getCurrentUser(ctx);
+  const { identity, user } = await getCurrentUser(ctx);
+  if (!identity) throw new Error("Not authenticated");
   if (!isAdminUser(user)) throw new Error("Unauthorized");
-  return { identity, email: identityEmail(identity) };
+  return { identity, user, email: identityEmail(identity) || user!.email?.toLowerCase() || "" };
 }
 
 export async function requireSuperAdmin(ctx: Ctx) {
-  const identity = await requireIdentity(ctx);
-  const { user } = await getCurrentUser(ctx);
+  const { identity, user } = await getCurrentUser(ctx);
+  if (!identity) throw new Error("Not authenticated");
   if (!isSuperAdminUser(user)) throw new Error("Unauthorized");
-  return { identity, email: identityEmail(identity) };
+  return { identity, user, email: identityEmail(identity) || user!.email?.toLowerCase() || "" };
 }
 
 export async function getCurrentSeller(ctx: Ctx) {

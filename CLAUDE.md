@@ -49,4 +49,4 @@ Product photos and category icons live in Cloudflare R2 via the `@convex-dev/r2`
 - Browser uploads require a **CORS policy on the R2 bucket** allowing `PUT` from the app origin.
 - File type/size are validated client-side in `lib/useImageUpload.js` (the file no longer passes through a server route).
 
-Pages are SSR-rendered by the Worker. Do not enable TanStack prerendering unless the Cloudflare build environment has every server runtime secret required by middleware such as Clerk.
+Pages are SSR-rendered by the Worker. Do not enable TanStack prerendering unless the Cloudflare build environment has every server runtime value required at request time (e.g. `VITE_CONVEX_URL` for the SSR Convex client). Auth is phone-OTP via VerifySpeed with a self-hosted RS256 session JWT (`convex/authActions.ts`, `convex/http.ts` JWKS); the session lives in the httpOnly `dasty2-session` cookie and drives `ConvexProviderWithAuth` (`src/lib/session.ts`).

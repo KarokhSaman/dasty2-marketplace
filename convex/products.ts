@@ -1,6 +1,6 @@
 import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
-import type { Doc } from "./_generated/dataModel";
+import type { Doc, Id } from "./_generated/dataModel";
 import {
   mutation,
   query,
@@ -20,6 +20,35 @@ import {
 } from "./auth";
 
 type PublicProduct = Omit<Doc<"products">, "sellerId" | "sellerPhone" | "profit">;
+
+const publicProductValidator = v.object({
+  _id: v.id("products"),
+  _creationTime: v.number(),
+  seq: v.string(),
+  title: v.string(),
+  description: v.string(),
+  category: v.string(),
+  brand: v.optional(v.string()),
+  condition: conditionValidator,
+  price: v.number(),
+  photos: v.array(v.string()),
+  status: productStatusValidator,
+  city: v.string(),
+  sellerName: v.string(),
+  featured: v.optional(v.boolean()),
+  featuredUntil: v.optional(v.string()),
+  featuredAt: v.optional(v.string()),
+  featuredPosition: v.optional(v.number()),
+  pinned: v.optional(v.boolean()),
+  pinnedUntil: v.optional(v.string()),
+  pinnedAt: v.optional(v.string()),
+  views: v.optional(v.number()),
+  notes: v.optional(v.string()),
+  approvedBy: v.optional(v.string()),
+  approvedAt: v.optional(v.string()),
+  dateAdded: v.string(),
+  dateSold: v.optional(v.string()),
+});
 
 const toPublic = ({
   sellerId: _sellerId,
@@ -49,6 +78,28 @@ function calculateProfit(price: number): number {
   return 0;
 }
 
+function validateListingInput({
+  title,
+  price,
+  photos,
+}: {
+  title: string;
+  price: number;
+  photos: string[];
+}) {
+  if (!title.trim()) throw new Error("Product title is required");
+  if (!Number.isInteger(price) || price < 5_000 || price > 1_000_000) {
+    throw new Error("Product price must be between 5,000 and 1,000,000 IQD");
+  }
+  if (
+    photos.length < 1 ||
+    photos.length > 5 ||
+    photos.some((photo) => !photo.trim())
+  ) {
+    throw new Error("A product must have between 1 and 5 photos");
+  }
+}
+
 async function getInactiveSellerIds(ctx: QueryCtx): Promise<Set<string>> {
   const inactive = await ctx.db
     .query("users")
@@ -59,10 +110,45 @@ async function getInactiveSellerIds(ctx: QueryCtx): Promise<Set<string>> {
   return new Set(inactive.map((s) => s._id.toString()));
 }
 
+async function deleteProductData(ctx: MutationCtx, product: Doc<"products">) {
+  const notifications = await ctx.db
+    .query("notifications")
+    .withIndex("by_productId", (q) =>
+      q.eq("productId", product._id as string),
+    )
+    .collect();
+  for (const notification of notifications) {
+    await ctx.db.delete(notification._id);
+  }
+
+  // Development mock uploads use Convex storage rather than R2. Remove those
+  // objects when their product is deleted; R2 URLs are left to the R2 lifecycle.
+  const convexCloudUrl = process.env.CONVEX_CLOUD_URL;
+  if (convexCloudUrl) {
+    const storageOrigin = new URL(convexCloudUrl).origin;
+    for (const photo of product.photos) {
+      try {
+        const url = new URL(photo);
+        const match = url.pathname.match(/^\/api\/storage\/([^/]+)$/);
+        if (url.origin === storageOrigin && match) {
+          await ctx.storage.delete(match[1] as Id<"_storage">);
+        }
+      } catch {
+        // Invalid/external image URLs have no Convex storage object to remove.
+      }
+    }
+  }
+
+  await ctx.db.delete(product._id);
+}
+
 export const getPublicById = query({
-  args: { id: v.id("products") },
+  args: { id: v.string() },
+  returns: v.union(v.null(), publicProductValidator),
   handler: async (ctx, { id }) => {
-    const product = await ctx.db.get(id);
+    const productId = ctx.db.normalizeId("products", id);
+    if (!productId) return null;
+    const product = await ctx.db.get(productId);
     if (!product || product.status !== "approved") return null;
     const inactiveIds = await getInactiveSellerIds(ctx);
     if (inactiveIds.has(product.sellerId)) return null;
@@ -203,8 +289,10 @@ export const add = mutation({
     featured: v.optional(v.boolean()),
     notes: v.optional(v.string()),
   },
+  returns: v.id("products"),
   handler: async (ctx, args) => {
     const seller = await requireCurrentSeller(ctx);
+    validateListingInput(args);
     // Check for active offer and adjust fee accordingly
     const today = new Date().toISOString().slice(0, 10);
     const allOffers = await ctx.db.query("offers")
@@ -284,8 +372,10 @@ export const sellerUpdate = mutation({
     price: v.number(),
     photos: v.array(v.string()),
   },
+  returns: v.null(),
   handler: async (ctx, { id, ...fields }) => {
     const seller = await requireCurrentSeller(ctx);
+    validateListingInput(fields);
     const product = await ctx.db.get(id);
     if (!product) throw new Error("Product not found");
     if (product.sellerId !== seller._id.toString()) {
@@ -307,6 +397,7 @@ export const sellerUpdate = mutation({
       read: false,
       createdAt: new Date().toISOString(),
     });
+    return null;
   },
 });
 
@@ -358,6 +449,7 @@ export const sellerRemove = mutation({
   args: {
     id: v.id("products"),
   },
+  returns: v.null(),
   handler: async (ctx, { id }) => {
     const seller = await requireCurrentSeller(ctx);
     const product = await ctx.db.get(id);
@@ -367,15 +459,20 @@ export const sellerRemove = mutation({
     if (!["pending", "rejected"].includes(product.status)) {
       throw new Error("Only pending or rejected products can be deleted");
     }
-    await ctx.db.delete(id);
+    await deleteProductData(ctx, product);
+    return null;
   },
 });
 
 export const remove = mutation({
   args: { id: v.id("products") },
+  returns: v.null(),
   handler: async (ctx, { id }) => {
     await requireAdmin(ctx);
-    await ctx.db.delete(id);
+    const product = await ctx.db.get(id);
+    if (!product) return null;
+    await deleteProductData(ctx, product);
+    return null;
   },
 });
 
@@ -384,9 +481,18 @@ export const adminUpdatePhotos = mutation({
     id:     v.id("products"),
     photos: v.array(v.string()),
   },
+  returns: v.null(),
   handler: async (ctx, { id, photos }) => {
     await requireAdmin(ctx);
+    if (
+      photos.length < 1 ||
+      photos.length > 5 ||
+      photos.some((photo) => !photo.trim())
+    ) {
+      throw new Error("A product must have between 1 and 5 photos");
+    }
     await ctx.db.patch(id, { photos });
+    return null;
   },
 });
 
@@ -443,4 +549,3 @@ export const cleanupExpiredFeatured = mutation({
     return { unfeatureCount, today };
   },
 });
-

@@ -9,7 +9,7 @@ import LocationPicker from "@/components/buyer/LocationPicker";
 import { SegmentedControl, Skeleton } from "@/components/ui";
 import { Link } from "@tanstack/react-router";
 import * as m from "@/paraglide/messages";
-import { getCategorySearchStrings, getCategoryLabel } from "@/lib/categories";
+import { getCategoryLabel } from "@/lib/categories";
 import { getAllBrands } from "@/lib/brands";
 import { getLocale } from "@/paraglide/runtime";
 import { seedProductCache } from "@/lib/productCache";
@@ -263,7 +263,7 @@ function EndDivider({ label }) {
 
 // ── Filters state ──────────────────────────────────────────
 const INITIAL_FILTERS = {
-  search: "", category: "all", condition: "all", sort: "default", city: "all", brands: [],
+  category: "all", condition: "all", sort: "default", city: "all", brands: [],
 };
 
 export default function HomePage() {
@@ -272,7 +272,7 @@ export default function HomePage() {
   const [filters, setFilters] = useState(INITIAL_FILTERS);
   const [rotationTick, setRotationTick] = useState(0); // Trigger re-render every 15 seconds
   const [isRotating, setIsRotating] = useState(false); // Animation state
-  const { search, category, condition, sort, city, brands } = filters;
+  const { category, condition, sort, city, brands } = filters;
   const updateFilter = (key) => (value) => setFilters((f) => ({ ...f, [key]: value }));
   const sentinelRef = useRef(null);
 
@@ -388,14 +388,11 @@ export default function HomePage() {
   }, [results, featuredProducts]);
 
   const matchesFilters = (p, { skipCategory = false } = {}) => {
-    const q = search.toLowerCase();
-    const catStrings  = getCategorySearchStrings(p.category);
-    const matchSearch = !q || p.title.toLowerCase().includes(q) || catStrings.some((s) => s.includes(q));
     const matchCond   = condition === "all" || p.condition === condition;
     const matchCity   = city === "all" || p.city === city;
     const matchCat    = skipCategory ? true : (category === "all" || p.category === category);
     const matchBrand  = brands.length === 0 || (p.brand && brands.includes(p.brand));
-    return matchSearch && matchCond && matchCity && matchCat && matchBrand;
+    return matchCond && matchCity && matchCat && matchBrand;
   };
 
   const applySort = (list) => {
@@ -407,7 +404,7 @@ export default function HomePage() {
 
   // Featured products for carousel — preserve position-based order from getFeatured query
   const featuredFiltered = useMemo(() => featuredProducts.filter((p) => matchesFilters(p, { skipCategory: true })),
-    [featuredProducts, search, condition, city, brands]);
+    [featuredProducts, condition, city, brands]);
 
   // All products: featured products on top, then regular products
   const allProducts = useMemo(() => {
@@ -420,7 +417,7 @@ export default function HomePage() {
     const sortedFeatured = featured; // Already sorted by position in getFeatured query
     const combined = [...sortedFeatured, ...applySort(regular)];
     return combined;
-  }, [featuredProducts, results, search, condition, sort, city, category, brands]);
+  }, [featuredProducts, results, condition, sort, city, category, brands]);
   const totalCount = allProducts.length;
 
   // Hover state for carousel and ref for auto-scroll
@@ -496,7 +493,7 @@ export default function HomePage() {
           condition={condition}
           setCondition={updateFilter("condition")}
           hasActiveFilter={
-            condition !== "all" || city !== "all" || sort !== "default" || category !== "all" || search !== "" || brands.length > 0
+            condition !== "all" || city !== "all" || sort !== "default" || category !== "all" || brands.length > 0
           }
           onReset={() => setFilters(INITIAL_FILTERS)}
         />

@@ -8,6 +8,12 @@ import {
   userRoleValidator,
 } from "./types";
 
+// TRANSITIONAL: `schemaValidation` is off so this final (narrowed) schema can be
+// deployed over legacy Clerk-era rows — existing admins still carry
+// `clerkTokenIdentifier`/`clerkUserId` and have no `phone` until
+// `internal.migrate.migrateToVerifySpeed` runs. After the migration completes on
+// every deployment, delete the options object below (re-enabling validation).
+// See docs/verifyspeed-auth-migration.md §Operator runbook.
 export default defineSchema({
   products: defineTable({
     seq: v.string(),
@@ -44,11 +50,9 @@ export default defineSchema({
 
   users: defineTable({
     role: userRoleValidator,
-    clerkTokenIdentifier: v.optional(v.string()),
-    clerkUserId: v.optional(v.string()),
     email: v.optional(v.string()),
     name: v.string(),
-    phone: v.optional(v.string()),
+    phone: v.string(), // E.164, unique login identity (VerifySpeed phone-OTP)
     city: v.optional(v.string()),
     address: v.optional(v.string()),
     registeredAt: v.string(),
@@ -56,16 +60,8 @@ export default defineSchema({
   })
     .index("by_role", ["role"])
     .index("by_role_and_isActive", ["role", "isActive"])
-    .index("by_clerkTokenIdentifier", ["clerkTokenIdentifier"])
-    .index("by_clerkUserId", ["clerkUserId"])
-    .index("by_email", ["email"]),
-
-  otpCodes: defineTable({
-    email: v.string(),
-    code: v.string(),
-    expiresAt: v.number(),
-    verified: v.boolean(),
-  }),
+    .index("by_email", ["email"])
+    .index("by_phone", ["phone"]),
 
   sales: defineTable({
     productId: v.string(),
@@ -87,7 +83,8 @@ export default defineSchema({
     endDate:       v.string(),
     isActive:      v.boolean(),
     createdAt:     v.string(),
-  }),
+  })
+    .index("by_isActive", ["isActive"]),
 
   adminLogs: defineTable({
     adminEmail:   v.string(),
@@ -108,5 +105,10 @@ export default defineSchema({
     read: v.boolean(),
     createdAt: v.string(),
     url: v.optional(v.string()),
-  }).index("by_sellerId", ["sellerId"]),
+  })
+    .index("by_sellerId", ["sellerId"])
+    .index("by_productId", ["productId"]),
+}, {
+  // Remove this after migrateToVerifySpeed has run on all deployments.
+  schemaValidation: false,
 });

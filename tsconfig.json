@@ -22,6 +22,6 @@
       "@/convex/*": ["./convex/*"]
     }
   },
-  "include": ["src", "convex", "vite.config.ts"],
+  "include": ["src", "convex", "vite.config.ts", "worker-configuration.d.ts"],
   "exclude": ["node_modules", ".output", ".nitro", ".vinxi"]
 }

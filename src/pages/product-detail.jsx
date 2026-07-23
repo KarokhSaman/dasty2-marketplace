@@ -5,7 +5,7 @@ import { api } from "@/convex/_generated/api";
 import { useRouter, useParams, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import * as m from "@/paraglide/messages";
-import { getLocale } from "@/paraglide/runtime";
+import { getLocale, localizeHref } from "@/paraglide/runtime";
 import { getCategoryLabel } from "@/lib/categories";
 import { getCityLabel } from "@/lib/cities";
 import { getProductCache, setProductCache } from "@/lib/productCache";
@@ -298,15 +298,17 @@ export default function ProductDetailPage() {
   const seed = useMemo(() => getProductCache(id), [id]);
   const product = live ?? seed;
 
+  // Keep hooks unconditional while the query moves through loading/not-found.
+  const [origin, setOrigin] = useState("https://dasty2mndalan.com");
+  useEffect(() => { setOrigin(window.location.origin); }, []);
+
   if (live === null) return <NotFoundState onBack={() => router.history.back()} />;
   if (!product)      return <ProductDetailSkeleton />;
 
   // Build the canonical origin SSR-safely: both the server and the first client
   // render use the production domain (so hydration matches), then the effect
   // swaps in the real origin after mount (e.g. localhost in dev).
-  const [origin, setOrigin] = useState("https://dasty2mndalan.com");
-  useEffect(() => { setOrigin(window.location.origin); }, []);
-  const productUrl = `${origin}/products/${id}`;
+  const productUrl = `${origin}${localizeHref(`/products/${id}`, { locale })}`;
 
   const waLink = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(
     m.waMessage({

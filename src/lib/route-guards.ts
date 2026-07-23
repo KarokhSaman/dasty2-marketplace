@@ -14,3 +14,17 @@ export async function requireSeller(queryClient: QueryClient) {
   }
   return { seller }
 }
+
+export async function requireAdmin(queryClient: QueryClient) {
+  const user = await queryClient.ensureQueryData(
+    convexQuery(api.users.getCurrent, {}),
+  )
+  if (
+    !user ||
+    !user.isActive ||
+    (user.role !== 'admin' && user.role !== 'super_admin')
+  ) {
+    throw redirect({ to: '/admin/login' })
+  }
+  return { user }
+}

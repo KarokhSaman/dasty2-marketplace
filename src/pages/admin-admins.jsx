@@ -186,10 +186,10 @@ export default function AdminAdminsPage() {
                     <p className="text-sm text-[var(--color-ink)]" dir="ltr">{admin.email}</p>
                   </div>
                 )}
-                {admin.clerkTokenIdentifier && (
+                {admin.phone && (
                   <div>
-                    <p className="text-[11px] font-semibold text-[var(--color-ink-fade)] uppercase tracking-wide mb-0.5">Clerk ID</p>
-                    <p className="text-xs text-[var(--color-ink)]" dir="ltr">{admin.clerkTokenIdentifier}</p>
+                    <p className="text-[11px] font-semibold text-[var(--color-ink-fade)] uppercase tracking-wide mb-0.5">Phone</p>
+                    <p className="text-xs text-[var(--color-ink)]" dir="ltr">{admin.phone}</p>
                   </div>
                 )}
                 {admin.registeredAt && (

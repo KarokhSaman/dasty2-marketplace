@@ -1,8 +1,7 @@
-import { Link, useLocation, useNavigate } from "@tanstack/react-router";
+import { Link, useLocation } from "@tanstack/react-router";
 const usePathname = () => useLocation({ select: (l) => l.pathname });
 import { useQuery, useConvexAuth } from "convex/react";
 import { useState, useRef, useCallback, useEffect } from "react";
-import { useAuth } from "@clerk/tanstack-react-start";
 import { api } from "@/convex/_generated/api";
 import * as m from "@/paraglide/messages";
 import LocaleSwitcher from "@/components/LocaleSwitcher";
@@ -35,42 +34,31 @@ function PlusIcon({ className = "w-3.5 h-3.5" }) {
 
 export default function SellerShell({ children }) {
   const pathname = usePathname();
-  const { sellerId, setSellerId } = useGlobalSellerSession();
-  const { isSignedIn } = useAuth();
+  const { sellerId } = useGlobalSellerSession();
   // Convex websocket auth state — authed queries must wait for this, otherwise
   // they run during the handshake, throw "Not authenticated", and crash the page.
   const { isAuthenticated } = useConvexAuth();
-  const navigate = useNavigate();
   const [showNotifs, setShowNotifs] = useState(false);
   const [authTimedOut, setAuthTimedOut] = useState(false);
   const bellRef = useRef();
 
-  // When Clerk invalidates the session (e.g. admin deleted the account),
-  // clear context and navigate to login immediately so the shell doesn't linger.
+  // If the session token stops validating (expired / account removed), give the
+  // websocket a grace period to (re)authenticate, then offer a reset to login.
   useEffect(() => {
-    if (isSignedIn === false) {
-      setSellerId(null);
-      fetch("/api/seller/logout", { method: "POST" }).catch(() => {});
-      navigate({ to: "/seller/login", replace: true });
-    }
-  }, [isSignedIn]);
-
-  useEffect(() => {
-    if (!isSignedIn || isAuthenticated) {
+    if (isAuthenticated) {
       setAuthTimedOut(false);
       return;
     }
 
     const timeout = window.setTimeout(() => setAuthTimedOut(true), 8000);
     return () => window.clearTimeout(timeout);
-  }, [isSignedIn, isAuthenticated]);
+  }, [isAuthenticated]);
 
   const handleAuthReset = useCallback(() => {
-    setSellerId(null);
-    fetch("/api/seller/logout", { method: "POST" }).finally(() => {
-      navigate({ to: "/seller/login", replace: true });
+    fetch("/api/auth/logout", { method: "POST" }).finally(() => {
+      window.location.href = "/seller/login";
     });
-  }, [navigate, setSellerId]);
+  }, []);
 
   const notifications = useQuery(api.notifications.getBySeller, isAuthenticated && sellerId ? { sellerId } : "skip");
   const unread = (notifications ?? []).filter((n) => !n.read).length;

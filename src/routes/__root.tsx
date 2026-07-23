@@ -6,11 +6,7 @@ import {
 } from '@tanstack/react-router'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ConvexQueryClient } from '@convex-dev/react-query'
-import { ConvexReactClient } from 'convex/react'
-import { ConvexProviderWithClerk } from 'convex/react-clerk'
-import { createServerFn } from '@tanstack/react-start'
-import { ClerkProvider, useAuth } from '@clerk/tanstack-react-start'
-import { auth } from '@clerk/tanstack-react-start/server'
+import { ConvexReactClient, ConvexProviderWithAuth } from 'convex/react'
 import type { ReactNode } from 'react'
 import {
   getLocale,
@@ -19,6 +15,7 @@ import {
   localizeHref,
 } from '@/paraglide/runtime'
 import { SellerSessionProvider } from '@/lib/SellerSessionContext'
+import { fetchSession, useVerifySpeedAuth } from '@/lib/session'
 import appCss from '@/styles/globals.css?url'
 
 interface RouterContext {
@@ -27,22 +24,17 @@ interface RouterContext {
   convexQueryClient: ConvexQueryClient
 }
 
-const fetchClerkAuth = createServerFn({ method: 'GET' }).handler(async () => {
-  const { userId, getToken } = await auth()
-  const token = await getToken()
-
-  return { userId, token }
-})
-
 export const Route = createRootRouteWithContext<RouterContext>()({
   beforeLoad: async (ctx) => {
     const locale = getLocale()
-    const { userId, token } = await fetchClerkAuth()
+    const { jwt } = await fetchSession()
 
-    if (token) {
-      ctx.context.convexQueryClient.serverHttpClient?.setAuth(token)
+    // Authenticate the SSR Convex client so route-loader queries prefetch as the
+    // logged-in user (same token the browser will use over the websocket).
+    if (jwt) {
+      ctx.context.convexQueryClient.serverHttpClient?.setAuth(jwt)
     }
-    return { locale, userId, token }
+    return { locale, token: jwt }
   },
   head: ({ matches }) => {
     // De-localized pathname (TanStack Router's rewrite.input strips the locale
@@ -95,15 +87,13 @@ function RootComponent() {
   const { queryClient, convexClient } = Route.useRouteContext()
 
   return (
-    <ClerkProvider>
-      <ConvexProviderWithClerk client={convexClient} useAuth={useAuth}>
-        <QueryClientProvider client={queryClient}>
-          <SellerSessionProvider>
-            <Outlet />
-          </SellerSessionProvider>
-        </QueryClientProvider>
-      </ConvexProviderWithClerk>
-    </ClerkProvider>
+    <ConvexProviderWithAuth client={convexClient} useAuth={useVerifySpeedAuth}>
+      <QueryClientProvider client={queryClient}>
+        <SellerSessionProvider>
+          <Outlet />
+        </SellerSessionProvider>
+      </QueryClientProvider>
+    </ConvexProviderWithAuth>
   )
 }
 

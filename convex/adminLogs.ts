@@ -13,20 +13,7 @@ export const create = mutation({
     notes:        v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const { identity, email: identityEmail } = await requireAdmin(ctx);
-
-    // Try to get email from identity, fall back to user email from database
-    let adminEmail = identityEmail;
-    if (!adminEmail) {
-      const user = await ctx.db
-        .query("users")
-        .filter((q) => q.eq(q.field("clerkUserId"), identity?.userId))
-        .first();
-      adminEmail = user?.email ?? "";
-    }
-
-    // Debug: Log the userId and email being used
-    console.log(`[AdminLog] userId: ${identity?.userId}, email: ${adminEmail}, action: ${args.action}`);
+    const { email: adminEmail } = await requireAdmin(ctx);
 
     await ctx.db.insert("adminLogs", {
       ...args,

@@ -1,11 +1,11 @@
 import { createFileRoute, Outlet } from '@tanstack/react-router'
 import AdminShell from '@/components/admin/AdminShell'
-import { requireAdminFn } from '@/lib/auth-guards'
+import { requireAdmin } from '@/lib/route-guards'
 
 export const Route = createFileRoute('/_admin')({
-  beforeLoad: async () => {
-    const { adminEmail } = await requireAdminFn()
-    return { adminEmail }
+  beforeLoad: async ({ context }) => {
+    const { user } = await requireAdmin(context.queryClient)
+    return { adminEmail: user.email ?? '' }
   },
   component: AdminLayout,
 })

@@ -1,13 +1,11 @@
 import { useEffect, useState } from "react";
-import { useUser } from "@clerk/tanstack-react-start";
 import { useNavigate } from "@tanstack/react-router";
-import { useConvexAuth } from "convex/react";
+import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import * as m from "@/paraglide/messages";
 import { getLocale } from "@/paraglide/runtime";
 import { getCityOptions } from "@/lib/cities";
 import CustomSelect from "@/components/ui/CustomSelect";
-import { sellerClerkRegisterFn, sellerClerkSyncFn } from "@/lib/clerk-seller";
-import { useGlobalSellerSession } from "@/lib/SellerSessionContext";
+import { api } from "@/convex/_generated/api";
 
 function ErrorBox({ message }) {
   return (
@@ -23,10 +21,8 @@ function ErrorBox({ message }) {
 // ── Profile completion form ───────────────────────────────
 function ProfileForm() {
   const locale = getLocale();
-  const { setSellerId } = useGlobalSellerSession();
-  const navigate = useNavigate();
+  const completeProfile = useMutation(api.users.completeSellerProfile);
   const [name,    setName]    = useState("");
-  const [phone,   setPhone]   = useState("");
   const [city,    setCity]    = useState("Erbil");
   const [address, setAddress] = useState("");
   const [loading, setLoading] = useState(false);
@@ -36,15 +32,16 @@ function ProfileForm() {
     e.preventDefault();
     setError(""); setLoading(true);
     try {
-      const res = await sellerClerkRegisterFn({ data: { name, phone, city, address } });
-      if (res.ok) {
-        setSellerId(res.sellerId);
-        navigate({ to: "/seller", replace: true });
-        return;
-      }
-      setError(res.error ?? "unknown_error");
+      await completeProfile({
+        name: name.trim(),
+        city,
+        address: address.trim() || undefined,
+      });
+      // Hard nav so the shell/guards pick up the now-complete profile.
+      window.location.href = "/seller";
+      return;
     } catch {
-      setError("unknown_error");
+      setError(m.errorGeneral());
     }
     setLoading(false);
   }
@@ -60,21 +57,6 @@ function ProfileForm() {
           className="w-full rounded-xl border border-[var(--color-hairline)] bg-white px-4 py-2.5 text-[var(--color-ink)] placeholder:text-[var(--color-ink-fade)] focus:outline-none focus:border-[var(--color-ember-300)] focus:ring-4 focus:ring-[var(--color-ember-100)]/50 transition" />
       </div>
       <div>
-        <label className="block text-sm font-medium text-[var(--color-ink)] mb-1.5">
-          {m.loginPhoneLabel()} <span className="text-rose-500">*</span>
-        </label>
-        <input type="tel" inputMode="numeric" value={phone}
-          onChange={e => setPhone(e.target.value.replace(/\D/g, ""))}
-          placeholder={m.loginPhonePlaceholder()} required dir="ltr"
-          className="w-full rounded-xl border border-[var(--color-hairline)] bg-white px-4 py-2.5 text-[var(--color-ink)] placeholder:text-[var(--color-ink-fade)] focus:outline-none focus:border-[var(--color-ember-300)] focus:ring-4 focus:ring-[var(--color-ember-100)]/50 transition" />
-        <div className="flex items-center gap-1.5 mt-1.5">
-          <svg className="w-3.5 h-3.5 text-green-500 shrink-0" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-          </svg>
-          <p className="text-[11px] text-[var(--color-ink-fade)]">{m.loginPhoneHint()}</p>
-        </div>
-      </div>
-      <div>
         <label className="block text-sm font-medium text-[var(--color-ink)] mb-1.5">{m.registerCityLabel()}</label>
         <CustomSelect value={city} onChange={setCity} options={getCityOptions(locale)} />
       </div>
@@ -87,7 +69,7 @@ function ProfileForm() {
           className="w-full rounded-xl border border-[var(--color-hairline)] bg-white px-4 py-2.5 text-[var(--color-ink)] placeholder:text-[var(--color-ink-fade)] focus:outline-none focus:border-[var(--color-ember-300)] focus:ring-4 focus:ring-[var(--color-ember-100)]/50 transition" />
       </div>
       {error && <ErrorBox message={error} />}
-      <button type="submit" disabled={loading || !name.trim() || !phone.trim() || !address.trim()}
+      <button type="submit" disabled={loading || !name.trim() || !address.trim()}
         className="w-full bg-rose-600 text-white font-semibold py-3 rounded-xl hover:bg-rose-700 transition-colors disabled:opacity-50">
         {loading ? "..." : m.continueBtn()}
       </button>
@@ -97,65 +79,24 @@ function ProfileForm() {
 
 // ── Page ──────────────────────────────────────────────────
 export default function SellerCompleteProfilePage() {
-  const { isLoaded, isSignedIn } = useUser();
-  const convexAuth = useConvexAuth();
-  const { setSellerId } = useGlobalSellerSession();
+  const { isLoading, isAuthenticated } = useConvexAuth();
   const navigate = useNavigate();
-  const [status, setStatus] = useState("checking"); // checking | form
+  const me = useQuery(api.users.getCurrent, isAuthenticated ? {} : "skip");
 
-  // Match the login completion flow: wait for Convex to accept the Clerk token,
-  // then verify whether this signed-in user still needs a seller profile.
   useEffect(() => {
-    if (!isLoaded) return;
-    if (!isSignedIn) {
+    if (isLoading) return;
+    if (!isAuthenticated) {
       navigate({ to: "/seller/login", replace: true });
       return;
     }
-    if (convexAuth.isLoading) {
-      setStatus("checking");
-      return;
+    if (me === undefined) return; // still loading
+    // No user row (shouldn't happen post-verify) or already-completed profile.
+    if (me && me.name && me.name.trim()) {
+      navigate({ to: "/seller", replace: true });
     }
-    if (!convexAuth.isAuthenticated) {
-      navigate({ to: "/seller/login", replace: true });
-      return;
-    }
+  }, [isLoading, isAuthenticated, me, navigate]);
 
-    let cancelled = false;
-    setStatus("checking");
-
-    sellerClerkSyncFn()
-      .then((res) => {
-        if (cancelled) return;
-        if (res.ok && res.needsProfile) {
-          setStatus("form");
-          return;
-        }
-        if (res.ok && res.sellerId) {
-          setSellerId(res.sellerId);
-          navigate({ to: "/seller", replace: true });
-          return;
-        }
-        // account_inactive / convex_auth_failed / not_authenticated
-        navigate({ to: "/seller/login", replace: true });
-      })
-      .catch(() => {
-        if (cancelled) return;
-        navigate({ to: "/seller/login", replace: true });
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    convexAuth.isAuthenticated,
-    convexAuth.isLoading,
-    isLoaded,
-    isSignedIn,
-    navigate,
-    setSellerId,
-  ]);
-
-  const showForm = status === "form";
+  const showForm = isAuthenticated && me !== undefined && (!me || !me.name || !me.name.trim());
 
   return (
     <div className="-mx-4 -my-6 lg:min-h-[calc(100vh-56px)] flex items-center justify-center bg-[var(--color-cream)]">
@@ -180,15 +121,6 @@ export default function SellerCompleteProfilePage() {
                     <div>
                       <p className="text-[var(--color-ink)] font-semibold text-sm">{m.profileExplainNameT()}</p>
                       <p className="text-[var(--color-ink-soft)] text-xs mt-0.5 leading-relaxed">{m.profileExplainNameD()}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="w-7 h-7 rounded-lg bg-[var(--color-ember-50)] flex items-center justify-center text-[var(--color-ember-600)] shrink-0 mt-0.5">
-                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-                    </div>
-                    <div>
-                      <p className="text-[var(--color-ink)] font-semibold text-sm">{m.profileExplainPhoneT()}</p>
-                      <p className="text-[var(--color-ink-soft)] text-xs mt-0.5 leading-relaxed">{m.profileExplainPhoneD()}</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">

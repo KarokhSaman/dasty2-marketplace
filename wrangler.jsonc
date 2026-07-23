@@ -6,7 +6,7 @@
   "main": "src/server.ts",
   "keep_vars": true,
   "secrets": {
-    "required": ["CLERK_SECRET_KEY", "RESEND_API_KEY"]
+    "required": ["RESEND_API_KEY"]
   },
   "upload_source_maps": true,
   "triggers": {
@@ -33,7 +33,7 @@
       "name": "dasty2-marketplace-pro",
       "keep_vars": true,
       "secrets": {
-        "required": ["CLERK_SECRET_KEY", "RESEND_API_KEY"]
+        "required": ["RESEND_API_KEY"]
       },
       "vars": {
         "VITE_CONVEX_URL": "https://artful-firefly-452.convex.cloud",
