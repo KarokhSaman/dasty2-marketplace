@@ -37,9 +37,11 @@ login pages. Enable the backend half only on the Convex development deployment:
 npx convex env set ALLOW_MOCK_AUTH true
 ```
 
-The deterministic accounts are `Codex QA Seller` (`+9647000000001`) and
-`Codex QA Admin` (`+9647000000002`). They have no passwords. The UI/API route
-is compiled out of production behavior, and Convex independently rejects the
+The deterministic identities are the mock seller (`+9647000000001`) and
+`Codex QA Admin` (`+9647000000002`). They have no passwords. Each mock seller
+login resets that seller to the registration-only state and opens the
+complete-profile step; the mock admin stays ready to use. The UI/API route is
+compiled out of production behavior, and Convex independently rejects the
 shortcut unless the flag is explicitly enabled.
 
 ## Deployment

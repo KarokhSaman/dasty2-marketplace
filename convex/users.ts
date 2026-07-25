@@ -16,10 +16,6 @@ const mockRoleValidator = v.union(v.literal("seller"), v.literal("admin"));
 const MOCK_USERS = {
   seller: {
     phone: "+9647000000001",
-    email: "seller.mock@dasty2.local",
-    name: "Codex QA Seller",
-    city: "Erbil",
-    address: "Development test account",
   },
   admin: {
     phone: "+9647000000002",
@@ -77,31 +73,42 @@ export const upsertMockUser = internalMutation({
       throw new Error("Mock authentication is disabled");
     }
 
-    const mock = MOCK_USERS[role];
+    const phone = MOCK_USERS[role].phone;
     const existing = await ctx.db
       .query("users")
-      .withIndex("by_phone", (q) => q.eq("phone", mock.phone))
+      .withIndex("by_phone", (q) => q.eq("phone", phone))
       .unique();
-    const user = {
-      role,
-      phone: mock.phone,
-      email: mock.email,
-      name: mock.name,
-      city: mock.city,
-      address: mock.address,
-      isActive: true,
-    } as const;
+    const registeredAt = existing?.registeredAt ?? new Date().toISOString();
+    const user: Omit<Doc<"users">, "_id" | "_creationTime"> =
+      role === "seller"
+        ? {
+            role: "seller",
+            phone,
+            name: "",
+            registeredAt,
+            isActive: true,
+          }
+        : {
+            role: "admin",
+            phone,
+            email: MOCK_USERS.admin.email,
+            name: MOCK_USERS.admin.name,
+            city: MOCK_USERS.admin.city,
+            address: MOCK_USERS.admin.address,
+            registeredAt,
+            isActive: true,
+          };
 
     if (existing) {
-      await ctx.db.patch(existing._id, user);
-      return { userId: existing._id as string, phone: mock.phone, role };
+      // Reusing the deterministic seller must still exercise first-time
+      // onboarding, so replace the row to remove any previously completed
+      // optional profile fields while preserving its stable document ID.
+      await ctx.db.replace(existing._id, user);
+      return { userId: existing._id as string, phone, role };
     }
 
-    const userId = await ctx.db.insert("users", {
-      ...user,
-      registeredAt: new Date().toISOString(),
-    });
-    return { userId: userId as string, phone: mock.phone, role };
+    const userId = await ctx.db.insert("users", user);
+    return { userId: userId as string, phone, role };
   },
 });
 
