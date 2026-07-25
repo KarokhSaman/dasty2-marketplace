@@ -16,6 +16,7 @@ import {
 } from '@/paraglide/runtime'
 import { SellerSessionProvider } from '@/lib/SellerSessionContext'
 import { fetchSession, useVerifySpeedAuth } from '@/lib/session'
+import { PageScrollbar } from '@/components/ui/PageScrollbar'
 import appCss from '@/styles/globals.css?url'
 
 interface RouterContext {
@@ -112,6 +113,7 @@ function RootDocument({
       </head>
       <body className="antialiased bg-cream text-ink min-h-screen-dvh" suppressHydrationWarning>
         {children}
+        <PageScrollbar />
         <Scripts />
       </body>
     </html>

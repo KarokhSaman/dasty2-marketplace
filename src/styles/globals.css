@@ -14,10 +14,10 @@
    The brand red is #ed0040 (rose-500 / ember-500).
    ────────────────────────────────────────────────────────── */
 @theme {
-  --font-sans: 'GeistVF', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-sans: var(--app-font-sans);
   /* Display now uses the same clean grotesk as body — no serif.
      Kept as a separate token so existing `.font-display` usages stay valid. */
-  --font-display: 'GeistVF', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: var(--app-font-display);
 
   /* Surfaces & ink — modern-app palette.
      App background and card surfaces share one warm off-white. */
@@ -85,7 +85,18 @@
 }
 
 :root {
-  --font-geist-sans: 'GeistVF', system-ui, sans-serif;
+  --font-sf-pro: -apple-system, BlinkMacSystemFont, 'SF Pro Text',
+    'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;
+  --font-sf-arabic: 'SF Arabic', -apple-system, BlinkMacSystemFont,
+    'Geeza Pro', 'Noto Sans Arabic', Tahoma, Arial, sans-serif;
+  --app-font-sans: var(--font-sf-pro);
+  --app-font-display: var(--font-sf-pro);
+}
+
+html:lang(ar),
+html:lang(ckb) {
+  --app-font-sans: var(--font-sf-arabic);
+  --app-font-display: var(--font-sf-arabic);
 }
 
 html {
@@ -94,8 +105,7 @@ html {
   scrollbar-width: thin;
 }
 
-/* Keep the page-position indicator visible without letting it dominate the UI.
-   A transparent track blends into the page; the inset thumb stays easy to grab. */
+/* Native fallback before React mounts or when JavaScript is unavailable. */
 html::-webkit-scrollbar {
   width: 8px;
 }
@@ -118,6 +128,16 @@ html::-webkit-scrollbar-thumb:hover {
 
 html::-webkit-scrollbar-corner {
   background: transparent;
+}
+
+/* The interactive page scrollbar takes over once it has mounted. */
+html.custom-scrollbar-enabled {
+  scrollbar-width: none;
+}
+
+html.custom-scrollbar-enabled::-webkit-scrollbar {
+  width: 0;
+  height: 0;
 }
 
 body {
