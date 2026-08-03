@@ -549,7 +549,7 @@ export default function AdminProductsPage() {
                       {featuredPosition ? `Position #${featuredPosition}` : 'None (date-sorted at end)'}
                     </button>
                     {isPositionDropdownOpen && (
-                      <div className="absolute top-full left-0 right-0 mt-1 max-h-48 overflow-y-auto bg-white border border-[var(--color-hairline)] rounded-lg shadow-lg z-50">
+                      <div className="absolute bottom-full left-0 right-0 mb-1 max-h-60 overflow-y-auto bg-white border border-[var(--color-hairline)] rounded-lg shadow-lg z-50">
                         <button
                           type="button"
                           onClick={() => {
