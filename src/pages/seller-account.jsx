@@ -5,7 +5,7 @@ import { api } from "@/convex/_generated/api";
 import * as m from "@/paraglide/messages";
 import { getLocale } from "@/paraglide/runtime";
 
-import { getCityOptions } from "@/lib/cities";
+import { getCityOptions, getCityLabel } from "@/lib/cities";
 import CustomSelect from "@/components/ui/CustomSelect";
 
 const FEE_TIERS = [
@@ -124,9 +124,9 @@ export default function SellerAccountPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
               </svg>
-              <span className="truncate">{seller.city}{seller.address ? ` · ${seller.address}` : ""}</span>
+              <span className="truncate">{getCityLabel(seller.city, locale)}{seller.address ? ` · ${seller.address}` : ""}</span>
             </p>
-            <p className="text-[var(--color-ink-soft)] text-xs mt-0.5" dir="ltr">{seller.phone}</p>
+            <p className="text-[var(--color-ink-soft)] text-xs mt-0.5 text-end" dir="ltr">{seller.phone}</p>
             {seller.email && (
               <p className="text-[var(--color-ink-soft)] text-xs mt-0.5 flex items-center gap-1">
                 <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
