@@ -407,8 +407,8 @@ export default function HomePage() {
   };
 
   // Featured products for carousel — preserve position-based order from getFeatured query
-  const featuredFiltered = useMemo(() => featuredProducts.filter((p) => matchesFilters(p, { skipCategory: true })),
-    [featuredProducts, condition, city, brands]);
+  const featuredFiltered = useMemo(() => featuredProducts.filter((p) => matchesFilters(p, { skipCategory: category === "all" })),
+    [featuredProducts, condition, city, brands, category]);
 
   // All products: featured products on top, then regular products
   const allProducts = useMemo(() => {
@@ -504,7 +504,7 @@ export default function HomePage() {
       )}
 
       {/* Featured Products Carousel - Sticky with Circular Cards (hidden on mobile and tablet) */}
-      {featuredFiltered.length > 0 && category === "all" && (
+      {featuredFiltered.length > 0 && (
         <div className={`hidden lg:block sticky top-14 z-30 bg-white pt-1 pb-3 -mx-4 px-4 sm:mx-0 sm:px-0 transition-all duration-1000 ease-in-out ${animateEntrance ? "fade-up" : ""} ${isRotating ? "opacity-90 scale-[0.98]" : "opacity-100 scale-100"}`}>
           <h2 className="text-sm font-bold text-[var(--color-ink)] mb-3 px-0.5 flex items-center gap-1.5">
             <span className="inline-flex items-center justify-center shrink-0 w-4 h-4 rounded-full bg-[var(--color-ember-500)] text-white shadow-[0_2px_6px_-2px_rgba(237,0,64,0.6)]">
@@ -579,7 +579,7 @@ export default function HomePage() {
       )}
 
       {/* Visual separator (hidden on mobile, tablet, and when category is filtered) */}
-      {featuredFiltered.length > 0 && category === "all" && (
+      {featuredFiltered.length > 0 && (
         <div className="hidden lg:flex sticky lg:top-[265px] z-40 bg-white items-center gap-3 my-0 py-2">
           <div className="flex-1 h-px bg-[var(--color-hairline)]" />
           <p className="text-xs font-semibold text-[var(--color-ink-fade)] uppercase tracking-wide">All Products</p>
