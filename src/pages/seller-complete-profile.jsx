@@ -98,12 +98,6 @@ export default function SellerCompleteProfilePage() {
 
   const showForm = isAuthenticated && me !== undefined && (!me || !me.name || !me.name.trim());
 
-  // Hide the seller shell nav by using data attribute
-  useEffect(() => {
-    document.documentElement.setAttribute('data-hide-seller-nav', 'true');
-    return () => document.documentElement.removeAttribute('data-hide-seller-nav');
-  }, []);
-
   return (
     <div className="-mx-4 -my-6 lg:min-h-[calc(100vh-56px)] flex items-center justify-center bg-[var(--color-cream)]">
       <div className="flex items-center justify-center px-6 py-10 w-full">

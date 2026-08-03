@@ -183,7 +183,7 @@ export default function SellerShell({ children }) {
       </main>
 
       {/* ── Mobile bottom nav — Home / Dashboard / Account ── */}
-      {!isAddProduct && !document.documentElement.getAttribute('data-hide-seller-nav') && (
+      {!isAddProduct && (
         <>
           <div className="lg:hidden h-20 sm:h-24" aria-hidden />
           <nav className="lg:hidden fixed inset-x-0 z-30 bg-white border-t border-[var(--color-hairline)]" style={{ bottom: 0 }}>
