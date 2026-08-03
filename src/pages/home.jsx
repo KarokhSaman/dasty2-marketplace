@@ -298,13 +298,18 @@ export default function HomePage() {
   const { data: liveFeatured } = useReactQuery(convexQuery(api.products.getFeatured, {}));
   const rawFeaturedProducts = liveFeatured ?? cachedFeatured ?? [];
 
-  // Apply client-side rotation logic every 20 seconds when category is "all"
+  // Apply client-side rotation logic every 10 seconds to rotate featured products at same position
   const applyClientRotation = (products) => {
-    if (category !== "all" || !products.length) return products;
+    if (!products.length) return products;
+
+    // Filter featured products by selected category
+    const filteredProducts = category === "all"
+      ? products
+      : products.filter(p => p.category === category);
 
     // Group by position
-    const positioned = products.filter(p => p.featuredPosition !== undefined);
-    const unpositioned = products.filter(p => p.featuredPosition === undefined);
+    const positioned = filteredProducts.filter(p => p.featuredPosition !== undefined);
+    const unpositioned = filteredProducts.filter(p => p.featuredPosition === undefined);
 
     const rotated = [];
     for (let pos = 1; pos <= 10; pos++) {
