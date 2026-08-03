@@ -326,21 +326,20 @@ export default function HomePage() {
 
   // Update rotationTick every 10 seconds to trigger re-renders (which recalculates rotation)
   useEffect(() => {
-    if (category !== "all") return;
     const interval = setInterval(() => {
       setRotationTick(t => t + 1);
     }, 10000); // 10 seconds
     return () => clearInterval(interval);
-  }, [category]);
+  }, []);
 
   // Trigger animation on rotation
   useEffect(() => {
-    if (rotationTick > 0 && category === "all") {
+    if (rotationTick > 0) {
       setIsRotating(true);
       const timer = setTimeout(() => setIsRotating(false), 1000); // 1000ms smooth animation
       return () => clearTimeout(timer);
     }
-  }, [rotationTick, category]);
+  }, [rotationTick]);
 
   const { results: liveResults, status, loadMore } = usePaginatedQuery(
     api.products.getPublicPaginated,
