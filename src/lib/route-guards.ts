@@ -12,6 +12,10 @@ export async function requireSeller(queryClient: QueryClient) {
   if (!seller || !seller.isActive) {
     throw redirect({ to: '/seller/login' })
   }
+  // Enforce profile completion — if seller has no name, redirect to complete profile
+  if (!seller.name || !seller.name.trim()) {
+    throw redirect({ to: '/seller/complete-profile' })
+  }
   return { seller }
 }
 
