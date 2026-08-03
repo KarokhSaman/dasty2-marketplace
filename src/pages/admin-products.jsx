@@ -44,7 +44,6 @@ export default function AdminProductsPage() {
 
   const [featuredPickerId, setFeaturedPickerId] = useState(null);
   const [featuredPosition, setFeaturedPosition] = useState(null); // Selected position 1-10 or null
-  const [isPositionDropdownOpen, setIsPositionDropdownOpen] = useState(false);
   const [tab,          setTab]          = useState(searchParams.get("tab") ?? "pending");
   const [search,       setSearch]       = useState("");
   const [rejectingId,  setRejectingId]  = useState(focusId ?? null);
@@ -540,46 +539,35 @@ export default function AdminProductsPage() {
                   <label className="text-xs font-semibold text-[var(--color-ink)] block mb-2">
                     Feature Position (Optional)
                   </label>
-                  <div className="relative">
+                  <div className="grid grid-cols-6 gap-2">
                     <button
                       type="button"
-                      onClick={() => setIsPositionDropdownOpen(!isPositionDropdownOpen)}
-                      className="w-full text-sm px-3 py-2 border border-[var(--color-hairline)] rounded-lg bg-white text-[var(--color-ink)] text-start focus:outline-none focus:ring-2 focus:ring-[var(--color-ember-400)] hover:bg-[var(--color-cream)]"
+                      onClick={() => setFeaturedPosition(null)}
+                      className={`py-2 px-2 text-xs rounded-lg font-medium transition-all ${
+                        featuredPosition === null
+                          ? "bg-[var(--color-ember-500)] text-white"
+                          : "bg-[var(--color-cream)] text-[var(--color-ink)] hover:bg-[var(--color-cream-deep)]"
+                      }`}
                     >
-                      {featuredPosition ? `Position #${featuredPosition}` : 'None (date-sorted at end)'}
+                      Auto
                     </button>
-                    {isPositionDropdownOpen && (
-                      <div className="absolute bottom-full left-0 right-0 mb-1 max-h-60 overflow-y-auto bg-white border border-[var(--color-hairline)] rounded-lg shadow-lg z-50">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setFeaturedPosition(null);
-                            setIsPositionDropdownOpen(false);
-                          }}
-                          className="w-full text-start px-3 py-2 text-sm hover:bg-[var(--color-cream)] border-b border-[var(--color-hairline)]"
-                        >
-                          None (date-sorted at end)
-                        </button>
-                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(pos => (
-                          <button
-                            key={pos}
-                            type="button"
-                            onClick={() => {
-                              setFeaturedPosition(pos);
-                              setIsPositionDropdownOpen(false);
-                            }}
-                            className={`w-full text-start px-3 py-2 text-sm hover:bg-[var(--color-cream)] ${
-                              featuredPosition === pos ? "bg-[var(--color-ember-50)] text-[var(--color-ember-600)] font-semibold" : ""
-                            } ${pos < 10 ? "border-b border-[var(--color-hairline)]" : ""}`}
-                          >
-                            Position #{pos}
-                          </button>
-                        ))}
-                      </div>
-                    )}
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(pos => (
+                      <button
+                        key={pos}
+                        type="button"
+                        onClick={() => setFeaturedPosition(pos)}
+                        className={`py-2 px-1 text-xs rounded-lg font-medium transition-all ${
+                          featuredPosition === pos
+                            ? "bg-[var(--color-ember-500)] text-white"
+                            : "bg-[var(--color-cream)] text-[var(--color-ink)] hover:bg-[var(--color-cream-deep)]"
+                        }`}
+                      >
+                        {pos}
+                      </button>
+                    ))}
                   </div>
-                  <p className="text-[10px] text-[var(--color-ink-fade)] mt-1.5">
-                    1 = first in carousel, 10 = last. Products at same position rotate fairly.
+                  <p className="text-[10px] text-[var(--color-ink-fade)] mt-2">
+                    1 = first in carousel, 10 = last. Auto = date-sorted at end.
                   </p>
                 </div>
               </>
