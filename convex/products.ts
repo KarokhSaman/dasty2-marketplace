@@ -75,6 +75,7 @@ function calculateProfit(price: number): number {
   if (price >= 300000 && price <= 399000) return 20000;
   if (price >= 400000 && price <= 499000) return 25000;
   if (price >= 500000 && price <= 1000000) return 30000;
+  if (price > 1000000) return 35000;
   return 0;
 }
 
@@ -88,15 +89,15 @@ function validateListingInput({
   photos: string[];
 }) {
   if (!title.trim()) throw new Error("Product title is required");
-  if (!Number.isInteger(price) || price < 5_000 || price > 1_000_000) {
-    throw new Error("Product price must be between 5,000 and 1,000,000 IQD");
+  if (!Number.isInteger(price) || price < 5_000) {
+    throw new Error("Product price must be at least 5,000 IQD");
   }
   if (
-    photos.length < 1 ||
+    photos.length < 2 ||
     photos.length > 5 ||
     photos.some((photo) => !photo.trim())
   ) {
-    throw new Error("A product must have between 1 and 5 photos");
+    throw new Error("A product must have between 2 and 5 photos");
   }
 }
 
