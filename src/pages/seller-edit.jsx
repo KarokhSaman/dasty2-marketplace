@@ -63,6 +63,9 @@ export default function EditProductPage() {
   const priceNum = Number(normalizeDigits(price).replace(/[^\d]/g, "")) || 0;
   const profit = calculateProfit(priceNum);
 
+  // Debug: log values when price changes
+  if (price) console.log("Price:", price, "PriceNum:", priceNum, "Profit:", profit);
+
   async function uploadFile(file) {
     setUploading((n) => n + 1);
     try {
@@ -272,9 +275,9 @@ export default function EditProductPage() {
             placeholder={m.fieldPricePlaceholder()}
             className={`w-full rounded-xl border bg-white px-4 py-2.5 text-[var(--color-ink)] placeholder:text-[var(--color-ink-fade)] focus:outline-none focus:ring-4 transition ${locale === "en" ? "pr-10" : "pl-10"} ${errors.price ? "border-red-400 bg-red-50" : "border-[var(--color-hairline)] focus:border-[var(--color-ember-300)] focus:ring-[var(--color-ember-100)]/50"}`}
           />
-          {price && priceNum >= 5000 && profit > 0 && (
-            <p className="mt-2 text-sm text-amber-700 bg-amber-50 rounded-lg px-3 py-2">
-              {m.profitLabel()} <span className="font-bold">{formatPrice(profit)}</span>
+          {price && priceNum >= 5000 && (
+            <p className="mt-2 text-sm text-green-700 bg-green-50 rounded-lg px-3 py-2">
+              {m.profitLabel()} <span className="font-bold">{formatPrice(profit)} IQD</span>
             </p>
           )}
           {errors.price && <p className="mt-1 text-xs text-red-500">{m.priceRange()}</p>}
