@@ -77,7 +77,7 @@
   "submitting": "Submitting...",
   "uploading": "Uploading...",
   "productSubmitted": "Product submitted for review! It will appear after admin approval.",
-  "atLeastOnePhoto": "At least one photo is required",
+  "atLeastOnePhoto": "At least two photos are required",
   "priceMinimum": "Price must be at least 5,000 IQD",
   "priceRange": "Price must be at least 5,000 IQD",
   "repostBtn": "Repost",
