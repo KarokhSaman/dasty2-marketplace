@@ -13,11 +13,11 @@ export const create = mutation({
     notes:        v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const { email: adminEmail } = await requireAdmin(ctx);
+    const { user } = await requireAdmin(ctx);
 
     await ctx.db.insert("adminLogs", {
       ...args,
-      adminEmail,
+      adminName: user!.name,
       createdAt: new Date().toISOString(),
     });
   },

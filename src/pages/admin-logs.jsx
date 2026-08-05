@@ -36,9 +36,9 @@ function timeAgo(iso) {
 export default function AdminLogsPage() {
   const logs = useQuery(api.adminLogs.getAll);
 
-  // Group by admin email for the summary
+  // Group by admin name for the summary
   const summary = logs ? logs.reduce((acc, log) => {
-    acc[log.adminEmail] = (acc[log.adminEmail] || 0) + 1;
+    acc[log.adminName] = (acc[log.adminName] || 0) + 1;
     return acc;
   }, {}) : {};
 
@@ -54,13 +54,13 @@ export default function AdminLogsPage() {
         <div className="bg-white rounded-2xl border border-[var(--color-hairline)] shadow-sm p-4">
           <p className="text-xs font-semibold text-[var(--color-ink-fade)] uppercase tracking-widest mb-3">Admin Activity Summary</p>
           <div className="flex flex-wrap gap-3">
-            {Object.entries(summary).map(([email, count]) => (
-              <div key={email} className="flex items-center gap-2 bg-white rounded-xl px-3 py-2">
+            {Object.entries(summary).map(([adminName, count]) => (
+              <div key={adminName} className="flex items-center gap-2 bg-white rounded-xl px-3 py-2">
                 <div className="w-7 h-7 rounded-full bg-rose-100 flex items-center justify-center text-xs font-bold text-[var(--color-ember-600)]">
-                  {email[0]?.toUpperCase()}
+                  {adminName[0]?.toUpperCase()}
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-gray-800" dir="ltr">{email}</p>
+                  <p className="text-xs font-semibold text-gray-800">{adminName}</p>
                   <p className="text-[10px] text-[var(--color-ink-fade)]">{count} action{count !== 1 ? "s" : ""}</p>
                 </div>
               </div>
@@ -92,12 +92,12 @@ export default function AdminLogsPage() {
                 <div key={log._id} className="px-4 py-3.5 flex items-start gap-3">
                   {/* Admin avatar */}
                   <div className="w-8 h-8 rounded-full bg-rose-100 flex items-center justify-center text-xs font-bold text-[var(--color-ember-600)] shrink-0 mt-0.5">
-                    {log.adminEmail ? log.adminEmail[0]?.toUpperCase() : "?"}
+                    {log.adminName ? log.adminName[0]?.toUpperCase() : "?"}
                   </div>
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-xs font-semibold text-[var(--color-ink)]" dir="ltr">{log.adminEmail || "Unknown Admin"}</span>
+                      <span className="text-xs font-semibold text-[var(--color-ink)]">{log.adminName || "Unknown Admin"}</span>
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${meta.color}`}>
                         {meta.label}
                       </span>

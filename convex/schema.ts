@@ -87,7 +87,7 @@ export default defineSchema({
     .index("by_isActive", ["isActive"]),
 
   adminLogs: defineTable({
-    adminEmail:   v.string(),
+    adminName:    v.string(),
     action:       v.string(),
     productId:    v.optional(v.string()),
     productTitle: v.optional(v.string()),

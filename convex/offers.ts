@@ -34,7 +34,7 @@ export const create = mutation({
     endDate:       v.string(),
   },
   handler: async (ctx, args) => {
-    const { email: adminEmail } = await requireAdmin(ctx);
+    const { user } = await requireAdmin(ctx);
 
     const offerId = await ctx.db.insert("offers", {
       ...args,
@@ -69,7 +69,7 @@ export const create = mutation({
 
     // Log the action
     await ctx.db.insert("adminLogs", {
-      adminEmail,
+      adminName:    user!.name,
       action:       "offer_created",
       productTitle: args.title,
       notes:        `${args.type === "free" ? "No fee" : `Flat ${args.flatFeeAmount?.toLocaleString()} IQD`} · ${args.startDate} → ${args.endDate}`,
@@ -83,12 +83,12 @@ export const create = mutation({
 export const deactivate = mutation({
   args: { id: v.id("offers") },
   handler: async (ctx, { id }) => {
-    const { email: adminEmail } = await requireAdmin(ctx);
+    const { user } = await requireAdmin(ctx);
 
     const offer = await ctx.db.get(id);
     await ctx.db.patch(id, { isActive: false });
     await ctx.db.insert("adminLogs", {
-      adminEmail,
+      adminName:    user!.name,
       action:       "offer_deactivated",
       productTitle: offer?.title,
       createdAt:    new Date().toISOString(),
@@ -99,12 +99,12 @@ export const deactivate = mutation({
 export const reactivate = mutation({
   args: { id: v.id("offers") },
   handler: async (ctx, { id }) => {
-    const { email: adminEmail } = await requireAdmin(ctx);
+    const { user } = await requireAdmin(ctx);
 
     const offer = await ctx.db.get(id);
     await ctx.db.patch(id, { isActive: true });
     await ctx.db.insert("adminLogs", {
-      adminEmail,
+      adminName:    user!.name,
       action:       "offer_reactivated",
       productTitle: offer?.title,
       createdAt:    new Date().toISOString(),
@@ -115,12 +115,12 @@ export const reactivate = mutation({
 export const deleteOffer = mutation({
   args: { id: v.id("offers") },
   handler: async (ctx, { id }) => {
-    const { email: adminEmail } = await requireAdmin(ctx);
+    const { user } = await requireAdmin(ctx);
 
     const offer = await ctx.db.get(id);
     await ctx.db.delete(id);
     await ctx.db.insert("adminLogs", {
-      adminEmail,
+      adminName:    user!.name,
       action:       "offer_deleted",
       productTitle: offer?.title,
       createdAt:    new Date().toISOString(),
