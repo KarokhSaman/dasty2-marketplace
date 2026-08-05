@@ -210,7 +210,7 @@ export function PageScrollbar() {
 
   return (
     <div
-      className={`pointer-events-none fixed bottom-20 top-20 z-[65] w-4 transition-opacity duration-200 hidden lg:block lg:bottom-5 ${
+      className={`pointer-events-none fixed bottom-20 top-20 z-[65] w-4 transition-opacity duration-200 hidden xl:block xl:bottom-5 ${
         metrics.visible ? 'opacity-100' : 'opacity-0'
       }`}
       style={{

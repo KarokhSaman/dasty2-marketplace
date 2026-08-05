@@ -64,7 +64,7 @@ export default function ProductCard({ product, onSave }) {
     <Link to={`/products/${product._id}`} className="group block" onClick={handleClick}>
       <article className="bg-paper rounded-2xl overflow-hidden border border-[var(--color-hairline)] transition-all duration-300 hover:border-[var(--color-ember-200)] hover:shadow-[0_18px_36px_-22px_rgba(11,12,15,0.22)] hover:-translate-y-0.5 active:scale-[0.98]">
         {/* Image */}
-        <div className="aspect-[4/5] relative overflow-hidden bg-[var(--color-sand)]">
+        <div className="aspect-[4/5] md:aspect-square relative overflow-hidden bg-[var(--color-sand)]">
           {photo ? (
             <img
               src={photo}
@@ -93,12 +93,12 @@ export default function ProductCard({ product, onSave }) {
         </div>
 
         {/* Info */}
-        <div className="px-3 pt-2.5 pb-3">
-          <h3 className="text-[13.5px] font-semibold text-[var(--color-ink)] line-clamp-2 leading-snug min-h-[2.5rem] mb-1.5">
+        <div className="px-3 pt-2.5 pb-3 md:px-2 md:pt-2 md:pb-2">
+          <h3 className="text-[13.5px] md:text-[12px] font-semibold text-[var(--color-ink)] line-clamp-2 leading-snug min-h-[2.5rem] md:min-h-[2rem] mb-1.5 md:mb-1">
             {product.title}
           </h3>
 
-          <div className="flex items-center gap-1.5 text-[11px] text-[var(--color-ink-fade)] mb-2 min-w-0">
+          <div className="flex items-center gap-1.5 text-[11px] md:text-[10px] text-[var(--color-ink-fade)] mb-2 md:mb-1.5 min-w-0">
             <span className="truncate">{categoryLabel}</span>
             {cityLabel && (
               <>

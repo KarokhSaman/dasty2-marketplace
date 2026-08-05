@@ -4,6 +4,7 @@ import { convexQuery } from "@convex-dev/react-query";
 import { api } from "@/convex/_generated/api";
 import { useState, useMemo, useRef, useEffect, useLayoutEffect } from "react";
 import ProductCard from "@/components/buyer/ProductCard";
+import VIPSpotlight from "@/components/buyer/VIPSpotlight";
 import CategoryBar from "@/components/buyer/CategoryBar";
 import LocationPicker from "@/components/buyer/LocationPicker";
 import { SegmentedControl, Skeleton } from "@/components/ui";
@@ -410,6 +411,13 @@ export default function HomePage() {
   const featuredFiltered = useMemo(() => featuredProducts.filter((p) => matchesFilters(p, { skipCategory: category === "all" })),
     [featuredProducts, condition, city, brands, category]);
 
+  // VIP Carousel products — raw featured products (no rotation) for pure carousel rotation
+  const vipCarouselProducts = useMemo(() => {
+    const filtered = rawFeaturedProducts.filter((p) => matchesFilters(p, { skipCategory: category === "all" }));
+    // Sort by featuredPosition to maintain order
+    return filtered.sort((a, b) => (a.featuredPosition ?? 11) - (b.featuredPosition ?? 11));
+  }, [rawFeaturedProducts, condition, city, brands, category]);
+
   // All products: featured products on top, then regular products
   const allProducts = useMemo(() => {
     // When category is "all", show featured with rotation at top. Otherwise filter by category.
@@ -424,52 +432,6 @@ export default function HomePage() {
   }, [featuredProducts, results, condition, sort, city, category, brands]);
   const totalCount = allProducts.length;
 
-  // Hover state for carousel and ref for auto-scroll
-  const [isHovering, setIsHovering] = useState(false);
-  const carouselRef = useRef(null);
-
-  // Auto-scroll carousel every 3 seconds with infinite circular motion
-  useEffect(() => {
-    if (!carouselRef.current || isHovering || featuredFiltered.length === 0) return;
-
-    const element = carouselRef.current;
-    const scrollAmount = 150; // Scroll by card width + gap
-    const isRTL = document.documentElement.dir === "rtl";
-    let lastScrollWidth = 0;
-
-    const interval = setInterval(() => {
-      if (element) {
-        // Recalculate scrollWidth each interval to account for images loading
-        const currentScrollWidth = element.scrollWidth;
-
-        // Only use the width if it's stable (hasn't changed recently, meaning images are loaded)
-        if (currentScrollWidth > 0 && currentScrollWidth !== lastScrollWidth) {
-          lastScrollWidth = currentScrollWidth;
-          return; // Skip this scroll, wait for next interval when width stabilizes
-        }
-
-        lastScrollWidth = currentScrollWidth;
-        const oneSetWidth = currentScrollWidth / 2;
-
-        // Get current scroll position
-        const currentScroll = Math.abs(element.scrollLeft);
-
-        // Reset to beginning if we've scrolled past halfway point
-        if (currentScroll >= oneSetWidth - scrollAmount) {
-          element.scrollLeft = 0;
-        } else {
-          // Auto-scroll - direction depends on text direction
-          const scrollValue = isRTL ? -scrollAmount : scrollAmount;
-          element.scrollBy({
-            left: scrollValue,
-            behavior: "smooth",
-          });
-        }
-      }
-    }, 3000);
-
-    return () => clearInterval(interval);
-  }, [isHovering, featuredFiltered.length]);
 
   const isLoading =
     status === "LoadingFirstPage" &&
@@ -503,88 +465,12 @@ export default function HomePage() {
         />
       )}
 
-      {/* Featured Products Carousel - Sticky with Circular Cards (hidden on mobile and tablet) */}
-      {featuredFiltered.length > 0 && (
-        <div className={`hidden lg:block sticky top-14 z-30 bg-white pt-1 pb-3 -mx-4 px-4 sm:mx-0 sm:px-0 transition-all duration-1000 ease-in-out ${animateEntrance ? "fade-up" : ""} ${isRotating ? "opacity-90 scale-[0.98]" : "opacity-100 scale-100"}`}>
-          <h2 className="text-sm font-bold text-[var(--color-ink)] mb-3 px-0.5 flex items-center gap-1.5">
-            <span className="inline-flex items-center justify-center shrink-0 w-4 h-4 rounded-full bg-[var(--color-ember-500)] text-white shadow-[0_2px_6px_-2px_rgba(237,0,64,0.6)]">
-              <svg className="w-2.5 h-2.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-                <path d="M12 2l2.39 6.96H22l-6.18 4.49L18.18 22 12 17.27 5.82 22l2.36-8.55L2 8.96h7.61L12 2z" />
-              </svg>
-            </span>
-            VIP
-          </h2>
-          <div
-            ref={carouselRef}
-            className="overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0"
-            onMouseEnter={() => setIsHovering(true)}
-            onMouseLeave={() => setIsHovering(false)}
-          >
-            <div className="flex gap-4 sm:gap-5">
-              {/* Original products */}
-              {featuredFiltered.map((p) => (
-                <Link
-                  key={`${p._id}-1`}
-                  to={`/products/${p._id}`}
-                  className="shrink-0"
-                >
-                  <div className="group cursor-pointer text-center">
-                    <div className="relative w-20 h-16 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-lg overflow-hidden bg-gray-100 mb-2 mx-auto">
-                      {p.photos?.[0] ? (
-                        <img
-                          src={p.photos[0]}
-                          alt={p.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gray-200" />
-                      )}
-                    </div>
-                    <p className="text-[10px] sm:text-xs text-[var(--color-ink-fade)] font-medium mb-0.5">{getCategoryLabel(p.category, locale)}</p>
-                    <p className="text-xs sm:text-sm font-bold text-[var(--color-ember-600)]">
-                      {(p.price ?? 0).toLocaleString()} IQD
-                    </p>
-                  </div>
-                </Link>
-              ))}
-              {/* Cloned products for infinite loop */}
-              {featuredFiltered.map((p) => (
-                <Link
-                  key={`${p._id}-2`}
-                  to={`/products/${p._id}`}
-                  className="shrink-0"
-                >
-                  <div className="group cursor-pointer text-center">
-                    <div className="relative w-20 h-16 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-lg overflow-hidden bg-gray-100 mb-2 mx-auto">
-                      {p.photos?.[0] ? (
-                        <img
-                          src={p.photos[0]}
-                          alt={p.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gray-200" />
-                      )}
-                    </div>
-                    <p className="text-[10px] sm:text-xs text-[var(--color-ink-fade)] font-medium mb-0.5">{getCategoryLabel(p.category, locale)}</p>
-                    <p className="text-xs sm:text-sm font-bold text-[var(--color-ember-600)]">
-                      {(p.price ?? 0).toLocaleString()} IQD
-                    </p>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Visual separator (hidden on mobile, tablet, and when category is filtered) */}
-      {featuredFiltered.length > 0 && (
-        <div className="hidden lg:flex sticky lg:top-[265px] z-40 bg-white items-center gap-3 my-0 py-2">
-          <div className="flex-1 h-px bg-[var(--color-hairline)]" />
-          <p className="text-xs font-semibold text-[var(--color-ink-fade)] uppercase tracking-wide">All Products</p>
-          <div className="flex-1 h-px bg-[var(--color-hairline)]" />
-        </div>
+      {/* VIP Spotlight - Modern Featured Product Hero */}
+      {vipCarouselProducts.length > 0 && (
+        <VIPSpotlight
+          products={vipCarouselProducts}
+          onViewProduct={() => onSave?.()}
+        />
       )}
 
       {isLoading && (

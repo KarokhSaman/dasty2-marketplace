@@ -28,5 +28,6 @@ export function calculateProfit(price) {
   if (p >= 300000 && p <= 399000) return 20000;
   if (p >= 400000 && p <= 499000) return 25000;
   if (p >= 500000 && p <= 1000000) return 30000;
+  if (p > 1000000) return 35000;
   return 0;
 }

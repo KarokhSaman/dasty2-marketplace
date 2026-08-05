@@ -74,8 +74,8 @@ export default function AddProductPage() {
     const errs = {};
     if (!title.trim())                          errs.title    = true;
     if (!category)                              errs.category = true;
-    if (!price || priceNum < 5000 || priceNum > 1000000) errs.price = true;
-    if (photos.length === 0 && uploading === 0) errs.photos   = true;
+    if (!price || priceNum < 5000)              errs.price    = true;
+    if (photos.length < 2 && uploading === 0)   errs.photos   = true;
     setErrors(errs);
     return Object.keys(errs).length === 0;
   }
@@ -205,7 +205,7 @@ export default function AddProductPage() {
               </button>
             )}
           </div>
-          {price && priceNum >= 5000 && priceNum <= 1000000 && (
+          {price && priceNum >= 5000 && (
             activeOffer ? (
               <div className={`mt-2 rounded-lg px-3 py-2 ${
                 activeOffer.type === "free"
