@@ -84,7 +84,7 @@ export default function EditProductPage() {
     const errs = {};
     if (!title.trim())                          errs.title    = true;
     if (!category)                              errs.category = true;
-    if (!price || priceNum < 5000 || priceNum > 1000000) errs.price = true;
+    if (!price || priceNum < 5000)              errs.price    = true;
     if (photos.length === 0 && uploading === 0) errs.photos   = true;
     setErrors(errs);
     return Object.keys(errs).length === 0;

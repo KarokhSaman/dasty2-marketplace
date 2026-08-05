@@ -18,6 +18,7 @@ const FEE_TIERS = [
   { range: "300,000 – 399,000",   fee: "20,000" },
   { range: "400,000 – 499,000",   fee: "25,000" },
   { range: "500,000 – 1,000,000", fee: "30,000" },
+  { range: "1,000,000+",          fee: "35,000" },
 ];
 
 function MenuItem({ icon, label, sub, onClick, danger, chevron = true }) {

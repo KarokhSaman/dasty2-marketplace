@@ -79,7 +79,7 @@
   "productSubmitted": "Product submitted for review! It will appear after admin approval.",
   "atLeastOnePhoto": "At least one photo is required",
   "priceMinimum": "Price must be at least 5,000 IQD",
-  "priceRange": "Price must be between 5,000 and 1,000,000 IQD",
+  "priceRange": "Price must be at least 5,000 IQD",
   "repostBtn": "Repost",
   "repostPageTitle": "Repost Product",
   "repostNote": "Review and update the details before submitting",
