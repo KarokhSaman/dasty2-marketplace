@@ -43,7 +43,7 @@ function SellerDesktopNav() {
       <Wordmark />
 
       {!isAuthPage && (
-        <div className="hidden lg:flex items-center gap-1 ms-2 ps-2 border-s border-[var(--color-hairline)]">
+        <div className="hidden xl:flex items-center gap-1 ms-2 ps-2 border-s border-[var(--color-hairline)]">
         <Link to="/" className={`${linkBase} ${isHome ? "bg-[var(--color-ember-50)] text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] hover:bg-white/60"}`}>
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
@@ -191,8 +191,8 @@ function SmartBottomNav() {
   if (sellerId) {
     return (
       <>
-        <div className="lg:hidden h-20 sm:h-24" aria-hidden />
-        <nav className="lg:hidden fixed inset-x-0 z-30 bg-white border-t border-[var(--color-hairline)]" style={{ bottom: 0 }}>
+        <div className="xl:hidden h-20 sm:h-24" aria-hidden />
+        <nav className="xl:hidden fixed inset-x-0 z-30 bg-white border-t border-[var(--color-hairline)]" style={{ bottom: 0 }}>
           <div className="flex items-center w-full py-1.5 px-4 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
             <Link to="/" onClick={handleHomeTap} className={`flex flex-1 flex-col items-center gap-0.5 py-1 transition-all`}>
               <svg className={`w-6 h-6 transition-all ${isHome ? "text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)]"}`} fill={isHome ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
