@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { useState, useEffect } from "react";
 import * as m from "@/paraglide/messages";
 import { getLocale } from "@/paraglide/runtime";
 import { getCategoryLabel } from "@/lib/categories";
@@ -130,15 +131,53 @@ function VIPCard({ product, onViewProduct }) {
 }
 
 export default function VIPSpotlight({ products = [], onViewProduct }) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  // Rotate through featured products every 10 seconds
+  useEffect(() => {
+    if (products.length === 0) return;
+
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => {
+        const nextIndex = prev + 4;
+        // Loop back to start if we've reached the end
+        return nextIndex >= products.length ? 0 : nextIndex;
+      });
+    }, 10000); // 10 seconds
+
+    return () => clearInterval(interval);
+  }, [products.length]);
+
   if (!products || products.length === 0) return null;
+
+  // Get the current 4 products to display
+  const visibleProducts = products.slice(currentIndex, currentIndex + 4);
 
   return (
     <div className="hidden xl:block bg-gradient-to-tl from-[var(--color-ember-100)]/80 via-white/95 to-[var(--color-sand)] rounded-3xl p-6 mb-10 shadow-lg">
       <div className="grid grid-cols-4 gap-4">
-        {products.slice(0, 4).map((product) => (
+        {visibleProducts.map((product) => (
           <VIPCard key={product._id} product={product} onViewProduct={onViewProduct} />
         ))}
       </div>
+
+      {/* Carousel Indicator */}
+      {products.length > 4 && (
+        <div className="flex justify-center gap-2 mt-4">
+          {Array.from({ length: Math.ceil(products.length / 4) }).map((_, idx) => (
+            <button
+              key={idx}
+              onClick={() => setCurrentIndex(idx * 4)}
+              className={`h-2 rounded-full transition-all duration-300 ${
+                idx === Math.floor(currentIndex / 4)
+                  ? "bg-[var(--color-ember-600)] w-6"
+                  : "bg-[var(--color-ember-200)] w-2"
+              }`}
+              aria-label={`Show featured products ${idx + 1}`}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

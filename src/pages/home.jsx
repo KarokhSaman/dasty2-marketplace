@@ -411,6 +411,13 @@ export default function HomePage() {
   const featuredFiltered = useMemo(() => featuredProducts.filter((p) => matchesFilters(p, { skipCategory: category === "all" })),
     [featuredProducts, condition, city, brands, category]);
 
+  // VIP Carousel products — raw featured products (no rotation) for pure carousel rotation
+  const vipCarouselProducts = useMemo(() => {
+    const filtered = rawFeaturedProducts.filter((p) => matchesFilters(p, { skipCategory: category === "all" }));
+    // Sort by featuredPosition to maintain order
+    return filtered.sort((a, b) => (a.featuredPosition ?? 11) - (b.featuredPosition ?? 11));
+  }, [rawFeaturedProducts, condition, city, brands, category]);
+
   // All products: featured products on top, then regular products
   const allProducts = useMemo(() => {
     // When category is "all", show featured with rotation at top. Otherwise filter by category.
@@ -459,9 +466,9 @@ export default function HomePage() {
       )}
 
       {/* VIP Spotlight - Modern Featured Product Hero */}
-      {featuredFiltered.length > 0 && (
+      {vipCarouselProducts.length > 0 && (
         <VIPSpotlight
-          products={featuredFiltered}
+          products={vipCarouselProducts}
           onViewProduct={() => onSave?.()}
         />
       )}
