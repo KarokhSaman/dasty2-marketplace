@@ -37,6 +37,7 @@ export default function AddProductPage() {
   const [description, setDescription] = useState("");
   const [photos, setPhotos]           = useState([]);
   const [uploading, setUploading]     = useState(0);
+  const [uploadError, setUploadError] = useState("");
   const [errors, setErrors]           = useState({});
   const [submitting, setSubmitting]   = useState(false);
   const [submitted, setSubmitted]     = useState(false);
@@ -53,12 +54,22 @@ export default function AddProductPage() {
 
   async function uploadFile(file) {
     setUploading((n) => n + 1);
+    setUploadError("");
     try {
       const url = await uploadImage(file);
       setPhotos((prev) => prev.length < MAX_PHOTOS ? [...prev, url] : prev);
     } catch (err) {
       console.error("Image upload failed:", err);
-      alert(`Upload failed: ${err.code === "unsupported_file_type" ? "File type not supported (JPEG, PNG, WEBP only)" : err.code === "file_too_large" ? "File too large (max 8MB)" : "Upload error - please try again"}`);
+      let errorMsg = "Upload error - please try again";
+      if (err.code === "unsupported_file_type") {
+        errorMsg = `File type not supported: ${file.type} (only JPEG, PNG, WEBP)`;
+      } else if (err.code === "file_too_large") {
+        errorMsg = `File too large: ${Math.round(file.size / 1024 / 1024)}MB (max 8MB)`;
+      } else {
+        errorMsg = `${err.message || "Upload failed"}`;
+      }
+      setUploadError(errorMsg);
+      console.error("Full error:", { code: err.code, message: err.message, file: file.name, size: file.size, type: file.type });
     } finally {
       setUploading((n) => n - 1);
     }
@@ -257,6 +268,7 @@ export default function AddProductPage() {
             </p>
           </button>
           <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleFileChange} />
+          {uploadError && <p className="mt-1 text-xs text-red-500 bg-red-50 p-2 rounded">{uploadError}</p>}
           {errors.photos && <p className="mt-1 text-xs text-red-500">{m.atLeastOnePhoto()}</p>}
 
           {(photos.length > 0 || uploading > 0) && (
