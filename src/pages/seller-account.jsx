@@ -3,7 +3,7 @@ import { useMutation, useQuery, useConvexAuth } from "convex/react";
 import { useRouter } from "@tanstack/react-router";
 import { api } from "@/convex/_generated/api";
 import * as m from "@/paraglide/messages";
-import { getLocale } from "@/paraglide/runtime";
+import { getLocale, getTextDirection } from "@/paraglide/runtime";
 
 import { getCityOptions, getCityLabel } from "@/lib/cities";
 import CustomSelect from "@/components/ui/CustomSelect";
@@ -127,7 +127,7 @@ export default function SellerAccountPage() {
               </svg>
               <span className="truncate">{getCityLabel(seller.city, locale)}{seller.address ? ` · ${seller.address}` : ""}</span>
             </p>
-            <p className="text-[var(--color-ink-soft)] text-xs mt-0.5 text-end" dir="ltr">{seller.phone}</p>
+            <p className={`text-[var(--color-ink-soft)] text-xs mt-0.5 ${getTextDirection(locale) === "rtl" ? "text-end" : "text-start"}`} dir="ltr">{seller.phone}</p>
             {seller.email && (
               <p className="text-[var(--color-ink-soft)] text-xs mt-0.5 flex items-center gap-1">
                 <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
