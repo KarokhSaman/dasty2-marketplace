@@ -36,8 +36,17 @@ function timeAgo(iso) {
 export default function AdminLogsPage() {
   const logs = useQuery(api.adminLogs.getAll);
 
-  if (logs && logs.length > 0) {
-    throw new Error(`DEBUG: First log entry has keys: ${Object.keys(logs[0]).join(", ")}`);
+  // Debug info shown on page
+  let debugInfo = null;
+  if (logs?.length) {
+    const sample = logs[0];
+    debugInfo = {
+      hasAdminName: "adminName" in sample,
+      adminNameValue: sample.adminName,
+      hasAdminEmail: "adminEmail" in sample,
+      adminEmailValue: sample.adminEmail,
+      keys: Object.keys(sample),
+    };
   }
 
   // Group by admin name for the summary (support both new adminName and old adminEmail fields)
@@ -52,6 +61,11 @@ export default function AdminLogsPage() {
       <div>
         <h1 className="text-2xl font-bold text-[var(--color-ink)]">Activity Log</h1>
         <p className="text-sm text-[var(--color-ink-fade)] mt-0.5">Every admin action recorded in chronological order</p>
+        {debugInfo && (
+          <div className="bg-blue-50 border border-blue-200 rounded p-3 mt-3 text-xs">
+            <p className="font-mono whitespace-pre-wrap">{JSON.stringify(debugInfo, null, 2)}</p>
+          </div>
+        )}
       </div>
 
       {/* ── Admin summary ── */}
