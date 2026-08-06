@@ -19,7 +19,7 @@ export default function CustomSelect({ value, onChange, options, placeholder, er
       <button
         type="button"
         onClick={() => setOpen(v => !v)}
-        className={`w-full flex items-center justify-between border rounded-xl px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-rose-300 transition-colors ${
+        className={`w-full flex items-center justify-between border rounded-xl px-4 py-2.5 min-h-11 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-rose-300 transition-colors ${
           error ? "border-red-400" : open ? "border-rose-400 ring-2 ring-rose-300" : "border-[var(--color-hairline)]"
         }`}
       >
