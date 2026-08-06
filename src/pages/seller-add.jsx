@@ -65,11 +65,22 @@ export default function AddProductPage() {
         errorMsg = `File type not supported: ${file.type} (only JPEG, PNG, WEBP)`;
       } else if (err.code === "file_too_large") {
         errorMsg = `File too large: ${Math.round(file.size / 1024 / 1024)}MB (max 8MB)`;
+      } else if (err.message) {
+        errorMsg = `Upload failed: ${err.message}`;
       } else {
-        errorMsg = `${err.message || "Upload failed"}`;
+        errorMsg = `Upload failed: ${err.toString ? err.toString() : JSON.stringify(err)}`;
       }
       setUploadError(errorMsg);
-      console.error("Full error:", { code: err.code, message: err.message, file: file.name, size: file.size, type: file.type });
+      console.error("Full error details:", {
+        code: err.code,
+        message: err.message,
+        name: err.name,
+        toString: err.toString(),
+        file: file.name,
+        size: file.size,
+        type: file.type,
+        error: err
+      });
     } finally {
       setUploading((n) => n - 1);
     }
