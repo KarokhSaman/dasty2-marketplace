@@ -1,12 +1,12 @@
 import { Link } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import * as m from "@/paraglide/messages";
 import { getLocale } from "@/paraglide/runtime";
 import { getCategoryLabel } from "@/lib/categories";
 import { getCityLabel } from "@/lib/cities";
 import { Chip } from "@/components/ui";
 
-function VIPCard({ product, onViewProduct }) {
+function VIPCard({ product, onViewProduct, isCenter }) {
   const locale = getLocale();
   const categoryLabel = getCategoryLabel(product.category, locale);
   const cityLabel = getCityLabel(product.city, locale);
@@ -15,7 +15,7 @@ function VIPCard({ product, onViewProduct }) {
     <Link
       to={`/products/${product._id}`}
       onClick={onViewProduct}
-      className="relative block aspect-[4/3] rounded-3xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 cursor-pointer group"
+      className="relative block w-full h-full rounded-3xl overflow-hidden shadow-lg cursor-pointer group"
     >
       {/* Background Image */}
       <div className="absolute inset-0 w-full h-full overflow-hidden">
@@ -23,7 +23,7 @@ function VIPCard({ product, onViewProduct }) {
           <img
             src={product.photos[0]}
             alt={product.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            className="w-full h-full object-cover"
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
@@ -44,140 +44,241 @@ function VIPCard({ product, onViewProduct }) {
         )}
       </div>
 
-      {/* Dark overlay gradient */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-black/10" />
+      {/* Subtle overlay */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-black/10 to-transparent" />
 
-      {/* Content overlay */}
-      {/* VIP Header */}
-      <div className="absolute top-3 start-3 flex items-center gap-2 z-10">
-        <span
-          title={m.featured()}
-          className="inline-flex items-center justify-center shrink-0 w-5 h-5 rounded-full bg-[var(--color-ember-500)] text-white shadow-[0_2px_6px_-2px_rgba(237,0,64,0.6)]"
-        >
-          <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2l2.39 6.96H22l-6.18 4.49L18.18 22 12 17.27 5.82 22l2.36-8.55L2 8.96h7.61L12 2z" />
-          </svg>
+      {/* VIP Badge */}
+      <div className="absolute top-3 start-3 z-10">
+        <span className="inline-flex items-center px-2 py-1 rounded-full bg-gradient-to-r from-[var(--color-ember-500)] to-[var(--color-ember-600)] text-white shadow-[0_4px_12px_-2px_rgba(237,0,64,0.4)] font-bold uppercase tracking-widest text-[10px]">
+          VIP
         </span>
-        <span className="text-xs font-bold text-white uppercase tracking-widest drop-shadow-lg">VIP</span>
       </div>
 
-      <div className="absolute inset-0 flex flex-col justify-end p-4 sm:p-5 md:p-6">
-        {/* Title */}
-        <h2 className="text-sm md:text-base lg:text-lg font-bold text-white leading-tight mb-1 line-clamp-2 drop-shadow-lg">
-          {product.title}
-        </h2>
+      {/* Product Info at Bottom - Only show for center card */}
+      {isCenter && (
+        <div className="absolute bottom-0 inset-x-0 p-4 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
+          {/* Title */}
+          <h3 className="text-sm font-bold text-white leading-tight mb-2 line-clamp-2">
+            {product.title}
+          </h3>
 
-        {/* Meta Info */}
-        <div className="flex flex-wrap items-center gap-2 text-xs md:text-sm text-white mb-3 drop-shadow-lg font-medium">
-          <span className="flex items-center gap-1 whitespace-nowrap">
-            <svg
-              className="w-3 h-3 text-white/70 flex-shrink-0"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
-              />
-            </svg>
-            <span className="line-clamp-1">{categoryLabel}</span>
-          </span>
-          <span className="flex items-center gap-1 whitespace-nowrap">
-            <svg
-              className="w-3 h-3 text-white/70 flex-shrink-0"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-              />
-            </svg>
-            <span className="line-clamp-1">{cityLabel}</span>
-          </span>
-        </div>
-
-        {/* Price and Badge */}
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-baseline gap-1 drop-shadow-lg min-w-0">
-            <span className="text-base md:text-lg lg:text-xl font-bold text-[var(--color-ember-300)] truncate">
-              {(product.price ?? 0).toLocaleString()}
+          {/* City and Condition Tags */}
+          <div className="flex gap-2 mb-3 flex-wrap">
+            <span className="text-xs bg-white/20 text-white px-2 py-1 rounded-full">
+              {getCityLabel(product.city, locale)}
             </span>
-            <span className="text-[10px] md:text-xs text-white/80 flex-shrink-0">IQD</span>
+            <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+              product.condition === "new"
+                ? "bg-green-500/30 text-green-200"
+                : product.condition === "likenew"
+                ? "bg-gray-500/30 text-gray-200"
+                : "bg-yellow-500/30 text-yellow-200"
+            }`}>
+              {product.condition === "new"
+                ? m.badgeNew?.()
+                : product.condition === "likenew"
+                ? m.conditionLikeNew?.()
+                : m.badgeUsed?.()}
+            </span>
           </div>
 
-          {/* Badge */}
-          <Chip
-            tone={product.condition === "new" ? "success" : product.condition === "likenew" ? "neutral" : "warning"}
-            dot
-            className="backdrop-blur-md shadow-sm flex-shrink-0"
-          >
-            {product.condition === "new"
-              ? m.badgeNew?.()
-              : product.condition === "likenew"
-              ? m.conditionLikeNew?.()
-              : m.badgeUsed?.()}
-          </Chip>
+          {/* Price */}
+          <div className="flex items-baseline gap-2">
+            <span className="text-2xl font-bold text-[var(--color-ember-300)]">
+              {(product.price ?? 0).toLocaleString()}
+            </span>
+            <span className="text-sm text-white/80">IQD</span>
+          </div>
         </div>
-      </div>
+      )}
+
     </Link>
   );
 }
 
 export default function VIPSpotlight({ products = [], onViewProduct }) {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState(0);
+  const containerRef = useRef(null);
+  const lastDragRef = useRef(0);
 
-  // Rotate through featured products every 10 seconds
+  if (!products || products.length === 0) return null;
+
+  // Auto-rotate every 3 seconds
   useEffect(() => {
-    if (products.length === 0) return;
-
     const interval = setInterval(() => {
-      setCurrentIndex((prev) => {
-        const nextIndex = prev + 4;
-        // Loop back to start if we've reached the end
-        return nextIndex >= products.length ? 0 : nextIndex;
-      });
-    }, 10000); // 10 seconds
+      setCurrentIndex((prev) => (prev + 1) % products.length);
+    }, 3000);
 
     return () => clearInterval(interval);
   }, [products.length]);
 
-  if (!products || products.length === 0) return null;
+  // Handle horizontal drag/swipe
+  const handleMouseDown = (e) => {
+    setIsDragging(true);
+    setDragStart(e.clientX);
+  };
 
-  // Get the current 4 products to display
-  const visibleProducts = products.slice(currentIndex, currentIndex + 4);
+  const handleMouseUp = (e) => {
+    if (!isDragging) return;
+    setIsDragging(false);
+
+    const dragEnd = e.clientX;
+    const diff = dragStart - dragEnd;
+    const now = Date.now();
+
+    // Throttle - only advance every 1000ms
+    if (now - lastDragRef.current < 1000) {
+      return;
+    }
+
+    // Require at least 50px drag to advance
+    if (Math.abs(diff) > 50) {
+      lastDragRef.current = now;
+
+      if (diff > 0) {
+        // Dragged left - advance
+        setCurrentIndex((prev) => (prev + 1) % products.length);
+      } else {
+        // Dragged right - go back
+        setCurrentIndex((prev) => (prev - 1 + products.length) % products.length);
+      }
+    }
+  };
+
+  const handleTouchStart = (e) => {
+    setDragStart(e.touches[0].clientX);
+  };
+
+  const handleTouchEnd = (e) => {
+    const touchEnd = e.changedTouches[0].clientX;
+    const diff = dragStart - touchEnd;
+    const now = Date.now();
+
+    if (now - lastDragRef.current < 1000) {
+      return;
+    }
+
+    if (Math.abs(diff) > 50) {
+      lastDragRef.current = now;
+
+      if (diff > 0) {
+        // Swiped left - advance
+        setCurrentIndex((prev) => (prev + 1) % products.length);
+      } else {
+        // Swiped right - go back
+        setCurrentIndex((prev) => (prev - 1 + products.length) % products.length);
+      }
+    }
+  };
 
   return (
-    <div className="hidden xl:block bg-gradient-to-tl from-[var(--color-ember-100)]/80 via-white/95 to-[var(--color-sand)] rounded-3xl p-6 mb-10 shadow-lg">
-      <div className="grid grid-cols-4 gap-4">
-        {visibleProducts.map((product) => (
-          <VIPCard key={product._id} product={product} onViewProduct={onViewProduct} />
-        ))}
+    <div className="hidden xl:block p-6 mb-10">
+      {/* 5-Card Stacked Carousel Display - Horizontal Drag Carousel */}
+      <div
+        ref={containerRef}
+        className="relative flex items-center justify-center mb-6 h-96 cursor-grab active:cursor-grabbing select-none"
+        onMouseDown={handleMouseDown}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
+        <div className="relative w-96 h-96">
+          {[2, 1, 0, 1, 2].map((offset, idx) => {
+            const productIdx = (currentIndex - 2 + idx + products.length) % products.length;
+            const product = products[productIdx];
+            const isCenter = idx === 2;
+
+            // Calculate scale based on distance from center
+            const scale = isCenter ? 1 : (offset === 1 ? 0.85 : 0.75);
+            const zIndex = isCenter ? 30 : (offset === 1 ? 20 : 10);
+
+            // Position cards - spread horizontally, aligned vertically to center
+            let xOffset = 0;
+            if (idx === 0) xOffset = -400; // Layer 2 left
+            if (idx === 1) xOffset = -240; // Layer 1 left
+            if (idx === 3) xOffset = 240;  // Layer 1 right
+            if (idx === 4) xOffset = 400;  // Layer 2 right
+
+            const yOffset = 0; // All aligned at same vertical center
+
+            // Calculate opacity and rotation based on position
+            const opacityMultiplier = isCenter ? 1 : (offset === 1 ? 0.85 : 0.7);
+            const rotation = isCenter ? 0 : (offset === 1 ? 2 : 4);
+
+            return (
+              <div
+                key={productIdx}
+                className="absolute rounded-3xl overflow-hidden shadow-lg cursor-pointer"
+                style={{
+                  width: `${340 * scale}px`,
+                  height: `${340 * scale}px`,
+                  left: "50%",
+                  top: "50%",
+                  transform: `translate(calc(-50% + ${xOffset}px), calc(-50% + ${yOffset}px)) scale(${scale}) rotateZ(${rotation}deg)`,
+                  zIndex: zIndex,
+                  transformOrigin: "center center",
+                  opacity: opacityMultiplier,
+                  transition: "all 0.8s cubic-bezier(0.4, 0, 0.2, 1)",
+                }}
+              >
+                <VIPCard product={product} onViewProduct={onViewProduct} isCenter={isCenter} />
+              </div>
+            );
+          })}
+        </div>
       </div>
 
-      {/* Carousel Indicator */}
-      {products.length > 4 && (
-        <div className="flex justify-center gap-2 mt-4">
-          {Array.from({ length: Math.ceil(products.length / 4) }).map((_, idx) => (
-            <button
-              key={idx}
-              onClick={() => setCurrentIndex(idx * 4)}
-              className={`h-2 rounded-full transition-all duration-300 ${
-                idx === Math.floor(currentIndex / 4)
-                  ? "bg-[var(--color-ember-600)] w-6"
-                  : "bg-[var(--color-ember-200)] w-2"
-              }`}
-              aria-label={`Show featured products ${idx + 1}`}
-            />
-          ))}
+      {/* Navigation Controls */}
+      <div className="flex items-center justify-center gap-6 mt-8">
+        {/* Previous Button */}
+        <button
+          onClick={() => setCurrentIndex((prev) => (prev - 1 + products.length) % products.length)}
+          className="p-2 rounded-full bg-white border border-[var(--color-hairline)] hover:bg-[var(--color-cream)] transition-colors"
+          aria-label="Previous product"
+        >
+          <svg className="w-5 h-5 text-[var(--color-ink)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+
+        {/* Indicator Dots - Max 10 */}
+        <div className="flex gap-2">
+          {(() => {
+            const maxDots = 10;
+            const dotsToShow = Math.min(maxDots, products.length);
+            const productsPerDot = Math.ceil(products.length / dotsToShow);
+            const currentDot = Math.floor(currentIndex / productsPerDot);
+
+            return Array.from({ length: dotsToShow }).map((_, idx) => (
+              <button
+                key={idx}
+                onClick={() => setCurrentIndex(idx * productsPerDot)}
+                className={`h-2 rounded-full transition-all duration-300 ${
+                  idx === currentDot
+                    ? "bg-[var(--color-ember-600)] w-6"
+                    : "bg-[var(--color-ember-200)] w-2 hover:bg-[var(--color-ember-300)]"
+                }`}
+                aria-label={`Go to product group ${idx + 1}`}
+              />
+            ));
+          })()}
         </div>
-      )}
+
+        {/* Next Button */}
+        <button
+          onClick={() => setCurrentIndex((prev) => (prev + 1) % products.length)}
+          className="p-2 rounded-full bg-white border border-[var(--color-hairline)] hover:bg-[var(--color-cream)] transition-colors"
+          aria-label="Next product"
+        >
+          <svg className="w-5 h-5 text-[var(--color-ink)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      </div>
+
     </div>
   );
 }
