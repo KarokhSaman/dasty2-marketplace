@@ -93,7 +93,7 @@ export default function AdminAdminsPage() {
             return (
             <div
               key={admin._id}
-              className="bg-white rounded-xl border border-[var(--color-hairline)] overflow-hidden"
+              className="bg-white rounded-xl border border-[var(--color-hairline)]"
             >
               {/* Header Section - Clickable */}
               <div className="px-4 py-4 flex items-start gap-3 border-b border-[var(--color-hairline)] hover:bg-[var(--color-cream)] transition-colors">
