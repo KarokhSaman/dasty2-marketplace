@@ -50,7 +50,21 @@ export function useImageUpload() {
       return url;
     }
 
-    const key = await upload(file);
-    return `${PUBLIC_BASE}/${key}`;
+    try {
+      const key = await upload(file);
+      return `${PUBLIC_BASE}/${key}`;
+    } catch (err) {
+      console.error("R2 upload error details:", {
+        message: err.message,
+        error: err,
+        status: err.status,
+        statusText: err.statusText,
+        url: PUBLIC_BASE,
+      });
+      throw Object.assign(new Error(`R2 upload failed: ${err.message || "Unknown error"}`), {
+        code: "r2_upload_failed",
+        originalError: err,
+      });
+    }
   };
 }
