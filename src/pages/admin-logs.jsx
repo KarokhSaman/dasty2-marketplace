@@ -36,9 +36,10 @@ function timeAgo(iso) {
 export default function AdminLogsPage() {
   const logs = useQuery(api.adminLogs.getAll);
 
-  // Group by admin name for the summary
+  // Group by admin name for the summary (support both new adminName and old adminEmail fields)
   const summary = logs ? logs.reduce((acc, log) => {
-    acc[log.adminName] = (acc[log.adminName] || 0) + 1;
+    const adminKey = log.adminName || log.adminEmail || "Unknown";
+    acc[adminKey] = (acc[adminKey] || 0) + 1;
     return acc;
   }, {}) : {};
 
@@ -88,16 +89,17 @@ export default function AdminLogsPage() {
           <div className="divide-y divide-gray-50">
             {logs.map(log => {
               const meta = ACTION_META[log.action] ?? { label: log.action, color: "bg-gray-100 text-[var(--color-ink-soft)]" };
+              const adminName = log.adminName || log.adminEmail || "Unknown Admin";
               return (
                 <div key={log._id} className="px-4 py-3.5 flex items-start gap-3">
                   {/* Admin avatar */}
                   <div className="w-8 h-8 rounded-full bg-rose-100 flex items-center justify-center text-xs font-bold text-[var(--color-ember-600)] shrink-0 mt-0.5">
-                    {log.adminName ? log.adminName[0]?.toUpperCase() : "?"}
+                    {adminName[0]?.toUpperCase()}
                   </div>
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-xs font-semibold text-[var(--color-ink)]">{log.adminName || "Unknown Admin"}</span>
+                      <span className="text-xs font-semibold text-[var(--color-ink)]">{adminName}</span>
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${meta.color}`}>
                         {meta.label}
                       </span>
