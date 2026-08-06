@@ -89,7 +89,8 @@ export default function AdminLogsPage() {
           <div className="divide-y divide-gray-50">
             {logs.map(log => {
               const meta = ACTION_META[log.action] ?? { label: log.action, color: "bg-gray-100 text-[var(--color-ink-soft)]" };
-              const adminName = log.adminName || log.adminEmail || "Unknown Admin";
+              const adminName = log.adminName || log.adminEmail || `Unknown (${Object.keys(log).filter(k => k.includes('admin')).join(', ') || 'no admin field'})`;
+              if (!log.adminName && !log.adminEmail) console.log("Log entry without adminName/adminEmail:", log);
               return (
                 <div key={log._id} className="px-4 py-3.5 flex items-start gap-3">
                   {/* Admin avatar */}
