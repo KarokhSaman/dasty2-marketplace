@@ -36,6 +36,8 @@ function timeAgo(iso) {
 export default function AdminLogsPage() {
   const logs = useQuery(api.adminLogs.getAll);
 
+  console.log("Admin logs loaded:", logs);
+
   // Group by admin name for the summary (support both new adminName and old adminEmail fields)
   const summary = logs ? logs.reduce((acc, log) => {
     const adminKey = log.adminName || log.adminEmail || "Unknown";
