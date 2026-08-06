@@ -89,13 +89,15 @@ export default function AdminLogsPage() {
       ) : (
         <div className="bg-white rounded-2xl border border-[var(--color-hairline)] shadow-sm overflow-hidden">
           <div className="divide-y divide-gray-50">
-            {logs.map(log => {
+            {logs.map((log, idx) => {
+              if (idx === 0) {
+                console.log("FIRST LOG ENTRY - ALL FIELDS:", Object.keys(log).reduce((acc, key) => ({ ...acc, [key]: log[key] }), {}));
+              }
               const meta = ACTION_META[log.action] ?? { label: log.action, color: "bg-gray-100 text-[var(--color-ink-soft)]" };
               // Support both new adminName and old adminEmail fields
               let adminName = "Unknown Admin";
               if (log.adminName) adminName = log.adminName;
               else if (log.adminEmail) adminName = log.adminEmail;
-              console.log("Log:", { adminName: log.adminName, adminEmail: log.adminEmail, computed: adminName });
               return (
                 <div key={log._id} className="px-4 py-3.5 flex items-start gap-3">
                   {/* Admin avatar */}
