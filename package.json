@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "deploy": "CLOUDFLARE_USE_DASHBOARD_ENV=true CLOUDFLARE_LOAD_DEV_VARS_FROM_DOT_ENV=false npm run build && wrangler deploy",
     "deploy:dev": "CLOUDFLARE_USE_DASHBOARD_ENV=true CLOUDFLARE_LOAD_DEV_VARS_FROM_DOT_ENV=false vite build --mode dev && wrangler deploy --env dev",
-    "deploy:prod": "CLOUDFLARE_USE_DASHBOARD_ENV=true CLOUDFLARE_LOAD_DEV_VARS_FROM_DOT_ENV=false vite build --mode production && wrangler deploy",
+    "deploy:prod": "CLOUDFLARE_USE_DASHBOARD_ENV=true CLOUDFLARE_ENV=production CLOUDFLARE_LOAD_DEV_VARS_FROM_DOT_ENV=false vite build --mode production && wrangler deploy",
     "cf-typegen": "wrangler types",
     "typecheck": "tsc --noEmit",
     "check:i18n": "node scripts/check-translations.mjs",
