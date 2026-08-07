@@ -4,7 +4,6 @@ import * as m from "@/paraglide/messages";
 import { getLocale } from "@/paraglide/runtime";
 import { getCategoryLabel } from "@/lib/categories";
 import { getCityLabel } from "@/lib/cities";
-import { Chip } from "@/components/ui";
 
 function VIPCard({ product, onViewProduct, isCenter }) {
   const locale = getLocale();
@@ -23,7 +22,7 @@ function VIPCard({ product, onViewProduct, isCenter }) {
           <img
             src={product.photos[0]}
             alt={product.title}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover object-center"
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
@@ -75,10 +74,10 @@ function VIPCard({ product, onViewProduct, isCenter }) {
                 : "bg-yellow-500/30 text-yellow-200"
             }`}>
               {product.condition === "new"
-                ? m.badgeNew?.()
+                ? m.badgeNew()
                 : product.condition === "likenew"
-                ? m.conditionLikeNew?.()
-                : m.badgeUsed?.()}
+                ? m.conditionLikeNew()
+                : m.badgeUsed()}
             </span>
           </div>
 
@@ -175,53 +174,73 @@ export default function VIPSpotlight({ products = [], onViewProduct }) {
 
   return (
     <div className="hidden xl:block p-6 mb-10">
-      {/* 5-Card Stacked Carousel Display - Horizontal Drag Carousel */}
+      {/* 7-Card Stacked Carousel Display - Portrait Shape */}
       <div
         ref={containerRef}
-        className="relative flex items-center justify-center mb-6 h-96 cursor-grab active:cursor-grabbing select-none"
+        className="relative flex items-center justify-center mb-6 h-60 cursor-grab active:cursor-grabbing select-none"
         onMouseDown={handleMouseDown}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
-        <div className="relative w-96 h-96">
-          {[2, 1, 0, 1, 2].map((offset, idx) => {
-            const productIdx = (currentIndex - 2 + idx + products.length) % products.length;
+        <div className="relative w-full h-full flex items-center justify-center">
+          {[3, 2, 1, 0, 1, 2, 3].map((offset, idx) => {
+            const productIdx = (currentIndex - 3 + idx + products.length) % products.length;
             const product = products[productIdx];
-            const isCenter = idx === 2;
+            const isCenter = idx === 3;
 
             // Calculate scale based on distance from center
-            const scale = isCenter ? 1 : (offset === 1 ? 0.85 : 0.75);
-            const zIndex = isCenter ? 30 : (offset === 1 ? 20 : 10);
+            let scale;
+            if (isCenter) scale = 1;
+            else if (offset === 1) scale = 0.87;
+            else if (offset === 2) scale = 0.77;
+            else scale = 0.70;
+
+            // Z-index layering
+            let zIndex;
+            if (isCenter) zIndex = 40;
+            else if (offset === 1) zIndex = 30;
+            else if (offset === 2) zIndex = 20;
+            else zIndex = 10;
 
             // Position cards - spread horizontally, aligned vertically to center
             let xOffset = 0;
-            if (idx === 0) xOffset = -400; // Layer 2 left
-            if (idx === 1) xOffset = -240; // Layer 1 left
-            if (idx === 3) xOffset = 240;  // Layer 1 right
-            if (idx === 4) xOffset = 400;  // Layer 2 right
+            if (idx === 0) xOffset = -400; // Layer 3 left (closer to Layer 2)
+            if (idx === 1) xOffset = -280; // Layer 2 left
+            if (idx === 2) xOffset = -150; // Layer 1 left
+            if (idx === 4) xOffset = 150;  // Layer 1 right
+            if (idx === 5) xOffset = 280;  // Layer 2 right
+            if (idx === 6) xOffset = 400;  // Layer 3 right (closer to Layer 2)
 
             const yOffset = 0; // All aligned at same vertical center
 
-            // Calculate opacity and rotation based on position
-            const opacityMultiplier = isCenter ? 1 : (offset === 1 ? 0.85 : 0.7);
-            const rotation = isCenter ? 0 : (offset === 1 ? 2 : 4);
+            // Calculate opacity based on position
+            let opacityMultiplier;
+            if (isCenter) opacityMultiplier = 1;
+            else if (offset === 1) opacityMultiplier = 0.87;
+            else if (offset === 2) opacityMultiplier = 0.77;
+            else opacityMultiplier = 0.70;
+
+            const rotation = 0; // No rotation on any card
 
             return (
               <div
                 key={productIdx}
                 className="absolute rounded-3xl overflow-hidden shadow-lg cursor-pointer"
                 style={{
-                  width: `${340 * scale}px`,
-                  height: `${340 * scale}px`,
+                  width: `${280 * scale}px`,
+                  height: `${280 * scale}px`,
                   left: "50%",
                   top: "50%",
                   transform: `translate(calc(-50% + ${xOffset}px), calc(-50% + ${yOffset}px)) scale(${scale}) rotateZ(${rotation}deg)`,
                   zIndex: zIndex,
                   transformOrigin: "center center",
                   opacity: opacityMultiplier,
-                  transition: "all 0.8s cubic-bezier(0.4, 0, 0.2, 1)",
+                  transition: "transform 0.8s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1)",
+                  willChange: "transform, opacity",
+                  WebkitBackfaceVisibility: "hidden",
+                  backfaceVisibility: "hidden",
                 }}
               >
                 <VIPCard product={product} onViewProduct={onViewProduct} isCenter={isCenter} />
@@ -229,54 +248,6 @@ export default function VIPSpotlight({ products = [], onViewProduct }) {
             );
           })}
         </div>
-      </div>
-
-      {/* Navigation Controls */}
-      <div className="flex items-center justify-center gap-6 mt-8">
-        {/* Previous Button */}
-        <button
-          onClick={() => setCurrentIndex((prev) => (prev - 1 + products.length) % products.length)}
-          className="p-2 rounded-full bg-white border border-[var(--color-hairline)] hover:bg-[var(--color-cream)] transition-colors"
-          aria-label="Previous product"
-        >
-          <svg className="w-5 h-5 text-[var(--color-ink)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
-
-        {/* Indicator Dots - Max 10 */}
-        <div className="flex gap-2">
-          {(() => {
-            const maxDots = 10;
-            const dotsToShow = Math.min(maxDots, products.length);
-            const productsPerDot = Math.ceil(products.length / dotsToShow);
-            const currentDot = Math.floor(currentIndex / productsPerDot);
-
-            return Array.from({ length: dotsToShow }).map((_, idx) => (
-              <button
-                key={idx}
-                onClick={() => setCurrentIndex(idx * productsPerDot)}
-                className={`h-2 rounded-full transition-all duration-300 ${
-                  idx === currentDot
-                    ? "bg-[var(--color-ember-600)] w-6"
-                    : "bg-[var(--color-ember-200)] w-2 hover:bg-[var(--color-ember-300)]"
-                }`}
-                aria-label={`Go to product group ${idx + 1}`}
-              />
-            ));
-          })()}
-        </div>
-
-        {/* Next Button */}
-        <button
-          onClick={() => setCurrentIndex((prev) => (prev + 1) % products.length)}
-          className="p-2 rounded-full bg-white border border-[var(--color-hairline)] hover:bg-[var(--color-cream)] transition-colors"
-          aria-label="Next product"
-        >
-          <svg className="w-5 h-5 text-[var(--color-ink)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-        </button>
       </div>
 
     </div>
