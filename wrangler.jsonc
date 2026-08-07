@@ -24,9 +24,9 @@
     }
   },
   "vars": {
-    "VITE_CONVEX_URL": "https://grandiose-pig-440.convex.cloud",
-    "VITE_CONVEX_SITE_URL": "https://grandiose-pig-440.convex.site",
-    "VITE_R2_PUBLIC_URL": "https://dev-assets.dasty2mndalan.com"
+    "VITE_CONVEX_URL": "https://artful-firefly-452.convex.cloud",
+    "VITE_CONVEX_SITE_URL": "https://artful-firefly-452.convex.site",
+    "VITE_R2_PUBLIC_URL": "https://assets.dasty2mndalan.com"
   },
   "env": {
     "production": {
@@ -39,6 +39,18 @@
         "VITE_CONVEX_URL": "https://artful-firefly-452.convex.cloud",
         "VITE_CONVEX_SITE_URL": "https://artful-firefly-452.convex.site",
         "VITE_R2_PUBLIC_URL": "https://assets.dasty2mndalan.com"
+      }
+    },
+    "development": {
+      "name": "dasty2-marketplace-dev",
+      "keep_vars": true,
+      "secrets": {
+        "required": ["RESEND_API_KEY"]
+      },
+      "vars": {
+        "VITE_CONVEX_URL": "https://grandiose-pig-440.convex.cloud",
+        "VITE_CONVEX_SITE_URL": "https://grandiose-pig-440.convex.site",
+        "VITE_R2_PUBLIC_URL": "https://dev-assets.dasty2mndalan.com"
       }
     }
   }
