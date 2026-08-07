@@ -25,6 +25,7 @@ export default defineSchema({
     price: v.number(),
     profit: v.number(),
     photos: v.array(v.string()),
+    mainPhotoIndex: v.optional(v.number()),
     status: productStatusValidator,
     city: v.string(),
     sellerId: v.string(),

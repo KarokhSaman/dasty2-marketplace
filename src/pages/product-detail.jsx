@@ -166,7 +166,8 @@ function ImagePlaceholder({ size = "lg" }) {
 
 // ── Compact related product card ──────────────────────────
 function RelatedCard({ product }) {
-  const photo = product.photos?.[0];
+  const photoIndex = product.mainPhotoIndex ?? 0;
+  const photo = product.photos?.[photoIndex];
   setProductCache(product);
   return (
     <Link to={`/products/${product._id}`} className="group block">
@@ -326,7 +327,12 @@ export default function ProductDetailPage() {
         .slice(0, 10)
     : [];
 
-  const photos = product.photos?.length ? product.photos : [];
+  let photos = product.photos?.length ? product.photos : [];
+  // Reorder photos so main photo is first
+  if (product.mainPhotoIndex && product.mainPhotoIndex > 0) {
+    const mainPhoto = photos[product.mainPhotoIndex];
+    photos = [mainPhoto, ...photos.filter((_, i) => i !== product.mainPhotoIndex)];
+  }
   const isNew = product.condition === "new";
   const cityLabel = product.city ? (getCityLabel(product.city, locale) ?? product.city) : null;
   const categoryLabel = getCategoryLabel(product.category, locale);

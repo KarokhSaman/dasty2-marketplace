@@ -45,7 +45,8 @@ function FeaturedStar() {
 
 export default function ProductCard({ product, onSave }) {
   const locale = getLocale();
-  const photo = product.photos?.[0];
+  const photoIndex = product.mainPhotoIndex ?? 0;
+  const photo = product.photos?.[photoIndex];
   const cityLabel = product.city ? (getCityLabel(product.city, locale) ?? product.city) : null;
   const categoryLabel = getCategoryLabel(product.category, locale);
   setProductCache(product);

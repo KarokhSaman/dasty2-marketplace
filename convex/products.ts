@@ -32,6 +32,7 @@ const publicProductValidator = v.object({
   condition: conditionValidator,
   price: v.number(),
   photos: v.array(v.string()),
+  mainPhotoIndex: v.optional(v.number()),
   status: productStatusValidator,
   city: v.string(),
   sellerName: v.string(),
@@ -497,19 +498,27 @@ export const remove = mutation({
 export const adminUpdatePhotos = mutation({
   args: {
     id:     v.id("products"),
-    photos: v.array(v.string()),
+    photos: v.optional(v.array(v.string())),
+    mainPhotoIndex: v.optional(v.number()),
   },
   returns: v.null(),
-  handler: async (ctx, { id, photos }) => {
+  handler: async (ctx, { id, photos, mainPhotoIndex }) => {
     await requireAdmin(ctx);
-    if (
-      photos.length < 1 ||
-      photos.length > 5 ||
-      photos.some((photo) => !photo.trim())
-    ) {
-      throw new Error("A product must have between 1 and 5 photos");
+    const patch: any = {};
+    if (photos !== undefined) {
+      if (
+        photos.length < 1 ||
+        photos.length > 5 ||
+        photos.some((photo) => !photo.trim())
+      ) {
+        throw new Error("A product must have between 1 and 5 photos");
+      }
+      patch.photos = photos;
     }
-    await ctx.db.patch(id, { photos });
+    if (mainPhotoIndex !== undefined) {
+      patch.mainPhotoIndex = mainPhotoIndex;
+    }
+    await ctx.db.patch(id, patch);
     return null;
   },
 });

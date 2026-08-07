@@ -432,8 +432,23 @@ export default function AdminProductsPage() {
                       <div key={i} className="relative group">
                         <img
                           src={url} alt=""
-                          className={`w-24 h-24 object-cover rounded-lg border transition-all ${confirmPhoto === `${product._id}:${i}` ? "border-red-400 opacity-60" : "border-[var(--color-hairline)]"}`}
+                          onClick={async () => {
+                            await adminUpdatePhotos({ id: product._id, mainPhotoIndex: i });
+                            await log("main_photo_set", product, `Photo ${i + 1} set as main`);
+                          }}
+                          className={`w-24 h-24 object-cover rounded-lg border transition-all cursor-pointer ${
+                            product.mainPhotoIndex === i
+                              ? "border-blue-500 ring-2 ring-blue-300"
+                              : confirmPhoto === `${product._id}:${i}`
+                              ? "border-red-400 opacity-60"
+                              : "border-[var(--color-hairline)] hover:border-blue-400"
+                          }`}
                         />
+                        {product.mainPhotoIndex === i && (
+                          <div className="absolute top-1 left-1 bg-blue-500 text-white text-xs px-2 py-1 rounded-full font-semibold">
+                            Main
+                          </div>
+                        )}
                         {confirmPhoto === `${product._id}:${i}` ? (
                           /* Step 2 — confirm or cancel */
                           <div className="absolute inset-0 flex items-center justify-center gap-1 rounded-lg bg-black/30">
@@ -441,7 +456,8 @@ export default function AdminProductsPage() {
                               type="button"
                               onClick={async () => {
                                 const next = product.photos.filter((_, j) => j !== i);
-                                await adminUpdatePhotos({ id: product._id, photos: next });
+                                const newMainIndex = product.mainPhotoIndex === i ? undefined : product.mainPhotoIndex;
+                                await adminUpdatePhotos({ id: product._id, photos: next, mainPhotoIndex: newMainIndex });
                                 await log("photo_removed", product, `Photo ${i + 1} removed`);
                                 setConfirmPhoto(null);
                               }}
@@ -468,7 +484,7 @@ export default function AdminProductsPage() {
                           <button
                             type="button"
                             onClick={() => setConfirmPhoto(`${product._id}:${i}`)}
-                            className="absolute top-1 right-1 w-5 h-5 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shadow"
+                            className="absolute top-1 right-1 w-5 h-5 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center opacity-100 transition-opacity shadow"
                             title="Remove photo"
                           >
                             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -9,6 +9,7 @@ function VIPCard({ product, onViewProduct, isCenter }) {
   const locale = getLocale();
   const categoryLabel = getCategoryLabel(product.category, locale);
   const cityLabel = getCityLabel(product.city, locale);
+  const photoIndex = product.mainPhotoIndex ?? 0;
 
   return (
     <Link
@@ -18,9 +19,9 @@ function VIPCard({ product, onViewProduct, isCenter }) {
     >
       {/* Background Image */}
       <div className="absolute inset-0 w-full h-full overflow-hidden">
-        {product.photos?.[0] ? (
+        {product.photos?.[photoIndex] ? (
           <img
-            src={product.photos[0]}
+            src={product.photos[photoIndex]}
             alt={product.title}
             className="w-full h-full object-cover object-center"
           />
