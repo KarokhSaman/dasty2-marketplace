@@ -172,9 +172,50 @@ export default function VIPSpotlight({ products = [], onViewProduct }) {
     }
   };
 
+  // Dynamically determine layers based on number of products
+  const getCardOffsets = () => {
+    const numProducts = products.length;
+    if (numProducts >= 9) return [4, 3, 2, 1, 0, 1, 2, 3, 4]; // 4 layers
+    if (numProducts >= 7) return [3, 2, 1, 0, 1, 2, 3]; // 3 layers
+    if (numProducts >= 5) return [2, 1, 0, 1, 2]; // 2 layers
+    if (numProducts >= 3) return [1, 0, 1]; // 1 layer
+    return [0]; // Center only
+  };
+
+  const cardOffsets = getCardOffsets();
+  const centerIdx = Math.floor(cardOffsets.length / 2);
+
+  // Helper function to get scale based on offset
+  const getScale = (offset, maxOffset) => {
+    if (offset === 0) return 1;
+    const scaleStep = 0.12;
+    return Math.max(0.55, 1 - offset * scaleStep);
+  };
+
+  // Helper function to get z-index based on offset
+  const getZIndex = (offset, maxOffset) => {
+    return 50 - offset * 10;
+  };
+
+  // Helper function to get x-offset based on position
+  const getXOffset = (idx, offset, maxOffset) => {
+    const maxXOffset = 600;
+    const xStep = maxXOffset / (maxOffset + 1);
+    if (idx < centerIdx) return -(centerIdx - idx) * xStep;
+    if (idx > centerIdx) return (idx - centerIdx) * xStep;
+    return 0;
+  };
+
+  // Helper function to get opacity based on offset
+  const getOpacity = (offset, maxOffset) => {
+    if (offset === 0) return 1;
+    const opacityStep = 0.13;
+    return Math.max(0.55, 1 - offset * opacityStep);
+  };
+
   return (
     <div className="hidden xl:block p-6 mb-10">
-      {/* 7-Card Stacked Carousel Display - Portrait Shape */}
+      {/* Dynamic Stacked Carousel Display */}
       <div
         ref={containerRef}
         className="relative flex items-center justify-center mb-6 h-60 cursor-grab active:cursor-grabbing select-none"
@@ -185,44 +226,17 @@ export default function VIPSpotlight({ products = [], onViewProduct }) {
         onTouchEnd={handleTouchEnd}
       >
         <div className="relative w-full h-full flex items-center justify-center">
-          {[3, 2, 1, 0, 1, 2, 3].map((offset, idx) => {
-            const productIdx = (currentIndex - 3 + idx + products.length) % products.length;
+          {cardOffsets.map((offset, idx) => {
+            const productIdx = (currentIndex - centerIdx + idx + products.length) % products.length;
             const product = products[productIdx];
-            const isCenter = idx === 3;
+            const isCenter = idx === centerIdx;
+            const maxOffset = Math.max(...cardOffsets.map(Math.abs));
 
-            // Calculate scale based on distance from center
-            let scale;
-            if (isCenter) scale = 1;
-            else if (offset === 1) scale = 0.87;
-            else if (offset === 2) scale = 0.77;
-            else scale = 0.70;
-
-            // Z-index layering
-            let zIndex;
-            if (isCenter) zIndex = 40;
-            else if (offset === 1) zIndex = 30;
-            else if (offset === 2) zIndex = 20;
-            else zIndex = 10;
-
-            // Position cards - spread horizontally, aligned vertically to center
-            let xOffset = 0;
-            if (idx === 0) xOffset = -400; // Layer 3 left (closer to Layer 2)
-            if (idx === 1) xOffset = -280; // Layer 2 left
-            if (idx === 2) xOffset = -150; // Layer 1 left
-            if (idx === 4) xOffset = 150;  // Layer 1 right
-            if (idx === 5) xOffset = 280;  // Layer 2 right
-            if (idx === 6) xOffset = 400;  // Layer 3 right (closer to Layer 2)
-
-            const yOffset = 0; // All aligned at same vertical center
-
-            // Calculate opacity based on position
-            let opacityMultiplier;
-            if (isCenter) opacityMultiplier = 1;
-            else if (offset === 1) opacityMultiplier = 0.87;
-            else if (offset === 2) opacityMultiplier = 0.77;
-            else opacityMultiplier = 0.70;
-
-            const rotation = 0; // No rotation on any card
+            const scale = getScale(offset, maxOffset);
+            const zIndex = getZIndex(offset, maxOffset);
+            const xOffset = getXOffset(idx, offset, maxOffset);
+            const opacity = getOpacity(offset, maxOffset);
+            const rotation = 0;
 
             return (
               <div
@@ -233,10 +247,10 @@ export default function VIPSpotlight({ products = [], onViewProduct }) {
                   height: `${280 * scale}px`,
                   left: "50%",
                   top: "50%",
-                  transform: `translate(calc(-50% + ${xOffset}px), calc(-50% + ${yOffset}px)) scale(${scale}) rotateZ(${rotation}deg)`,
+                  transform: `translate(calc(-50% + ${xOffset}px), calc(-50%)) scale(${scale}) rotateZ(${rotation}deg)`,
                   zIndex: zIndex,
                   transformOrigin: "center center",
-                  opacity: opacityMultiplier,
+                  opacity: opacity,
                   transition: "transform 0.8s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1)",
                   willChange: "transform, opacity",
                   WebkitBackfaceVisibility: "hidden",
