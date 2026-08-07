@@ -14,7 +14,7 @@ import * as m from "@/paraglide/messages";
 import { getLocale } from "@/paraglide/runtime";
 import { useSellerSession } from "@/lib/useSellerSession";
 import { useImageUpload } from "@/lib/useImageUpload";
-import { calculateProfit, formatPrice, normalizeDigits } from "@/lib/utils";
+import { calculateProfit, formatPrice, formatPriceLocale, normalizeDigits } from "@/lib/utils";
 import CustomSelect from "@/components/ui/CustomSelect";
 import { CATEGORY_CONFIG, getCategoryLabel } from "@/lib/categories";
 import { getBrandOptions, hasBrandOption } from "@/lib/brands";
@@ -34,6 +34,7 @@ export default function EditProductPage() {
   const product = useQuery(api.products.getById, id ? { id } : "skip");
   const sellerUpdate = useMutation(api.products.sellerUpdate);
   const uploadImage = useImageUpload();
+  const activeOffer = useQuery(api.offers.getActive);
 
   // Form state — initialised from product once loaded
   const [title, setTitle]             = useState("");
@@ -61,7 +62,10 @@ export default function EditProductPage() {
   }, [product]);
 
   const priceNum = Number(normalizeDigits(price).replace(/[^\d]/g, "")) || 0;
-  const profit = calculateProfit(priceNum);
+  const standardProfit = calculateProfit(priceNum);
+  const profit = activeOffer
+    ? (activeOffer.type === "free" ? 0 : (activeOffer.flatFeeAmount ?? 0))
+    : standardProfit;
 
   async function uploadFile(file) {
     setUploading((n) => n + 1);
@@ -272,10 +276,33 @@ export default function EditProductPage() {
             placeholder={m.fieldPricePlaceholder()}
             className={`w-full rounded-xl border bg-white px-4 py-2.5 text-[var(--color-ink)] placeholder:text-[var(--color-ink-fade)] focus:outline-none focus:ring-4 transition ${locale === "en" ? "pr-10" : "pl-10"} ${errors.price ? "border-red-400 bg-red-50" : "border-[var(--color-hairline)] focus:border-[var(--color-ember-300)] focus:ring-[var(--color-ember-100)]/50"}`}
           />
-          {price && priceNum >= 5000 && profit > 0 && (
-            <p className="mt-2 text-sm text-amber-700 bg-amber-50 rounded-lg px-3 py-2">
-              {m.profitLabel()} <span className="font-bold">{formatPrice(profit)}</span>
-            </p>
+          {price && priceNum >= 5000 && (
+            activeOffer ? (
+              <div className={`mt-2 rounded-lg px-3 py-2 ${
+                activeOffer.type === "free"
+                  ? "bg-green-50 border border-green-100"
+                  : "bg-amber-50 border border-amber-100"
+              }`}>
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <span className="text-xs font-bold bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded-full">🎉 {activeOffer.title}</span>
+                </div>
+                {activeOffer.type === "free" ? (
+                  <p className="text-sm text-green-700">
+                    {m.profitLabel()} <span className="font-bold line-through text-[var(--color-ink-fade)]">{formatPriceLocale(standardProfit, locale)}</span>{" "}
+                    <span className="font-bold text-green-600">{m.offerFreeLabel()}</span>
+                  </p>
+                ) : (
+                  <p className="text-sm text-amber-700">
+                    {m.profitLabel()} <span className="font-bold line-through text-[var(--color-ink-fade)]">{formatPriceLocale(standardProfit, locale)}</span>{" "}
+                    <span className="font-bold text-amber-600">{formatPriceLocale(profit, locale)}</span>
+                  </p>
+                )}
+              </div>
+            ) : profit > 0 ? (
+              <p className="mt-2 text-sm text-green-700 bg-green-50 rounded-lg px-3 py-2">
+                {m.profitLabel()} <span className="font-bold">{formatPriceLocale(profit, locale)}</span>
+              </p>
+            ) : null
           )}
           {errors.price && <p className="mt-1 text-xs text-red-500">{m.priceRange()}</p>}
         </div>

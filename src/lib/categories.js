@@ -9,13 +9,13 @@ export const CATEGORY_CONFIG = [
     img: icon("all.png"),
   },
   {
-    value: "Strollers & Travel",
+    value: "Stroller",
     labels: { ckb: "عارەبانە", ar: "عربات الأطفال", en: "Stroller" },
     bg: "bg-white",
     img: icon("strollers.png"),
   },
   {
-    value: "Car Seats",
+    value: "Car Seat",
     labels: { ckb: "کورسی ئۆتۆمبێل", ar: "مقاعد السيارات", en: "Car Seat" },
     bg: "bg-white",
     img: icon("carseats.png"),
@@ -51,13 +51,13 @@ export const CATEGORY_CONFIG = [
     img: icon("feeding.png"),
   },
   {
-    value: "Bouncers & Swings",
+    value: "Bouncer",
     labels: { ckb: "جۆلانه", ar: "هزازات وأرجوحات", en: "Bouncer" },
     bg: "bg-white",
     img: icon("bouncers.png"),
   },
   {
-    value: "High Chairs",
+    value: "High Chair",
     labels: { ckb: "کورسی نانخواردن", ar: "كراسي طعام عالية", en: "High Chair" },
     bg: "bg-white",
     img: icon("highchairs.png"),
@@ -69,13 +69,13 @@ export const CATEGORY_CONFIG = [
     img: icon("baby-walker.png"),
   },
   {
-    value: "Toys & Play",
+    value: "Toy",
     labels: { ckb: "یارییەکان", ar: "الألعاب والترفيه", en: "Toy" },
     bg: "bg-white",
     img: icon("toys.png"),
   },
   {
-    value: "Electronics & Monitors",
+    value: "Electronic",
     labels: { ckb: "ئامێرە ئەلیکترۆنییەکان", ar: "الأجهزة الإلكترونية والمراقبة", en: "Electronic" },
     bg: "bg-white",
     img: icon("electronics.png"),

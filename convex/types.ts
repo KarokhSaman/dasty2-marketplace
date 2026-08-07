@@ -1,15 +1,18 @@
 import { v } from "convex/values";
 
 export const categoryValidator = v.union(
-  v.literal("Strollers & Travel"),
-  v.literal("Car Seats"),
+  v.literal("Stroller"),
+  v.literal("Car Seat"),
   v.literal("Carry Cot"),
-  v.literal("Bed"),
-  v.literal("Feeding & Nursing"),
-  v.literal("Bouncers & Swings"),
-  v.literal("High Chairs"),
-  v.literal("Toys & Play"),
-  v.literal("Electronics & Monitors"),
+  v.literal("Crib"),
+  v.literal("Cradle"),
+  v.literal("Bassinet"),
+  v.literal("Breast Pump"),
+  v.literal("Bouncer"),
+  v.literal("High Chair"),
+  v.literal("Baby Walker"),
+  v.literal("Toy"),
+  v.literal("Electronic"),
   v.literal("Other"),
 );
 export type Category = typeof categoryValidator.type;

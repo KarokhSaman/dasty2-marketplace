@@ -385,9 +385,17 @@ export const sellerUpdate = mutation({
     if (product.status === "sold" || product.status === "paid") {
       throw new Error("Cannot edit a sold or paid product");
     }
+    // Check for active offer and adjust fee accordingly
+    const today = new Date().toISOString().slice(0, 10);
+    const allOffers = await ctx.db.query("offers")
+      .filter(q => q.eq(q.field("isActive"), true)).collect();
+    const activeOffer = allOffers.find(o => o.startDate <= today && o.endDate >= today);
+    const profit = activeOffer
+      ? (activeOffer.type === "free" ? 0 : (activeOffer.flatFeeAmount ?? 0))
+      : calculateProfit(fields.price);
     await ctx.db.patch(id, {
       ...fields,
-      profit: calculateProfit(fields.price),
+      profit,
       status: "pending",
     });
     await ctx.db.insert("notifications", {
@@ -413,6 +421,15 @@ export const duplicate = mutation({
       throw new Error("Not authorized");
     }
 
+    // Check for active offer and adjust fee accordingly
+    const today = new Date().toISOString().slice(0, 10);
+    const allOffers = await ctx.db.query("offers")
+      .filter(q => q.eq(q.field("isActive"), true)).collect();
+    const activeOffer = allOffers.find(o => o.startDate <= today && o.endDate >= today);
+    const profit = activeOffer
+      ? (activeOffer.type === "free" ? 0 : (activeOffer.flatFeeAmount ?? 0))
+      : calculateProfit(src.price);
+
     const seq = await generateSeq(ctx);
     const newId = await ctx.db.insert("products", {
       seq,
@@ -421,7 +438,7 @@ export const duplicate = mutation({
       category:    src.category,
       condition:   src.condition,
       price:       src.price,
-      profit:      src.profit,
+      profit,
       photos:      src.photos,
       city:        src.city,
       sellerId:    src.sellerId,
