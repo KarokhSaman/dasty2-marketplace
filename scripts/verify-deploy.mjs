@@ -43,34 +43,47 @@ async function fetchWithRetry(url, attempts = 5) {
   throw new Error(`could not fetch ${url} after ${attempts} attempts`);
 }
 
-const html = await fetchWithRetry(origin);
+async function check() {
+  const html = await fetchWithRetry(origin);
 
-const bundlePath = html.match(/\/assets\/index-[A-Za-z0-9_-]+\.js/)?.[0];
-if (!bundlePath) {
-  console.error("✗ could not find the client bundle in the served HTML");
-  process.exit(1);
-}
-const bundle = await fetchWithRetry(new URL(bundlePath, origin).href);
+  const bundlePath = html.match(/\/assets\/index-[A-Za-z0-9_-]+\.js/)?.[0];
+  if (!bundlePath) return ["could not find the client bundle in the served HTML"];
+  const bundle = await fetchWithRetry(new URL(bundlePath, origin).href);
 
-const failures = [];
+  const failures = [];
 
-const convexHosts = [...new Set(bundle.match(/[a-z0-9-]+\.convex\.(?:cloud|site)/g) ?? [])];
-if (!convexHosts.some((host) => host === expectedConvex)) {
-  failures.push(`Convex: expected ${expectedConvex}, bundle references ${convexHosts.join(", ") || "none"}`);
-}
+  const convexHosts = [...new Set(bundle.match(/[a-z0-9-]+\.convex\.(?:cloud|site)/g) ?? [])];
+  if (!convexHosts.some((host) => host === expectedConvex)) {
+    failures.push(`Convex: expected ${expectedConvex}, bundle references ${convexHosts.join(", ") || "none"}`);
+  }
 
-// An empty VITE_R2_PUBLIC_URL degrades to relative "/categories/*.png" rather
-// than erroring, so check the positive case explicitly. Anchor on the scheme:
-// bare "assets.dasty2mndalan.com" is a substring of the dev bucket's hostname.
-if (!html.includes(`https://${expectedR2}`)) {
-  const otherR2 = [...new Set(html.match(/[a-z0-9-]*assets\.dasty2mndalan\.com/g) ?? [])];
-  failures.push(`R2: expected ${expectedR2}, HTML references ${otherR2.join(", ") || "relative paths (unset at build time)"}`);
-}
+  // An empty VITE_R2_PUBLIC_URL degrades to relative "/categories/*.png" rather
+  // than erroring, so check the positive case explicitly. Anchor on the scheme:
+  // bare "assets.dasty2mndalan.com" is a substring of the dev bucket's hostname.
+  if (!html.includes(`https://${expectedR2}`)) {
+    const otherR2 = [...new Set(html.match(/[a-z0-9-]*assets\.dasty2mndalan\.com/g) ?? [])];
+    failures.push(`R2: expected ${expectedR2}, HTML references ${otherR2.join(", ") || "relative paths (unset at build time)"}`);
+  }
 
-if (failures.length) {
-  console.error(`\n✗ ${origin} does not match env.${target}:`);
-  for (const failure of failures) console.error(`  - ${failure}`);
-  process.exit(1);
+  return failures;
 }
 
-console.log(`✓ ${origin} targets ${expectedConvex} and ${expectedR2}`);
+// A just-uploaded Worker takes a few seconds to reach every edge colo, so a
+// successful fetch of the PREVIOUS bundle is an expected transient state, not a
+// failure. Retry the whole check — not just the fetch — before giving up.
+let failures = [];
+for (let attempt = 1; attempt <= 6; attempt++) {
+  failures = await check();
+  if (!failures.length) {
+    console.log(`✓ ${origin} targets ${expectedConvex} and ${expectedR2}`);
+    process.exit(0);
+  }
+  if (attempt < 6) {
+    console.error(`  attempt ${attempt}: still propagating, retrying in 10s`);
+    await new Promise((r) => setTimeout(r, 10_000));
+  }
+}
+
+console.error(`\n✗ ${origin} does not match env.${target}:`);
+for (const failure of failures) console.error(`  - ${failure}`);
+process.exit(1);
