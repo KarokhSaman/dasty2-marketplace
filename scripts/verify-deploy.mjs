@@ -28,27 +28,28 @@ if (!vars) {
 const expectedConvex = new URL(vars.VITE_CONVEX_URL).host;
 const expectedR2 = new URL(vars.VITE_R2_PUBLIC_URL).host;
 
-// A fresh deploy takes a few seconds to propagate to every edge colo.
-async function fetchWithRetry(url, attempts = 5) {
-  for (let i = 1; i <= attempts; i++) {
-    try {
-      const res = await fetch(url, { headers: { "cache-control": "no-cache" } });
-      if (res.ok) return await res.text();
-      console.error(`  attempt ${i}: HTTP ${res.status}`);
-    } catch (err) {
-      console.error(`  attempt ${i}: ${err.message}`);
-    }
-    if (i < attempts) await new Promise((r) => setTimeout(r, 5000));
-  }
-  throw new Error(`could not fetch ${url} after ${attempts} attempts`);
+async function fetchText(url) {
+  const res = await fetch(url, { headers: { "cache-control": "no-cache" } });
+  if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
+  return await res.text();
 }
 
+// Returns a list of mismatches; [] means the live site matches. Any transient
+// error is reported as a mismatch so the caller retries rather than aborting:
+// the Worker script and its static assets propagate independently, so the HTML
+// can briefly reference a bundle hash the edge cannot serve yet (HTTP 404).
 async function check() {
-  const html = await fetchWithRetry(origin);
-
-  const bundlePath = html.match(/\/assets\/index-[A-Za-z0-9_-]+\.js/)?.[0];
-  if (!bundlePath) return ["could not find the client bundle in the served HTML"];
-  const bundle = await fetchWithRetry(new URL(bundlePath, origin).href);
+  let html;
+  let bundle;
+  let bundlePath;
+  try {
+    html = await fetchText(origin);
+    bundlePath = html.match(/\/assets\/index-[A-Za-z0-9_-]+\.js/)?.[0];
+    if (!bundlePath) return ["no client bundle referenced in the served HTML"];
+    bundle = await fetchText(new URL(bundlePath, origin).href);
+  } catch (err) {
+    return [err.message];
+  }
 
   const failures = [];
 
@@ -68,19 +69,23 @@ async function check() {
   return failures;
 }
 
-// A just-uploaded Worker takes a few seconds to reach every edge colo, so a
-// successful fetch of the PREVIOUS bundle is an expected transient state, not a
-// failure. Retry the whole check — not just the fetch — before giving up.
+// A just-uploaded Worker takes time to reach every edge colo, and its static
+// assets propagate separately from the script, so serving the PREVIOUS bundle
+// or 404ing the new one are both expected transient states. Retry the whole
+// check — not just the fetch — before calling a deploy bad.
+const ATTEMPTS = 10;
+const DELAY_MS = 15_000;
+
 let failures = [];
-for (let attempt = 1; attempt <= 6; attempt++) {
+for (let attempt = 1; attempt <= ATTEMPTS; attempt++) {
   failures = await check();
   if (!failures.length) {
     console.log(`✓ ${origin} targets ${expectedConvex} and ${expectedR2}`);
     process.exit(0);
   }
-  if (attempt < 6) {
-    console.error(`  attempt ${attempt}: still propagating, retrying in 10s`);
-    await new Promise((r) => setTimeout(r, 10_000));
+  if (attempt < ATTEMPTS) {
+    console.error(`  attempt ${attempt}/${ATTEMPTS}: ${failures[0]} — retrying in ${DELAY_MS / 1000}s`);
+    await new Promise((r) => setTimeout(r, DELAY_MS));
   }
 }
 
