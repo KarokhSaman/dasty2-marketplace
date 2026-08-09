@@ -16,6 +16,7 @@ export { default as PriceTag, formatAmount } from "./PriceTag";
 export { default as SectionHeader } from "./SectionHeader";
 export { default as WhatsAppButton } from "./WhatsAppButton";
 export { default as WhatsAppIcon }  from "./WhatsAppIcon";
+export { default as ShareSheet }   from "./ShareSheet";
 
 export { useClickOutside } from "./useClickOutside";
 export { useMediaQuery, useIsDesktop } from "./useMediaQuery";

@@ -8,11 +8,13 @@ import * as m from "@/paraglide/messages";
 import { getLocale, localizeHref } from "@/paraglide/runtime";
 import { getCategoryLabel } from "@/lib/categories";
 import { getCityLabel } from "@/lib/cities";
+import { formatDate } from "@/lib/formatDate";
 import { getProductCache, setProductCache } from "@/lib/productCache";
 import {
   Chip,
   Gallery,
   PriceTag,
+  ShareSheet,
   Skeleton,
   WhatsAppButton,
   formatAmount,
@@ -58,13 +60,6 @@ function ShareIcon({ className = "w-4 h-4" }) {
     </svg>
   );
 }
-function CheckIcon({ className = "w-4 h-4" }) {
-  return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.4} d="M5 13l4 4L19 7" />
-    </svg>
-  );
-}
 function ShieldIcon({ className = "w-4 h-4" }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -73,59 +68,41 @@ function ShieldIcon({ className = "w-4 h-4" }) {
   );
 }
 
-// ── Format a posted date in the active locale ──────────────
-function formatDate(iso, locale) {
-  if (!iso) return "";
-  try {
-    const tag = locale === "en" ? "en-GB" : locale;
-    // Iraq is a fixed UTC+3 (no DST). Shift by +3h and format in UTC — workerd
-    // lacks named-timezone (ICU) data, so formatting in UTC is the only way the
-    // server and client agree on the calendar date (avoids a hydration mismatch).
-    const local = new Date(new Date(iso).getTime() + 3 * 60 * 60 * 1000);
-    return local.toLocaleDateString(tag, { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
-  } catch {
-    return String(iso).slice(0, 10);
-  }
-}
-
 // ── Floating controls layered over the gallery ─────────────
-function GalleryOverlay({ onBack, shareTitle, shareUrl }) {
-  const [copied, setCopied] = useState(false);
-
-  async function onShare() {
-    if (typeof navigator !== "undefined" && navigator.share) {
-      try { await navigator.share({ title: shareTitle, url: shareUrl }); } catch { /* dismissed */ }
-      return;
-    }
-    try {
-      await navigator.clipboard.writeText(shareUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1800);
-    } catch { /* clipboard unavailable */ }
-  }
+function GalleryOverlay({ onBack, shareTitle, shareUrl, story }) {
+  const [shareOpen, setShareOpen] = useState(false);
 
   const btn = "pointer-events-auto inline-flex items-center justify-center w-9 h-9 rounded-full bg-black/35 text-white ring-1 ring-white/15 backdrop-blur-md transition-transform active:scale-90 hover:bg-black/45";
 
   return (
-    <div className="absolute inset-x-3 top-3 z-10 flex items-center gap-2 pointer-events-none">
-      <button type="button" onClick={onBack} aria-label={m.back()} className={btn}>
-        <svg className="w-4 h-4 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.4} d="M15 19l-7-7 7-7" />
-        </svg>
-      </button>
+    <>
+      <div className="absolute inset-x-3 top-3 z-10 flex items-center gap-2 pointer-events-none">
+        <button type="button" onClick={onBack} aria-label={m.back()} className={btn}>
+          <svg className="w-4 h-4 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.4} d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
 
-      <div className="flex-1 flex justify-center">
-        {copied && (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/70 text-white text-[12px] font-semibold backdrop-blur-md scale-in">
-            <CheckIcon className="w-3.5 h-3.5" /> {m.linkCopied()}
-          </span>
-        )}
+        <div className="flex-1" />
+
+        <button
+          type="button"
+          onClick={() => setShareOpen(true)}
+          aria-label={m.shareLabel()}
+          className={btn}
+        >
+          <ShareIcon className="w-4 h-4" />
+        </button>
       </div>
 
-      <button type="button" onClick={onShare} aria-label={m.shareLabel()} className={btn}>
-        {copied ? <CheckIcon className="w-4 h-4" /> : <ShareIcon className="w-4 h-4" />}
-      </button>
-    </div>
+      <ShareSheet
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+        url={shareUrl}
+        title={shareTitle}
+        story={story}
+      />
+    </>
   );
 }
 
@@ -353,6 +330,15 @@ export default function ProductDetailPage() {
             onBack={() => router.history.back()}
             shareTitle={product.title}
             shareUrl={productUrl}
+            story={{
+              title: product.title,
+              price: `${formatAmount(product.price)} IQD`,
+              photo: photos[0],
+              meta: [cityLabel, categoryLabel].filter(Boolean).join(" · "),
+              code: product.seq ? `#${product.seq}` : undefined,
+              site: new URL(productUrl).host,
+              rtl: locale !== "en",
+            }}
           />
         </div>
 

@@ -32,7 +32,15 @@ Three locales: `en` (default, LTR), `ckb` (Central Kurdish, RTL), `ar` (Arabic, 
 
 Hosted on Cloudflare Workers — project name `dasty2mndalan` (`wrangler.jsonc`). Custom server entry is `src/server.ts` (keeps the paraglide locale-redirect middleware around `createStartHandler`).
 
-- `npm run deploy` — builds with Vite + `@cloudflare/vite-plugin` and uploads via `wrangler deploy`.
+**Deploys run from CI only** (`.github/workflows/deploy.yml`) — `scripts/assert-ci.mjs` blocks a local `npm run deploy:*`. A laptop build reads `.env.local`, which is how production once shipped pointing at the dev Convex deployment and the dev R2 bucket.
+
+- `development` branch → `dasty2-marketplace-dev` (dev.dasty2mndalan.com)
+- `main` branch → `dasty2-marketplace-pro` (dasty2mndalan.com)
+- Manual: `gh workflow run Deploy -f environment=dev|prod`
+- Break-glass local deploy: `ALLOW_LOCAL_DEPLOY=1 npm run deploy:prod`
+
+`wrangler.jsonc` `env.dev` / `env.production` `vars` are the single source of truth for the `VITE_*` build values. CI reads them via `scripts/ci-export-env.mjs` so the client bundle and the Worker runtime cannot drift; do **not** duplicate these into GitHub secrets. After each deploy `scripts/verify-deploy.mjs` refetches the live site and fails the job if the served bundle targets the wrong Convex or R2 host.
+
 - `npm run preview` — previews the built bundle locally on miniflare.
 - `npm run cf-typegen` — regenerates `worker-configuration.d.ts` from `wrangler.jsonc` after binding/var changes.
 
