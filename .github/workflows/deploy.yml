@@ -3,8 +3,8 @@ name: Deploy
 on:
   push:
     branches:
-      - main        # push to main → deploy to dev
-      - production  # push to production → deploy to prod
+      - development # push to development → deploy to dev
+      - main        # push to main → deploy to prod
   workflow_dispatch:
     inputs:
       environment:
@@ -16,10 +16,16 @@ on:
           - dev
           - prod
 
+# Never let two deploys to the same Worker overlap — the second would race the
+# first and the surviving version would be whichever finished last.
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   deploy-dev:
     name: Deploy to Dev
-    if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'dev')
+    if: github.ref == 'refs/heads/development' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'dev')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -29,11 +35,15 @@ jobs:
           cache: 'npm'
       - run: npm ci
 
+      # VITE_* values are inlined into the client bundle at build time and come
+      # from wrangler.jsonc, so the bundle and the Worker runtime cannot drift.
+      - name: Resolve VITE_* from wrangler.jsonc (env.dev)
+        run: node scripts/ci-export-env.mjs dev >> "$GITHUB_ENV"
+
       - name: Build and deploy to dasty2-marketplace-dev
         run: npm run deploy:dev
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          VITE_CONVEX_URL: ${{ secrets.DEV_VITE_CONVEX_URL }}
           CONVEX_URL: ${{ secrets.DEV_CONVEX_URL }}
           VITE_CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
           CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
@@ -41,9 +51,12 @@ jobs:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           VITE_WHATSAPP_NUMBER: ${{ secrets.VITE_WHATSAPP_NUMBER }}
 
+      - name: Verify deployed bundle targets the dev backend
+        run: node scripts/verify-deploy.mjs dev https://dev.dasty2mndalan.com
+
   deploy-prod:
     name: Deploy to Production
-    if: github.ref == 'refs/heads/production' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'prod')
+    if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'prod')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -53,14 +66,19 @@ jobs:
           cache: 'npm'
       - run: npm ci
 
+      - name: Resolve VITE_* from wrangler.jsonc (env.production)
+        run: node scripts/ci-export-env.mjs production >> "$GITHUB_ENV"
+
       - name: Build and deploy to dasty2-marketplace-pro
         run: npm run deploy:prod
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          VITE_CONVEX_URL: ${{ secrets.PROD_VITE_CONVEX_URL }}
           CONVEX_URL: ${{ secrets.PROD_CONVEX_URL }}
           VITE_CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
           CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
           CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           VITE_WHATSAPP_NUMBER: ${{ secrets.VITE_WHATSAPP_NUMBER }}
+
+      - name: Verify deployed bundle targets the production backend
+        run: node scripts/verify-deploy.mjs production https://dasty2mndalan.com
