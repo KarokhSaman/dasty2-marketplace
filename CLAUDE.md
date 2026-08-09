@@ -32,14 +32,32 @@ Three locales: `en` (default, LTR), `ckb` (Central Kurdish, RTL), `ar` (Arabic, 
 
 Hosted on Cloudflare Workers — project name `dasty2mndalan` (`wrangler.jsonc`). Custom server entry is `src/server.ts` (keeps the paraglide locale-redirect middleware around `createStartHandler`).
 
-**Deploys run from CI only** (`.github/workflows/deploy.yml`) — `scripts/assert-ci.mjs` blocks a local `npm run deploy:*`. A laptop build reads `.env.local`, which is how production once shipped pointing at the dev Convex deployment and the dev R2 bucket.
+### Push → deploy
 
-- `development` branch → `dasty2-marketplace-dev` (dev.dasty2mndalan.com)
-- `main` branch → `dasty2-marketplace-pro` (dasty2mndalan.com)
-- Manual: `gh workflow run Deploy -f environment=dev|prod`
-- Break-glass local deploy: `ALLOW_LOCAL_DEPLOY=1 npm run deploy:prod`
+Pushing a branch is what deploys. There is no other path.
 
-`wrangler.jsonc` `env.dev` / `env.production` `vars` are the single source of truth for the `VITE_*` build values. CI reads them via `scripts/ci-export-env.mjs` so the client bundle and the Worker runtime cannot drift; do **not** duplicate these into GitHub secrets. After each deploy `scripts/verify-deploy.mjs` refetches the live site and fails the job if the served bundle targets the wrong Convex or R2 host.
+| Branch | Worker | URL | Convex | R2 |
+| --- | --- | --- | --- | --- |
+| `development` | `dasty2-marketplace-dev` | dev.dasty2mndalan.com | `grandiose-pig-440` | `dev-assets.dasty2mndalan.com` |
+| `main` | `dasty2-marketplace-pro` | dasty2mndalan.com | `artful-firefly-452` | `assets.dasty2mndalan.com` |
+
+**A push to `main` deploys production immediately.** Land work on `development` first unless you mean to ship.
+
+Local dev is a third Convex deployment again (`trustworthy-dodo-766`, via `CONVEX_DEPLOYMENT` in `.env.local`) — it is neither of the deployed ones, so "it worked locally" says nothing about either environment's data.
+
+- Deploy without a commit: `gh workflow run Deploy -f environment=dev|prod`
+- Watch: `gh run watch $(gh run list --workflow=Deploy --limit 1 --json databaseId --jq '.[0].databaseId')`
+- Check a live site any time: `node scripts/verify-deploy.mjs production https://dasty2mndalan.com`
+
+### Rules that keep the two environments apart
+
+**Never deploy from a laptop.** `scripts/assert-ci.mjs` blocks `npm run deploy:*` outside CI. A local build reads `.env.local` and inlines *your* Convex and R2 URLs into `import.meta.env`, which is how production once shipped pointing at the dev backend. `ALLOW_LOCAL_DEPLOY=1` exists for emergencies and will do exactly that.
+
+**Never reconnect Cloudflare Workers Builds.** The Cloudflare dashboard can attach a Worker to this Git repo (Worker → Settings → Build). It was connected to `main` with dev `VITE_*` values and a deploy command missing `--env`, so it rebuilt production with the dev backend roughly a minute after every Actions run and silently won. It is disconnected. If a deploy keeps reverting ~1–2 minutes after CI succeeds, that is the first thing to check.
+
+**`wrangler.jsonc` `env.dev` / `env.production` `vars` are the single source of truth for `VITE_*`.** CI reads them via `scripts/ci-export-env.mjs`. Do not duplicate these into GitHub secrets, the Cloudflare dashboard, or `.dev.vars` — every past environment bug came from the same value living in two places. `VITE_*` is inlined into the client bundle at build time, so a wrong value ships to browsers and no runtime binding can correct it.
+
+**Every deploy is verified.** `scripts/verify-deploy.mjs` refetches the live site afterwards and fails the job unless the served bundle targets that environment's Convex and R2 hosts. A green `wrangler deploy` only means an upload happened.
 
 - `npm run preview` — previews the built bundle locally on miniflare.
 - `npm run cf-typegen` — regenerates `worker-configuration.d.ts` from `wrangler.jsonc` after binding/var changes.
