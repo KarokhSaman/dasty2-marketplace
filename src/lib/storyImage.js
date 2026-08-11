@@ -20,8 +20,14 @@ function loadImage(src) {
     if (!src) return resolve(null);
     const img = new Image();
     img.crossOrigin = "anonymous";
-    img.onload = () => resolve(img);
-    img.onerror = () => resolve(null);
+    img.onload = () => {
+      console.log("✓ Story image loaded:", src);
+      resolve(img);
+    };
+    img.onerror = (err) => {
+      console.warn("✗ Story image failed to load:", src, err);
+      resolve(null);
+    };
     img.src = src;
   });
 }
