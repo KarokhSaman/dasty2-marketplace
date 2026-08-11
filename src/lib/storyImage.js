@@ -22,7 +22,8 @@ function loadImage(src) {
       return resolve(null);
     }
     const img = new Image();
-    img.crossOrigin = "anonymous";
+    // Don't set crossOrigin — R2 URLs from the same domain don't need it
+    // and the strict CORS requirement breaks the load despite the URL working
 
     img.onload = () => {
       console.log("✓ Story image loaded successfully:", {
@@ -38,7 +39,6 @@ function loadImage(src) {
     img.onerror = (event) => {
       console.error("✗ Story image failed to load:", {
         src,
-        crossOrigin: img.crossOrigin,
         errorEvent: event
       });
       resolve(null);
