@@ -17,17 +17,39 @@ const BRAND = "#ed0040";
 // fails, which we treat as "no photo" rather than letting it poison the canvas.
 function loadImage(src) {
   return new Promise((resolve) => {
-    if (!src) return resolve(null);
+    if (!src) {
+      console.log("⚠ No image source provided");
+      return resolve(null);
+    }
     const img = new Image();
     img.crossOrigin = "anonymous";
+
     img.onload = () => {
-      console.log("✓ Story image loaded:", src);
+      console.log("✓ Story image loaded successfully:", {
+        src,
+        width: img.width,
+        height: img.height,
+        naturalWidth: img.naturalWidth,
+        naturalHeight: img.naturalHeight
+      });
       resolve(img);
     };
-    img.onerror = (err) => {
-      console.warn("✗ Story image failed to load:", src, err);
+
+    img.onerror = (event) => {
+      console.error("✗ Story image failed to load:", {
+        src,
+        crossOrigin: img.crossOrigin,
+        errorEvent: event
+      });
       resolve(null);
     };
+
+    img.onabort = () => {
+      console.warn("⚠ Story image load aborted:", src);
+      resolve(null);
+    };
+
+    console.log("📷 Starting to load story image:", src);
     img.src = src;
   });
 }
@@ -157,13 +179,19 @@ export async function buildStoryImage({ title, price, photo, meta, code, site, r
  * @returns {Promise<"shared" | "downloaded" | "failed">}
  */
 export async function shareStoryImage(product) {
+  console.log("📤 Starting share story image with product:", product);
   let blob;
   try {
     blob = await buildStoryImage(product);
-  } catch {
+  } catch (err) {
+    console.error("❌ buildStoryImage threw error:", err);
     return "failed";
   }
-  if (!blob) return "failed";
+  if (!blob) {
+    console.error("❌ No blob generated");
+    return "failed";
+  }
+  console.log("✓ Blob created successfully, size:", blob.size, "bytes");
 
   const file = new File([blob], `${product.code || "product"}.png`, { type: "image/png" });
 
