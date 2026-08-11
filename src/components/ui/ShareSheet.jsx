@@ -139,9 +139,9 @@ export default function ShareSheet({ open, onClose, url, title, story }) {
       Icon: FacebookIcon,
     },
     {
-      key: "instagram",
-      name: "Instagram",
-      href: "https://www.instagram.com/",
+      key: "instagram-dm",
+      name: m.shareInstagramDM(),
+      href: "https://www.instagram.com/direct/",
       copyFirst: true,
       tile: "bg-[linear-gradient(45deg,#F58529_0%,#DD2A7B_45%,#8134AF_70%,#515BD4_100%)]",
       Icon: InstagramIcon,
