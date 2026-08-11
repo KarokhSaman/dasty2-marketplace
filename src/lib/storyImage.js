@@ -21,36 +21,42 @@ function loadImage(src) {
       console.log("⚠ No image source provided");
       return resolve(null);
     }
-    const img = new Image();
-    // Don't set crossOrigin — R2 URLs from the same domain don't need it
-    // and the strict CORS requirement breaks the load despite the URL working
-
-    img.onload = () => {
-      console.log("✓ Story image loaded successfully:", {
-        src,
-        width: img.width,
-        height: img.height,
-        naturalWidth: img.naturalWidth,
-        naturalHeight: img.naturalHeight
-      });
-      resolve(img);
-    };
-
-    img.onerror = (event) => {
-      console.error("✗ Story image failed to load:", {
-        src,
-        errorEvent: event
-      });
-      resolve(null);
-    };
-
-    img.onabort = () => {
-      console.warn("⚠ Story image load aborted:", src);
-      resolve(null);
-    };
 
     console.log("📷 Starting to load story image:", src);
-    img.src = src;
+
+    // Fetch the image as a blob to avoid canvas tainting, then create an object URL.
+    // This works around CORS issues while keeping the canvas exportable.
+    fetch(src, { mode: "cors" })
+      .then((response) => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return response.blob();
+      })
+      .then((blob) => {
+        const objectUrl = URL.createObjectURL(blob);
+        const img = new Image();
+
+        img.onload = () => {
+          console.log("✓ Story image loaded successfully:", {
+            src,
+            width: img.width,
+            height: img.height,
+          });
+          URL.revokeObjectURL(objectUrl);
+          resolve(img);
+        };
+
+        img.onerror = () => {
+          console.error("✗ Story image failed to load from object URL:", src);
+          URL.revokeObjectURL(objectUrl);
+          resolve(null);
+        };
+
+        img.src = objectUrl;
+      })
+      .catch((err) => {
+        console.error("✗ Failed to fetch story image:", src, err.message);
+        resolve(null);
+      });
   });
 }
 
