@@ -141,7 +141,7 @@ export default function ShareSheet({ open, onClose, url, title, story }) {
     {
       key: "instagram-dm",
       name: m.shareInstagramDM(),
-      href: "https://www.instagram.com/direct/",
+      href: "https://www.instagram.com/",
       copyFirst: true,
       tile: "bg-[linear-gradient(45deg,#F58529_0%,#DD2A7B_45%,#8134AF_70%,#515BD4_100%)]",
       Icon: InstagramIcon,
@@ -204,7 +204,18 @@ export default function ShareSheet({ open, onClose, url, title, story }) {
             href={href}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={() => onTargetClick({ name, copyFirst })}
+            onClick={(e) => {
+              if (key === "instagram-dm") {
+                e.preventDefault();
+                writeClipboard(url);
+                setCopied(name);
+                setTimeout(() => {
+                  window.open("https://www.instagram.com/", "_blank");
+                }, 100);
+              } else {
+                onTargetClick({ name, copyFirst });
+              }
+            }}
             className="flex flex-col items-center gap-1.5 tap"
           >
             <span
