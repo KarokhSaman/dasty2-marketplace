@@ -299,7 +299,7 @@ export default function HomePage() {
   const { data: liveFeatured } = useReactQuery(convexQuery(api.products.getFeatured, {}));
   const rawFeaturedProducts = liveFeatured ?? cachedFeatured ?? [];
 
-  // Apply client-side rotation logic every 10 seconds to rotate featured products at same position
+  // Apply random shuffle to featured products on each page load
   const applyClientRotation = (products) => {
     if (!products.length) return products;
 
@@ -319,9 +319,9 @@ export default function HomePage() {
         .sort((a, b) => a._id.localeCompare(b._id));
 
       if (atPos.length > 0) {
-        // Calculate rotation offset based on current time (rotate every 10 seconds)
-        const offset = Math.floor(Date.now() / 10000) % atPos.length;
-        rotated.push(...[...atPos.slice(offset), ...atPos.slice(0, offset)]);
+        // Random shuffle: rotate by a random offset each page load
+        const randomOffset = Math.floor(Math.random() * atPos.length);
+        rotated.push(...[...atPos.slice(randomOffset), ...atPos.slice(0, randomOffset)]);
       }
     }
 
