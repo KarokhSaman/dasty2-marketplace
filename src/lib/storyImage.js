@@ -22,41 +22,26 @@ function loadImage(src) {
       return resolve(null);
     }
 
-    console.log("📷 Starting to load story image:", src);
+    const img = new Image();
+    // Empty crossOrigin allows the image to load while minimizing CORS restrictions
+    img.crossOrigin = "";
 
-    // Fetch the image as a blob to avoid canvas tainting, then create an object URL.
-    // This works around CORS issues while keeping the canvas exportable.
-    fetch(src, { mode: "cors" })
-      .then((response) => {
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        return response.blob();
-      })
-      .then((blob) => {
-        const objectUrl = URL.createObjectURL(blob);
-        const img = new Image();
-
-        img.onload = () => {
-          console.log("✓ Story image loaded successfully:", {
-            src,
-            width: img.width,
-            height: img.height,
-          });
-          URL.revokeObjectURL(objectUrl);
-          resolve(img);
-        };
-
-        img.onerror = () => {
-          console.error("✗ Story image failed to load from object URL:", src);
-          URL.revokeObjectURL(objectUrl);
-          resolve(null);
-        };
-
-        img.src = objectUrl;
-      })
-      .catch((err) => {
-        console.error("✗ Failed to fetch story image:", src, err.message);
-        resolve(null);
+    img.onload = () => {
+      console.log("✓ Story image loaded successfully:", {
+        src,
+        width: img.width,
+        height: img.height,
       });
+      resolve(img);
+    };
+
+    img.onerror = (event) => {
+      console.error("✗ Story image failed to load:", src, event);
+      resolve(null);
+    };
+
+    console.log("📷 Starting to load story image:", src);
+    img.src = src;
   });
 }
 
