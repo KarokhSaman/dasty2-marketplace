@@ -276,6 +276,7 @@ export default function HomePage() {
   const { category, condition, sort, city, brands } = filters;
   const updateFilter = (key) => (value) => setFilters((f) => ({ ...f, [key]: value }));
   const sentinelRef = useRef(null);
+  const shuffleSeedRef = useRef(Math.random()); // Generate once per page load
 
   // Play entrance animations only on the first home view of the session — but
   // NOT during SSR / first hydration (the static HTML has no animation classes,
@@ -299,7 +300,7 @@ export default function HomePage() {
   const { data: liveFeatured } = useReactQuery(convexQuery(api.products.getFeatured, {}));
   const rawFeaturedProducts = liveFeatured ?? cachedFeatured ?? [];
 
-  // Apply random shuffle to featured products on each page load
+  // Apply random shuffle to featured products (same seed throughout page session)
   const applyClientRotation = (products) => {
     if (!products.length) return products;
 
@@ -319,9 +320,9 @@ export default function HomePage() {
         .sort((a, b) => a._id.localeCompare(b._id));
 
       if (atPos.length > 0) {
-        // Random shuffle: rotate by a random offset each page load
-        const randomOffset = Math.floor(Math.random() * atPos.length);
-        rotated.push(...[...atPos.slice(randomOffset), ...atPos.slice(0, randomOffset)]);
+        // Use fixed shuffle seed (generated once per page load, persists across category changes)
+        const offset = Math.floor(shuffleSeedRef.current * atPos.length);
+        rotated.push(...[...atPos.slice(offset), ...atPos.slice(0, offset)]);
       }
     }
 
