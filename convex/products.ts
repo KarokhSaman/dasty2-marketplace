@@ -576,3 +576,41 @@ export const cleanupExpiredFeatured = mutation({
     return { unfeatureCount, today };
   },
 });
+
+// Temporary query to check unique categories in database
+export const getUniqueCategoriesDebug = query({
+  returns: v.array(v.string()),
+  handler: async (ctx) => {
+    const products = await ctx.db.query("products").collect();
+    const categories = new Set(products.map(p => p.category));
+    return Array.from(categories).sort();
+  },
+});
+
+// ⚠️ DEVELOPMENT ONLY: Clear all products from dev database
+export const devClearAllProducts = mutation({
+  args: { confirmDelete: v.boolean() },
+  returns: v.object({ deletedCount: v.number() }),
+  handler: async (ctx, { confirmDelete }) => {
+    // Safety check: only works in development
+    const isDev = process.env.ENVIRONMENT === "dev" || !process.env.ENVIRONMENT;
+    if (!isDev) {
+      throw new Error("❌ This mutation only works in development!");
+    }
+
+    if (!confirmDelete) {
+      throw new Error("❌ You must confirm deletion by setting confirmDelete: true");
+    }
+
+    const products = await ctx.db.query("products").collect();
+    let deletedCount = 0;
+
+    for (const product of products) {
+      await deleteProductData(ctx, product);
+      deletedCount++;
+    }
+
+    console.log(`✓ [Dev] Deleted ${deletedCount} products from database`);
+    return { deletedCount };
+  },
+});

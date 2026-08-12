@@ -139,8 +139,8 @@ export default function ShareSheet({ open, onClose, url, title, story }) {
       Icon: FacebookIcon,
     },
     {
-      key: "instagram",
-      name: "Instagram",
+      key: "instagram-dm",
+      name: m.shareInstagramDM(),
       href: "https://www.instagram.com/",
       copyFirst: true,
       tile: "bg-[linear-gradient(45deg,#F58529_0%,#DD2A7B_45%,#8134AF_70%,#515BD4_100%)]",
@@ -204,7 +204,33 @@ export default function ShareSheet({ open, onClose, url, title, story }) {
             href={href}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={() => onTargetClick({ name, copyFirst })}
+            onClick={(e) => {
+              if (key === "instagram-dm") {
+                e.preventDefault();
+                // Use native share sheet for Instagram DM
+                // This gives Instagram better control over opening to the right screen
+                if (canNativeShare) {
+                  navigator.share({
+                    title,
+                    text: url,
+                    url
+                  }).catch(() => {
+                    // Fallback if user dismisses share sheet
+                    writeClipboard(url);
+                    setCopied(name);
+                  });
+                } else {
+                  // Fallback: copy link and open Instagram
+                  writeClipboard(url);
+                  setCopied(name);
+                  setTimeout(() => {
+                    window.open("https://instagram.com", "_blank");
+                  }, 100);
+                }
+              } else {
+                onTargetClick({ name, copyFirst });
+              }
+            }}
             className="flex flex-col items-center gap-1.5 tap"
           >
             <span

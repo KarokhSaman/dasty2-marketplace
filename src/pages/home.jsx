@@ -276,13 +276,19 @@ export default function HomePage() {
   const { category, condition, sort, city, brands } = filters;
   const updateFilter = (key) => (value) => setFilters((f) => ({ ...f, [key]: value }));
   const sentinelRef = useRef(null);
+  // Shuffle seed — calculated after hydration to avoid server/client mismatch
+  const shuffleSeedRef = useRef(0);
+  const [hydrationTrigger, setHydrationTrigger] = useState(0); // Triggers re-render after hydration
 
   // Play entrance animations only on the first home view of the session — but
   // NOT during SSR / first hydration (the static HTML has no animation classes,
   // so adding them in the initial render would hydration-mismatch). Start false
   // to match the server, then trigger the animation once after mount.
   const [animateEntrance, setAnimateEntrance] = useState(false);
-  useEffect(() => {
+  useLayoutEffect(() => {
+    // Initialize shuffle seed on client only (after hydration is complete)
+    shuffleSeedRef.current = Math.random();
+    setHydrationTrigger(1); // Trigger re-render to apply shuffle
     if (!homeEntranceShown) {
       homeEntranceShown = true;
       setAnimateEntrance(true);
@@ -299,7 +305,7 @@ export default function HomePage() {
   const { data: liveFeatured } = useReactQuery(convexQuery(api.products.getFeatured, {}));
   const rawFeaturedProducts = liveFeatured ?? cachedFeatured ?? [];
 
-  // Apply client-side rotation logic every 10 seconds to rotate featured products at same position
+  // Apply random shuffle to featured products (same seed throughout page session)
   const applyClientRotation = (products) => {
     if (!products.length) return products;
 
@@ -319,8 +325,8 @@ export default function HomePage() {
         .sort((a, b) => a._id.localeCompare(b._id));
 
       if (atPos.length > 0) {
-        // Calculate rotation offset based on current time (rotate every 10 seconds)
-        const offset = Math.floor(Date.now() / 10000) % atPos.length;
+        // Use fixed shuffle seed (generated once per page load, persists across category changes)
+        const offset = Math.floor(shuffleSeedRef.current * atPos.length);
         rotated.push(...[...atPos.slice(offset), ...atPos.slice(0, offset)]);
       }
     }
@@ -330,22 +336,8 @@ export default function HomePage() {
 
   const featuredProducts = applyClientRotation(rawFeaturedProducts);
 
-  // Update rotationTick every 10 seconds to trigger re-renders (which recalculates rotation)
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setRotationTick(t => t + 1);
-    }, 10000); // 10 seconds
-    return () => clearInterval(interval);
-  }, []);
-
-  // Trigger animation on rotation
-  useEffect(() => {
-    if (rotationTick > 0) {
-      setIsRotating(true);
-      const timer = setTimeout(() => setIsRotating(false), 1000); // 1000ms smooth animation
-      return () => clearTimeout(timer);
-    }
-  }, [rotationTick]);
+  // Featured products now rotate only on page refresh, not automatically every 10 seconds.
+  // This eliminates flickering when switching categories.
 
   const { results: liveResults, status, loadMore } = usePaginatedQuery(
     api.products.getPublicPaginated,
@@ -481,7 +473,7 @@ export default function HomePage() {
       {!isLoading && allProducts.length === 0 && featuredFiltered.length === 0 && <EmptyState />}
 
       {allProducts.length > 0 && (
-        <div className={`grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 mt-1 ${animateEntrance ? "stagger" : ""}`}>
+        <div suppressHydrationWarning className={`grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 mt-1 transition-all duration-300 ${animateEntrance ? "stagger" : ""}`}>
           {allProducts.map((p) => (
             <ProductCard key={p._id} product={p} onSave={onSave} />
           ))}
