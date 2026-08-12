@@ -576,3 +576,13 @@ export const cleanupExpiredFeatured = mutation({
     return { unfeatureCount, today };
   },
 });
+
+// Temporary query to check unique categories in database
+export const getUniqueCategoriesDebug = query({
+  returns: v.array(v.string()),
+  handler: async (ctx) => {
+    const products = await ctx.db.query("products").collect();
+    const categories = new Set(products.map(p => p.category));
+    return Array.from(categories).sort();
+  },
+});
