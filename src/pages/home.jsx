@@ -468,7 +468,7 @@ export default function HomePage() {
       {!isLoading && allProducts.length === 0 && featuredFiltered.length === 0 && <EmptyState />}
 
       {allProducts.length > 0 && (
-        <div className={`grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 mt-1 ${animateEntrance ? "stagger" : ""}`}>
+        <div className={`grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 mt-1 transition-all duration-300 ${animateEntrance ? "stagger" : ""}`}>
           {allProducts.map((p) => (
             <ProductCard key={p._id} product={p} onSave={onSave} />
           ))}
