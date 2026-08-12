@@ -209,8 +209,15 @@ export default function ShareSheet({ open, onClose, url, title, story }) {
                 e.preventDefault();
                 writeClipboard(url);
                 setCopied(name);
+                // Open Instagram app to messaging/inbox
+                // On mobile with Instagram installed: opens the app's DM section
+                // On mobile/desktop without app: opens web version
                 setTimeout(() => {
-                  window.open("https://www.instagram.com/", "_blank");
+                  window.open("instagram://inbox", "_blank");
+                  // Fallback to web version if app doesn't open
+                  setTimeout(() => {
+                    window.open("https://instagram.com/direct", "_blank");
+                  }, 500);
                 }, 100);
               } else {
                 onTargetClick({ name, copyFirst });
