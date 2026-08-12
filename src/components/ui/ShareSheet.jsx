@@ -207,18 +207,26 @@ export default function ShareSheet({ open, onClose, url, title, story }) {
             onClick={(e) => {
               if (key === "instagram-dm") {
                 e.preventDefault();
-                writeClipboard(url);
-                setCopied(name);
-                // Open Instagram app to messaging/inbox
-                // On mobile with Instagram installed: opens the app's DM section
-                // On mobile/desktop without app: opens web version
-                setTimeout(() => {
-                  window.open("instagram://inbox", "_blank");
-                  // Fallback to web version if app doesn't open
+                // Use native share sheet for Instagram DM
+                // This gives Instagram better control over opening to the right screen
+                if (canNativeShare) {
+                  navigator.share({
+                    title,
+                    text: url,
+                    url
+                  }).catch(() => {
+                    // Fallback if user dismisses share sheet
+                    writeClipboard(url);
+                    setCopied(name);
+                  });
+                } else {
+                  // Fallback: copy link and open Instagram
+                  writeClipboard(url);
+                  setCopied(name);
                   setTimeout(() => {
-                    window.open("https://instagram.com/direct", "_blank");
-                  }, 500);
-                }, 100);
+                    window.open("https://instagram.com", "_blank");
+                  }, 100);
+                }
               } else {
                 onTargetClick({ name, copyFirst });
               }
