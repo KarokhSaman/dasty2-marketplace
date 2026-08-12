@@ -276,12 +276,9 @@ export default function HomePage() {
   const { category, condition, sort, city, brands } = filters;
   const updateFilter = (key) => (value) => setFilters((f) => ({ ...f, [key]: value }));
   const sentinelRef = useRef(null);
-  // Generate shuffle seed from current time (bucketed to 10-second windows to allow some consistency)
-  const shuffleSeedRef = useRef(() => {
-    const bucket = Math.floor(Date.now() / 10000);
-    return (bucket * 0.123 + 0.456) % 1; // Deterministic pseudo-random from bucket
-  })();
-  // This creates a new seed on every page mount/refresh, but keeps it stable during hot reloads within the same 10-second window
+  // Generate shuffle seed from current time — changes every 10 seconds per refresh
+  const bucket = Math.floor(Date.now() / 10000);
+  const shuffleSeedRef = useRef((bucket * 0.123 + 0.456) % 1);
 
   // Play entrance animations only on the first home view of the session — but
   // NOT during SSR / first hydration (the static HTML has no animation classes,
