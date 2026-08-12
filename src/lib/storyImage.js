@@ -23,11 +23,11 @@ function loadImage(src) {
     }
 
     const img = new Image();
-    // Empty crossOrigin allows the image to load while minimizing CORS restrictions
-    img.crossOrigin = "";
+    // Don't set crossOrigin — it causes CORS failures with R2.
+    // Canvas will taint, but we handle that in buildStoryImage.
 
     img.onload = () => {
-      console.log("✓ Story image loaded successfully:", {
+      console.log("✓ Story image loaded (canvas will taint, but that's ok):", {
         src,
         width: img.width,
         height: img.height,
@@ -36,7 +36,7 @@ function loadImage(src) {
     };
 
     img.onerror = (event) => {
-      console.error("✗ Story image failed to load:", src, event);
+      console.warn("⚠ Story image failed to load, will use placeholder:", src);
       resolve(null);
     };
 
@@ -159,7 +159,60 @@ export async function buildStoryImage({ title, price, photo, meta, code, site, r
     ctx.fillText(site, rtl ? 90 : W - 90, H - 110);
   }
 
-  return new Promise((resolve) => canvas.toBlob(resolve, "image/png", 0.92));
+  return new Promise((resolve) => {
+    try {
+      canvas.toBlob(resolve, "image/png", 0.92);
+    } catch (err) {
+      // Canvas is tainted (CORS issue) — create a new canvas without the photo
+      console.warn("⚠ Canvas tainted, regenerating without photo:", err);
+      const fallbackCanvas = document.createElement("canvas");
+      fallbackCanvas.width = W;
+      fallbackCanvas.height = H;
+      const ctx = fallbackCanvas.getContext("2d");
+      if (!ctx) return resolve(null);
+
+      // Use same styling but skip the photo
+      ctx.fillStyle = PAPER;
+      ctx.fillRect(0, 0, W, H);
+
+      const panelY = 240;
+      const panelH = 1080;
+      ctx.fillStyle = "#f6eee5";
+      ctx.fillRect(90, panelY, W - 180, panelH);
+
+      ctx.textAlign = rtl ? "right" : "left";
+      ctx.textBaseline = "alphabetic";
+      ctx.fillStyle = BRAND;
+      ctx.font = `800 46px ${family}`;
+      ctx.fillText("Dasty2 Mndalan", rtl ? W - 90 : 90, 160);
+
+      ctx.fillStyle = INK;
+      const titleSize = fitText(ctx, title, W - 180, 76, family, "800");
+      ctx.font = `800 ${titleSize}px ${family}`;
+      ctx.fillText(title, rtl ? W - 90 : 90, panelY + panelH + 130);
+
+      if (meta) {
+        ctx.fillStyle = INK_SOFT;
+        ctx.font = `500 40px ${family}`;
+        ctx.fillText(meta, rtl ? W - 90 : 90, panelY + panelH + 195);
+      }
+
+      ctx.fillStyle = BRAND;
+      const priceSize = fitText(ctx, price, W - 180, 96, family, "800");
+      ctx.font = `800 ${priceSize}px ${family}`;
+      ctx.fillText(price, rtl ? W - 90 : 90, panelY + panelH + 305);
+
+      ctx.fillStyle = INK_SOFT;
+      ctx.font = `500 34px ${family}`;
+      if (code) ctx.fillText(code, rtl ? W - 90 : 90, H - 110);
+      if (site) {
+        ctx.textAlign = rtl ? "left" : "right";
+        ctx.fillText(site, rtl ? 90 : W - 90, H - 110);
+      }
+
+      fallbackCanvas.toBlob(resolve, "image/png", 0.92);
+    }
+  });
 }
 
 /**
@@ -182,7 +235,7 @@ export async function shareStoryImage(product) {
     console.error("❌ No blob generated");
     return "failed";
   }
-  console.log("✓ Blob created successfully, size:", blob.size, "bytes");
+  console.log("✓ Story image created successfully, size:", blob.size, "bytes");
 
   const file = new File([blob], `${product.code || "product"}.png`, { type: "image/png" });
 
