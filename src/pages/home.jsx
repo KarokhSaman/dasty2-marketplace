@@ -330,22 +330,8 @@ export default function HomePage() {
 
   const featuredProducts = applyClientRotation(rawFeaturedProducts);
 
-  // Update rotationTick every 10 seconds to trigger re-renders (which recalculates rotation)
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setRotationTick(t => t + 1);
-    }, 10000); // 10 seconds
-    return () => clearInterval(interval);
-  }, []);
-
-  // Trigger animation on rotation
-  useEffect(() => {
-    if (rotationTick > 0) {
-      setIsRotating(true);
-      const timer = setTimeout(() => setIsRotating(false), 1000); // 1000ms smooth animation
-      return () => clearTimeout(timer);
-    }
-  }, [rotationTick]);
+  // Featured products now rotate only on page refresh, not automatically every 10 seconds.
+  // This eliminates flickering when switching categories.
 
   const { results: liveResults, status, loadMore } = usePaginatedQuery(
     api.products.getPublicPaginated,
