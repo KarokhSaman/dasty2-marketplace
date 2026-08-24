@@ -22,6 +22,7 @@ export default function Gallery({
   className = "",
   aspectClassName = "aspect-square",
   rounded = "rounded-2xl",
+  fit = "cover",
   heroTransitionName,
 }) {
   const valid = (photos || []).filter(Boolean);
@@ -87,7 +88,7 @@ export default function Gallery({
               src={src}
               alt={count > 1 ? `${alt} — ${i + 1}/${count}` : alt}
               loading={i === 0 ? "eager" : "lazy"}
-              className="w-full h-full object-cover"
+              className={`w-full h-full ${fit === "contain" ? "object-contain" : "object-cover"}`}
               style={i === 0 && heroTransitionName ? { viewTransitionName: heroTransitionName } : undefined}
             />
           </div>

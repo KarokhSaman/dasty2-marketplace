@@ -323,6 +323,7 @@ export default function ProductDetailPage() {
           <Gallery
             photos={photos}
             alt={product.title}
+            fit="contain"
             rounded="rounded-none sm:rounded-[1.5rem]"
             heroTransitionName={`vt-${product._id}`}
           />
