@@ -56,6 +56,7 @@ export default function AdminProductsPage() {
   const [confirmFeature, setConfirmFeature] = useState(null); // { productId, action: 'feature' | 'unfeature', duration }
   const [editingCategoryId, setEditingCategoryId] = useState(null); // Product ID being edited
   const [selectedCategory, setSelectedCategory] = useState(null); // Selected category
+  const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(null); // Product ID with open dropdown
 
   const statusLabels = {
     all:      m.adminAllStatus(),
@@ -258,46 +259,61 @@ export default function AdminProductsPage() {
                   </p>
 
                   {/* Category - editable for pending products */}
-                  <div className="mt-1.5">
+                  <div className="mt-2">
                     {editingCategoryId === product._id ? (
-                      <div className="flex items-center gap-1.5">
-                        <select
-                          value={selectedCategory || product.category}
-                          onChange={(e) => setSelectedCategory(e.target.value)}
-                          className="text-xs px-2 py-1 border border-blue-300 rounded bg-blue-50 text-blue-900 font-medium focus:outline-none focus:ring-1 focus:ring-blue-500"
-                        >
-                          {CATEGORY_CONFIG.filter(c => c.value !== "all").map(cat => (
-                            <option key={cat.value} value={cat.value}>{cat.value}</option>
-                          ))}
-                        </select>
+                      <div className="relative z-20 inline-block">
                         <button
-                          onClick={() => updateCategory(product, selectedCategory || product.category)}
-                          className="text-xs px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors font-medium"
+                          onClick={() => setCategoryDropdownOpen(categoryDropdownOpen === product._id ? null : product._id)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all duration-200 text-[11.5px] font-semibold border-blue-400 bg-blue-50 text-blue-600"
                         >
-                          Save
+                          {selectedCategory || product.category}
+                          <svg className={`w-3 h-3 transition-transform duration-200 ${categoryDropdownOpen === product._id ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+                          </svg>
                         </button>
-                        <button
-                          onClick={() => {
-                            setEditingCategoryId(null);
-                            setSelectedCategory(null);
-                          }}
-                          className="text-xs px-2 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors font-medium"
-                        >
-                          Cancel
-                        </button>
+                        {categoryDropdownOpen === product._id && (
+                          <div className="absolute start-0 top-full mt-2 bg-white border border-[var(--color-hairline)] rounded-2xl shadow-[0_18px_44px_-20px_rgba(11,12,15,0.28)] z-30 overflow-hidden min-w-[160px]">
+                            <div className="max-h-48 overflow-y-auto">
+                              {CATEGORY_CONFIG.filter(c => c.value !== "all").map(cat => (
+                                <button
+                                  key={cat.value}
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedCategory(cat.value);
+                                    updateCategory(product, cat.value);
+                                    setCategoryDropdownOpen(null);
+                                  }}
+                                  className={`flex items-center justify-between gap-3 w-full px-3 py-2 text-xs text-start whitespace-nowrap transition-colors ${
+                                    cat.value === (selectedCategory || product.category)
+                                      ? "bg-blue-50 text-blue-600 font-semibold"
+                                      : "text-[var(--color-ink)] hover:bg-[var(--color-cream)]"
+                                  }`}
+                                >
+                                  {cat.value}
+                                  {cat.value === (selectedCategory || product.category) && (
+                                    <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                  )}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ) : (
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs px-2 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded font-medium">{product.category}</span>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-blue-300 bg-blue-50 text-blue-600 text-[11.5px] font-semibold">{product.category}</span>
                         {product.status === "pending" && (
                           <button
                             onClick={() => {
                               setEditingCategoryId(product._id);
                               setSelectedCategory(product.category);
+                              setCategoryDropdownOpen(null);
                             }}
-                            className="text-xs px-2 py-1 bg-blue-100 text-blue-600 border border-blue-300 rounded hover:bg-blue-200 transition-colors font-medium"
+                            className="text-[11px] px-2.5 py-1.5 bg-blue-100 text-blue-600 border border-blue-300 rounded-full hover:bg-blue-200 transition-colors font-semibold whitespace-nowrap"
                           >
-                            Edit
+                            Edit Category
                           </button>
                         )}
                       </div>
