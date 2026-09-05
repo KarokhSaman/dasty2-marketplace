@@ -346,6 +346,17 @@ export const updateStatus = mutation({
   },
 });
 
+export const adminUpdateCategory = mutation({
+  args: {
+    id: v.id("products"),
+    category: categoryValidator,
+  },
+  handler: async (ctx, { id, category }) => {
+    await requireAdmin(ctx);
+    await ctx.db.patch(id, { category });
+  },
+});
+
 export const getById = query({
   args: { id: v.id("products") },
   handler: async (ctx, { id }) => {

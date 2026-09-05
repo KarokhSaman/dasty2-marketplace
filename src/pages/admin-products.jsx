@@ -12,6 +12,7 @@ const useSearchParams = () => {
 import { api } from "@/convex/_generated/api";
 import * as m from "@/paraglide/messages";
 import { formatPrice } from "@/lib/utils";
+import { CATEGORY_CONFIG } from "@/lib/categories";
 import ProductStatusMenu from "@/components/admin/ProductStatusMenu";
 import BottomSheet from "@/components/ui/BottomSheet";
 
@@ -33,6 +34,7 @@ export default function AdminProductsPage() {
 
   const products        = useQuery(api.products.getAll);
   const updateStatus    = useMutation(api.products.updateStatus);
+  const adminUpdateCategory = useMutation(api.products.adminUpdateCategory);
   const removeProduct       = useMutation(api.products.remove);
   const adminUpdatePhotos   = useMutation(api.products.adminUpdatePhotos);
   const setFeatured         = useMutation(api.products.setFeatured);
@@ -52,6 +54,8 @@ export default function AdminProductsPage() {
   const [confirmDel,   setConfirmDel]   = useState(null);
   const [confirmPhoto, setConfirmPhoto] = useState(null); // "productId:photoIndex"
   const [confirmFeature, setConfirmFeature] = useState(null); // { productId, action: 'feature' | 'unfeature', duration }
+  const [editingCategoryId, setEditingCategoryId] = useState(null); // Product ID being edited
+  const [selectedCategory, setSelectedCategory] = useState(null); // Selected category
 
   const statusLabels = {
     all:      m.adminAllStatus(),
@@ -152,6 +156,17 @@ export default function AdminProductsPage() {
     }
   }
 
+  async function updateCategory(product, newCategory) {
+    if (newCategory === product.category) {
+      setEditingCategoryId(null);
+      return;
+    }
+    await adminUpdateCategory({ id: product._id, category: newCategory });
+    await log("category_changed", product, `Changed from ${product.category} to ${newCategory}`);
+    setEditingCategoryId(null);
+    setSelectedCategory(null);
+  }
+
   if (!products) {
     return (
       <div className="space-y-3 animate-pulse">
@@ -236,11 +251,58 @@ export default function AdminProductsPage() {
                   <div className="flex items-start gap-2 flex-wrap">
                     <p className="text-sm font-semibold text-gray-800 truncate">{product.title}</p>
                   </div>
-                  {/* Condition + seq */}
+                  {/* Condition + seq + category */}
                   <p className="text-xs text-[var(--color-ink-fade)] mt-0.5 flex items-center gap-1.5">
                     <span>{product.condition === "new" ? m.conditionNew() : m.conditionUsed()}</span>
                     {product.seq && <span className="font-mono font-bold text-rose-400">{product.seq}</span>}
                   </p>
+
+                  {/* Category - editable for pending products */}
+                  <div className="mt-1.5">
+                    {editingCategoryId === product._id ? (
+                      <div className="flex items-center gap-1.5">
+                        <select
+                          value={selectedCategory || product.category}
+                          onChange={(e) => setSelectedCategory(e.target.value)}
+                          className="text-xs px-2 py-1 border border-blue-300 rounded bg-blue-50 text-blue-900 font-medium focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        >
+                          {CATEGORY_CONFIG.filter(c => c.value !== "all").map(cat => (
+                            <option key={cat.value} value={cat.value}>{cat.value}</option>
+                          ))}
+                        </select>
+                        <button
+                          onClick={() => updateCategory(product, selectedCategory || product.category)}
+                          className="text-xs px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors font-medium"
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={() => {
+                            setEditingCategoryId(null);
+                            setSelectedCategory(null);
+                          }}
+                          className="text-xs px-2 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors font-medium"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs px-2 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded font-medium">{product.category}</span>
+                        {product.status === "pending" && (
+                          <button
+                            onClick={() => {
+                              setEditingCategoryId(product._id);
+                              setSelectedCategory(product.category);
+                            }}
+                            className="text-xs px-2 py-1 bg-blue-100 text-blue-600 border border-blue-300 rounded hover:bg-blue-200 transition-colors font-medium"
+                          >
+                            Edit
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
 
                   {/* Price + fee + date */}
                   <div className="flex items-center gap-3 mt-2 flex-wrap">
