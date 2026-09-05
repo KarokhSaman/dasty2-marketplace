@@ -259,66 +259,63 @@ export default function AdminProductsPage() {
                   </p>
 
                   {/* Category - editable for pending products */}
-                  <div className="mt-2">
-                    {editingCategoryId === product._id ? (
-                      <div className="relative z-20 inline-block">
-                        <button
-                          onClick={() => setCategoryDropdownOpen(categoryDropdownOpen === product._id ? null : product._id)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all duration-200 text-[11.5px] font-semibold border-blue-400 bg-blue-50 text-blue-600"
-                        >
-                          {selectedCategory || product.category}
-                          <svg className={`w-3 h-3 transition-transform duration-200 ${categoryDropdownOpen === product._id ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
-                          </svg>
-                        </button>
-                        {categoryDropdownOpen === product._id && (
-                          <div className="absolute start-0 top-full mt-2 bg-white border border-[var(--color-hairline)] rounded-2xl shadow-[0_18px_44px_-20px_rgba(11,12,15,0.28)] z-30 overflow-hidden min-w-[160px]">
-                            <div className="max-h-48 overflow-y-auto">
-                              {CATEGORY_CONFIG.filter(c => c.value !== "all").map(cat => (
-                                <button
-                                  key={cat.value}
-                                  type="button"
-                                  onClick={() => {
-                                    setSelectedCategory(cat.value);
-                                    updateCategory(product, cat.value);
-                                    setCategoryDropdownOpen(null);
-                                  }}
-                                  className={`flex items-center justify-between gap-3 w-full px-3 py-2 text-xs text-start whitespace-nowrap transition-colors ${
-                                    cat.value === (selectedCategory || product.category)
-                                      ? "bg-blue-50 text-blue-600 font-semibold"
-                                      : "text-[var(--color-ink)] hover:bg-[var(--color-cream)]"
-                                  }`}
-                                >
-                                  {cat.value}
-                                  {cat.value === (selectedCategory || product.category) && (
-                                    <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                                    </svg>
-                                  )}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-blue-300 bg-blue-50 text-blue-600 text-[11.5px] font-semibold">{product.category}</span>
-                        {product.status === "pending" && (
+                  {product.status === "pending" && (
+                    <div className="mt-2">
+                      {editingCategoryId === product._id ? (
+                        <div className="relative z-20 inline-block">
                           <button
-                            onClick={() => {
-                              setEditingCategoryId(product._id);
-                              setSelectedCategory(product.category);
-                              setCategoryDropdownOpen(null);
-                            }}
-                            className="text-[11px] px-2.5 py-1.5 bg-blue-100 text-blue-600 border border-blue-300 rounded-full hover:bg-blue-200 transition-colors font-semibold whitespace-nowrap"
+                            onClick={() => setCategoryDropdownOpen(categoryDropdownOpen === product._id ? null : product._id)}
+                            className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg font-medium border-2 bg-cyan-100 text-cyan-700 border-cyan-400 hover:bg-cyan-200 hover:border-cyan-500 transition-colors"
                           >
-                            Edit Category
+                            {selectedCategory || product.category}
+                            <svg className={`w-3 h-3 transition-transform duration-200 ${categoryDropdownOpen === product._id ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+                            </svg>
                           </button>
-                        )}
-                      </div>
-                    )}
-                  </div>
+                          {categoryDropdownOpen === product._id && (
+                            <div className="absolute start-0 top-full mt-2 bg-white border border-[var(--color-hairline)] rounded-lg shadow-lg z-40 overflow-hidden min-w-[180px]">
+                              <div className="max-h-56 overflow-y-auto">
+                                {CATEGORY_CONFIG.filter(c => c.value !== "all").map(cat => (
+                                  <button
+                                    key={cat.value}
+                                    type="button"
+                                    onClick={() => {
+                                      setSelectedCategory(cat.value);
+                                      updateCategory(product, cat.value);
+                                      setCategoryDropdownOpen(null);
+                                    }}
+                                    className={`flex items-center justify-between w-full px-3 py-2 text-xs text-start whitespace-nowrap transition-colors ${
+                                      cat.value === (selectedCategory || product.category)
+                                        ? "bg-cyan-50 text-cyan-700 font-semibold"
+                                        : "text-[var(--color-ink)] hover:bg-gray-50"
+                                    }`}
+                                  >
+                                    {cat.value}
+                                    {cat.value === (selectedCategory || product.category) && (
+                                      <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                                      </svg>
+                                    )}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            setEditingCategoryId(product._id);
+                            setSelectedCategory(product.category);
+                            setCategoryDropdownOpen(null);
+                          }}
+                          className="text-xs font-medium border-2 bg-white text-cyan-600 border-cyan-300 hover:bg-cyan-50 hover:border-cyan-500 hover:text-cyan-700 px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap"
+                        >
+                          {product.category}
+                        </button>
+                      )}
+                    </div>
+                  )}
 
                   {/* Price + fee + date */}
                   <div className="flex items-center gap-3 mt-2 flex-wrap">
