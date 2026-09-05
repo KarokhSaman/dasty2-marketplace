@@ -357,6 +357,18 @@ export const adminUpdateCategory = mutation({
   },
 });
 
+export const adminUpdateTitle = mutation({
+  args: {
+    id: v.id("products"),
+    title: v.string(),
+  },
+  handler: async (ctx, { id, title }) => {
+    await requireAdmin(ctx);
+    if (!title.trim()) throw new Error("Title cannot be empty");
+    await ctx.db.patch(id, { title: title.trim() });
+  },
+});
+
 export const getById = query({
   args: { id: v.id("products") },
   handler: async (ctx, { id }) => {

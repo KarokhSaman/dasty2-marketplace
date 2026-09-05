@@ -35,6 +35,7 @@ export default function AdminProductsPage() {
   const products        = useQuery(api.products.getAll);
   const updateStatus    = useMutation(api.products.updateStatus);
   const adminUpdateCategory = useMutation(api.products.adminUpdateCategory);
+  const adminUpdateTitle = useMutation(api.products.adminUpdateTitle);
   const removeProduct       = useMutation(api.products.remove);
   const adminUpdatePhotos   = useMutation(api.products.adminUpdatePhotos);
   const setFeatured         = useMutation(api.products.setFeatured);
@@ -57,6 +58,8 @@ export default function AdminProductsPage() {
   const [editingCategoryId, setEditingCategoryId] = useState(null); // Product ID being edited
   const [selectedCategory, setSelectedCategory] = useState(null); // Selected category
   const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(null); // Product ID with open dropdown
+  const [editingTitleId, setEditingTitleId] = useState(null); // Product ID being edited
+  const [editingTitleValue, setEditingTitleValue] = useState(""); // Title being edited
 
   const statusLabels = {
     all:      m.adminAllStatus(),
@@ -168,6 +171,18 @@ export default function AdminProductsPage() {
     setSelectedCategory(null);
   }
 
+  async function updateTitle(product, newTitle) {
+    if (!newTitle.trim() || newTitle === product.title) {
+      setEditingTitleId(null);
+      setEditingTitleValue("");
+      return;
+    }
+    await adminUpdateTitle({ id: product._id, title: newTitle.trim() });
+    await log("title_changed", product, `Changed from "${product.title}" to "${newTitle.trim()}"`);
+    setEditingTitleId(null);
+    setEditingTitleValue("");
+  }
+
   if (!products) {
     return (
       <div className="space-y-3 animate-pulse">
@@ -249,9 +264,64 @@ export default function AdminProductsPage() {
 
                 {/* Info */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-start gap-2 flex-wrap">
-                    <p className="text-sm font-semibold text-gray-800 truncate">{product.title}</p>
+                  {/* Title - editable for pending products */}
+                  <div className="relative">
+                    {editingTitleId === product._id ? (
+                      <button
+                        onClick={() => setCategoryDropdownOpen(editingTitleId)}
+                        className="text-sm font-semibold text-gray-800 px-2 py-1 rounded-lg border-2 border-cyan-400 bg-cyan-50 hover:bg-cyan-100 transition-colors text-start"
+                      >
+                        {editingTitleValue || product.title}
+                      </button>
+                    ) : (
+                      <p className="text-sm font-semibold text-gray-800">{product.title}</p>
+                    )}
+
+                    {/* Popup editor for title */}
+                    {editingTitleId === product._id && (
+                      <div className="absolute start-0 top-full mt-2 bg-white border border-[var(--color-hairline)] rounded-lg shadow-lg z-40 w-80 p-4">
+                        <label className="block text-xs font-semibold text-[var(--color-ink)] mb-2">Edit Title</label>
+                        <input
+                          type="text"
+                          value={editingTitleValue}
+                          onChange={(e) => setEditingTitleValue(e.target.value)}
+                          className="w-full text-sm border-2 border-cyan-400 rounded-lg px-3 py-2 mb-3 focus:outline-none focus:ring-2 focus:ring-cyan-300"
+                          autoFocus
+                          onKeyPress={(e) => e.key === 'Enter' && updateTitle(product, editingTitleValue)}
+                        />
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => updateTitle(product, editingTitleValue)}
+                            className="flex-1 text-xs font-medium border-2 bg-cyan-100 text-cyan-700 border-cyan-400 hover:bg-cyan-200 hover:border-cyan-500 px-3 py-1.5 rounded-lg transition-colors"
+                          >
+                            Save
+                          </button>
+                          <button
+                            onClick={() => {
+                              setEditingTitleId(null);
+                              setEditingTitleValue("");
+                            }}
+                            className="flex-1 text-xs font-medium border-2 bg-white text-gray-600 border-gray-300 hover:bg-gray-50 hover:border-gray-500 px-3 py-1.5 rounded-lg transition-colors"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
+
+                  {/* Edit button */}
+                  {product.status === "pending" && editingTitleId !== product._id && (
+                    <button
+                      onClick={() => {
+                        setEditingTitleId(product._id);
+                        setEditingTitleValue(product.title);
+                      }}
+                      className="mt-1 text-xs font-medium border-2 bg-white text-cyan-600 border-cyan-300 hover:bg-cyan-50 hover:border-cyan-500 hover:text-cyan-700 px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap"
+                    >
+                      Edit Title
+                    </button>
+                  )}
                   {/* Condition + seq + category */}
                   <p className="text-xs text-[var(--color-ink-fade)] mt-0.5 flex items-center gap-1.5">
                     <span>{product.condition === "new" ? m.conditionNew() : m.conditionUsed()}</span>
