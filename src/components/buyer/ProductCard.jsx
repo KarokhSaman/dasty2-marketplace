@@ -33,7 +33,7 @@ function PinIcon() {
 function FeaturedStar() {
   return (
     <span
-      title={m.featured()}
+      title={m.badgeSponsored()}
       className="inline-flex items-center justify-center shrink-0 w-4 h-4 rounded-full bg-[var(--color-ember-500)] text-white shadow-[0_2px_6px_-2px_rgba(237,0,64,0.6)]"
     >
       <svg className="w-2.5 h-2.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>

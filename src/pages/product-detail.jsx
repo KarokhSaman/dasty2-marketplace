@@ -371,7 +371,7 @@ export default function ProductDetailPage() {
             )}
             {product.featured && (
               <Chip tone="brand" leadingIcon={<StarIcon className="w-2.5 h-2.5" />}>
-                {m.featured()}
+                {m.badgeSponsored()}
               </Chip>
             )}
           </div>
