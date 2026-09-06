@@ -687,21 +687,21 @@ export default function AdminProductsPage() {
 
       {/* Feature confirmation dialog */}
       {confirmFeature && (
-        <BottomSheet open={true} onClose={() => { setConfirmFeature(null); setFeaturedPosition(null); }} title={confirmFeature.action === 'feature' ? 'Feature Product — Choose Position' : 'Unfeature Product'}>
+        <BottomSheet open={true} onClose={() => { setConfirmFeature(null); setFeaturedPosition(null); }} title={confirmFeature.action === 'feature' ? 'Sponsor Product — Choose Position' : 'Unsponsored Product'}>
           <div className="p-4 sm:p-3">
             {confirmFeature.action === 'feature' ? (
               <>
                 <p className="text-[13px] font-semibold text-[var(--color-ink)] mb-1">
-                  Feature this product?
+                  Sponsor this product?
                 </p>
                 <p className="text-xs text-[var(--color-ink-fade)] mb-3">
-                  This product will be featured for {confirmFeature.duration || 'unlimited time'}.
+                  This product will be sponsored for {confirmFeature.duration || 'unlimited time'}.
                   {featuredPosition && featuredPosition !== 'none' ? ` Position: #${featuredPosition}` : ' Position: Auto (date-sorted)'}
                 </p>
 
                 <div className="mb-4">
                   <label className="text-xs font-semibold text-[var(--color-ink)] block mb-2">
-                    Feature Position (Optional)
+                    Sponsor Position (Optional)
                   </label>
                   <div className="grid grid-cols-6 gap-2">
                     <button
@@ -738,10 +738,10 @@ export default function AdminProductsPage() {
             ) : (
               <>
                 <p className="text-[13px] font-semibold text-[var(--color-ink)] mb-1">
-                  Unfeature this product?
+                  Remove sponsorship?
                 </p>
                 <p className="text-xs text-[var(--color-ink-fade)] mb-3">
-                  This product will no longer be featured.
+                  This product will no longer be sponsored.
                 </p>
               </>
             )}
@@ -762,12 +762,12 @@ export default function AdminProductsPage() {
                     setConfirmFeature(null);
                     setFeaturedPosition(null);
                   } catch (error) {
-                    console.error("Feature action failed:", error);
+                    console.error("Sponsor action failed:", error);
                     alert("Action failed: " + (error.message || "Unknown error"));
                   }
                 }}
                 className="flex-1 text-sm bg-[var(--color-ember-600)] hover:bg-[var(--color-ember-700)] text-white font-semibold py-2.5 rounded-xl transition-colors">
-                {confirmFeature.action === 'feature' ? 'Feature' : 'Unfeature'}
+                {confirmFeature.action === 'feature' ? 'Sponsor' : 'Remove Sponsorship'}
               </button>
               <button
                 onClick={() => setConfirmFeature(null)}
