@@ -76,16 +76,23 @@ export default function ProductCard({ product, onSave }) {
             />
           ) : <ImagePlaceholder />}
 
-          {/* Only one chip on the image: condition. */}
-          <Chip
-            tone={product.condition === "new" ? "success" : product.condition === "likenew" ? "neutral" : "warning"}
-            dot
-            className="absolute top-2.5 start-2.5 backdrop-blur-md shadow-sm"
-          >
-            {product.condition === "new" ? m.badgeNew() : product.condition === "likenew" ? m.conditionLikeNew() : m.badgeUsed()}
-          </Chip>
+          {/* Chips: sponsored + condition status (stacked vertically) */}
+          <div className="absolute top-2.5 start-2.5 flex flex-col gap-1">
+            {product.featured && (
+              <Chip tone="brand" dot className="backdrop-blur-md shadow-sm">
+                {m.badgeSponsored()}
+              </Chip>
+            )}
+            <Chip
+              tone={product.condition === "new" ? "success" : product.condition === "likenew" ? "neutral" : "warning"}
+              dot
+              className="backdrop-blur-md shadow-sm"
+            >
+              {product.condition === "new" ? m.badgeNew() : product.condition === "likenew" ? m.conditionLikeNew() : m.badgeUsed()}
+            </Chip>
+          </div>
 
-          {/* Featured indicator: small star pill, top-end */}
+          {/* Featured star indicator: top-end */}
           {product.featured && (
             <span className="absolute top-2.5 end-2.5">
               <FeaturedStar />
@@ -99,12 +106,7 @@ export default function ProductCard({ product, onSave }) {
             {product.title}
           </h3>
 
-          <div className="flex items-center gap-1.5 text-[11px] md:text-[10px] text-[var(--color-ink-fade)] mb-2 md:mb-1.5 min-w-0 flex-wrap">
-            {product.featured && (
-              <Chip tone="brand" size="sm" className="shrink-0">
-                {m.badgeSponsored()}
-              </Chip>
-            )}
+          <div className="flex items-center gap-1.5 text-[11px] md:text-[10px] text-[var(--color-ink-fade)] mb-2 md:mb-1.5 min-w-0">
             <span className="truncate">{categoryLabel}</span>
             {cityLabel && (
               <>
