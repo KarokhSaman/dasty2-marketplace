@@ -13,8 +13,10 @@ import { api } from "@/convex/_generated/api";
 import * as m from "@/paraglide/messages";
 import { formatPrice } from "@/lib/utils";
 import { CATEGORY_CONFIG } from "@/lib/categories";
+import { getAllBrands } from "@/lib/brands";
 import ProductStatusMenu from "@/components/admin/ProductStatusMenu";
 import BottomSheet from "@/components/ui/BottomSheet";
+import CustomSelect from "@/components/ui/CustomSelect";
 
 const WHATSAPP = import.meta.env.VITE_WHATSAPP_NUMBER;
 
@@ -36,6 +38,7 @@ export default function AdminProductsPage() {
   const updateStatus    = useMutation(api.products.updateStatus);
   const adminUpdateCategory = useMutation(api.products.adminUpdateCategory);
   const adminUpdateTitle = useMutation(api.products.adminUpdateTitle);
+  const adminUpdateBrand = useMutation(api.products.adminUpdateBrand);
   const removeProduct       = useMutation(api.products.remove);
   const adminUpdatePhotos   = useMutation(api.products.adminUpdatePhotos);
   const setFeatured         = useMutation(api.products.setFeatured);
@@ -60,6 +63,9 @@ export default function AdminProductsPage() {
   const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(null); // Product ID with open dropdown
   const [editingTitleId, setEditingTitleId] = useState(null); // Product ID being edited
   const [editingTitleValue, setEditingTitleValue] = useState(""); // Title being edited
+  const [editingBrandId, setEditingBrandId] = useState(null); // Product ID being edited
+  const [selectedBrand, setSelectedBrand] = useState(null); // Selected brand
+  const [brandDropdownOpen, setBrandDropdownOpen] = useState(null); // Product ID with open dropdown
 
   const statusLabels = {
     all:      m.adminAllStatus(),
@@ -113,7 +119,7 @@ export default function AdminProductsPage() {
   async function reject(product) {
     if (!rejectReason.trim()) return;
     await updateStatus({ id: product._id, status: "rejected", notes: rejectReason.trim() });
-    await createNotif({ sellerId: product.sellerId, productId: product._id, message: m.adminRejectMsg({ title: product.title, reason: rejectReason.trim() }), url: `/seller` });
+    await createNotif({ sellerId: product.sellerId, productId: product._id, message: m.adminRejectMsg({ title: product.title, reason: rejectReason.trim() }), url: `/seller/products/${product._id}/edit?from=rejection` });
     await log("rejected", product, rejectReason.trim());
     setRejectingId(null);
     setRejectReason("");
@@ -181,6 +187,18 @@ export default function AdminProductsPage() {
     await log("title_changed", product, `Changed from "${product.title}" to "${newTitle.trim()}"`);
     setEditingTitleId(null);
     setEditingTitleValue("");
+  }
+
+  async function updateBrand(product, newBrand) {
+    if (newBrand === (product.brand || "")) {
+      setEditingBrandId(null);
+      setSelectedBrand(null);
+      return;
+    }
+    await adminUpdateBrand({ id: product._id, brand: newBrand });
+    await log("brand_changed", product, `Changed from "${product.brand || "None"}" to "${newBrand || "None"}"`);
+    setEditingBrandId(null);
+    setSelectedBrand(null);
   }
 
   if (!products) {
@@ -380,6 +398,88 @@ export default function AdminProductsPage() {
                               setEditingCategoryId(product._id);
                               setSelectedCategory(product.category);
                               setCategoryDropdownOpen(null);
+                            }}
+                            className="text-xs font-medium border-2 bg-white text-cyan-600 border-cyan-300 hover:bg-cyan-50 hover:border-cyan-500 hover:text-cyan-700 px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap"
+                          >
+                            Edit
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Brand - editable for pending products */}
+                  <div className="mt-2">
+                    {editingBrandId === product._id ? (
+                      <div className="relative z-20 inline-block">
+                        <button
+                          onClick={() => setBrandDropdownOpen(brandDropdownOpen === product._id ? null : product._id)}
+                          className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg font-medium border-2 bg-cyan-100 text-cyan-700 border-cyan-400 hover:bg-cyan-200 hover:border-cyan-500 transition-colors"
+                        >
+                          {selectedBrand || product.brand || "None"}
+                          <svg className={`w-3 h-3 transition-transform duration-200 ${brandDropdownOpen === product._id ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </button>
+                        {brandDropdownOpen === product._id && (
+                          <div className="absolute start-0 top-full mt-2 bg-white border border-[var(--color-hairline)] rounded-lg shadow-lg z-40 overflow-hidden min-w-[180px]">
+                            <div className="max-h-56 overflow-y-auto">
+                              {getAllBrands().map(brand => (
+                                <button
+                                  key={brand}
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedBrand(brand);
+                                    updateBrand(product, brand);
+                                    setBrandDropdownOpen(null);
+                                  }}
+                                  className={`flex items-center justify-between w-full px-3 py-2 text-xs text-start whitespace-nowrap transition-colors ${
+                                    brand === (selectedBrand || product.brand)
+                                      ? "bg-cyan-50 text-cyan-700 font-semibold"
+                                      : "text-[var(--color-ink)] hover:bg-gray-50"
+                                  }`}
+                                >
+                                  {brand}
+                                  {brand === (selectedBrand || product.brand) && (
+                                    <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                  )}
+                                </button>
+                              ))}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedBrand("Other");
+                                  updateBrand(product, "Other");
+                                  setBrandDropdownOpen(null);
+                                }}
+                                className={`flex items-center justify-between w-full px-3 py-2 text-xs text-start whitespace-nowrap transition-colors ${
+                                  "Other" === (selectedBrand || product.brand)
+                                    ? "bg-cyan-50 text-cyan-700 font-semibold"
+                                    : "text-[var(--color-ink)] hover:bg-gray-50"
+                                }`}
+                              >
+                                Other
+                                {"Other" === (selectedBrand || product.brand) && (
+                                  <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                )}
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-medium px-2.5 py-1 rounded-lg bg-gray-100 text-gray-700">{product.brand || "None"}</span>
+                        {product.status === "pending" && (
+                          <button
+                            onClick={() => {
+                              setEditingBrandId(product._id);
+                              setSelectedBrand(product.brand || "");
+                              setBrandDropdownOpen(null);
                             }}
                             className="text-xs font-medium border-2 bg-white text-cyan-600 border-cyan-300 hover:bg-cyan-50 hover:border-cyan-500 hover:text-cyan-700 px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap"
                           >

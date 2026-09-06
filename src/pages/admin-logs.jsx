@@ -20,6 +20,9 @@ const ACTION_META = {
   offer_deactivated: { label: "Offer Deactivated", color: "bg-[var(--color-ember-50)] text-[var(--color-ink-fade)]"    },
   offer_reactivated: { label: "Offer Reactivated", color: "bg-green-100 text-green-600"  },
   offer_deleted:     { label: "Offer Deleted",     color: "bg-red-100 text-red-500"      },
+  title_changed:     { label: "Title Edited",      color: "bg-cyan-100 text-cyan-700"    },
+  category_changed:  { label: "Category Edited",   color: "bg-cyan-100 text-cyan-700"    },
+  brand_changed:     { label: "Brand Edited",      color: "bg-cyan-100 text-cyan-700"    },
 };
 
 function timeAgo(iso) {
@@ -112,6 +115,15 @@ export default function AdminLogsPage() {
                         {log.sellerName && <span>{log.sellerName}</span>}
                         {log.sellerName && log.productCode && <span className="text-[var(--color-ink-fade)]"> · </span>}
                         {log.productCode && <span className="text-[var(--color-ink-fade)]">{log.productCode}</span>}
+                      </p>
+                    )}
+                    {log.notes && (
+                      <p className={`text-[11px] mt-0.5 rounded-lg px-2 py-1 inline-block ${
+                        log.action === "rejected"
+                          ? "text-red-500 bg-red-50"
+                          : "text-cyan-600 bg-cyan-50"
+                      }`}>
+                        {log.action === "rejected" ? "Reason: " : ""}{log.notes}
                       </p>
                     )}
                   </div>

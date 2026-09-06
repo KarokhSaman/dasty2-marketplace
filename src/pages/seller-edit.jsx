@@ -17,7 +17,7 @@ import { useImageUpload } from "@/lib/useImageUpload";
 import { calculateProfit, formatPrice, formatPriceLocale, normalizeDigits } from "@/lib/utils";
 import CustomSelect from "@/components/ui/CustomSelect";
 import { CATEGORY_CONFIG, getCategoryLabel } from "@/lib/categories";
-import { getBrandOptions, hasBrandOption } from "@/lib/brands";
+import { getAllBrands } from "@/lib/brands";
 
 const CATEGORIES = CATEGORY_CONFIG.filter(c => c.value !== "all").map(c => c.value);
 
@@ -28,6 +28,8 @@ export default function EditProductPage() {
   const locale = getLocale();
   const { id } = useParams({ strict: false });
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const fromRejection = searchParams.get("from") === "rejection";
   const { seller, loading: sessionLoading } = useSellerSession();
   const fileInputRef = useRef(null);
 
@@ -188,6 +190,19 @@ export default function EditProductPage() {
 
       <h1 className="font-display text-[22px] text-[var(--color-ink)] mb-2">{m.editProductTitle()}</h1>
 
+      {/* Rejection notice */}
+      {fromRejection && product?.status === "rejected" && product?.notes && (
+        <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-6">
+          <svg className="w-4 h-4 text-red-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4v.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <div>
+            <p className="text-sm font-semibold text-red-700 mb-1">Rejection Reason:</p>
+            <p className="text-sm text-red-600">{product.notes}</p>
+          </div>
+        </div>
+      )}
+
       {/* Re-approval notice */}
       <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-6">
         <svg className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -238,27 +253,25 @@ export default function EditProductPage() {
           </div>
         </div>
 
-        {hasBrandOption(category) && (
-          <div>
-            <label className="block text-[13px] font-semibold text-[var(--color-ink)] mb-1.5">{m.fieldBrand()}</label>
-            <div className="relative">
-              <CustomSelect
-                value={brand}
-                onChange={setBrand}
-                placeholder={m.fieldBrandPlaceholder()}
-                options={[...getBrandOptions(category).map(b => ({ value: b, label: b })), { value: "Other", label: "Other" }]}
-              />
-              {brand && (
-                <button type="button" onClick={() => setBrand("")}
-                  className="absolute end-3 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded-full bg-[var(--color-cream-deep)] hover:bg-[var(--color-cream-deep)] text-[var(--color-ink-fade)] hover:text-[var(--color-ink-soft)] transition-colors">
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              )}
-            </div>
+        <div>
+          <label className="block text-[13px] font-semibold text-[var(--color-ink)] mb-1.5">{m.fieldBrand()}</label>
+          <div className="relative">
+            <CustomSelect
+              value={brand}
+              onChange={setBrand}
+              placeholder={m.fieldBrandPlaceholder()}
+              options={[...getAllBrands().map(b => ({ value: b, label: b })), { value: "Other", label: "Other" }]}
+            />
+            {brand && (
+              <button type="button" onClick={() => setBrand("")}
+                className="absolute end-3 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded-full bg-[var(--color-cream-deep)] hover:bg-[var(--color-cream-deep)] text-[var(--color-ink-fade)] hover:text-[var(--color-ink-soft)] transition-colors">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
           </div>
-        )}
+        </div>
 
         {/* Price */}
         <div>

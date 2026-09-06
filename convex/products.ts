@@ -369,6 +369,17 @@ export const adminUpdateTitle = mutation({
   },
 });
 
+export const adminUpdateBrand = mutation({
+  args: {
+    id: v.id("products"),
+    brand: v.string(),
+  },
+  handler: async (ctx, { id, brand }) => {
+    await requireAdmin(ctx);
+    await ctx.db.patch(id, { brand: brand.trim() || undefined });
+  },
+});
+
 export const getById = query({
   args: { id: v.id("products") },
   handler: async (ctx, { id }) => {
