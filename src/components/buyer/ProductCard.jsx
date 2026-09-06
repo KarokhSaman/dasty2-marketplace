@@ -30,16 +30,11 @@ function PinIcon() {
   );
 }
 
-function FeaturedStar() {
+function StarIcon() {
   return (
-    <span
-      title={m.badgeSponsored()}
-      className="inline-flex items-center justify-center shrink-0 w-4 h-4 rounded-full bg-[var(--color-ember-500)] text-white shadow-[0_2px_6px_-2px_rgba(237,0,64,0.6)]"
-    >
-      <svg className="w-2.5 h-2.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-        <path d="M12 2l2.39 6.96H22l-6.18 4.49L18.18 22 12 17.27 5.82 22l2.36-8.55L2 8.96h7.61L12 2z" />
-      </svg>
-    </span>
+    <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M12 2l2.39 6.96H22l-6.18 4.49L18.18 22 12 17.27 5.82 22l2.36-8.55L2 8.96h7.61L12 2z" />
+    </svg>
   );
 }
 
@@ -79,7 +74,7 @@ export default function ProductCard({ product, onSave }) {
           {/* Chips: sponsored + condition status (stacked vertically) */}
           <div className="absolute top-2.5 start-2.5 flex flex-col gap-1">
             {product.featured && (
-              <Chip tone="brand" dot className="backdrop-blur-md shadow-sm">
+              <Chip tone="brand" leadingIcon={<StarIcon />} className="backdrop-blur-md shadow-sm">
                 {m.badgeSponsored()}
               </Chip>
             )}
@@ -91,13 +86,6 @@ export default function ProductCard({ product, onSave }) {
               {product.condition === "new" ? m.badgeNew() : product.condition === "likenew" ? m.conditionLikeNew() : m.badgeUsed()}
             </Chip>
           </div>
-
-          {/* Featured star indicator: top-end */}
-          {product.featured && (
-            <span className="absolute top-2.5 end-2.5">
-              <FeaturedStar />
-            </span>
-          )}
         </div>
 
         {/* Info */}
