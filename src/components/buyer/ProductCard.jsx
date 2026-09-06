@@ -99,7 +99,12 @@ export default function ProductCard({ product, onSave }) {
             {product.title}
           </h3>
 
-          <div className="flex items-center gap-1.5 text-[11px] md:text-[10px] text-[var(--color-ink-fade)] mb-2 md:mb-1.5 min-w-0">
+          <div className="flex items-center gap-1.5 text-[11px] md:text-[10px] text-[var(--color-ink-fade)] mb-2 md:mb-1.5 min-w-0 flex-wrap">
+            {product.featured && (
+              <Chip tone="brand" size="sm" className="shrink-0">
+                {m.badgeSponsored()}
+              </Chip>
+            )}
             <span className="truncate">{categoryLabel}</span>
             {cityLabel && (
               <>
