@@ -81,7 +81,7 @@ export default function ProductCard({ product, onSave }) {
             <Chip
               tone={product.condition === "new" ? "success" : product.condition === "likenew" ? "neutral" : "warning"}
               dot
-              className="backdrop-blur-md shadow-sm"
+              className="backdrop-blur-md shadow-sm w-fit"
             >
               {product.condition === "new" ? m.badgeNew() : product.condition === "likenew" ? m.conditionLikeNew() : m.badgeUsed()}
             </Chip>
