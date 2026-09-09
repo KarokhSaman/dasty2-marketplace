@@ -214,17 +214,17 @@ function StickyMobileCTA({ price, waLink, seq }) {
   return (
     <div className="sm:hidden fixed inset-x-0 bottom-0 z-30 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 pointer-events-none">
       <div className="pointer-events-auto mx-auto max-w-md surface-frost rounded-[1.75rem] border border-[var(--color-hairline)] shadow-[0_18px_44px_-20px_rgba(11,12,15,0.22)] p-2.5 flex items-center gap-3">
-        <div className="flex flex-col min-w-0 ps-2">
+        <div className="flex flex-col min-w-0 ps-2 flex-1">
           {seq && (
             <span className="text-[10px] uppercase tracking-[0.14em] font-semibold text-[var(--color-ink-fade)] leading-none">
-              {m.productCode()} · {seq}
+              {m.productCode()} · <span dir="ltr" className="font-mono">{seq}</span>
             </span>
           )}
           <span className={seq ? "mt-1" : ""}>
             <PriceTag amount={price} size="lg" />
           </span>
         </div>
-        <WhatsAppButton href={waLink} size="md" className="ms-auto" />
+        <WhatsAppButton href={waLink} size="md" className="shrink-0" />
       </div>
     </div>
   );
@@ -400,7 +400,7 @@ export default function ProductDetailPage() {
             {product.seq && (
               <span className="inline-flex items-center gap-1">
                 {m.productCode()}
-                <span className="font-mono font-semibold text-[var(--color-ink-soft)] tracking-wide">{product.seq}</span>
+                <span className="font-mono font-semibold text-[var(--color-ink-soft)] tracking-wide" dir="ltr">{product.seq}</span>
               </span>
             )}
           </div>
