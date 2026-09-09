@@ -25,6 +25,21 @@ interface RouterContext {
   convexQueryClient: ConvexQueryClient
 }
 
+const metaTranslations = {
+  en: {
+    title: 'Baby Products in Kurdistan',
+    description: 'Buy and sell baby products in Kurdistan, Iraq',
+  },
+  ckb: {
+    title: 'کاڵای منداڵان لە کوردستان',
+    description: 'کڕین و فرۆشتنی کاڵای منداڵان لە کوردستان، عێراق',
+  },
+  ar: {
+    title: 'منتجات الأطفال في كردستان',
+    description: 'شراء وبيع منتجات الأطفال في كردستان، العراق',
+  },
+}
+
 export const Route = createRootRouteWithContext<RouterContext>()({
   beforeLoad: async (ctx) => {
     const locale = getLocale()
@@ -41,14 +56,17 @@ export const Route = createRootRouteWithContext<RouterContext>()({
     // De-localized pathname (TanStack Router's rewrite.input strips the locale
     // prefix before matching), so we re-localize per language for hreflang.
     const pathname = matches[matches.length - 1]?.pathname ?? '/'
+    const locale = getLocale()
+    const meta = metaTranslations[locale as keyof typeof metaTranslations] || metaTranslations.en
+
     return {
       meta: [
         { charSet: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' },
-        { title: 'Dasty2 Mndalan — Baby Products Erbil' },
+        { title: meta.title },
         {
           name: 'description',
-          content: 'Buy and sell baby products in Erbil, Iraq',
+          content: meta.description,
         },
       ],
       links: [

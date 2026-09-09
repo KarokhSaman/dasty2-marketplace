@@ -103,7 +103,7 @@ export default function VIPSpotlight({ products = [], onViewProduct }) {
   const containerRef = useRef(null);
   const lastDragRef = useRef(0);
 
-  if (!products || products.length === 0) return null;
+  if (!products || products.length < 5) return null;
 
   // Auto-rotate every 3 seconds
   useEffect(() => {
