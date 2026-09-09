@@ -456,8 +456,8 @@ export default function HomePage() {
         />
       )}
 
-      {/* VIP Spotlight - Modern Featured Product Hero */}
-      {vipCarouselProducts.length > 0 && (
+      {/* VIP Spotlight - Modern Featured Product Hero (desktop only, min 5 products) */}
+      {vipCarouselProducts.length >= 5 && (
         <VIPSpotlight
           products={vipCarouselProducts}
           onViewProduct={() => onSave?.()}
