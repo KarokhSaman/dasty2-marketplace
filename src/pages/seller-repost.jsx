@@ -90,7 +90,7 @@ export default function RepostPage() {
     if (!title.trim())                          errs.title    = true;
     if (!category)                              errs.category = true;
     if (!price || priceNum < 5000)              errs.price    = true;
-    if (photos.length === 0 && uploading === 0) errs.photos   = true;
+    if (photos.length < 2 && uploading === 0)   errs.photos   = true;
     setErrors(errs);
     return Object.keys(errs).length === 0;
   }
