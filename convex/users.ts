@@ -230,7 +230,19 @@ export const updateProfile = mutation({
   returns: v.null(),
   handler: async (ctx, { name, city, address }) => {
     const seller = await requireCurrentSeller(ctx);
+    const changes = [];
+    if (seller.name !== name) changes.push("name");
+    if (seller.city !== city) changes.push("city/address");
+    if (seller.address !== address) changes.push("address");
     await ctx.db.patch(seller._id, { name, city, address });
+    if (changes.length > 0) {
+      await ctx.db.insert("adminLogs", {
+        action: "profile_updated",
+        sellerName: seller.name,
+        notes: `Updated: ${changes.join(", ")}`,
+        createdAt: new Date().toISOString(),
+      });
+    }
     return null;
   },
 });

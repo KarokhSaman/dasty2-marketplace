@@ -324,6 +324,15 @@ export const add = mutation({
       read: false,
       createdAt: new Date().toISOString(),
     });
+    await ctx.db.insert("adminLogs", {
+      action: "product_posted",
+      productId: id.toString(),
+      productTitle: args.title,
+      productCode: seq,
+      sellerName: seller.name,
+      price: args.price,
+      createdAt: new Date().toISOString(),
+    });
     return id;
   },
 });
@@ -439,6 +448,24 @@ export const sellerUpdate = mutation({
       message: `Product resubmitted for review: "${fields.title}" by ${product.sellerName}`,
       url: "/admin/products?tab=pending",
       read: false,
+      createdAt: new Date().toISOString(),
+    });
+    const oldPhotoCount = product.photos?.length ?? 0;
+    const newPhotoCount = fields.photos?.length ?? 0;
+    let photoNotes = "";
+    if (newPhotoCount > oldPhotoCount) {
+      photoNotes = `Added ${newPhotoCount - oldPhotoCount} photo(s)`;
+    } else if (newPhotoCount < oldPhotoCount) {
+      photoNotes = `Removed ${oldPhotoCount - newPhotoCount} photo(s)`;
+    }
+    await ctx.db.insert("adminLogs", {
+      action: "product_edited",
+      productId: id.toString(),
+      productTitle: fields.title,
+      productCode: product.seq,
+      sellerName: product.sellerName,
+      price: fields.price,
+      notes: photoNotes || undefined,
       createdAt: new Date().toISOString(),
     });
     return null;

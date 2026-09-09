@@ -23,6 +23,11 @@ const ACTION_META = {
   title_changed:     { label: "Title Edited",      color: "bg-cyan-100 text-cyan-700"    },
   category_changed:  { label: "Category Edited",   color: "bg-cyan-100 text-cyan-700"    },
   brand_changed:     { label: "Brand Edited",      color: "bg-cyan-100 text-cyan-700"    },
+  product_posted:    { label: "Product Posted",    color: "bg-green-50 text-green-700"   },
+  product_edited:    { label: "Product Edited",    color: "bg-blue-50 text-blue-700"     },
+  photos_added:      { label: "Photos Added",      color: "bg-violet-50 text-violet-700" },
+  photos_removed:    { label: "Photos Removed",    color: "bg-orange-50 text-orange-600" },
+  profile_updated:   { label: "Profile Updated",   color: "bg-pink-50 text-pink-700"     },
 };
 
 function timeAgo(iso) {
