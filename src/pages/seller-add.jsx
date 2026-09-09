@@ -57,7 +57,7 @@ export default function AddProductPage() {
     setUploadError("");
     try {
       const url = await uploadImage(file);
-      setPhotos((prev) => prev.length < MAX_PHOTOS ? [...prev, url] : prev);
+      setPhotos((prev) => prev.length < MAX_PHOTOS ? [url, ...prev] : prev);
     } catch (err) {
       console.error("Image upload failed:", err);
       let errorMsg = "Upload error - please try again";
