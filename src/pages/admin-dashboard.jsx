@@ -164,15 +164,17 @@ export default function AdminDashboard() {
             <div className="divide-y divide-gray-50">
               {visibleLogs.map(log => {
                 const meta = ACTION_META[log.action] ?? { label: log.action, color: "bg-gray-100 text-[var(--color-ink-soft)]" };
-                const adminName = log.adminName || log.adminEmail || "Unknown Admin";
+                const isAdminAction = !!log.adminName || !!log.adminEmail;
+                const actorName = log.adminName || log.adminEmail || log.sellerName || "Unknown";
+                const avatarBg = isAdminAction ? "bg-rose-100 text-[var(--color-ember-600)]" : "bg-blue-100 text-blue-700";
                 return (
                   <div key={log._id} className="px-4 py-3.5 flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-full bg-rose-100 flex items-center justify-center text-xs font-bold text-[var(--color-ember-600)] shrink-0 mt-0.5">
-                      {adminName[0]?.toUpperCase()}
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 ${avatarBg}`}>
+                      {actorName[0]?.toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-xs font-semibold text-[var(--color-ink)]" dir="ltr">{adminName}</span>
+                        <span className="text-xs font-semibold text-[var(--color-ink)]" dir="ltr">{actorName} {!isAdminAction && <span className="text-[10px] font-normal text-[var(--color-ink-fade)]">(Seller)</span>}</span>
                         <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${meta.color}`}>
                           {meta.label}
                         </span>
