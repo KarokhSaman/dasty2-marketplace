@@ -540,6 +540,15 @@ export const sellerRemove = mutation({
       throw new Error("Only pending or rejected products can be deleted");
     }
     await deleteProductData(ctx, product);
+    await ctx.db.insert("adminLogs", {
+      action: "product_deleted",
+      productId: id.toString(),
+      productTitle: product.title,
+      productCode: product.seq,
+      sellerName: seller.name,
+      price: product.price,
+      createdAt: new Date().toISOString(),
+    });
     return null;
   },
 });
@@ -548,10 +557,20 @@ export const remove = mutation({
   args: { id: v.id("products") },
   returns: v.null(),
   handler: async (ctx, { id }) => {
-    await requireAdmin(ctx);
+    const { user } = await requireAdmin(ctx);
     const product = await ctx.db.get(id);
     if (!product) return null;
     await deleteProductData(ctx, product);
+    await ctx.db.insert("adminLogs", {
+      action: "product_deleted",
+      productId: id.toString(),
+      productTitle: product.title,
+      productCode: product.seq,
+      sellerName: product.sellerName,
+      price: product.price,
+      adminName: user!.name,
+      createdAt: new Date().toISOString(),
+    });
     return null;
   },
 });
