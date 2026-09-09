@@ -47,7 +47,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
       meta: [
         { charSet: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' },
-        { title: 'New and Pre-Loved Baby Products' },
+        { title: 'Dasty2 Mndalan - New and Pre-Loved Baby Products' },
         {
           name: 'description',
           content: 'Buy and sell baby products in Kurdistan, Iraq',
