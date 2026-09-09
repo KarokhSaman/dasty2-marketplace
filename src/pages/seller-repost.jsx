@@ -247,17 +247,27 @@ export default function RepostPage() {
           <label className="block text-[13px] font-semibold text-[var(--color-ink)] mb-1.5">
             {m.fieldPrice()} <span className="text-rose-500">*</span>
           </label>
-          <input
-            type="text" inputMode="decimal"
-            dir={locale === "en" ? "ltr" : "rtl"}
-            value={price}
-            onChange={(e) => {
-              const val = e.target.value.replace(/[^\d٠-٩۰-۹]/g, "");
-              setPrice(val);
-            }}
-            placeholder={m.fieldPricePlaceholder()}
-            className={`w-full rounded-xl border bg-white px-4 py-2.5 text-[var(--color-ink)] placeholder:text-[var(--color-ink-fade)] focus:outline-none focus:ring-4 transition ${locale === "en" ? "pr-10" : "pl-10"} ${errors.price ? "border-red-400 bg-red-50" : "border-[var(--color-hairline)] focus:border-[var(--color-ember-300)] focus:ring-[var(--color-ember-100)]/50"}`}
-          />
+          <div className="relative">
+            <input
+              type="text" inputMode="decimal"
+              dir={locale === "en" ? "ltr" : "rtl"}
+              value={price}
+              onChange={(e) => {
+                const val = e.target.value.replace(/[^\d٠-٩۰-۹]/g, "");
+                setPrice(val);
+              }}
+              placeholder={m.fieldPricePlaceholder()}
+              className={`w-full rounded-xl border bg-white px-4 py-2.5 text-[var(--color-ink)] placeholder:text-[var(--color-ink-fade)] focus:outline-none focus:ring-4 transition ${locale === "en" ? "pr-10" : "pl-10"} ${errors.price ? "border-red-400 bg-red-50" : "border-[var(--color-hairline)] focus:border-[var(--color-ember-300)] focus:ring-[var(--color-ember-100)]/50"}`}
+            />
+            {price && (
+              <button type="button" onClick={() => setPrice("")}
+                className={`absolute ${locale === "en" ? "right-3" : "left-3"} top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center rounded-full bg-[var(--color-cream-deep)] hover:bg-[var(--color-cream-deep)] text-[var(--color-ink-fade)] hover:text-[var(--color-ink-soft)] transition-colors`}>
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
           {price && priceNum >= 5000 && (
             activeOffer ? (
               <div className={`mt-2 rounded-lg px-3 py-2 ${
