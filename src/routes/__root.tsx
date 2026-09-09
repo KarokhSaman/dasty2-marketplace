@@ -50,7 +50,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
         { title: 'Dasty2 Mndalan - New and Pre-Loved Baby Products' },
         {
           name: 'description',
-          content: 'Buy and sell baby products in Kurdistan, Iraq',
+          content: 'کڕین و فرۆشتنی کاڵای منداڵان لە کوردستان، عێراق',
         },
       ],
       links: [
