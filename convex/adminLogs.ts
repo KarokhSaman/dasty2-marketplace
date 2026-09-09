@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { requireAdmin } from "./auth";
+import { requireAdmin, getCurrentUser } from "./auth";
 
 export const create = mutation({
   args: {
@@ -18,6 +18,27 @@ export const create = mutation({
     await ctx.db.insert("adminLogs", {
       ...args,
       adminName: user!.name,
+      createdAt: new Date().toISOString(),
+    });
+  },
+});
+
+export const logSellerAction = mutation({
+  args: {
+    action:       v.string(),
+    productId:    v.optional(v.string()),
+    productTitle: v.optional(v.string()),
+    productCode:  v.optional(v.string()),
+    price:        v.optional(v.number()),
+    notes:        v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const { user } = await getCurrentUser(ctx);
+    if (!user) throw new Error("Not authenticated");
+
+    await ctx.db.insert("adminLogs", {
+      ...args,
+      sellerName: user.name,
       createdAt: new Date().toISOString(),
     });
   },
