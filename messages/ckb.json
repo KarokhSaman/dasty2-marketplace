@@ -25,7 +25,7 @@
   "contactToBuy": "بۆ کڕین پەیوەندی بکە لە ڕێگەی واتساپ ",
   "back": "گەڕانەوە",
   "notFound": "کاڵاکە نەدۆزرایەوە",
-  "waMessage": "سڵاو، دەمەوێت ئەم کاڵایە بکڕم:\nکۆدی کاڵا: {seq}\n{title} — {price}\n{url}",
+  "waMessage": "سڵاو، دەمەوێت ئەم کاڵایە بکڕم:\nکۆدی کاڵا: ‏{seq}‏\n{title} — {price}\n{url}",
   "productCode": "کۆدی کاڵا",
   "sellerDeleteConfirm": "دڵنیای لە سڕینەوە؟",
   "footerText": "بازاڕی کاڵای منداڵان، کوردستان، عێراق",
