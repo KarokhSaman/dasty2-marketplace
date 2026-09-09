@@ -28,7 +28,7 @@ const STATUS_STYLE = {
   paid:     "bg-purple-100 text-purple-700",
 };
 
-const TABS = ["all","pending","approved","rejected","sold","paid"];
+const TABS = ["all","pending","approved","rejected","sold","paid","sponsored"];
 
 export default function AdminProductsPage() {
   const searchParams = useSearchParams();
@@ -68,17 +68,25 @@ export default function AdminProductsPage() {
   const [brandDropdownOpen, setBrandDropdownOpen] = useState(null); // Product ID with open dropdown
 
   const statusLabels = {
-    all:      m.adminAllStatus(),
-    pending:  m.statusPending(),
-    approved: m.statusApproved(),
-    rejected: m.statusRejected(),
-    sold:     m.statusSold(),
-    paid:     m.statusPaid(),
+    all:       m.adminAllStatus(),
+    pending:   m.statusPending(),
+    approved:  m.statusApproved(),
+    rejected:  m.statusRejected(),
+    sold:      m.statusSold(),
+    paid:      m.statusPaid(),
+    sponsored: "Sponsored",
   };
 
   const filtered = useMemo(() => {
     if (!products) return [];
-    const list = tab === "all" ? products : products.filter((p) => p.status === tab);
+    let list;
+    if (tab === "all") {
+      list = products;
+    } else if (tab === "sponsored") {
+      list = products.filter((p) => p.featured === true);
+    } else {
+      list = products.filter((p) => p.status === tab);
+    }
     const q = search.trim().toLowerCase();
     const searched = q
       ? list.filter((p) =>
@@ -94,7 +102,11 @@ export default function AdminProductsPage() {
   const counts = useMemo(() => {
     if (!products) return {};
     return Object.fromEntries(
-      TABS.map((s) => [s, s === "all" ? products.length : products.filter((p) => p.status === s).length])
+      TABS.map((s) => {
+        if (s === "all") return [s, products.length];
+        if (s === "sponsored") return [s, products.filter((p) => p.featured === true).length];
+        return [s, products.filter((p) => p.status === s).length];
+      })
     );
   }, [products]);
 
