@@ -152,6 +152,7 @@ export default function AddProductPage() {
           <label className="block text-[13px] font-semibold text-[var(--color-ink)] mb-1.5">{m.fieldTitle()} <span className="text-rose-500">*</span></label>
           <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={m.fieldTitlePlaceholder()}
             className={`w-full rounded-xl border bg-white px-4 py-2.5 text-[var(--color-ink)] placeholder:text-[var(--color-ink-fade)] focus:outline-none focus:ring-4 transition ${errors.title ? "border-red-400 bg-red-50" : "border-[var(--color-hairline)] focus:border-[var(--color-ember-300)] focus:ring-[var(--color-ember-100)]/50"}`} />
+          {errors.title && <p className="mt-1 text-xs text-red-500">{m.errTitleRequired()}</p>}
         </div>
 
         <div className="grid grid-cols-2 gap-4">
@@ -167,6 +168,7 @@ export default function AddProductPage() {
               error={errors.category}
               options={CATEGORIES.map(c => ({ value: c, label: getCategoryLabel(c, locale) }))}
             />
+            {errors.category && <p className="mt-1 text-xs text-red-500">{m.errCategoryRequired()}</p>}
           </div>
           <div>
             <label className="block text-[13px] font-semibold text-[var(--color-ink)] mb-1.5">{m.fieldCondition()} <span className="text-rose-500">*</span></label>
@@ -225,6 +227,8 @@ export default function AddProductPage() {
               </button>
             )}
           </div>
+          {errors.price && <p className="mt-1 text-xs text-red-500">{!price ? m.errPriceRequired() : m.priceRange()}</p>}
+          {!errors.price && <p className="mt-1 text-xs text-[var(--color-ink-fade)]">{m.priceRange()}</p>}
           {price && priceNum >= 5000 && (
             activeOffer ? (
               <div className={`mt-2 rounded-lg px-3 py-2 ${
@@ -253,7 +257,6 @@ export default function AddProductPage() {
               </p>
             ) : null
           )}
-          {errors.price && <p className="mt-1 text-xs text-red-500">{m.priceRange()}</p>}
         </div>
 
         <div>
