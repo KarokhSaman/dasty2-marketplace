@@ -126,22 +126,12 @@ export async function buildStoryImage({ title, price, photo, meta, code, site, r
   ctx.textAlign = align;
   ctx.textBaseline = "alphabetic";
 
-  // Header — brand wordmark
-  ctx.fillStyle = BRAND;
-  ctx.font = `800 46px ${family}`;
-  ctx.fillText("Dasty2 Mndalan", edge, 160);
-
-  // Title
-  ctx.fillStyle = INK;
-  const titleSize = fitText(ctx, title, W - 180, 76, family, "800");
-  ctx.font = `800 ${titleSize}px ${family}`;
-  ctx.fillText(title, edge, panelY + panelH + 130);
-
-  // Meta line (city · category)
+  // Meta line (city only)
   if (meta) {
+    const cityOnly = meta.split(" · ")[0];
     ctx.fillStyle = INK_SOFT;
-    ctx.font = `500 40px ${family}`;
-    ctx.fillText(meta, edge, panelY + panelH + 195);
+    ctx.font = `600 40px ${family}`;
+    ctx.fillText(cityOnly, edge, panelY + panelH + 195);
   }
 
   // Price
@@ -182,19 +172,13 @@ export async function buildStoryImage({ title, price, photo, meta, code, site, r
 
       ctx.textAlign = rtl ? "right" : "left";
       ctx.textBaseline = "alphabetic";
-      ctx.fillStyle = BRAND;
-      ctx.font = `800 46px ${family}`;
-      ctx.fillText("Dasty2 Mndalan", rtl ? W - 90 : 90, 160);
 
-      ctx.fillStyle = INK;
-      const titleSize = fitText(ctx, title, W - 180, 76, family, "800");
-      ctx.font = `800 ${titleSize}px ${family}`;
-      ctx.fillText(title, rtl ? W - 90 : 90, panelY + panelH + 130);
-
+      // Meta line (city only)
       if (meta) {
+        const cityOnly = meta.split(" · ")[0];
         ctx.fillStyle = INK_SOFT;
-        ctx.font = `500 40px ${family}`;
-        ctx.fillText(meta, rtl ? W - 90 : 90, panelY + panelH + 195);
+        ctx.font = `600 40px ${family}`;
+        ctx.fillText(cityOnly, rtl ? W - 90 : 90, panelY + panelH + 195);
       }
 
       ctx.fillStyle = BRAND;
