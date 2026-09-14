@@ -5,7 +5,6 @@
   "compatibility_flags": ["nodejs_compat"],
   "main": "src/server.ts",
   "routes": [
-    { "pattern": "dev.dasty2mndalan.com/*", "zone_name": "dasty2mndalan.com" },
     { "pattern": "dev.mndallan.com/*", "zone_name": "mndallan.com" }
   ],
   "keep_vars": true,
@@ -36,8 +35,6 @@
     "production": {
       "name": "dasty2-marketplace-pro",
       "routes": [
-        { "pattern": "dasty2mndalan.com/*", "zone_name": "dasty2mndalan.com" },
-        { "pattern": "www.dasty2mndalan.com/*", "zone_name": "dasty2mndalan.com" },
         { "pattern": "mndallan.com/*", "zone_name": "mndallan.com" },
         { "pattern": "www.mndallan.com/*", "zone_name": "mndallan.com" }
       ],
