@@ -86,9 +86,8 @@ function InfoPanel({ onOpenFees }) {
   return (
     <aside className="hidden lg:flex h-full min-h-0 flex-col justify-center overflow-hidden bg-white border-e border-[var(--color-hairline)] px-10 py-8 xl:px-14">
       <div className="max-w-lg">
-        <p className="text-xl font-bold tracking-tight mb-4" dir="ltr">
-          <span className="text-[var(--color-ember-600)]">Dasty2</span>{" "}
-          <span className="font-medium text-[var(--color-ink-soft)]">Mndalan</span>
+        <p className="text-xl font-bold tracking-tight mb-4 text-[var(--color-ember-600)]" dir="ltr">
+          Mndallan
         </p>
         <h2 className="text-3xl xl:text-4xl font-display text-[var(--color-ink)] leading-tight">{m.loginHeroTitle()}</h2>
         <p className="text-[var(--color-ink-soft)] mt-3 text-sm leading-relaxed">{m.loginHeroSub()}</p>

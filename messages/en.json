@@ -119,11 +119,11 @@
   "acctFeesFeeCol": "Service Fee",
   "acctFeesNote": "Buyers pay nothing. Fee applies to sellers only.",
   "acctAboutSec": "About",
-  "acctAboutTitle": "About Dasty2 Mndalan",
+  "acctAboutTitle": "About Mndallan",
   "acctAboutSub": "Our story and mission",
   "acctContactTitle": "Contact Us",
   "acctContactSub": "Chat with us on WhatsApp",
-  "acctFooter": "Dasty2 Mndalan · Erbil, Iraq",
+  "acctFooter": "Mndallan · Erbil, Iraq",
   "acctMyAccountSec": "My Account",
   "acctSupportSec": "Support",
   "acctMyProductsSub": "View and manage your listings",
@@ -162,7 +162,7 @@
   "adminSoldMsg": "Your product \"{title}\" has been marked as sold!",
   "adminPaidMsg": "Your payment for \"{title}\" has been processed!",
 
-  "adminLoginTitle": "Dasty2 Admin",
+  "adminLoginTitle": "Mndallan Admin",
   "adminEnterEmail": "Enter your admin email",
   "adminEmailNotRegistered": "This email is not registered as an admin.",
 

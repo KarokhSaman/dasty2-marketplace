@@ -15,11 +15,10 @@ function Wordmark() {
     <Link
       to="/seller"
       dir="ltr"
-      aria-label="Dasty2 Mndalan"
+      aria-label="Mndallan"
       className="group inline-flex items-center gap-1.5 shrink-0 select-none"
     >
-      <span className="text-lg font-bold text-[var(--color-ember-600)] tracking-tight">Dasty2</span>
-      <span className="text-lg font-medium text-[var(--color-ink-soft)]">Mndalan</span>
+      <span className="text-lg font-bold text-[var(--color-ember-600)] tracking-tight">Mndallan</span>
     </Link>
   );
 }

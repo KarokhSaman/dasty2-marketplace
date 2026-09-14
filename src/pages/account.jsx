@@ -73,10 +73,10 @@ export default function BuyerAccountPage() {
       <div className="surface-card p-5 mb-3">
         <div className="flex items-center gap-3.5 mb-3">
           <div className="w-12 h-12 rounded-2xl bg-[var(--color-ember-500)] flex items-center justify-center shrink-0 shadow-[0_8px_18px_-8px_rgba(237,0,64,0.6)]">
-            <span dir="ltr" className="text-xl font-display text-white">{isSignedIn ? signedInInitial : "D2"}</span>
+            <span dir="ltr" className="text-xl font-display text-white">{isSignedIn ? signedInInitial : "M"}</span>
           </div>
           <div className="min-w-0">
-            <p className="font-display text-[17px] text-[var(--color-ink)] leading-tight">{isSignedIn ? (displayName || m.acctMyAccountSec()) : "Dasty2 Mndalan"}</p>
+            <p className="font-display text-[17px] text-[var(--color-ink)] leading-tight">{isSignedIn ? (displayName || m.acctMyAccountSec()) : "Mndallan"}</p>
             <p className="text-[var(--color-ink-soft)] text-[12.5px] mt-0.5">{isSignedIn ? email : m.acctAppTagline()}</p>
           </div>
         </div>

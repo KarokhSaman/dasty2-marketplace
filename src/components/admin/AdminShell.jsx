@@ -123,8 +123,7 @@ export default function AdminShell({ children }) {
           {/* Left: logo + desktop nav */}
           <div className="flex items-center gap-2">
             <Link to="/admin" dir="ltr" className="group inline-flex items-center gap-1.5 shrink-0 select-none">
-              <span className="text-lg font-bold text-[var(--color-ember-600)] tracking-tight">Dasty2</span>
-              <span className="text-lg font-medium text-[var(--color-ink-soft)]">Mndalan</span>
+              <span className="text-lg font-bold text-[var(--color-ember-600)] tracking-tight">Mndallan</span>
             </Link>
             <div className="hidden xl:flex items-center gap-1 ms-2 ps-2 border-s border-[var(--color-hairline)]">
               {navTabs.map(tab => (

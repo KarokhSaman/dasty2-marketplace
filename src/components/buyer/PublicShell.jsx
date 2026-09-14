@@ -17,11 +17,10 @@ function Wordmark() {
     <Link
       to="/"
       dir="ltr"
-      aria-label="Dasty2 Mndalan — home"
+      aria-label="Mndallan — home"
       className="group inline-flex items-center gap-1.5 shrink-0 select-none"
     >
-      <span className="text-lg font-bold text-[var(--color-ember-600)] tracking-tight">Dasty2</span>
-      <span className="text-lg font-medium text-[var(--color-ink-soft)]">Mndalan</span>
+      <span className="text-lg font-bold text-[var(--color-ember-600)] tracking-tight">Mndallan</span>
     </Link>
   );
 }
@@ -285,7 +284,7 @@ export default function PublicShell({ children }) {
       {!isAuthPage && (
         <footer className="hidden sm:block border-t border-[var(--color-hairline)] bg-white/40 mt-12 py-8">
           <p className="text-center text-sm text-[var(--color-ink-fade)]">
-            © {new Date().getFullYear()} <span className="font-display font-semibold"><span className="text-[var(--color-ink)]">Dasty2</span> <span className="text-[var(--color-ember-600)]">Mndalan</span></span> — {m.footerText()}
+            © {new Date().getFullYear()} <span className="font-display font-semibold text-[var(--color-ink)]">Mndallan</span> — {m.footerText()}
           </p>
         </footer>
       )}

@@ -119,11 +119,11 @@
   "acctFeesFeeCol": "رسوم الخدمة",
   "acctFeesNote": "المشتري لا يدفع شيئاً. الرسوم على البائع فقط.",
   "acctAboutSec": "حول",
-  "acctAboutTitle": "حول Dasty2 Mndalan",
+  "acctAboutTitle": "حول Mndallan",
   "acctAboutSub": "قصتنا ومهمتنا",
   "acctContactTitle": "تواصل معنا",
   "acctContactSub": "تحدث إلينا على واتساب",
-  "acctFooter": "Dasty2 Mndalan · أربيل، العراق",
+  "acctFooter": "Mndallan · أربيل، العراق",
   "acctMyAccountSec": "حسابي",
   "acctSupportSec": "الدعم",
   "acctMyProductsSub": "عرض وإدارة منتجاتك",
@@ -162,7 +162,7 @@
   "adminSoldMsg": "تم بيع منتجك \"{title}\"!",
   "adminPaidMsg": "تم دفع عائد منتجك \"{title}\"!",
 
-  "adminLoginTitle": "مشرف Dasty2",
+  "adminLoginTitle": "مشرف Mndallan",
   "adminEnterEmail": "أدخل بريد المشرف الإلكتروني",
   "adminEmailNotRegistered": "هذا البريد الإلكتروني غير مسجّل كمشرف.",
 

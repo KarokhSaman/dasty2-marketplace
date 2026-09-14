@@ -159,7 +159,7 @@ export const seedProducts = mutation({
     } else {
       const newId = await ctx.db.insert("users", {
         role: "seller",
-        name: "Dasty2 Demo",
+        name: "Mndallan Demo",
         email: "demo@dasty2mndalan.com",
         phone: "+964 750 971 7177",
         city: "Erbil",
@@ -167,7 +167,7 @@ export const seedProducts = mutation({
         isActive: true,
       });
       sellerId    = newId.toString();
-      sellerName  = "Dasty2 Demo";
+      sellerName  = "Mndallan Demo";
       sellerPhone = "+964 750 971 7177";
     }
 
