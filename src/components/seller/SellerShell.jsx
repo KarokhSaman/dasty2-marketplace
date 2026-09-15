@@ -13,12 +13,21 @@ import { useGlobalSellerSession } from "@/lib/SellerSessionContext";
 function Wordmark() {
   return (
     <Link
-      to="/seller"
+      to="/"
       dir="ltr"
-      aria-label="Mndallan"
-      className="group inline-flex items-center gap-1.5 shrink-0 select-none"
+      aria-label="Mndallan — home"
+      className="group inline-flex items-center gap-2.5 shrink-0 select-none"
     >
-      <span className="text-lg font-bold text-[var(--color-ember-600)] tracking-tight">Mndallan</span>
+      <img
+        src="/logo-mndallan.svg"
+        alt=""
+        className="w-10 h-10"
+        style={{ color: 'var(--color-ink)' }}
+      />
+      <div className="flex flex-col gap-0 h-10 justify-center">
+        <span className="text-base font-bold text-[var(--color-ember-600)] tracking-tight leading-none">Mndallan</span>
+        <span className="text-xs text-[var(--color-ink-soft)] font-medium leading-none">Baby Marketplace</span>
+      </div>
     </Link>
   );
 }
@@ -99,7 +108,7 @@ export default function SellerShell({ children }) {
       />
 
       {/* ── Top bar ── */}
-      <header className="sticky top-0 z-[70] bg-[var(--color-cream)] border-b border-[var(--color-hairline)] shadow-[0_1px_0_rgba(11,12,15,0.02)]">
+      <header dir="ltr" className="sticky top-0 z-[70] bg-[var(--color-cream)] border-b border-[var(--color-hairline)] shadow-[0_1px_0_rgba(11,12,15,0.02)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Wordmark />

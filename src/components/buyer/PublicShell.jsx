@@ -12,15 +12,38 @@ import { api } from "@/convex/_generated/api";
 import { useGlobalSellerSession } from "@/lib/SellerSessionContext";
 
 // ── Wordmark ──────────────────────────────────────────────
-function Wordmark() {
+function Wordmark({ isAuthPage }) {
+  const content = (
+    <>
+      <img
+        src="/logo-mndallan.svg"
+        alt=""
+        className="w-10 h-10"
+        style={{ color: 'var(--color-ink)' }}
+      />
+      <div className="flex flex-col gap-0 h-10 justify-center">
+        <span className="text-base font-bold text-[var(--color-ember-600)] tracking-tight leading-none">Mndallan</span>
+        <span className="text-xs text-[var(--color-ink-soft)] font-medium leading-none">Baby Marketplace</span>
+      </div>
+    </>
+  );
+
+  if (isAuthPage) {
+    return (
+      <div dir="ltr" className="inline-flex items-center gap-2.5 shrink-0 select-none">
+        {content}
+      </div>
+    );
+  }
+
   return (
     <Link
       to="/"
       dir="ltr"
       aria-label="Mndallan — home"
-      className="group inline-flex items-center gap-1.5 shrink-0 select-none"
+      className="group inline-flex items-center gap-2.5 shrink-0 select-none"
     >
-      <span className="text-lg font-bold text-[var(--color-ember-600)] tracking-tight">Mndallan</span>
+      {content}
     </Link>
   );
 }
@@ -39,7 +62,7 @@ function SellerDesktopNav() {
 
   return (
     <div className="flex items-center gap-2">
-      <Wordmark />
+      <Wordmark isAuthPage={isAuthPage} />
 
       {!isAuthPage && (
         <div className="hidden xl:flex items-center gap-1 ms-2 ps-2 border-s border-[var(--color-hairline)]">
@@ -264,7 +287,7 @@ export default function PublicShell({ children }) {
         }}
       />
 
-      <header className="sticky top-0 z-[70] bg-[var(--color-cream)] border-b border-[var(--color-hairline)] shadow-[0_1px_0_rgba(11,12,15,0.03)]">
+      <header dir="ltr" className="sticky top-0 z-[70] bg-[var(--color-cream)] border-b border-[var(--color-hairline)] shadow-[0_1px_0_rgba(11,12,15,0.03)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <SellerDesktopNav />
           <HeaderActions />
