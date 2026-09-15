@@ -126,10 +126,24 @@ export async function buildStoryImage({ title, price, photo, meta, code, site, r
   ctx.fillStyle = PAPER;
   ctx.fillRect(0, 0, W, H);
 
-  // Logo — top-left corner
+  // Branded header — logo + text (Mndallan + Baby Marketplace)
   if (logo) {
-    const logoSize = 80;
-    ctx.drawImage(logo, 30, 30, logoSize, logoSize);
+    const logoSize = 100;
+    const logoX = 30;
+    const logoY = 30;
+    ctx.drawImage(logo, logoX, logoY, logoSize, logoSize);
+
+    // "Mndallan" text in red, next to logo
+    ctx.fillStyle = BRAND;
+    ctx.font = `bold 48px ${family}`;
+    ctx.textAlign = "left";
+    ctx.textBaseline = "top";
+    ctx.fillText("Mndallan", logoX + logoSize + 20, logoY + 8);
+
+    // "Baby Marketplace" tagline in gray, below brand name
+    ctx.fillStyle = INK_SOFT;
+    ctx.font = `500 28px ${family}`;
+    ctx.fillText("Baby Marketplace", logoX + logoSize + 20, logoY + 52);
   }
 
   // Photo panel — a tall rounded card, or a brand-tinted placeholder.
@@ -188,10 +202,24 @@ export async function buildStoryImage({ title, price, photo, meta, code, site, r
       ctx.fillStyle = PAPER;
       ctx.fillRect(0, 0, W, H);
 
-      // Logo — top-left corner
+      // Branded header — logo + text (Mndallan + Baby Marketplace)
       if (logo) {
-        const logoSize = 80;
-        ctx.drawImage(logo, 30, 30, logoSize, logoSize);
+        const logoSize = 100;
+        const logoX = 30;
+        const logoY = 30;
+        ctx.drawImage(logo, logoX, logoY, logoSize, logoSize);
+
+        // "Mndallan" text in red, next to logo
+        ctx.fillStyle = BRAND;
+        ctx.font = `bold 48px ${family}`;
+        ctx.textAlign = "left";
+        ctx.textBaseline = "top";
+        ctx.fillText("Mndallan", logoX + logoSize + 20, logoY + 8);
+
+        // "Baby Marketplace" tagline in gray, below brand name
+        ctx.fillStyle = INK_SOFT;
+        ctx.font = `500 28px ${family}`;
+        ctx.fillText("Baby Marketplace", logoX + logoSize + 20, logoY + 52);
       }
 
       const panelY = 240;
