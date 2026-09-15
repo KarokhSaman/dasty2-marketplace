@@ -45,6 +45,22 @@ function loadImage(src) {
   });
 }
 
+// Load the Mndallan logo from public folder
+function loadLogo() {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      console.log("✓ Logo loaded successfully");
+      resolve(img);
+    };
+    img.onerror = () => {
+      console.warn("⚠ Logo failed to load");
+      resolve(null);
+    };
+    img.src = "/logo-mndallan.svg";
+  });
+}
+
 function roundedRect(ctx, x, y, w, h, r) {
   ctx.beginPath();
   ctx.moveTo(x + r, y);
@@ -93,6 +109,7 @@ export async function buildStoryImage({ title, price, photo, meta, code, site, r
   }
 
   const img = await loadImage(photo);
+  const logo = await loadLogo();
 
   const canvas = document.createElement("canvas");
   canvas.width = W;
@@ -109,6 +126,12 @@ export async function buildStoryImage({ title, price, photo, meta, code, site, r
   ctx.fillStyle = PAPER;
   ctx.fillRect(0, 0, W, H);
 
+  // Logo — top-left corner
+  if (logo) {
+    const logoSize = 80;
+    ctx.drawImage(logo, 30, 30, logoSize, logoSize);
+  }
+
   // Photo panel — a tall rounded card, or a brand-tinted placeholder.
   const panelY = 240;
   const panelH = 1080;
@@ -118,7 +141,7 @@ export async function buildStoryImage({ title, price, photo, meta, code, site, r
   if (img) {
     drawCover(ctx, img, 90, panelY, W - 180, panelH);
   } else {
-    ctx.fillStyle = "#f6eee5";
+    ctx.fillStyle = PAPER;
     ctx.fillRect(90, panelY, W - 180, panelH);
   }
   ctx.restore();
@@ -165,9 +188,15 @@ export async function buildStoryImage({ title, price, photo, meta, code, site, r
       ctx.fillStyle = PAPER;
       ctx.fillRect(0, 0, W, H);
 
+      // Logo — top-left corner
+      if (logo) {
+        const logoSize = 80;
+        ctx.drawImage(logo, 30, 30, logoSize, logoSize);
+      }
+
       const panelY = 240;
       const panelH = 1080;
-      ctx.fillStyle = "#f6eee5";
+      ctx.fillStyle = PAPER;
       ctx.fillRect(90, panelY, W - 180, panelH);
 
       ctx.textAlign = rtl ? "right" : "left";
