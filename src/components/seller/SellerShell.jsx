@@ -16,7 +16,7 @@ function Wordmark() {
       to="/"
       dir="ltr"
       aria-label="Mndallan — home"
-      className="group inline-flex items-center gap-2.5 shrink-0 select-none"
+      className="group inline-flex items-center gap-1 shrink-0 select-none"
     >
       <img
         src="/logo-mndallan.svg"
@@ -26,7 +26,7 @@ function Wordmark() {
       />
       <div className="flex flex-col gap-0 h-10 justify-center">
         <span className="text-base font-bold text-[var(--color-ember-600)] tracking-tight leading-none">Mndallan</span>
-        <span className="text-xs text-[var(--color-ink-soft)] font-medium leading-none">Baby Marketplace</span>
+        <span className="text-[10px] text-[var(--color-ink-soft)] font-medium leading-none">Baby Marketplace</span>
       </div>
     </Link>
   );

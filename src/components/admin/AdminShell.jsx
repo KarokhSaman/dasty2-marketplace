@@ -122,7 +122,7 @@ export default function AdminShell({ children }) {
 
           {/* Left: logo + desktop nav */}
           <div className="flex items-center gap-2">
-            <Link to="/admin" dir="ltr" aria-label="Mndallan — admin dashboard" className="group inline-flex items-center gap-2.5 shrink-0 select-none">
+            <Link to="/admin" dir="ltr" aria-label="Mndallan — admin dashboard" className="group inline-flex items-center gap-1 shrink-0 select-none">
               <img
                 src="/logo-mndallan.svg"
                 alt=""
@@ -131,7 +131,7 @@ export default function AdminShell({ children }) {
               />
               <div className="flex flex-col gap-0 h-10 justify-center">
                 <span className="text-base font-bold text-[var(--color-ember-600)] tracking-tight leading-none">Mndallan</span>
-                <span className="text-xs text-[var(--color-ink-soft)] font-medium leading-none">Baby Marketplace</span>
+                <span className="text-[10px] text-[var(--color-ink-soft)] font-medium leading-none">Baby Marketplace</span>
               </div>
             </Link>
             <div className="hidden xl:flex items-center gap-1 ms-2 ps-2 border-s border-[var(--color-hairline)]">
