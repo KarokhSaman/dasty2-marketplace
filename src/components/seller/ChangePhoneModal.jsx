@@ -2,10 +2,12 @@ import { useState } from "react";
 import { useAction, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import * as m from "@/paraglide/messages";
+import { getLocale, getTextDirection } from "@/paraglide/runtime";
 import { DEFAULT_DIAL_CODE, DIAL_CODES, OTP_METHODS, toE164, isPlausiblePhone } from "@/lib/phone";
 import CustomSelect from "@/components/ui/CustomSelect";
 
 export default function ChangePhoneModal({ currentPhone, onClose, onSuccess }) {
+  const locale = getLocale();
   const [step, setStep] = useState("phone"); // "phone" | "method" | "otp"
   const [dialCode, setDialCode] = useState(DEFAULT_DIAL_CODE); // Default to Iraq
   const [local, setLocal] = useState("");
@@ -95,22 +97,22 @@ export default function ChangePhoneModal({ currentPhone, onClose, onSuccess }) {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-2xl border border-[var(--color-hairline)] p-5 max-w-sm w-full">
-        <h2 className="text-sm font-bold text-[var(--color-ink)] mb-4">Change Phone Number</h2>
+        <h2 className="text-sm font-bold text-[var(--color-ink)] mb-4">{m.changePhoneTitle()}</h2>
 
         {step === "phone" ? (
           <form onSubmit={handlePhoneSubmit} className="space-y-3">
             <div>
               <label className="block text-xs font-medium text-[var(--color-ink-soft)] mb-1">
-                Current Phone
+                {m.changePhoneCurrent()}
               </label>
-              <div className="w-full rounded-xl border border-[var(--color-hairline)] bg-[var(--color-cream)] px-4 py-2.5 text-[var(--color-ink)] text-sm" dir="ltr">
+              <div className={`w-full rounded-xl border border-[var(--color-hairline)] bg-[var(--color-cream)] px-4 py-2.5 text-[var(--color-ink)] text-sm ${getTextDirection(locale) === "rtl" ? "text-end" : "text-start"}`} dir="ltr">
                 {currentPhone}
               </div>
             </div>
 
             <div>
               <label className="block text-xs font-medium text-[var(--color-ink-soft)] mb-1">
-                Country Code
+                {m.changePhoneCountry()}
               </label>
               <CustomSelect
                 value={dialCode}
@@ -122,7 +124,7 @@ export default function ChangePhoneModal({ currentPhone, onClose, onSuccess }) {
 
             <div>
               <label className="block text-xs font-medium text-[var(--color-ink-soft)] mb-1">
-                Phone Number
+                {m.changePhoneNew()}
               </label>
               <div className="flex gap-2" dir="ltr">
                 <div className="bg-[var(--color-cream)] rounded-xl border border-[var(--color-hairline)] px-3 py-2.5 text-[var(--color-ink)] text-sm w-16 flex items-center justify-center shrink-0 font-medium">
@@ -152,21 +154,21 @@ export default function ChangePhoneModal({ currentPhone, onClose, onSuccess }) {
                 disabled={!local}
                 className="flex-1 bg-[var(--color-ember-500)] hover:bg-[var(--color-ember-600)] text-white text-sm font-semibold py-2.5 rounded-xl transition-colors disabled:opacity-50"
               >
-                Continue
+                {m.changePhoneContinue()}
               </button>
               <button
                 type="button"
                 onClick={onClose}
                 className="flex-1 bg-[var(--color-cream-deep)] text-[var(--color-ink)] text-sm font-semibold py-2.5 rounded-xl hover:bg-[var(--color-cream-deep)] transition-colors"
               >
-                Cancel
+                {m.changePhoneCancel()}
               </button>
             </div>
           </form>
         ) : step === "method" ? (
           <form onSubmit={handleSendOtp} className="space-y-4">
             <p className="text-xs text-[var(--color-ink-soft)]">
-              How would you like to receive the verification code?
+              {m.changePhoneMethod()}
             </p>
 
             <div className="space-y-2">
@@ -200,26 +202,26 @@ export default function ChangePhoneModal({ currentPhone, onClose, onSuccess }) {
                 disabled={loading}
                 className="flex-1 bg-[var(--color-ember-500)] hover:bg-[var(--color-ember-600)] text-white text-sm font-semibold py-2.5 rounded-xl transition-colors disabled:opacity-50"
               >
-                {loading ? "Sending..." : "Send Code"}
+                {loading ? "..." : m.changePhoneSend()}
               </button>
               <button
                 type="button"
                 onClick={handleBack}
                 className="flex-1 bg-[var(--color-cream-deep)] text-[var(--color-ink)] text-sm font-semibold py-2.5 rounded-xl hover:bg-[var(--color-cream-deep)] transition-colors"
               >
-                Back
+                {m.changePhoneBack()}
               </button>
             </div>
           </form>
         ) : (
           <form onSubmit={handleVerifyOtp} className="space-y-3">
             <p className="text-xs text-[var(--color-ink-soft)] mb-2" dir="ltr">
-              Enter the OTP sent to {e164}
+              {m.otpSent({ phone: e164 })}
             </p>
 
             <div>
               <label className="block text-xs font-medium text-[var(--color-ink-soft)] mb-1">
-                Verification Code
+                {m.changePhoneCode()}
               </label>
               <input
                 type="text"
@@ -245,14 +247,14 @@ export default function ChangePhoneModal({ currentPhone, onClose, onSuccess }) {
                 disabled={loading || code.length < 5}
                 className="flex-1 bg-[var(--color-ember-500)] hover:bg-[var(--color-ember-600)] text-white text-sm font-semibold py-2.5 rounded-xl transition-colors disabled:opacity-50"
               >
-                {loading ? "Verifying..." : "Verify"}
+                {loading ? "..." : m.changePhoneVerify()}
               </button>
               <button
                 type="button"
                 onClick={handleBack}
                 className="flex-1 bg-[var(--color-cream-deep)] text-[var(--color-ink)] text-sm font-semibold py-2.5 rounded-xl hover:bg-[var(--color-cream-deep)] transition-colors"
               >
-                Back
+                {m.changePhoneBack()}
               </button>
             </div>
           </form>
