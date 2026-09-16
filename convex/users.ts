@@ -247,6 +247,23 @@ export const updateProfile = mutation({
   },
 });
 
+export const updatePhone = mutation({
+  args: { newPhone: v.string() },
+  returns: v.object({ success: v.boolean() }),
+  handler: async (ctx, { newPhone }) => {
+    const seller = await requireCurrentSeller(ctx);
+    const oldPhone = seller.phone;
+    await ctx.db.patch(seller._id, { phone: newPhone });
+    await ctx.db.insert("adminLogs", {
+      action: "phone_updated",
+      sellerName: seller.name,
+      notes: `Phone changed from ${oldPhone} to ${newPhone}`,
+      createdAt: new Date().toISOString(),
+    });
+    return { success: true };
+  },
+});
+
 export const deleteSeller = mutation({
   args: { id: v.id("users") },
   handler: async (ctx, { id }) => {

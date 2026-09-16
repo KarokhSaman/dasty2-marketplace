@@ -115,6 +115,41 @@ export const verifyOtp = action({
   },
 });
 
+// Verify OTP for phone number change (does NOT create/update user, just validates phone)
+export const verifyOtpForPhoneChange = action({
+  args: { code: v.string(), verificationKey: v.string() },
+  returns: v.object({
+    ok: v.boolean(),
+    verifiedPhone: v.optional(v.string()),
+    errorCode: v.optional(v.string()),
+    errorMessage: v.optional(v.string()),
+  }),
+  handler: async (
+    _ctx,
+    { code, verificationKey },
+  ): Promise<{
+    ok: boolean;
+    verifiedPhone?: string;
+    errorCode?: string;
+    errorMessage?: string;
+  }> => {
+    const result = await vsValidateOtp({ code, verificationKey });
+
+    if (!result.succeed) {
+      return {
+        ok: false,
+        errorCode: result.errorCode ?? "OTP_INVALID",
+        errorMessage: result.errorMessage ?? undefined,
+      };
+    }
+
+    const phone = result.phoneNumber;
+    if (!phone) return { ok: false, errorCode: "NO_PHONE" };
+
+    return { ok: true, verifiedPhone: phone };
+  },
+});
+
 // Development-only shortcut used by the local browser QA flow. Both this action
 // and the internal mutation it calls require an explicit Convex environment flag.
 export const mockLogin = action({

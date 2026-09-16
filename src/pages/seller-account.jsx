@@ -7,6 +7,7 @@ import { getLocale, getTextDirection } from "@/paraglide/runtime";
 
 import { getCityOptions, getCityLabel } from "@/lib/cities";
 import CustomSelect from "@/components/ui/CustomSelect";
+import ChangePhoneModal from "@/components/seller/ChangePhoneModal";
 
 const FEE_TIERS = [
   { range: "5,000 – 9,000",       fee: "2,000" },
@@ -60,6 +61,7 @@ export default function SellerAccountPage() {
   const [showHow, setShowHow]   = useState(false);
   const [showFees, setShowFees] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
+  const [showChangePhone, setShowChangePhone] = useState(false);
 
   const [name, setName]       = useState("");
   const [city, setCity]       = useState("");
@@ -190,6 +192,15 @@ export default function SellerAccountPage() {
 
         <div className="border-t border-[var(--color-hairline)]" />
 
+        <MenuItem
+          label="Change Phone Number"
+          sub={seller.phone}
+          onClick={() => setShowChangePhone(true)}
+          icon={<svg className="w-4 h-4 text-[var(--color-ink-soft)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>}
+        />
+
+        <div className="border-t border-[var(--color-hairline)]" />
+
         {/* How it works */}
         <button onClick={() => setShowHow(v => !v)}
           className="w-full flex items-center gap-4 px-4 py-3.5 hover:bg-[var(--color-cream)] transition-colors text-start">
@@ -288,6 +299,18 @@ export default function SellerAccountPage() {
       </div>
 
       <p className="text-center text-xs text-[var(--color-ink-fade)] mt-6">{m.acctFooter()}</p>
+
+      {/* ── Change Phone Modal ── */}
+      {showChangePhone && (
+        <ChangePhoneModal
+          currentPhone={seller.phone}
+          onClose={() => setShowChangePhone(false)}
+          onSuccess={(newPhone) => {
+            setShowChangePhone(false);
+            window.location.reload();
+          }}
+        />
+      )}
     </div>
   );
 }
