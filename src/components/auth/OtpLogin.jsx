@@ -2,6 +2,7 @@ import { useState } from "react";
 import * as m from "@/paraglide/messages";
 import { getLocale } from "@/paraglide/runtime";
 import { DEFAULT_DIAL_CODE, DIAL_CODES, isPlausiblePhone, toE164 } from "@/lib/phone";
+import CustomSelect from "@/components/ui/CustomSelect";
 
 const METHODS = [
   { id: "whatsapp-otp", label: () => m.otpMethodWhatsapp() },
@@ -129,17 +130,18 @@ export default function OtpLogin({ onVerified }) {
             inputMode="numeric"
             autoComplete="one-time-code"
             value={code}
-            onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 8))}
-            placeholder={m.otpPlaceholder()}
+            onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 5))}
+            placeholder="00000"
+            maxLength="5"
             required
             dir="ltr"
-            className={`${inputCls} text-center tracking-[0.3em] text-lg`}
+            className={`${inputCls} text-center tracking-[0.3em] text-lg font-mono`}
           />
         </div>
         <ErrorBox message={error} />
         <button
           type="submit"
-          disabled={loading || code.trim().length < 4}
+          disabled={loading || code.trim().length < 5}
           className="w-full bg-rose-600 text-white font-semibold py-3 rounded-xl hover:bg-rose-700 transition-colors disabled:opacity-50"
         >
           {loading ? "..." : m.verifyBtn()}
@@ -174,6 +176,8 @@ export default function OtpLogin({ onVerified }) {
     );
   }
 
+  const dialCodeOptions = DIAL_CODES.map(d => ({ value: d.code, label: d.label }));
+
   return (
     <form onSubmit={handleSendSubmit} className="space-y-4">
       <div>
@@ -181,15 +185,14 @@ export default function OtpLogin({ onVerified }) {
           {m.loginPhoneLabel()} <span className="text-rose-500">*</span>
         </label>
         <div className="flex gap-2" dir="ltr">
-          <select
-            value={dialCode}
-            onChange={(e) => setDialCode(e.target.value)}
-            className="rounded-xl border border-[var(--color-hairline)] bg-white px-2 py-2.5 text-sm text-[var(--color-ink)] focus:outline-none focus:border-[var(--color-ember-300)]"
-          >
-            {DIAL_CODES.map((d) => (
-              <option key={d.code} value={d.code}>{d.label}</option>
-            ))}
-          </select>
+          <div className="w-32 shrink-0">
+            <CustomSelect
+              value={dialCode}
+              onChange={setDialCode}
+              options={dialCodeOptions}
+              placeholder="Code"
+            />
+          </div>
           <input
             type="tel"
             inputMode="numeric"

@@ -2,19 +2,34 @@ import { useState } from "react";
 import { useAction, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import * as m from "@/paraglide/messages";
+import { DEFAULT_DIAL_CODE, DIAL_CODES, OTP_METHODS, toE164, isPlausiblePhone } from "@/lib/phone";
+import CustomSelect from "@/components/ui/CustomSelect";
 
 export default function ChangePhoneModal({ currentPhone, onClose, onSuccess }) {
-  const [step, setStep] = useState("phone"); // "phone" | "otp"
-  const [newPhone, setNewPhone] = useState("");
-  const [otp, setOtp] = useState("");
+  const [step, setStep] = useState("phone"); // "phone" | "method" | "otp"
+  const [dialCode, setDialCode] = useState(DEFAULT_DIAL_CODE); // Default to Iraq
+  const [local, setLocal] = useState("");
+  const [otpMethod, setOtpMethod] = useState("whatsapp-otp"); // Default to WhatsApp
+  const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [verificationKey, setVerificationKey] = useState("");
-  const [methodName, setMethodName] = useState("");
+
+  const e164 = toE164(dialCode, local);
 
   const sendOtp = useAction(api.authActions.sendOtp);
   const verifyOtpForPhoneChange = useAction(api.authActions.verifyOtpForPhoneChange);
   const updatePhone = useMutation(api.users.updatePhone);
+
+  function handlePhoneSubmit(e) {
+    e.preventDefault();
+    setError("");
+    if (!isPlausiblePhone(dialCode, local)) {
+      setError("Please enter a valid phone number");
+      return;
+    }
+    setStep("method");
+  }
 
   async function handleSendOtp(e) {
     e.preventDefault();
@@ -23,13 +38,13 @@ export default function ChangePhoneModal({ currentPhone, onClose, onSuccess }) {
 
     try {
       const result = await sendOtp({
-        methodName: "sms-otp",
-        phoneNumber: newPhone,
+        methodName: otpMethod,
+        phoneNumber: e164,
         language: "en",
         clientIpv4: "127.0.0.1",
       });
       setVerificationKey(result.verificationKey);
-      setMethodName(result.methodName);
+      setCode("");
       setStep("otp");
     } catch (err) {
       setError(err.message || "Failed to send OTP");
@@ -45,7 +60,7 @@ export default function ChangePhoneModal({ currentPhone, onClose, onSuccess }) {
 
     try {
       const result = await verifyOtpForPhoneChange({
-        code: otp.trim(),
+        code: code.trim(),
         verificationKey,
       });
 
@@ -65,10 +80,17 @@ export default function ChangePhoneModal({ currentPhone, onClose, onSuccess }) {
   }
 
   function handleBack() {
-    setStep("phone");
-    setOtp("");
-    setError("");
+    if (step === "otp") {
+      setStep("method");
+      setCode("");
+      setError("");
+    } else if (step === "method") {
+      setStep("phone");
+      setError("");
+    }
   }
+
+  const dialCodeOptions = DIAL_CODES.map(d => ({ value: d.code, label: d.label }));
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
@@ -76,7 +98,7 @@ export default function ChangePhoneModal({ currentPhone, onClose, onSuccess }) {
         <h2 className="text-sm font-bold text-[var(--color-ink)] mb-4">Change Phone Number</h2>
 
         {step === "phone" ? (
-          <form onSubmit={handleSendOtp} className="space-y-3">
+          <form onSubmit={handlePhoneSubmit} className="space-y-3">
             <div>
               <label className="block text-xs font-medium text-[var(--color-ink-soft)] mb-1">
                 Current Phone
@@ -88,17 +110,34 @@ export default function ChangePhoneModal({ currentPhone, onClose, onSuccess }) {
 
             <div>
               <label className="block text-xs font-medium text-[var(--color-ink-soft)] mb-1">
-                New Phone Number
+                Country Code
               </label>
-              <input
-                type="tel"
-                value={newPhone}
-                onChange={(e) => setNewPhone(e.target.value)}
-                placeholder="+964..."
-                required
-                className="w-full rounded-xl border border-[var(--color-hairline)] bg-white px-4 py-2.5 text-[var(--color-ink)] placeholder:text-[var(--color-ink-fade)] focus:outline-none focus:border-[var(--color-ember-300)] focus:ring-4 focus:ring-[var(--color-ember-100)]/50 transition"
-                dir="ltr"
+              <CustomSelect
+                value={dialCode}
+                onChange={setDialCode}
+                options={dialCodeOptions}
+                placeholder="Select country"
               />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-[var(--color-ink-soft)] mb-1">
+                Phone Number
+              </label>
+              <div className="flex gap-2" dir="ltr">
+                <div className="bg-[var(--color-cream)] rounded-xl border border-[var(--color-hairline)] px-3 py-2.5 text-[var(--color-ink)] text-sm w-16 flex items-center justify-center shrink-0 font-medium">
+                  {dialCode}
+                </div>
+                <input
+                  type="tel"
+                  inputMode="numeric"
+                  value={local}
+                  onChange={(e) => setLocal(e.target.value.replace(/\D/g, ""))}
+                  placeholder="7X0000000"
+                  required
+                  className="flex-1 rounded-xl border border-[var(--color-hairline)] bg-white px-4 py-2.5 text-[var(--color-ink)] placeholder:text-[var(--color-ink-fade)] focus:outline-none focus:border-[var(--color-ember-300)] focus:ring-4 focus:ring-[var(--color-ember-100)]/50 transition"
+                />
+              </div>
             </div>
 
             {error && (
@@ -110,10 +149,10 @@ export default function ChangePhoneModal({ currentPhone, onClose, onSuccess }) {
             <div className="flex gap-2 pt-1">
               <button
                 type="submit"
-                disabled={loading || !newPhone}
+                disabled={!local}
                 className="flex-1 bg-[var(--color-ember-500)] hover:bg-[var(--color-ember-600)] text-white text-sm font-semibold py-2.5 rounded-xl transition-colors disabled:opacity-50"
               >
-                {loading ? "Sending..." : "Send OTP"}
+                Continue
               </button>
               <button
                 type="button"
@@ -124,10 +163,58 @@ export default function ChangePhoneModal({ currentPhone, onClose, onSuccess }) {
               </button>
             </div>
           </form>
+        ) : step === "method" ? (
+          <form onSubmit={handleSendOtp} className="space-y-4">
+            <p className="text-xs text-[var(--color-ink-soft)]">
+              How would you like to receive the verification code?
+            </p>
+
+            <div className="space-y-2">
+              {OTP_METHODS.map((methodOption) => (
+                <label key={methodOption.id} className="flex items-center p-3 border-2 rounded-xl cursor-pointer transition-colors" style={{
+                  borderColor: otpMethod === methodOption.id ? "var(--color-ember-400)" : "var(--color-hairline)",
+                  backgroundColor: otpMethod === methodOption.id ? "var(--color-ember-50)" : "white",
+                }}>
+                  <input
+                    type="radio"
+                    name="otpMethod"
+                    value={methodOption.id}
+                    checked={otpMethod === methodOption.id}
+                    onChange={(e) => setOtpMethod(e.target.value)}
+                    className="w-4 h-4 accent-[var(--color-ember-500)]"
+                  />
+                  <span className="ms-3 text-sm font-medium text-[var(--color-ink)]">{methodOption.label}</span>
+                </label>
+              ))}
+            </div>
+
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-xs text-red-600">
+                {error}
+              </div>
+            )}
+
+            <div className="flex gap-2 pt-1">
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex-1 bg-[var(--color-ember-500)] hover:bg-[var(--color-ember-600)] text-white text-sm font-semibold py-2.5 rounded-xl transition-colors disabled:opacity-50"
+              >
+                {loading ? "Sending..." : "Send Code"}
+              </button>
+              <button
+                type="button"
+                onClick={handleBack}
+                className="flex-1 bg-[var(--color-cream-deep)] text-[var(--color-ink)] text-sm font-semibold py-2.5 rounded-xl hover:bg-[var(--color-cream-deep)] transition-colors"
+              >
+                Back
+              </button>
+            </div>
+          </form>
         ) : (
           <form onSubmit={handleVerifyOtp} className="space-y-3">
-            <p className="text-xs text-[var(--color-ink-soft)] mb-2">
-              Enter the OTP sent to {newPhone}
+            <p className="text-xs text-[var(--color-ink-soft)] mb-2" dir="ltr">
+              Enter the OTP sent to {e164}
             </p>
 
             <div>
@@ -136,12 +223,13 @@ export default function ChangePhoneModal({ currentPhone, onClose, onSuccess }) {
               </label>
               <input
                 type="text"
-                value={otp}
-                onChange={(e) => setOtp(e.target.value)}
-                placeholder="000000"
-                maxLength="6"
+                value={code}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 5))}
+                placeholder="00000"
+                maxLength="5"
                 required
-                className="w-full rounded-xl border border-[var(--color-hairline)] bg-white px-4 py-2.5 text-[var(--color-ink)] placeholder:text-[var(--color-ink-fade)] focus:outline-none focus:border-[var(--color-ember-300)] focus:ring-4 focus:ring-[var(--color-ember-100)]/50 transition text-center text-lg tracking-widest"
+                inputMode="numeric"
+                className="w-full rounded-xl border border-[var(--color-hairline)] bg-white px-4 py-2.5 text-[var(--color-ink)] placeholder:text-[var(--color-ink-fade)] focus:outline-none focus:border-[var(--color-ember-300)] focus:ring-4 focus:ring-[var(--color-ember-100)]/50 transition text-center text-lg tracking-widest font-mono"
               />
             </div>
 
@@ -154,7 +242,7 @@ export default function ChangePhoneModal({ currentPhone, onClose, onSuccess }) {
             <div className="flex gap-2 pt-1">
               <button
                 type="submit"
-                disabled={loading || otp.length < 6}
+                disabled={loading || code.length < 5}
                 className="flex-1 bg-[var(--color-ember-500)] hover:bg-[var(--color-ember-600)] text-white text-sm font-semibold py-2.5 rounded-xl transition-colors disabled:opacity-50"
               >
                 {loading ? "Verifying..." : "Verify"}
