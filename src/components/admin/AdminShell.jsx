@@ -30,6 +30,10 @@ const logoAnimationStyles = `
     -webkit-backface-visibility: hidden;
     perspective: 1000px;
     -webkit-perspective: 1000px;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+    contain: layout style paint;
+    isolation: isolate;
   }
 `;
 
