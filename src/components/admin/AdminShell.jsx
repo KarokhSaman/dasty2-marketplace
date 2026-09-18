@@ -26,6 +26,10 @@ const logoAnimationStyles = `
     will-change: transform, opacity;
     animation: cartSlideIn 3.5s cubic-bezier(0.34, 1.56, 0.64, 1);
     animation-fill-mode: forwards;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    perspective: 1000px;
+    -webkit-perspective: 1000px;
   }
 `;
 
