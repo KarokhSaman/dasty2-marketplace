@@ -16,7 +16,7 @@ const logoAnimationStyles = `
   @keyframes cartSlideIn {
     0% {
       opacity: 0;
-      transform: translate3d(-40px, 0, 0);
+      transform: translate3d(-15px, 0, 0);
     }
     100% {
       opacity: 1;
@@ -26,12 +26,10 @@ const logoAnimationStyles = `
 
   .logo-image-animate {
     will-change: transform, opacity;
-    animation: cartSlideIn 3.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation: cartSlideIn 3.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     animation-fill-mode: forwards;
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
-    perspective: 1000px;
-    -webkit-perspective: 1000px;
     transform: translateZ(0);
     -webkit-transform: translateZ(0);
     contain: layout style paint;
