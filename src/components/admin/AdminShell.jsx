@@ -9,14 +9,44 @@ import NotificationPanel from "@/components/ui/NotificationPanel";
 
 const ADMIN_ID = "ADMIN";
 
+// ── Logo Animation Styles ─────────────────────────────────
+const logoAnimationStyles = `
+  @keyframes cartSlideIn {
+    0% {
+      opacity: 0;
+      transform: translate3d(-40px, 0, 0);
+    }
+    100% {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+  }
+
+  .logo-image-animate {
+    will-change: transform, opacity;
+    animation: cartSlideIn 3.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation-fill-mode: forwards;
+  }
+`;
+
 export default function AdminShell({ children }) {
   const pathname = usePathname();
+  const [shouldAnimate, setShouldAnimate] = useState(true);
   const [showNotifs, setShowNotifs] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [authTimedOut, setAuthTimedOut] = useState(false);
   const bellRef = useRef();
   const profileRef = useRef();
   const { isAuthenticated } = useConvexAuth();
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setShouldAnimate(true);
+      setTimeout(() => setShouldAnimate(false), 3600);
+    }, 7000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   // Current admin (for the avatar/email) over the authenticated Convex session.
   const me = useQuery(api.users.getCurrent, isAuthenticated ? {} : "skip");
@@ -117,6 +147,7 @@ export default function AdminShell({ children }) {
       />
 
       {/* ── Top bar ── */}
+      <style>{logoAnimationStyles}</style>
       <header dir="ltr" className="sticky top-0 z-[70] bg-[var(--color-cream)] border-b border-[var(--color-hairline)] shadow-[0_1px_0_rgba(11,12,15,0.02)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
 
@@ -126,7 +157,7 @@ export default function AdminShell({ children }) {
               <img
                 src="/logo-mndallan.svg"
                 alt=""
-                className="w-10 h-10"
+                className={`w-10 h-10 ${shouldAnimate ? 'logo-image-animate' : ''}`}
                 style={{ color: 'var(--color-ink)' }}
               />
               <div className="flex flex-col gap-0 h-10 justify-center">

@@ -9,26 +9,60 @@ import NotificationPanel from "@/components/ui/NotificationPanel";
 import { Button } from "@/components/ui";
 import { useGlobalSellerSession } from "@/lib/SellerSessionContext";
 
+// ── Logo Animation Styles ─────────────────────────────────
+const logoAnimationStyles = `
+  @keyframes cartSlideIn {
+    0% {
+      opacity: 0;
+      transform: translate3d(-40px, 0, 0);
+    }
+    100% {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+  }
+
+  .logo-image-animate {
+    will-change: transform, opacity;
+    animation: cartSlideIn 3.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation-fill-mode: forwards;
+  }
+`;
+
 // ── Wordmark — clean sans, matches the buyer header ───────
 function Wordmark() {
+  const [shouldAnimate, setShouldAnimate] = useState(true);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setShouldAnimate(true);
+      setTimeout(() => setShouldAnimate(false), 3600);
+    }, 7000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   return (
-    <Link
-      to="/"
-      dir="ltr"
-      aria-label="Mndallan — home"
-      className="group inline-flex items-center gap-1 shrink-0 select-none"
-    >
-      <img
-        src="/logo-mndallan.svg"
-        alt=""
-        className="w-10 h-10"
-        style={{ color: 'var(--color-ink)' }}
-      />
-      <div className="flex flex-col gap-0 h-10 justify-center">
-        <span className="text-base font-bold text-[var(--color-ember-600)] tracking-tight leading-none">Mndallan</span>
-        <span className="text-[10px] text-[var(--color-ink-soft)] font-medium leading-none">Baby Marketplace</span>
-      </div>
-    </Link>
+    <>
+      <style>{logoAnimationStyles}</style>
+      <Link
+        to="/"
+        dir="ltr"
+        aria-label="Mndallan — home"
+        className="group inline-flex items-center gap-1 shrink-0 select-none"
+      >
+        <img
+          src="/logo-mndallan.svg"
+          alt=""
+          className={`w-10 h-10 ${shouldAnimate ? 'logo-image-animate' : ''}`}
+          style={{ color: 'var(--color-ink)' }}
+        />
+        <div className="flex flex-col gap-0 h-10 justify-center">
+          <span className="text-base font-bold text-[var(--color-ember-600)] tracking-tight leading-none">Mndallan</span>
+          <span className="text-[10px] text-[var(--color-ink-soft)] font-medium leading-none">Baby Marketplace</span>
+        </div>
+      </Link>
+    </>
   );
 }
 

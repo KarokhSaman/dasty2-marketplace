@@ -11,14 +11,45 @@ import { useQuery, useConvexAuth } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useGlobalSellerSession } from "@/lib/SellerSessionContext";
 
+// ── Logo Animation Styles ─────────────────────────────────
+const logoAnimationStyles = `
+  @keyframes cartSlideIn {
+    0% {
+      opacity: 0;
+      transform: translate3d(-40px, 0, 0);
+    }
+    100% {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+  }
+
+  .logo-image-animate {
+    will-change: transform, opacity;
+    animation: cartSlideIn 3.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation-fill-mode: forwards;
+  }
+`;
+
 // ── Wordmark ──────────────────────────────────────────────
 function Wordmark({ isAuthPage }) {
+  const [shouldAnimate, setShouldAnimate] = useState(true);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setShouldAnimate(true);
+      setTimeout(() => setShouldAnimate(false), 3600);
+    }, 7000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   const content = (
     <>
       <img
         src="/logo-mndallan.svg"
         alt=""
-        className="w-10 h-10"
+        className={`w-10 h-10 ${shouldAnimate ? 'logo-image-animate' : ''}`}
         style={{ color: 'var(--color-ink)' }}
       />
       <div className="flex flex-col gap-0 h-10 justify-center">
@@ -30,21 +61,27 @@ function Wordmark({ isAuthPage }) {
 
   if (isAuthPage) {
     return (
-      <div dir="ltr" className="inline-flex items-center gap-1 shrink-0 select-none">
-        {content}
-      </div>
+      <>
+        <style>{logoAnimationStyles}</style>
+        <div dir="ltr" className="inline-flex items-center gap-1 shrink-0 select-none">
+          {content}
+        </div>
+      </>
     );
   }
 
   return (
-    <Link
-      to="/"
-      dir="ltr"
-      aria-label="Mndallan — home"
-      className="group inline-flex items-center gap-1 shrink-0 select-none"
-    >
-      {content}
-    </Link>
+    <>
+      <style>{logoAnimationStyles}</style>
+      <Link
+        to="/"
+        dir="ltr"
+        aria-label="Mndallan — home"
+        className="group inline-flex items-center gap-1 shrink-0 select-none"
+      >
+        {content}
+      </Link>
+    </>
   );
 }
 
