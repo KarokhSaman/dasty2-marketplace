@@ -9,10 +9,12 @@ function OtpPhoneMessage({ phone }) {
   const isRTL = locale === "ckb" || locale === "ar";
 
   if (isRTL) {
+    // For RTL: render message text and phone in separate LTR elements
+    // to prevent browser from reordering the + sign
     return (
-      <p className="text-sm text-[var(--color-ink-soft)]">
-        <span>{m.otpSent({ phone: "" })}</span>
-        <span dir="ltr" className="font-semibold">{phone}</span>
+      <p className="text-sm text-[var(--color-ink-soft)]" dir="auto">
+        {m.otpSent({ phone: "" })}
+        <span dir="ltr" className="font-semibold inline-block">{phone}</span>
       </p>
     );
   }
