@@ -15,6 +15,7 @@ import type * as devUploads from "../devUploads.js";
 import type * as http from "../http.js";
 import type * as migrate from "../migrate.js";
 import type * as migrateImages from "../migrateImages.js";
+import type * as migrate_image_urls from "../migrate_image_urls.js";
 import type * as notifications from "../notifications.js";
 import type * as offers from "../offers.js";
 import type * as products from "../products.js";
@@ -38,6 +39,7 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   migrate: typeof migrate;
   migrateImages: typeof migrateImages;
+  migrate_image_urls: typeof migrate_image_urls;
   notifications: typeof notifications;
   offers: typeof offers;
   products: typeof products;

@@ -4,6 +4,28 @@ import { getLocale } from "@/paraglide/runtime";
 import { DEFAULT_DIAL_CODE, DIAL_CODES, isPlausiblePhone, toE164 } from "@/lib/phone";
 import CustomSelect from "@/components/ui/CustomSelect";
 
+function OtpPhoneMessage({ phone }) {
+  const locale = getLocale();
+  const isRTL = locale === "ckb" || locale === "ar";
+
+  if (isRTL) {
+    // For RTL: render message text and phone in separate LTR elements
+    // to prevent browser from reordering the + sign
+    return (
+      <p className="text-sm text-[var(--color-ink-soft)]" dir="auto">
+        {m.otpSent({ phone: "" })}
+        <span dir="ltr" className="font-semibold inline-block">{phone}</span>
+      </p>
+    );
+  }
+
+  return (
+    <p className="text-sm text-[var(--color-ink-soft)]">
+      {m.otpSent({ phone })}
+    </p>
+  );
+}
+
 const METHODS = [
   { id: "whatsapp-otp", label: () => m.otpMethodWhatsapp() },
   { id: "telegram-otp", label: () => m.otpMethodTelegram() },
@@ -122,7 +144,7 @@ export default function OtpLogin({ onVerified }) {
   if (step === "otp") {
     return (
       <form onSubmit={handleVerify} className="space-y-4">
-        <p className="text-sm text-[var(--color-ink-soft)]">{m.otpSent({ phone: e164 })}</p>
+        <OtpPhoneMessage phone={e164} />
         <div>
           <label className="block text-sm font-medium text-[var(--color-ink)] mb-1.5">{m.otpLabel()}</label>
           <input
