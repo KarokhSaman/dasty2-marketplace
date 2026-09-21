@@ -8,7 +8,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ConvexQueryClient } from '@convex-dev/react-query'
 import { ConvexReactClient, ConvexProviderWithAuth } from 'convex/react'
 import type { ReactNode } from 'react'
-import { useEffect } from 'react'
 import {
   getLocale,
   getTextDirection,
@@ -92,29 +91,6 @@ function NotFoundComponent() {
 function RootComponent() {
   const { queryClient, convexClient } = Route.useRouteContext()
 
-  useEffect(() => {
-    // Detect Instagram in-app browser and redirect to default browser for best experience
-    const userAgent = navigator.userAgent;
-    const isInstagramApp = /Instagram/.test(userAgent);
-    const isAndroid = /Android/.test(userAgent);
-    const isIOS = /iPhone|iPad|iPod/.test(userAgent);
-
-    if (isInstagramApp) {
-      const currentUrl = window.location.href;
-
-      if (isAndroid) {
-        // Android: Use intent scheme to open in default browser
-        window.location.href = `intent://${currentUrl.replace(/^https?:\/\//, '')}#Intent;scheme=https;action=android.intent.action.VIEW;end`;
-      } else if (isIOS) {
-        // iOS: Redirect to Safari by opening in a new context
-        // This works better than direct location change in Instagram WebView
-        const link = document.createElement('a');
-        link.href = currentUrl;
-        link.target = '_blank';
-        link.click();
-      }
-    }
-  }, []);
 
   return (
     <ConvexProviderWithAuth client={convexClient} useAuth={useVerifySpeedAuth}>
