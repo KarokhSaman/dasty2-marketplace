@@ -122,7 +122,9 @@ export default function OtpLogin({ onVerified }) {
   if (step === "otp") {
     return (
       <form onSubmit={handleVerify} className="space-y-4">
-        <p className="text-sm text-[var(--color-ink-soft)]">{m.otpSent({ phone: e164 })}</p>
+        <p className="text-sm text-[var(--color-ink-soft)]">
+          {m.otpSent({ phone: <bdi key="phone" className="font-semibold">{e164}</bdi> })}
+        </p>
         <div>
           <label className="block text-sm font-medium text-[var(--color-ink)] mb-1.5">{m.otpLabel()}</label>
           <input
