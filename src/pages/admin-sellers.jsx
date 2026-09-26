@@ -1,10 +1,12 @@
 import { useMemo, useState } from "react";
 import { useQuery, useMutation } from "convex/react";
+import { useRouter } from "@tanstack/react-router";
 import { api } from "@/convex/_generated/api";
 import * as m from "@/paraglide/messages";
 import SellerActionsMenu from "@/components/admin/SellerActionsMenu";
 
 export default function AdminSellersPage() {
+  const router        = useRouter();
   const sellers       = useQuery(api.users.getAll);
   const products      = useQuery(api.products.getAll);
   const setActive     = useMutation(api.users.setActive);
@@ -162,10 +164,13 @@ export default function AdminSellersPage() {
                 </div>
               )}
               <div className="grid grid-cols-2 gap-4 pt-2">
-                <div>
+                <button
+                  onClick={() => router.navigate({ to: "/admin/products", search: { tab: "all", sellerId: seller._id } })}
+                  className="text-start hover:opacity-75 transition-opacity"
+                >
                   <p className="text-[11px] font-semibold text-[var(--color-ink-fade)] uppercase tracking-wide mb-0.5">Products</p>
-                  <p className="text-sm text-[var(--color-ink)] font-medium">{seller.productCount}</p>
-                </div>
+                  <p className="text-sm text-blue-600 font-medium cursor-pointer hover:underline">{seller.productCount}</p>
+                </button>
                 {seller.registeredAt && (
                   <div>
                     <p className="text-[11px] font-semibold text-[var(--color-ink-fade)] uppercase tracking-wide mb-0.5">Joined</p>
