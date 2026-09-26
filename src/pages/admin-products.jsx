@@ -33,6 +33,7 @@ const TABS = ["all","pending","approved","rejected","sold","paid","sponsored"];
 export default function AdminProductsPage() {
   const searchParams = useSearchParams();
   const focusId = searchParams.get("focus");
+  const sellerId = searchParams.get("sellerId");
 
   const products        = useQuery(api.products.getAll);
   const updateStatus    = useMutation(api.products.updateStatus);
@@ -80,24 +81,30 @@ export default function AdminProductsPage() {
   const filtered = useMemo(() => {
     if (!products) return [];
     let list;
-    if (tab === "all") {
+
+    // If filtering by seller, start with only that seller's products
+    if (sellerId) {
+      list = products.filter((p) => p.sellerId === sellerId);
+    } else if (tab === "all") {
       list = products;
     } else if (tab === "sponsored") {
       list = products.filter((p) => p.featured === true);
     } else {
       list = products.filter((p) => p.status === tab);
     }
+
     const q = search.trim().toLowerCase();
     const searched = q
       ? list.filter((p) =>
           p.title.toLowerCase().includes(q) ||
           (p.seq ?? "").toLowerCase().includes(q) ||
           p.sellerName.toLowerCase().includes(q) ||
-          p.category.toLowerCase().includes(q)
+          p.category.toLowerCase().includes(q) ||
+          (p.city ?? "").toLowerCase().includes(q)
         )
       : list;
     return [...searched].sort((a, b) => new Date(b.dateAdded) - new Date(a.dateAdded));
-  }, [products, tab, search]);
+  }, [products, tab, search, sellerId]);
 
   const counts = useMemo(() => {
     if (!products) return {};
@@ -223,7 +230,22 @@ export default function AdminProductsPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-[var(--color-ink)] mb-5">{m.adminProducts()}</h1>
+      <div className="flex items-center gap-3 mb-5">
+        <h1 className="text-2xl font-bold text-[var(--color-ink)]">{m.adminProducts()}</h1>
+        {sellerId && (
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-lg">
+            <span className="text-xs font-semibold text-blue-600">
+              Filtered by seller
+            </span>
+            <button
+              onClick={() => window.history.back()}
+              className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+            >
+              Clear
+            </button>
+          </div>
+        )}
+      </div>
 
       {/* Search */}
       <div className="relative mb-4">
@@ -234,7 +256,7 @@ export default function AdminProductsPage() {
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by title, code (DS-0001), seller name…"
+          placeholder="Search by title, code (DS-0001), seller name, category, city…"
           dir="ltr"
           className="w-full border border-[var(--color-hairline)] rounded-xl pl-10 pr-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-ember-300"
         />
