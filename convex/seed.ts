@@ -172,7 +172,9 @@ export const seedProducts = mutation({
     }
 
     const year = new Date().getFullYear().toString().slice(-2);
-    const count = (await ctx.db.query("products").collect()).length;
+    const prefix = `${year}-`;
+    const all = await ctx.db.query("products").collect();
+    const count = all.filter((p) => (p.seq ?? "").startsWith(prefix)).length;
     let seqN = count + 1;
     const now = new Date().toISOString();
 
