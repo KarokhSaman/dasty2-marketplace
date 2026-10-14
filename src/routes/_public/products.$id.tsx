@@ -8,20 +8,16 @@ export const Route = createFileRoute('/_public/products/$id')({
   // component renders, so a link/tab navigation lands on real content instead
   // of a skeleton — and `defaultPreload: 'intent'` warms it on hover/touch.
   loader: async ({ context, params }) => {
-    await context.queryClient
+    return await context.queryClient
       .ensureQueryData(
         convexQuery(api.products.getPublicById, {
           id: params.id,
         }),
       )
   },
-  head: ({ matches, context }) => {
-    // Get product data from React Query cache for meta tags
-    const product = context.queryClient.getQueryData(
-      convexQuery(api.products.getPublicById, {
-        id: matches[matches.length - 1]?.params.id,
-      }).queryKey
-    )
+  head: ({ loaderData }) => {
+    // Use product data from loader
+    const product = loaderData
 
     const conditionLabel = product?.condition === 'new' ? 'New' : 'Used'
     const title = product?.title || 'Product - Mndallan'
