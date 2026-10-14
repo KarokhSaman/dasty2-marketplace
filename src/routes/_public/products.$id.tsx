@@ -15,5 +15,27 @@ export const Route = createFileRoute('/_public/products/$id')({
         }),
       )
   },
+  head: ({ matches, context }) => {
+    // Get product data from React Query cache for meta tags
+    const product = context.queryClient.getQueryData(
+      convexQuery(api.products.getPublicById, {
+        id: matches[matches.length - 1]?.params.id,
+      }).queryKey
+    )
+
+    const conditionLabel = product?.condition === 'new' ? 'New' : 'Used'
+    const title = product?.title || 'Product - Mndallan'
+    const description = `${product?.title}\n${product?.city}\n${conditionLabel}\n${product?.price?.toLocaleString()} IQD`
+
+    return {
+      meta: [
+        { property: 'og:title', content: title },
+        { property: 'og:description', content: description },
+        { property: 'og:type', content: 'product' },
+        { property: 'og:site_name', content: 'Mndallan' },
+        { name: 'description', content: description },
+      ],
+    }
+  },
   component: ProductDetailPage,
 })
