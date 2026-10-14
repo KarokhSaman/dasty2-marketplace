@@ -90,10 +90,10 @@ function fitText(ctx, text, maxWidth, startSize, family, weight = "700") {
 }
 
 function drawDetails(ctx, { title, price, meta, condition, family, edge, panelBottom }) {
-  if (meta) {
+  if (condition) {
     ctx.fillStyle = INK_SOFT;
     ctx.font = `600 40px ${family}`;
-    ctx.fillText(meta.split(" · ")[0], edge, panelBottom + 90);
+    ctx.fillText(condition, edge, panelBottom + 90);
   }
 
   if (title) {
@@ -108,10 +108,10 @@ function drawDetails(ctx, { title, price, meta, condition, family, edge, panelBo
   ctx.font = `800 ${priceSize}px ${family}`;
   ctx.fillText(price, edge, panelBottom + 290);
 
-  if (condition) {
+  if (meta) {
     ctx.fillStyle = INK_SOFT;
     ctx.font = `600 40px ${family}`;
-    ctx.fillText(condition, edge, panelBottom + 360);
+    ctx.fillText(meta.split(" · ")[0], edge, panelBottom + 360);
   }
 }
 
