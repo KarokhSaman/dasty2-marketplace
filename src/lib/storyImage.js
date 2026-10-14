@@ -89,6 +89,32 @@ function fitText(ctx, text, maxWidth, startSize, family, weight = "700") {
   return size;
 }
 
+function drawDetails(ctx, { title, price, meta, condition, family, edge, panelBottom }) {
+  if (meta) {
+    ctx.fillStyle = INK_SOFT;
+    ctx.font = `600 40px ${family}`;
+    ctx.fillText(meta.split(" · ")[0], edge, panelBottom + 90);
+  }
+
+  if (title) {
+    ctx.fillStyle = INK;
+    const titleSize = fitText(ctx, title, W - 180, 56, family, "700");
+    ctx.font = `700 ${titleSize}px ${family}`;
+    ctx.fillText(title, edge, panelBottom + 170);
+  }
+
+  ctx.fillStyle = BRAND;
+  const priceSize = fitText(ctx, price, W - 180, 96, family, "800");
+  ctx.font = `800 ${priceSize}px ${family}`;
+  ctx.fillText(price, edge, panelBottom + 290);
+
+  if (condition) {
+    ctx.fillStyle = INK_SOFT;
+    ctx.font = `600 40px ${family}`;
+    ctx.fillText(condition, edge, panelBottom + 360);
+  }
+}
+
 /**
  * Draw the story card and return it as a PNG blob.
  *
@@ -97,11 +123,12 @@ function fitText(ctx, text, maxWidth, startSize, family, weight = "700") {
  * @param {string} p.price      pre-formatted price, e.g. "320,000 IQD"
  * @param {string} [p.photo]    absolute image URL (R2)
  * @param {string} [p.meta]     small line under the title (city · category)
+ * @param {string} [p.condition] localized condition label, e.g. "Used"
  * @param {string} [p.code]     product code, e.g. "26-0009"
  * @param {string} [p.site]     domain shown in the footer
  * @param {boolean} [p.rtl]     right-to-left layout for ckb/ar
  */
-export async function buildStoryImage({ title, price, photo, meta, code, site, rtl = false }) {
+export async function buildStoryImage({ title, price, photo, meta, condition, code, site, rtl = false }) {
   // Webfonts must be resolved before fillText or the card renders in a
   // fallback face (and Kurdish/Arabic glyphs may not render at all).
   if (typeof document !== "undefined" && document.fonts?.ready) {
@@ -163,19 +190,7 @@ export async function buildStoryImage({ title, price, photo, meta, code, site, r
   ctx.textAlign = align;
   ctx.textBaseline = "alphabetic";
 
-  // Meta line (city only)
-  if (meta) {
-    const cityOnly = meta.split(" · ")[0];
-    ctx.fillStyle = INK_SOFT;
-    ctx.font = `600 40px ${family}`;
-    ctx.fillText(cityOnly, edge, panelY + panelH + 195);
-  }
-
-  // Price
-  ctx.fillStyle = BRAND;
-  const priceSize = fitText(ctx, price, W - 180, 96, family, "800");
-  ctx.font = `800 ${priceSize}px ${family}`;
-  ctx.fillText(price, edge, panelY + panelH + 305);
+  drawDetails(ctx, { title, price, meta, condition, family, edge, panelBottom: panelY + panelH });
 
   // Footer — product code and domain, on opposite edges
   ctx.fillStyle = INK_SOFT;
@@ -230,18 +245,7 @@ export async function buildStoryImage({ title, price, photo, meta, code, site, r
       ctx.textAlign = rtl ? "right" : "left";
       ctx.textBaseline = "alphabetic";
 
-      // Meta line (city only)
-      if (meta) {
-        const cityOnly = meta.split(" · ")[0];
-        ctx.fillStyle = INK_SOFT;
-        ctx.font = `600 40px ${family}`;
-        ctx.fillText(cityOnly, rtl ? W - 90 : 90, panelY + panelH + 195);
-      }
-
-      ctx.fillStyle = BRAND;
-      const priceSize = fitText(ctx, price, W - 180, 96, family, "800");
-      ctx.font = `800 ${priceSize}px ${family}`;
-      ctx.fillText(price, rtl ? W - 90 : 90, panelY + panelH + 305);
+      drawDetails(ctx, { title, price, meta, condition, family, edge, panelBottom: panelY + panelH });
 
       ctx.fillStyle = INK_SOFT;
       ctx.font = `500 34px ${family}`;

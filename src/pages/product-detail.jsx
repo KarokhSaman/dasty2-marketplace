@@ -336,6 +336,7 @@ export default function ProductDetailPage() {
               price: `${formatAmount(product.price)} IQD`,
               photo: photos[0],
               meta: [cityLabel, categoryLabel].filter(Boolean).join(" · "),
+              condition: isNew ? m.badgeNew() : product.condition === "likenew" ? m.conditionLikeNew() : m.badgeUsed(),
               code: product.seq ? `#${product.seq}` : undefined,
               site: new URL(productUrl).host,
               rtl: locale !== "en",
