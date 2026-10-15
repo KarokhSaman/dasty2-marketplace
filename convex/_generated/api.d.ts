@@ -22,6 +22,7 @@ import type * as offers from "../offers.js";
 import type * as products from "../products.js";
 import type * as r2 from "../r2.js";
 import type * as seed from "../seed.js";
+import type * as stores from "../stores.js";
 import type * as types from "../types.js";
 import type * as users from "../users.js";
 import type * as verifyspeed from "../verifyspeed.js";
@@ -47,6 +48,7 @@ declare const fullApi: ApiFromModules<{
   products: typeof products;
   r2: typeof r2;
   seed: typeof seed;
+  stores: typeof stores;
   types: typeof types;
   users: typeof users;
   verifyspeed: typeof verifyspeed;

@@ -15,6 +15,7 @@ import { getLocale } from "@/paraglide/runtime";
 import { useSellerSession } from "@/lib/useSellerSession";
 import { useImageUpload } from "@/lib/useImageUpload";
 import { resolveProfit } from "@/convex/fees";
+import StoreStockFields from "@/components/seller/StoreStockFields";
 import { calculateProfit, formatPrice, formatPriceLocale, normalizeDigits } from "@/lib/utils";
 import CustomSelect from "@/components/ui/CustomSelect";
 import { CATEGORY_CONFIG, getCategoryLabel } from "@/lib/categories";
@@ -62,13 +63,23 @@ export default function EditProductPage() {
     setPrice(String(product.price ?? ""));
     setDescription(product.description ?? "");
     setPhotos(product.photos ?? []);
+    setStoreId(product.storeId ?? "");
+    setStock(product.stock != null ? String(product.stock) : "");
   }, [product]);
 
   const priceNum = Number(normalizeDigits(price).replace(/[^\d]/g, "")) || 0;
   const standardProfit = calculateProfit(priceNum);
   const currentSeller = useQuery(api.users.getCurrentSeller);
-  const customFee = !!currentSeller?.feeMode && currentSeller.feeMode !== "default";
-  const profit = resolveProfit(priceNum, currentSeller, activeOffer ?? null);
+  const stores = useQuery(api.stores.listMine);
+  const linkedStore = useQuery(api.stores.getLinked);
+  const [pickedStoreId, setStoreId] = useState("");
+  const [stock, setStock] = useState("");
+  // A store-owner account is always locked to its linked store.
+  const storeId = linkedStore ? linkedStore._id : pickedStoreId;
+  const feeSource = linkedStore ?? stores?.find((s) => s._id === storeId) ?? currentSeller;
+  const customFee = !!feeSource?.feeMode && feeSource.feeMode !== "default";
+  const profit = resolveProfit(priceNum, feeSource, activeOffer ?? null);
+  const stockNum = storeId && stock ? Number(normalizeDigits(stock)) : undefined;
 
   async function uploadFile(file) {
     setUploading((n) => n + 1);
@@ -111,6 +122,8 @@ export default function EditProductPage() {
         price: priceNum,
         description: description.trim(),
         photos,
+        storeId: storeId || undefined,
+        stock: stockNum,
       });
       setSubmitted(true);
     } catch (err) {
@@ -335,6 +348,8 @@ export default function EditProductPage() {
         </div>
 
         {/* Description */}
+        <StoreStockFields stores={stores} lockedStore={linkedStore} storeId={pickedStoreId} onStoreChange={setStoreId} stock={stock} onStockChange={setStock} />
+
         <div>
           <label className="block text-[13px] font-semibold text-[var(--color-ink)] mb-1.5">{m.fieldDescription()}</label>
           <textarea value={description} onChange={(e) => setDescription(e.target.value)}

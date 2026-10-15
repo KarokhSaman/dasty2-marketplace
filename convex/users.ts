@@ -320,6 +320,16 @@ export const deleteSeller = mutation({
       .withIndex("by_sellerId", (q) => q.eq("sellerId", sellerIdStr))
       .collect();
     for (const n of sellerNotifs) await ctx.db.delete(n._id);
+    const sellerStores = await ctx.db
+      .query("stores")
+      .withIndex("by_seller", (q) => q.eq("sellerId", sellerIdStr))
+      .collect();
+    for (const store of sellerStores) await ctx.db.delete(store._id);
+    const linkedStores = await ctx.db
+      .query("stores")
+      .withIndex("by_linked_user", (q) => q.eq("linkedUserId", id))
+      .collect();
+    for (const store of linkedStores) await ctx.db.patch(store._id, { linkedUserId: undefined });
     await ctx.db.delete(id);
   },
 });

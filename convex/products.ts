@@ -20,7 +20,7 @@ import {
 } from "./auth";
 import { resolveProfit } from "./fees";
 
-type PublicProduct = Omit<Doc<"products">, "sellerId" | "sellerPhone" | "profit">;
+type PublicProduct = Omit<Doc<"products">, "sellerId" | "sellerPhone" | "profit" | "storeId" | "soldFromId">;
 
 const publicProductValidator = v.object({
   _id: v.id("products"),
@@ -50,12 +50,15 @@ const publicProductValidator = v.object({
   approvedAt: v.optional(v.string()),
   dateAdded: v.string(),
   dateSold: v.optional(v.string()),
+  stock: v.optional(v.number()),
 });
 
 const toPublic = ({
   sellerId: _sellerId,
   sellerPhone: _sellerPhone,
   profit: _profit,
+  storeId: _storeId,
+  soldFromId: _soldFromId,
   ...rest
 }: Doc<"products">): PublicProduct => rest;
 
@@ -87,6 +90,34 @@ function validateListingInput({
   ) {
     throw new Error("A product must have between 2 and 5 photos");
   }
+}
+
+// Resolves the optional store/stock on a listing. A store-owner account (linked
+// to a store) is always locked to that store. Otherwise the store must be one the
+// seller manages. Stock only makes sense for a store product.
+async function resolveStoreListing(
+  ctx: QueryCtx,
+  seller: Doc<"users">,
+  storeId: Id<"stores"> | undefined,
+  stock: number | undefined,
+): Promise<{ store: Doc<"stores"> | null; storeId: Id<"stores"> | undefined }> {
+  const linked = await ctx.db
+    .query("stores")
+    .withIndex("by_linked_user", (q) => q.eq("linkedUserId", seller._id))
+    .first();
+  let store: Doc<"stores"> | null = linked;
+  if (!store && storeId) {
+    store = await ctx.db.get(storeId);
+    if (!store || store.sellerId !== seller._id.toString()) throw new Error("Store not found");
+  }
+  if (!store) {
+    if (stock !== undefined) throw new Error("Stock requires a store");
+    return { store: null, storeId: undefined };
+  }
+  if (stock !== undefined && (!Number.isInteger(stock) || stock < 1 || stock > 9999)) {
+    throw new Error("Stock must be a whole number between 1 and 9999");
+  }
+  return { store, storeId: store._id };
 }
 
 async function getInactiveSellerIds(ctx: QueryCtx): Promise<Set<string>> {
@@ -241,14 +272,35 @@ export const getPublicPaginated = query({
   },
 });
 
+// A seller's dashboard list: their own products, plus — for a store-owner
+// account — every product of the linked store posted by the managing seller
+// (read-only, with the manager's identity and phone stripped).
 export const getBySeller = query({
   args: {},
   handler: async (ctx) => {
     const seller = await requireCurrentSeller(ctx);
-    return await ctx.db
+    const me = seller._id.toString();
+    const own = await ctx.db
       .query("products")
-      .withIndex("by_seller", q => q.eq("sellerId", seller._id.toString()))
+      .withIndex("by_seller", q => q.eq("sellerId", me))
       .collect();
+    const linked = await ctx.db
+      .query("stores")
+      .withIndex("by_linked_user", (q) => q.eq("linkedUserId", seller._id))
+      .first();
+    if (!linked) return own;
+    const storeProducts = await ctx.db
+      .query("products")
+      .withIndex("by_store", q => q.eq("storeId", linked._id))
+      .collect();
+    const ownIds = new Set(own.map(p => p._id));
+    const managed = storeProducts
+      .filter(p => !ownIds.has(p._id))
+      .map(({ sellerId: _sid, sellerPhone: _sp, sellerName: _sn, ...rest }) => ({
+        ...rest,
+        postedByManager: true as const,
+      }));
+    return [...own, ...managed].sort((a, b) => a._creationTime - b._creationTime);
   },
 });
 
@@ -262,7 +314,13 @@ export const getAll = query({
       .withIndex("by_role", (q) => q.eq("role", "seller"))
       .collect();
     const addrMap  = new Map(sellers.map(s => [s._id.toString(), s.address ?? ""]));
-    return products.map(p => ({ ...p, sellerAddress: addrMap.get(p.sellerId) ?? "" }));
+    const stores   = await ctx.db.query("stores").collect();
+    const storeMap = new Map(stores.map(st => [st._id.toString(), st.name]));
+    return products.map(p => ({
+      ...p,
+      sellerAddress: addrMap.get(p.sellerId) ?? "",
+      storeName: p.storeId ? (storeMap.get(p.storeId.toString()) ?? "") : "",
+    }));
   },
 });
 
@@ -277,20 +335,24 @@ export const add = mutation({
     photos: v.array(v.string()),
     featured: v.optional(v.boolean()),
     notes: v.optional(v.string()),
+    storeId: v.optional(v.id("stores")),
+    stock: v.optional(v.number()),
   },
   returns: v.id("products"),
   handler: async (ctx, args) => {
     const seller = await requireCurrentSeller(ctx);
     validateListingInput(args);
+    const { store, storeId } = await resolveStoreListing(ctx, seller, args.storeId, args.stock);
     // Check for active offer and adjust fee accordingly
     const today = new Date().toISOString().slice(0, 10);
     const allOffers = await ctx.db.query("offers")
       .filter(q => q.eq(q.field("isActive"), true)).collect();
     const activeOffer = allOffers.find(o => o.startDate <= today && o.endDate >= today);
-    const profit = resolveProfit(args.price, seller, activeOffer ?? null);
+    const profit = resolveProfit(args.price, store ?? seller, activeOffer ?? null);
     const seq = await generateSeq(ctx);
     const id = await ctx.db.insert("products", {
       ...args,
+      storeId,
       seq,
       city: seller.city || "Erbil",
       sellerId: seller._id.toString(),
@@ -337,6 +399,63 @@ export const updateStatus = mutation({
       Object.entries(fields).filter(([, value]) => value !== undefined),
     );
     await ctx.db.patch(id, patch);
+  },
+});
+
+// Stocked store products: selling one unit takes it off the stock and records
+// it as its own sold (fee pending) or paid copy of the listing, so the sold and
+// paid tabs and earnings count every unit. The original stays approved and
+// visible until its last unit, which uses the normal sold/paid status flow. A
+// sold copy is later marked paid through the normal status menu.
+export const markUnitSold = mutation({
+  args: { id: v.id("products"), status: v.union(v.literal("sold"), v.literal("paid")) },
+  returns: v.null(),
+  handler: async (ctx, { id, status }) => {
+    await requireAdmin(ctx);
+    const product = await ctx.db.get(id);
+    if (!product) throw new Error("Product not found");
+    if (product.status !== "approved") throw new Error("Only approved products can be sold");
+    const stock = product.stock ?? 1;
+    if (stock <= 1) throw new Error("Last unit: use the normal sold/paid status instead");
+
+    const { _id, _creationTime, stock: _stock, featured: _featured, featuredUntil: _fu,
+      featuredAt: _fa, featuredPosition: _fp, views: _views, ...snapshot } = product;
+    await ctx.db.insert("products", {
+      ...snapshot,
+      status,
+      dateSold: new Date().toISOString(),
+      soldFromId: id,
+    });
+    await ctx.db.patch(id, { stock: stock - 1 });
+    return null;
+  },
+});
+
+// Buyer changed their mind: a sold/paid unit goes back on the shelf. The unit
+// entry is removed and its listing gets +1 stock. If that listing is gone or
+// already sold out, the entry itself becomes a live single-unit listing again.
+export const returnUnit = mutation({
+  args: { id: v.id("products") },
+  returns: v.null(),
+  handler: async (ctx, { id }) => {
+    await requireAdmin(ctx);
+    const unit = await ctx.db.get(id);
+    if (!unit || !unit.soldFromId) throw new Error("Not a sold unit of a stocked product");
+    if (unit.status !== "sold" && unit.status !== "paid") {
+      throw new Error("Only sold or paid units can be returned");
+    }
+    const original = await ctx.db.get(unit.soldFromId);
+    if (original && original.status === "approved") {
+      await ctx.db.patch(original._id, { stock: (original.stock ?? 1) + 1 });
+      await deleteProductData(ctx, unit);
+    } else {
+      await ctx.db.patch(id, {
+        status: "approved",
+        dateSold: undefined,
+        soldFromId: undefined,
+      });
+    }
+    return null;
   },
 });
 
@@ -401,11 +520,14 @@ export const sellerUpdate = mutation({
     condition: conditionValidator,
     price: v.number(),
     photos: v.array(v.string()),
+    storeId: v.optional(v.id("stores")),
+    stock: v.optional(v.number()),
   },
   returns: v.null(),
   handler: async (ctx, { id, ...fields }) => {
     const seller = await requireCurrentSeller(ctx);
     validateListingInput(fields);
+    const { store, storeId } = await resolveStoreListing(ctx, seller, fields.storeId, fields.stock);
     const product = await ctx.db.get(id);
     if (!product) throw new Error("Product not found");
     if (product.sellerId !== seller._id.toString()) {
@@ -419,9 +541,10 @@ export const sellerUpdate = mutation({
     const allOffers = await ctx.db.query("offers")
       .filter(q => q.eq(q.field("isActive"), true)).collect();
     const activeOffer = allOffers.find(o => o.startDate <= today && o.endDate >= today);
-    const profit = resolveProfit(fields.price, seller, activeOffer ?? null);
+    const profit = resolveProfit(fields.price, store ?? seller, activeOffer ?? null);
     await ctx.db.patch(id, {
       ...fields,
+      storeId,
       profit,
       status: "pending",
     });
@@ -471,7 +594,8 @@ export const duplicate = mutation({
     const allOffers = await ctx.db.query("offers")
       .filter(q => q.eq(q.field("isActive"), true)).collect();
     const activeOffer = allOffers.find(o => o.startDate <= today && o.endDate >= today);
-    const profit = resolveProfit(src.price, seller, activeOffer ?? null);
+    const srcStore = src.storeId ? await ctx.db.get(src.storeId) : null;
+    const profit = resolveProfit(src.price, srcStore ?? seller, activeOffer ?? null);
 
     const seq = await generateSeq(ctx);
     const newId = await ctx.db.insert("products", {
@@ -481,6 +605,8 @@ export const duplicate = mutation({
       category:    src.category,
       condition:   src.condition,
       price:       src.price,
+      storeId:     src.storeId,
+      stock:       src.stock,
       profit,
       photos:      src.photos,
       city:        src.city,

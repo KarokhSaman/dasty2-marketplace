@@ -52,6 +52,9 @@ export default function ProductStatusMenu({ product, onStatusChange }) {
 
   const currentColor = STATUS_COLORS[product.status];
   const allStatuses = ["pending", "approved", "rejected", "sold", "paid"];
+  // Stocked products (more than one unit left): sold or paid records one unit
+  // as its own entry, takes it off the stock and keeps the listing live.
+  const hasStock = product.status === "approved" && product.stock > 1;
   const availableStatuses = allStatuses.filter(s => s !== product.status);
 
   const rowCls = "flex items-center gap-3 w-full px-4 py-3 sm:py-2.5 text-[15px] sm:text-sm text-start transition-colors";
@@ -62,7 +65,11 @@ export default function ProductStatusMenu({ product, onStatusChange }) {
         Change to {STATUS_LABELS[confirmStatus]()}?
       </p>
       <p className="text-xs text-[var(--color-ink-fade)] mb-3">
-        This will update the product status. The seller will be notified.
+        {product.soldFromId && confirmStatus === "approved"
+          ? "The buyer cancelled. This unit goes back to the product's stock (+1) and this entry is removed."
+          : hasStock && (confirmStatus === "sold" || confirmStatus === "paid")
+          ? `Records one unit as ${confirmStatus}. Stock goes from ${product.stock} to ${product.stock - 1} and the product stays live.`
+          : "This will update the product status. The seller will be notified."}
       </p>
       <div className="flex gap-2">
         <button

@@ -365,6 +365,11 @@ export default function ProductDetailPage() {
                 {product.brand}
               </Chip>
             )}
+            {product.stock > 1 && (
+              <Chip tone="neutral">
+                {m.stockLeft({ count: product.stock })}
+              </Chip>
+            )}
             {cityLabel && (
               <Chip tone="neutral" leadingIcon={<PinIcon className="w-3 h-3" />}>
                 {cityLabel}
