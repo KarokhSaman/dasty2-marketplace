@@ -47,7 +47,7 @@
         "VITE_CONVEX_URL": "https://artful-firefly-452.convex.cloud",
         "VITE_CONVEX_SITE_URL": "https://artful-firefly-452.convex.site",
         "VITE_R2_PUBLIC_URL": "https://assets.mndallan.com",
-        "VITE_IMAGE_TRANSFORMS": "false"
+        "VITE_IMAGE_TRANSFORMS": "true"
       }
     },
     "dev": {
