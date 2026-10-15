@@ -9,7 +9,7 @@ import {
   requireCurrentUser,
   requireSuperAdmin,
 } from "./auth";
-import { userRoleValidator } from "./types";
+import { feeModeValidator, userRoleValidator } from "./types";
 
 const mockRoleValidator = v.union(v.literal("seller"), v.literal("admin"));
 
@@ -159,6 +159,37 @@ export const setActive = mutation({
     const user = await ctx.db.get(id);
     if (!user || user.role !== "seller") throw new Error("User not found");
     await ctx.db.patch(id, { isActive });
+  },
+});
+
+export const setFeeArrangement = mutation({
+  args: {
+    id: v.id("users"),
+    feeMode: feeModeValidator,
+    feeValue: v.optional(v.number()),
+  },
+  returns: v.null(),
+  handler: async (ctx, { id, feeMode, feeValue }) => {
+    await requireAdmin(ctx);
+    const user = await ctx.db.get(id);
+    if (!user || user.role !== "seller") throw new Error("User not found");
+
+    if (feeMode === "flat") {
+      if (feeValue === undefined || !Number.isInteger(feeValue) || feeValue <= 0) {
+        throw new Error("Flat fee must be a whole number of IQD greater than 0");
+      }
+    } else if (feeMode === "percentage") {
+      if (feeValue === undefined || !(feeValue > 0 && feeValue <= 100)) {
+        throw new Error("Percentage must be between 0 and 100");
+      }
+    }
+
+    const hasValue = feeMode === "flat" || feeMode === "percentage";
+    await ctx.db.patch(id, {
+      feeMode: feeMode === "default" ? undefined : feeMode,
+      feeValue: hasValue ? feeValue : undefined,
+    });
+    return null;
   },
 });
 

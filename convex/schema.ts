@@ -3,6 +3,7 @@ import { v } from "convex/values";
 import {
   categoryValidator,
   conditionValidator,
+  feeModeValidator,
   offerTypeValidator,
   productStatusValidator,
   userRoleValidator,
@@ -58,6 +59,10 @@ export default defineSchema({
     address: v.optional(v.string()),
     registeredAt: v.string(),
     isActive: v.boolean(),
+    // Negotiated service-fee arrangement. Missing/"default" = price table (or
+    // active platform offer). feeValue is IQD for "flat", 0-100 for "percentage".
+    feeMode: v.optional(feeModeValidator),
+    feeValue: v.optional(v.number()),
   })
     .index("by_role", ["role"])
     .index("by_role_and_isActive", ["role", "isActive"])
