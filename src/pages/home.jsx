@@ -273,6 +273,7 @@ export default function HomePage() {
   // stays on usePaginatedQuery (convexQuery has no pagination).
   const { data: liveFeatured } = useReactQuery(convexQuery(api.products.getFeatured, {}));
   const { data: publicStores } = useReactQuery(convexQuery(api.stores.listPublic, {}));
+  const { data: publicCities } = useReactQuery(convexQuery(api.products.listCities, {}));
   const rawFeaturedProducts = liveFeatured ?? cachedFeatured ?? [];
 
   // Apply random shuffle to featured products (same seed throughout page session)
@@ -349,10 +350,14 @@ export default function HomePage() {
     [featuredProducts]
   );
 
+  // Full list from the server; until it arrives, fall back to the cities of the
+  // products loaded so far.
   const availableCities = useMemo(() => {
-    const set = new Set([...results, ...featuredProducts].map((p) => p.city).filter(Boolean));
+    const set = new Set(
+      publicCities ?? [...results, ...featuredProducts].map((p) => p.city).filter(Boolean),
+    );
     return [...set].sort();
-  }, [results, featuredProducts]);
+  }, [publicCities, results, featuredProducts]);
 
   const matchesFilters = (p, { skipCategory = false } = {}) => {
     const matchCond   = condition === "all" || p.condition === condition;
