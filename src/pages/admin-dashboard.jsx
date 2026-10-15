@@ -14,6 +14,7 @@ const ACTION_META = {
   marked_paid:       { label: "Marked Paid",       color: "bg-purple-100 text-purple-700" },
   deleted:           { label: "Deleted",           color: "bg-[var(--color-ember-50)] text-[var(--color-ink-soft)]"     },
   photo_removed:     { label: "Photo Removed",     color: "bg-orange-100 text-orange-600" },
+  seller_fee_changed:{ label: "Fee Changed", color: "bg-amber-100 text-amber-700" },
   seller_promoted_to_admin:{ label: "Promoted Admin", color: "bg-indigo-100 text-indigo-700" },
   admin_demoted_to_seller:{ label: "Made Seller", color: "bg-[var(--color-ember-50)] text-[var(--color-ink)]" },
   featured:          { label: "Sponsored",          color: "bg-amber-100 text-amber-700"   },

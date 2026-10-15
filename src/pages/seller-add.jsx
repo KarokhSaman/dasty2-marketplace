@@ -14,6 +14,7 @@ import * as m from "@/paraglide/messages";
 import { getLocale } from "@/paraglide/runtime";
 import { useSellerSession } from "@/lib/useSellerSession";
 import { useImageUpload } from "@/lib/useImageUpload";
+import { resolveProfit } from "@/convex/fees";
 import { calculateProfit, formatPrice, formatPriceLocale, normalizeDigits } from "@/lib/utils";
 import CustomSelect from "@/components/ui/CustomSelect";
 import { CATEGORY_CONFIG, getCategoryLabel } from "@/lib/categories";
@@ -46,9 +47,9 @@ export default function AddProductPage() {
   // Normalize Arabic/Kurdish digits to ASCII for calculations
   const priceNum = Number(normalizeDigits(price).replace(/[^\d]/g, "")) || 0;
   const standardProfit = calculateProfit(priceNum);
-  const profit = activeOffer
-    ? (activeOffer.type === "free" ? 0 : (activeOffer.flatFeeAmount ?? 0))
-    : standardProfit;
+  const currentSeller = useQuery(api.users.getCurrentSeller);
+  const customFee = !!currentSeller?.feeMode && currentSeller.feeMode !== "default";
+  const profit = resolveProfit(priceNum, currentSeller, activeOffer ?? null);
 
   const MAX_PHOTOS = 5;
 
@@ -230,7 +231,7 @@ export default function AddProductPage() {
           {errors.price && <p className="mt-1 text-xs text-red-500">{!price ? m.errPriceRequired() : m.priceRange()}</p>}
           {!errors.price && <p className="mt-1 text-xs text-[var(--color-ink-fade)]">{m.priceRange()}</p>}
           {price && priceNum >= 5000 && (
-            activeOffer ? (
+            activeOffer && !customFee ? (
               <div className={`mt-2 rounded-lg px-3 py-2 ${
                 activeOffer.type === "free"
                   ? "bg-green-50 border border-green-100"

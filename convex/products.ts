@@ -18,6 +18,7 @@ import {
   requireAdmin,
   requireCurrentSeller,
 } from "./auth";
+import { resolveProfit } from "./fees";
 
 type PublicProduct = Omit<Doc<"products">, "sellerId" | "sellerPhone" | "profit">;
 
@@ -64,20 +65,6 @@ async function generateSeq(ctx: QueryCtx | MutationCtx): Promise<string> {
   const all = await ctx.db.query("products").collect();
   const count = all.filter((p) => (p.seq ?? "").startsWith(prefix)).length;
   return `${prefix}${String(count + 1).padStart(4, "0")}`;
-}
-
-function calculateProfit(price: number): number {
-  if (price >= 5000 && price <= 9000) return 2000;
-  if (price >= 10000 && price <= 29000) return 3000;
-  if (price >= 30000 && price <= 49000) return 4000;
-  if (price >= 50000 && price <= 99000) return 5000;
-  if (price >= 100000 && price <= 199000) return 10000;
-  if (price >= 200000 && price <= 299000) return 15000;
-  if (price >= 300000 && price <= 399000) return 20000;
-  if (price >= 400000 && price <= 499000) return 25000;
-  if (price >= 500000 && price <= 1000000) return 30000;
-  if (price > 1000000) return 35000;
-  return 0;
 }
 
 function validateListingInput({
@@ -300,9 +287,7 @@ export const add = mutation({
     const allOffers = await ctx.db.query("offers")
       .filter(q => q.eq(q.field("isActive"), true)).collect();
     const activeOffer = allOffers.find(o => o.startDate <= today && o.endDate >= today);
-    const profit = activeOffer
-      ? (activeOffer.type === "free" ? 0 : (activeOffer.flatFeeAmount ?? 0))
-      : calculateProfit(args.price);
+    const profit = resolveProfit(args.price, seller, activeOffer ?? null);
     const seq = await generateSeq(ctx);
     const id = await ctx.db.insert("products", {
       ...args,
@@ -434,9 +419,7 @@ export const sellerUpdate = mutation({
     const allOffers = await ctx.db.query("offers")
       .filter(q => q.eq(q.field("isActive"), true)).collect();
     const activeOffer = allOffers.find(o => o.startDate <= today && o.endDate >= today);
-    const profit = activeOffer
-      ? (activeOffer.type === "free" ? 0 : (activeOffer.flatFeeAmount ?? 0))
-      : calculateProfit(fields.price);
+    const profit = resolveProfit(fields.price, seller, activeOffer ?? null);
     await ctx.db.patch(id, {
       ...fields,
       profit,
@@ -488,9 +471,7 @@ export const duplicate = mutation({
     const allOffers = await ctx.db.query("offers")
       .filter(q => q.eq(q.field("isActive"), true)).collect();
     const activeOffer = allOffers.find(o => o.startDate <= today && o.endDate >= today);
-    const profit = activeOffer
-      ? (activeOffer.type === "free" ? 0 : (activeOffer.flatFeeAmount ?? 0))
-      : calculateProfit(src.price);
+    const profit = resolveProfit(src.price, seller, activeOffer ?? null);
 
     const seq = await generateSeq(ctx);
     const newId = await ctx.db.insert("products", {

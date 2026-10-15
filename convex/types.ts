@@ -45,3 +45,10 @@ export const userRoleValidator = v.union(
   v.literal("super_admin"),
 );
 export type UserRole = typeof userRoleValidator.type;
+
+export const feeModeValidator = v.union(
+  v.literal("default"),
+  v.literal("flat"),
+  v.literal("percentage"),
+  v.literal("none"),
+);

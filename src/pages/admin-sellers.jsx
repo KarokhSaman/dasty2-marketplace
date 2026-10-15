@@ -5,6 +5,13 @@ import { api } from "@/convex/_generated/api";
 import * as m from "@/paraglide/messages";
 import SellerActionsMenu from "@/components/admin/SellerActionsMenu";
 
+function feeLabel({ feeMode, feeValue }) {
+  if (feeMode === "flat") return `Flat fee ${Number(feeValue).toLocaleString("en-US")} IQD`;
+  if (feeMode === "percentage") return `${feeValue}% of price`;
+  if (feeMode === "none") return "No service fee";
+  return "Default pricing table";
+}
+
 export default function AdminSellersPage() {
   const router        = useRouter();
   const sellers       = useQuery(api.users.getAll);
@@ -12,6 +19,7 @@ export default function AdminSellersPage() {
   const setActive     = useMutation(api.users.setActive);
   const setRole       = useMutation(api.users.setRole);
   const deleteSeller  = useMutation(api.users.deleteSeller);
+  const setFeeArrangement = useMutation(api.users.setFeeArrangement);
   const createLog     = useMutation(api.adminLogs.create);
   const [search, setSearch] = useState("");
   const [expandedSeller, setExpandedSeller] = useState(null);
@@ -79,6 +87,11 @@ export default function AdminSellersPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-bold text-[var(--color-ink)]">{seller.name}</p>
+                  {seller.feeMode && seller.feeMode !== "default" && (
+                    <span className="inline-block mt-1 text-[10.5px] font-semibold bg-[var(--color-honey-50)] text-[var(--color-honey-600)] px-2 py-0.5 rounded-full">
+                      {feeLabel(seller)}
+                    </span>
+                  )}
                   {seller.phone && (
                     <p className="text-xs text-[var(--color-ink-soft)] mt-1.5 truncate" dir="ltr">
                       {seller.phone}
@@ -123,6 +136,14 @@ export default function AdminSellersPage() {
                       notes: seller.email || undefined,
                     });
                   }}
+                  onSetFee={async (feeMode, feeValue) => {
+                    await setFeeArrangement({ id: seller._id, feeMode, feeValue });
+                    await createLog({
+                      action: "seller_fee_changed",
+                      sellerName: seller.name,
+                      notes: feeLabel({ feeMode, feeValue }),
+                    });
+                  }}
                   onDelete={async () => {
                     await deleteSeller({ id: seller._id });
                     await createLog({
@@ -163,6 +184,10 @@ export default function AdminSellersPage() {
                   <p className="text-sm text-[var(--color-ink)]">{seller.city}{seller.address ? `, ${seller.address}` : ""}</p>
                 </div>
               )}
+              <div>
+                <p className="text-[11px] font-semibold text-[var(--color-ink-fade)] uppercase tracking-wide mb-0.5">Service fee</p>
+                <p className="text-sm text-[var(--color-ink)]">{feeLabel(seller)}</p>
+              </div>
               <div className="grid grid-cols-2 gap-4 pt-2">
                 <button
                   onClick={() => router.navigate({ to: "/admin/products", search: { tab: "all", sellerId: seller._id } })}

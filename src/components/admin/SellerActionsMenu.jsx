@@ -3,11 +3,23 @@ import { useIsDesktop } from "@/components/ui/useMediaQuery";
 import BottomSheet from "@/components/ui/BottomSheet";
 import * as m from "@/paraglide/messages";
 
-export default function SellerActionsMenu({ seller, onPromote, onToggleActive, onDelete }) {
+const FEE_MODES = [
+  { value: "default", label: "Default pricing table" },
+  { value: "flat", label: "Flat fee per product" },
+  { value: "percentage", label: "Percentage of price" },
+  { value: "none", label: "No service fee" },
+];
+
+export default function SellerActionsMenu({ seller, onPromote, onToggleActive, onDelete, onSetFee }) {
   const [open, setOpen] = useState(false);
   const [confirmDel, setConfirmDel] = useState(false);
   const [confirmPromote, setConfirmPromote] = useState(false);
   const [confirmToggle, setConfirmToggle] = useState(false);
+  const [feeOpen, setFeeOpen] = useState(false);
+  const [feeMode, setFeeMode] = useState("default");
+  const [feeValue, setFeeValue] = useState("");
+  const [feeError, setFeeError] = useState("");
+  const [feeSaving, setFeeSaving] = useState(false);
   const isDesktop = useIsDesktop();
   const ref = useRef();
 
@@ -19,6 +31,7 @@ export default function SellerActionsMenu({ seller, onPromote, onToggleActive, o
         setConfirmDel(false);
         setConfirmPromote(false);
         setConfirmToggle(false);
+        setFeeOpen(false);
       }
     }
     document.addEventListener("mousedown", handler);
@@ -30,11 +43,102 @@ export default function SellerActionsMenu({ seller, onPromote, onToggleActive, o
     setConfirmDel(false);
     setConfirmPromote(false);
     setConfirmToggle(false);
+    setFeeOpen(false);
+    setFeeError("");
   };
+
+  function openFee() {
+    setFeeMode(seller.feeMode ?? "default");
+    setFeeValue(seller.feeValue != null ? String(seller.feeValue) : "");
+    setFeeError("");
+    setFeeOpen(true);
+  }
+
+  async function saveFee() {
+    const needsValue = feeMode === "flat" || feeMode === "percentage";
+    const num = Number(feeValue);
+    if (needsValue && (!feeValue || !Number.isFinite(num) || num <= 0)) {
+      setFeeError(feeMode === "flat" ? "Enter the flat fee in IQD" : "Enter a percentage between 0 and 100");
+      return;
+    }
+    setFeeSaving(true);
+    setFeeError("");
+    try {
+      await onSetFee(feeMode, needsValue ? num : undefined);
+      close();
+    } catch (err) {
+      setFeeError(err?.message?.split("\n")[0].replace(/^.*Uncaught Error:\s*/, "") || "Could not save");
+    } finally {
+      setFeeSaving(false);
+    }
+  }
 
   const rowCls = "flex items-center gap-3 w-full px-4 py-3 sm:py-2.5 text-[15px] sm:text-sm text-start transition-colors";
 
-  const actions = confirmPromote ? (
+  const actions = feeOpen ? (
+    <div className="p-4 sm:p-3 sm:w-72">
+      <p className="text-[13px] font-semibold text-[var(--color-ink)] mb-1">Service fee for {seller.name}</p>
+      <p className="text-xs text-[var(--color-ink-fade)] mb-3">
+        Applies to products this seller adds, edits or reposts from now on. Existing products keep their fee.
+      </p>
+      <div className="space-y-1.5 mb-3">
+        {FEE_MODES.map((opt) => (
+          <label
+            key={opt.value}
+            className={`flex items-center gap-2.5 px-3 py-2 rounded-lg border cursor-pointer text-sm transition-colors ${
+              feeMode === opt.value
+                ? "border-[var(--color-ember-300)] bg-[var(--color-ember-50)] text-[var(--color-ink)]"
+                : "border-[var(--color-hairline)] text-[var(--color-ink-soft)] hover:bg-[var(--color-cream)]"
+            }`}
+          >
+            <input
+              type="radio"
+              name={`fee-${seller._id}`}
+              checked={feeMode === opt.value}
+              onChange={() => { setFeeMode(opt.value); setFeeError(""); }}
+              className="accent-[var(--color-ember-600)]"
+            />
+            {opt.label}
+          </label>
+        ))}
+      </div>
+      {(feeMode === "flat" || feeMode === "percentage") && (
+        <div className="mb-3">
+          <div className="relative">
+            <input
+              type="number"
+              inputMode="decimal"
+              min="0"
+              value={feeValue}
+              onChange={(e) => { setFeeValue(e.target.value); setFeeError(""); }}
+              placeholder={feeMode === "flat" ? "e.g. 3000" : "e.g. 10"}
+              dir="ltr"
+              className="w-full border border-[var(--color-hairline)] rounded-xl ps-3 pe-14 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-ember-300)]"
+            />
+            <span className="absolute end-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-[var(--color-ink-fade)]">
+              {feeMode === "flat" ? "IQD" : "%"}
+            </span>
+          </div>
+        </div>
+      )}
+      {feeError && <p className="text-xs text-red-500 mb-3">{feeError}</p>}
+      <div className="flex gap-2">
+        <button
+          onClick={saveFee}
+          disabled={feeSaving}
+          className="flex-1 text-sm bg-[var(--color-ember-600)] hover:bg-[var(--color-ember-700)] disabled:opacity-60 text-white font-semibold py-2.5 rounded-xl transition-colors"
+        >
+          Save
+        </button>
+        <button
+          onClick={() => setFeeOpen(false)}
+          className="flex-1 text-sm bg-[var(--color-cream-deep)] hover:bg-[var(--color-hairline)] text-[var(--color-ink)] py-2.5 rounded-xl transition-colors"
+        >
+          {m.adminCancel()}
+        </button>
+      </div>
+    </div>
+  ) : confirmPromote ? (
     <div className="p-4 sm:p-3">
       <p className="text-[13px] font-semibold text-[var(--color-ink)] mb-1">Promote to Admin?</p>
       <p className="text-xs text-[var(--color-ink-fade)] mb-3">
@@ -140,6 +244,21 @@ export default function SellerActionsMenu({ seller, onPromote, onToggleActive, o
           />
         </svg>
         {seller.isActive ? m.adminDeactivate() : m.adminActivate()}
+      </button>
+
+      <button
+        onClick={openFee}
+        className={`${rowCls} text-[var(--color-ink)] hover:bg-[var(--color-cream)]`}
+      >
+        <svg className="w-5 h-5 text-[var(--color-ink-fade)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+        Service fee
       </button>
 
       <div className="border-t border-[var(--color-hairline)] mx-2 my-1" />
