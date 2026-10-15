@@ -192,6 +192,26 @@ export const getPublic = query({
   },
 });
 
+// "Similar products" strip on the product page: only same-category approved
+// products, capped, instead of the whole catalogue. The client shuffles and
+// shows 10.
+export const getRelated = query({
+  args: { category: v.string(), excludeId: v.optional(v.string()) },
+  handler: async (ctx, { category, excludeId }) => {
+    const inactiveIds = await getInactiveSellerIds(ctx);
+    const products = await ctx.db
+      .query("products")
+      .withIndex("by_status_category", (q) =>
+        q.eq("status", "approved").eq("category", category),
+      )
+      .order("desc")
+      .take(60);
+    return products
+      .filter((p) => p._id !== excludeId && !inactiveIds.has(p.sellerId))
+      .map(toPublic);
+  },
+});
+
 // Returns featured products sorted by position (1-10) with rotation for same-position products
 export const getFeatured = query({
   args: {},

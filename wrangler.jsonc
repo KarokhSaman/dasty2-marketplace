@@ -29,7 +29,8 @@
   "vars": {
     "VITE_CONVEX_URL": "https://grandiose-pig-440.convex.cloud",
     "VITE_CONVEX_SITE_URL": "https://grandiose-pig-440.convex.site",
-    "VITE_R2_PUBLIC_URL": "https://dev-assets.mndallan.com"
+    "VITE_R2_PUBLIC_URL": "https://dev-assets.mndallan.com",
+    "VITE_IMAGE_TRANSFORMS": "true"
   },
   "env": {
     "production": {
@@ -45,7 +46,8 @@
       "vars": {
         "VITE_CONVEX_URL": "https://artful-firefly-452.convex.cloud",
         "VITE_CONVEX_SITE_URL": "https://artful-firefly-452.convex.site",
-        "VITE_R2_PUBLIC_URL": "https://assets.mndallan.com"
+        "VITE_R2_PUBLIC_URL": "https://assets.mndallan.com",
+        "VITE_IMAGE_TRANSFORMS": "false"
       }
     },
     "dev": {
@@ -57,7 +59,8 @@
       "vars": {
         "VITE_CONVEX_URL": "https://grandiose-pig-440.convex.cloud",
         "VITE_CONVEX_SITE_URL": "https://grandiose-pig-440.convex.site",
-        "VITE_R2_PUBLIC_URL": "https://dev-assets.mndallan.com"
+        "VITE_R2_PUBLIC_URL": "https://dev-assets.mndallan.com",
+        "VITE_IMAGE_TRANSFORMS": "true"
       }
     }
   }

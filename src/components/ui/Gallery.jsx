@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { photoProps } from "@/lib/images";
 
 function ImagePlaceholder() {
   return (
@@ -85,7 +86,7 @@ export default function Gallery({
             className={`shrink-0 w-full snap-center ${aspectClassName}`}
           >
             <img
-              src={src}
+              {...photoProps(src, 1200)}
               alt={count > 1 ? `${alt} — ${i + 1}/${count}` : alt}
               loading={i === 0 ? "eager" : "lazy"}
               className={`w-full h-full ${fit === "contain" ? "object-contain" : "object-cover"}`}

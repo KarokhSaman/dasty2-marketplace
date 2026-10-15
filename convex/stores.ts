@@ -44,30 +44,34 @@ export const getLinked = query({
 });
 
 // Stores that currently have at least one live product — feeds the buyer home
-// page store filter. Public: only id and name are exposed.
+// page store filter. Public: only id and name are exposed. Starts from the (few)
+// stores and stops at the first live product of each, so it does almost no work
+// when there are no stores.
 export const listPublic = query({
   args: {},
   returns: v.array(v.object({ _id: v.id("stores"), name: v.string() })),
   handler: async (ctx) => {
+    const stores = await ctx.db.query("stores").collect();
+    if (stores.length === 0) return [];
+
     const inactive = await ctx.db
       .query("users")
       .withIndex("by_role_and_isActive", (q) => q.eq("role", "seller").eq("isActive", false))
       .collect();
     const inactiveIds = new Set(inactive.map((u) => u._id.toString()));
-    const approved = await ctx.db
-      .query("products")
-      .withIndex("by_status", (q) => q.eq("status", "approved"))
-      .collect();
-    const storeIds = new Set<Id<"stores">>();
-    for (const p of approved) {
-      if (p.storeId && !inactiveIds.has(p.sellerId)) storeIds.add(p.storeId);
+
+    const live = [];
+    for (const store of stores) {
+      for await (const p of ctx.db
+        .query("products")
+        .withIndex("by_store", (q) => q.eq("storeId", store._id))) {
+        if (p.status === "approved" && !inactiveIds.has(p.sellerId)) {
+          live.push({ _id: store._id, name: store.name });
+          break;
+        }
+      }
     }
-    const stores = [];
-    for (const id of storeIds) {
-      const store = await ctx.db.get(id);
-      if (store) stores.push({ _id: store._id, name: store.name });
-    }
-    return stores.sort((a, b) => a.name.localeCompare(b.name));
+    return live.sort((a, b) => a.name.localeCompare(b.name));
   },
 });
 

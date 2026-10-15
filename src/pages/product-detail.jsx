@@ -19,6 +19,7 @@ import {
   WhatsAppButton,
   formatAmount,
 } from "@/components/ui";
+import { photoProps } from "@/lib/images";
 
 const WHATSAPP = import.meta.env.VITE_WHATSAPP_NUMBER;
 
@@ -151,7 +152,7 @@ function RelatedCard({ product }) {
       <div className="bg-white rounded-2xl border border-[var(--color-hairline)] overflow-hidden hover:border-[var(--color-ember-200)] hover:shadow-[0_18px_36px_-22px_rgba(11,12,15,0.22)] transition-all duration-300 active:scale-[0.98]">
         <div className="aspect-square relative overflow-hidden bg-[var(--color-sand)]">
           {photo ? (
-            <img src={photo} alt={product.title}
+            <img {...photoProps(photo, 600)} alt={product.title}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
           ) : <ImagePlaceholder size="sm" />}
           <Chip
@@ -272,9 +273,12 @@ export default function ProductDetailPage() {
   });
   // Related list stays a client-only live query — it shuffles with Math.random(),
   // which must not run during SSR (hydration mismatch).
-  const allProducts = useQuery(api.products.getPublic);
   const seed = useMemo(() => getProductCache(id), [id]);
   const product = live ?? seed;
+  const relatedPool = useQuery(
+    api.products.getRelated,
+    product ? { category: product.category, excludeId: product._id } : "skip",
+  );
 
   // Keep hooks unconditional while the query moves through loading/not-found.
   const [origin, setOrigin] = useState("https://dasty2mndalan.com");
@@ -297,11 +301,8 @@ export default function ProductDetailPage() {
     })
   )}`;
 
-  const related = allProducts
-    ? allProducts
-        .filter(p => p.category === product.category && p._id !== product._id)
-        .sort(() => Math.random() - 0.5)
-        .slice(0, 10)
+  const related = relatedPool
+    ? [...relatedPool].sort(() => Math.random() - 0.5).slice(0, 10)
     : [];
 
   let photos = product.photos?.length ? product.photos : [];
@@ -442,10 +443,10 @@ export default function ProductDetailPage() {
         </div>
       </div>
 
-      {(allProducts === undefined || related.length > 0) && (
+      {(relatedPool === undefined || related.length > 0) && (
         <RelatedSection
           heading={categoryLabel}
-          loading={allProducts === undefined}
+          loading={relatedPool === undefined}
           items={related}
         />
       )}

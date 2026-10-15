@@ -4,6 +4,7 @@ import * as m from "@/paraglide/messages";
 import { getLocale } from "@/paraglide/runtime";
 import { getCategoryLabel } from "@/lib/categories";
 import { getCityLabel } from "@/lib/cities";
+import { photoProps } from "@/lib/images";
 
 function VIPCard({ product, onViewProduct, isCenter }) {
   const locale = getLocale();
@@ -21,7 +22,7 @@ function VIPCard({ product, onViewProduct, isCenter }) {
       <div className="absolute inset-0 w-full h-full overflow-hidden">
         {product.photos?.[photoIndex] ? (
           <img
-            src={product.photos[photoIndex]}
+            {...photoProps(product.photos[photoIndex], 1000)}
             alt={product.title}
             className="w-full h-full object-cover object-center"
           />

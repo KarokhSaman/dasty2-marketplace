@@ -73,16 +73,14 @@ function FiltersRow({ cities, setCities, availableCities, stores, setStores, pub
           selected={cities}
           onChange={setCities}
         />
-        {publicStores && publicStores.length > 0 && (
-          <MultiSelectMenu
-            label={m.storesLabel()}
-            allLabel={m.storeAll()}
-            leadingIcon={<StoreIcon />}
-            options={publicStores.map((st) => ({ value: st._id, label: st.name }))}
-            selected={stores}
-            onChange={setStores}
-          />
-        )}
+        <MultiSelectMenu
+          label={m.storesLabel()}
+          allLabel={m.storeAll()}
+          leadingIcon={<StoreIcon />}
+          options={(publicStores ?? []).map((st) => ({ value: st._id, label: st.name }))}
+          selected={stores}
+          onChange={setStores}
+        />
       </div>
       <div className="inline-flex items-center gap-1 shrink-0">
         <MultiSelectMenu
