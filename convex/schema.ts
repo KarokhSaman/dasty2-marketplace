@@ -55,6 +55,7 @@ export default defineSchema({
   })
     .index("by_status",          ["status"])
     .index("by_status_category", ["status", "category"])
+    .index("by_status_city",     ["status", "city"])
     .index("by_seller",          ["sellerId"])
     .index("by_store",           ["storeId"]),
 

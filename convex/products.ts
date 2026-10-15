@@ -192,6 +192,38 @@ export const getPublic = query({
   },
 });
 
+// Cities that currently have at least one live product — feeds the buyer home
+// page City filter (the page only loads products a screenful at a time, so it
+// can't work this out itself). Hops from city to city through the index, so it
+// reads a few documents per city rather than every product.
+export const listCities = query({
+  args: {},
+  returns: v.array(v.string()),
+  handler: async (ctx) => {
+    const inactiveIds = await getInactiveSellerIds(ctx);
+    const cities: string[] = [];
+    let last = "";
+    for (let i = 0; i < 200; i++) {
+      const next = await ctx.db
+        .query("products")
+        .withIndex("by_status_city", (q) => q.eq("status", "approved").gt("city", last))
+        .first();
+      if (!next) break;
+      const city = next.city;
+      last = city;
+      for await (const p of ctx.db
+        .query("products")
+        .withIndex("by_status_city", (q) => q.eq("status", "approved").eq("city", city))) {
+        if (!inactiveIds.has(p.sellerId)) {
+          cities.push(city);
+          break;
+        }
+      }
+    }
+    return cities;
+  },
+});
+
 // "Similar products" strip on the product page: only same-category approved
 // products, capped, instead of the whole catalogue. The client shuffles and
 // shows 10.
