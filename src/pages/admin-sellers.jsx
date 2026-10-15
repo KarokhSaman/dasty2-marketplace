@@ -4,6 +4,7 @@ import { useRouter } from "@tanstack/react-router";
 import { api } from "@/convex/_generated/api";
 import * as m from "@/paraglide/messages";
 import SellerActionsMenu from "@/components/admin/SellerActionsMenu";
+import SellerStores from "@/components/admin/SellerStores";
 
 function feeLabel({ feeMode, feeValue }) {
   if (feeMode === "flat") return `Flat fee ${Number(feeValue).toLocaleString("en-US")} IQD`;
@@ -16,6 +17,7 @@ export default function AdminSellersPage() {
   const router        = useRouter();
   const sellers       = useQuery(api.users.getAll);
   const products      = useQuery(api.products.getAll);
+  const allStores     = useQuery(api.stores.listAll);
   const setActive     = useMutation(api.users.setActive);
   const setRole       = useMutation(api.users.setRole);
   const deleteSeller  = useMutation(api.users.deleteSeller);
@@ -39,7 +41,7 @@ export default function AdminSellersPage() {
       .sort((a, b) => new Date(b.registeredAt) - new Date(a.registeredAt));
   }, [sellers, products, search]);
 
-  if (!sellers || !products) {
+  if (!sellers || !products || !allStores) {
     return (
       <div className="space-y-3 animate-pulse">
         {Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-16 bg-gray-200 rounded-xl" />)}
@@ -188,6 +190,7 @@ export default function AdminSellersPage() {
                 <p className="text-[11px] font-semibold text-[var(--color-ink-fade)] uppercase tracking-wide mb-0.5">Service fee</p>
                 <p className="text-sm text-[var(--color-ink)]">{feeLabel(seller)}</p>
               </div>
+              <SellerStores seller={seller} sellers={sellers} stores={allStores.filter((st) => st.sellerId === seller._id)} />
               <div className="grid grid-cols-2 gap-4 pt-2">
                 <button
                   onClick={() => router.navigate({ to: "/admin/products", search: { tab: "all", sellerId: seller._id } })}

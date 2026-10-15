@@ -37,6 +37,8 @@ export default function AdminProductsPage() {
 
   const products        = useQuery(api.products.getAll);
   const updateStatus    = useMutation(api.products.updateStatus);
+  const markUnitSoldMutation = useMutation(api.products.markUnitSold);
+  const returnUnitMutation = useMutation(api.products.returnUnit);
   const adminUpdateCategory = useMutation(api.products.adminUpdateCategory);
   const adminUpdateTitle = useMutation(api.products.adminUpdateTitle);
   const adminUpdateBrand = useMutation(api.products.adminUpdateBrand);
@@ -156,6 +158,18 @@ export default function AdminProductsPage() {
     await log("marked_paid", product);
   }
 
+  async function markUnitSold(product, status) {
+    await markUnitSoldMutation({ id: product._id, status });
+    const msg = status === "sold" ? m.adminSoldMsg({ title: product.title }) : m.adminPaidMsg({ title: product.title });
+    await createNotif({ sellerId: product.sellerId, productId: product._id, message: msg, url: `/seller` });
+    await log(status === "sold" ? "marked_sold" : "marked_paid", product, `1 unit, ${product.stock - 1} left`);
+  }
+
+  async function returnUnit(product) {
+    await returnUnitMutation({ id: product._id });
+    await log("unit_returned", product, "Unit returned to stock");
+  }
+
   async function deleteProduct(id) {
     const product = products?.find(p => p._id === id);
     await removeProduct({ id });
@@ -170,17 +184,20 @@ export default function AdminProductsPage() {
         await log("status_changed_to_pending", product);
         break;
       case "approved":
-        await approve(product);
+        if (product.soldFromId && (product.status === "sold" || product.status === "paid")) await returnUnit(product);
+        else await approve(product);
         break;
       case "rejected":
         setRejectingId(product._id);
         setRejectReason("");
         break;
       case "sold":
-        await markSold(product);
+        if (product.status === "approved" && product.stock > 1) await markUnitSold(product, "sold");
+        else await markSold(product);
         break;
       case "paid":
-        await markPaid(product);
+        if (product.status === "approved" && product.stock > 1) await markUnitSold(product, "paid");
+        else await markPaid(product);
         break;
     }
   }
@@ -378,6 +395,10 @@ export default function AdminProductsPage() {
                   <p className="text-xs text-[var(--color-ink-fade)] mt-0.5 flex items-center gap-1.5">
                     <span>{product.condition === "new" ? m.conditionNew() : m.conditionUsed()}</span>
                     {product.seq && <span className="font-mono font-bold text-rose-400">{product.seq}</span>}
+                    {product.storeName && <span className="font-semibold text-[var(--color-ink-soft)]">· {product.storeName}</span>}
+                    {product.stock > 0 && product.status === "approved" && (
+                      <span className="font-semibold bg-[var(--color-honey-50)] text-[var(--color-honey-600)] px-1.5 py-0.5 rounded-full">Stock {product.stock}</span>
+                    )}
                   </p>
 
                   {/* Category - editable for pending, view-only for others */}

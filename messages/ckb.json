@@ -302,5 +302,16 @@
   "listedBy": "بڵاوکراوەتەوە لەلایەن",
   "postedLabel": "ڕێکەوتی بڵاوکردنەوە",
   "viewsCount": "{count} بینین",
-  "safetyNote": "پێش پارەدان کاڵاکە بە باشی بپشکنە و هەمیشە لە شوێنێکی گشتیدا یەکتر ببینن."
+  "safetyNote": "پێش پارەدان کاڵاکە بە باشی بپشکنە و هەمیشە لە شوێنێکی گشتیدا یەکتر ببینن.",
+  "fieldStore": "فرۆشگا",
+  "fieldStoreNone": "بێ فرۆشگا",
+  "fieldStock": "بڕی بەردەست",
+  "stockLeft": "{count} ماوە",
+  "unitsSoldLeft": "{sold} فرۆشراوە · {left} ماوە",
+  "storeAll": "هەموو فرۆشگاکان",
+  "feePending": "کرێی چاوەڕوان",
+  "feePaid": "کرێی دراو",
+  "postedForYou": "بۆ تۆ بڵاوکراوەتەوە",
+  "citiesLabel": "شارەکان",
+  "storesLabel": "فرۆشگاکان"
 }

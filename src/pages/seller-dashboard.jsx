@@ -15,9 +15,10 @@ import { getLocale } from "@/paraglide/runtime";
 import { useSellerSession } from "@/lib/useSellerSession";
 import { calculateProfit, formatPrice } from "@/lib/utils";
 import CustomSelect from "@/components/ui/CustomSelect";
-import { BottomSheet, useIsDesktop } from "@/components/ui";
+import { BottomSheet, SelectMenu, useIsDesktop } from "@/components/ui";
 import { getCategoryLabel } from "@/lib/categories";
 import { Link } from "@tanstack/react-router";
+import { photoProps } from "@/lib/images";
 
 const EDITABLE_STATUSES = ["pending", "approved", "rejected"];
 
@@ -164,10 +165,16 @@ export default function SellerDashboard() {
   const router = useRouter();
   const { seller, loading } = useSellerSession();
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [storeFilter, setStoreFilter] = useState("all");
+  const [expandedId, setExpandedId] = useState(null);
   const sellerRemove = useMutation(api.products.sellerRemove);
 
   const products    = useQuery(api.products.getBySeller, seller ? {} : "skip");
   const activeOffer = useQuery(api.offers.getActive);
+  const stores      = useQuery(api.stores.listMine, seller ? {} : "skip");
+  const linkedStore = useQuery(api.stores.getLinked, seller ? {} : "skip");
+  const storeNames  = useMemo(() => new Map((stores ?? []).map(st => [st._id, st.name])), [stores]);
+  const hasStores   = (stores?.length ?? 0) > 0;
 
   const sellerCategories = useMemo(() => {
     if (!products) return [];
@@ -175,11 +182,31 @@ export default function SellerDashboard() {
     return products.filter((p) => { if (seen.has(p.category)) return false; seen.add(p.category); return true; }).map(p => p.category);
   }, [products]);
 
+  // Sold/paid units of a stocked product are listed under that product instead
+  // of as separate rows (unless the original listing no longer exists).
   const visibleProducts = useMemo(() => {
     if (!products) return [];
-    const sorted = [...products].reverse();
-    return categoryFilter === "all" ? sorted : sorted.filter(p => p.category === categoryFilter);
-  }, [products, categoryFilter]);
+    const ids = new Set(products.map(p => p._id));
+    const unitsByParent = new Map();
+    for (const p of products) {
+      if (p.soldFromId && ids.has(p.soldFromId)) {
+        const list = unitsByParent.get(p.soldFromId) ?? [];
+        list.push(p);
+        unitsByParent.set(p.soldFromId, list);
+      }
+    }
+    const top = products
+      .filter(p => !(p.soldFromId && ids.has(p.soldFromId)))
+      .map(p => ({
+        ...p,
+        units: (unitsByParent.get(p._id) ?? []).sort((a, b) => (b.dateSold ?? "").localeCompare(a.dateSold ?? "")),
+      }))
+      .reverse();
+    return top.filter(p =>
+      (categoryFilter === "all" || p.category === categoryFilter) &&
+      (storeFilter === "all" || (storeFilter === "none" ? !p.storeId : p.storeId === storeFilter)),
+    );
+  }, [products, categoryFilter, storeFilter]);
 
   if (loading || !seller || products === undefined) {
     return (
@@ -202,6 +229,9 @@ export default function SellerDashboard() {
     sold:     products.filter(p => p.status === "sold").length,
     paid:     products.filter(p => p.status === "paid").length,
   };
+
+  const feePending = products.filter(p => p.status === "sold").reduce((n, p) => n + (p.profit ?? 0), 0);
+  const feePaid    = products.filter(p => p.status === "paid").reduce((n, p) => n + (p.profit ?? 0), 0);
 
   async function handleDelete(product) {
     await sellerRemove({ id: product._id });
@@ -244,6 +274,17 @@ export default function SellerDashboard() {
 
       <StatsPanel stats={stats} />
 
+      <div className="bg-white rounded-2xl border border-[var(--color-hairline)] shadow-sm flex divide-x divide-[var(--color-hairline)] overflow-hidden mb-6 -mt-3">
+        <div className="flex-1 flex flex-col items-center py-3.5 gap-0.5">
+          <span className="text-lg font-bold text-blue-600">{formatPrice(feePending)}</span>
+          <span className="text-[11px] text-[var(--color-ink-fade)] font-medium">{m.feePending()}</span>
+        </div>
+        <div className="flex-1 flex flex-col items-center py-3.5 gap-0.5">
+          <span className="text-lg font-bold text-purple-600">{formatPrice(feePaid)}</span>
+          <span className="text-[11px] text-[var(--color-ink-fade)] font-medium">{m.feePaid()}</span>
+        </div>
+      </div>
+
       {/* ── My Products — sticky below header ──────────── */}
       <div className="sticky top-14 z-10 -mx-4 px-4 bg-[var(--color-cream)] pb-2 shadow-[0_4px_8px_-4px_rgba(0,0,0,0.06)]">
         <div className="flex items-center justify-between pt-3 mb-3">
@@ -251,8 +292,8 @@ export default function SellerDashboard() {
           <span className="text-xs text-[var(--color-ink-fade)]">{products.length} {m.statTotal().toLowerCase()}</span>
         </div>
 
-        {/* Category filter */}
-        {sellerCategories.length > 1 && (
+        {/* Category filter (scroll buttons) — sellers without stores */}
+        {!hasStores && sellerCategories.length > 1 && (
           <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
             {["all", ...sellerCategories].map((cat) => (
               <button key={cat} onClick={() => setCategoryFilter(cat)}
@@ -260,6 +301,30 @@ export default function SellerDashboard() {
                   categoryFilter === cat ? "bg-rose-600 text-white border-rose-600" : "bg-white text-[var(--color-ink-soft)] border-[var(--color-hairline)] hover:border-rose-300"
                 }`}>{cat === "all" ? m.categoryAll() : getCategoryLabel(cat, locale)}</button>
             ))}
+          </div>
+        )}
+
+        {/* Store + category dropdowns — only for sellers that have stores */}
+        {hasStores && (
+          <div className="flex items-center gap-2 pb-2">
+            <SelectMenu
+              value={storeFilter}
+              onChange={setStoreFilter}
+              options={[
+                { value: "all", label: m.storeAll() },
+                ...stores.map(st => ({ value: st._id, label: st.name })),
+                { value: "none", label: m.fieldStoreNone() },
+              ]}
+            />
+            <SelectMenu
+              value={categoryFilter}
+              onChange={setCategoryFilter}
+              align="end"
+              options={[
+                { value: "all", label: m.categoryAll() },
+                ...sellerCategories.map(cat => ({ value: cat, label: getCategoryLabel(cat, locale) })),
+              ]}
+            />
           </div>
         )}
       </div>
@@ -289,7 +354,7 @@ export default function SellerDashboard() {
               <div className="flex items-center gap-3">
                 <div className="w-14 h-14 rounded-xl overflow-hidden bg-[var(--color-sand)] shrink-0">
                   {product.photos?.[0]
-                    ? <img src={product.photos[0]} alt={product.title} className="w-full h-full object-cover"/>
+                    ? <img {...photoProps(product.photos[0], 200)} alt={product.title} className="w-full h-full object-cover"/>
                     : <div className="w-full h-full flex items-center justify-center"><svg className="w-5 h-5 text-[var(--color-ink-fade)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></div>
                   }
                 </div>
@@ -299,16 +364,68 @@ export default function SellerDashboard() {
                     <span className="text-xs text-[var(--color-ink-fade)] truncate min-w-0">{getCategoryLabel(product.category, locale)}</span>
                     {product.seq && <span className="text-xs font-mono text-rose-400 bg-rose-50 px-1.5 py-0.5 rounded shrink-0">{product.seq}</span>}
                   </div>
+                  {hasStores && product.storeId && storeNames.get(product.storeId) && (
+                    <p className="text-xs font-semibold text-[var(--color-ink-soft)] truncate mt-0.5">{storeNames.get(product.storeId)}</p>
+                  )}
                   <p className="text-[13px] font-bold text-[var(--color-ink)] mt-0.5">{formatPrice(product.price)}</p>
+                  {linkedStore && (
+                    <p className="text-xs text-[var(--color-ink-fade)] mt-0.5 truncate">
+                      {m.profitLabel()} <span className="font-semibold text-[var(--color-ink-soft)]">{formatPrice(product.profit ?? 0)}</span>
+                      {product.postedByManager && <span className="ms-2 text-[10.5px] font-semibold bg-[var(--color-cream-deep)] text-[var(--color-ink-soft)] px-1.5 py-0.5 rounded-full">{m.postedForYou()}</span>}
+                    </p>
+                  )}
                 </div>
                 <span className={`text-xs px-2.5 py-1 rounded-full font-semibold shrink-0 ${STATUS_STYLE[product.status] ?? "bg-[var(--color-cream-deep)] text-[var(--color-ink-soft)]"}`}>
                   {statusLabel[product.status] ?? product.status}
                 </span>
-                <ProductMenu product={product}
-                  onEdit={() => router.navigate({ to: `/seller/products/${product._id}/edit` })}
-                  onRepost={() => handleRepost(product)}
-                  onDelete={() => handleDelete(product)}/>
+                {!product.postedByManager && (
+                  <ProductMenu product={product}
+                    onEdit={() => router.navigate({ to: `/seller/products/${product._id}/edit` })}
+                    onRepost={() => handleRepost(product)}
+                    onDelete={() => handleDelete(product)}/>
+                )}
               </div>
+              {/* Stock summary + sold units */}
+              {(product.units.length > 0 || product.stock > 1) && (() => {
+                const sold = product.units.length + (product.status === "sold" || product.status === "paid" ? 1 : 0);
+                const left = product.status === "approved" ? (product.stock ?? 1) : 0;
+                const expandable = product.units.length > 0;
+                const isOpen = expandedId === product._id;
+                return (
+                  <>
+                    <button
+                      type="button"
+                      disabled={!expandable}
+                      onClick={() => setExpandedId(isOpen ? null : product._id)}
+                      className={`mt-2.5 w-full flex items-center justify-between gap-2 rounded-lg bg-[var(--color-cream)] px-3 py-2 text-xs font-semibold text-[var(--color-ink)] ${expandable ? "hover:bg-[var(--color-cream-deep)] cursor-pointer" : "cursor-default"}`}
+                    >
+                      <span>{m.unitsSoldLeft({ sold, left })}</span>
+                      {expandable && (
+                        <svg className={`w-4 h-4 text-[var(--color-ink-fade)] transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+                          fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      )}
+                    </button>
+                    {isOpen && (
+                      <div className="mt-2 space-y-1.5">
+                        {product.units.map((unit) => (
+                          <div key={unit._id} className="flex items-center gap-2 rounded-lg border border-[var(--color-hairline)] px-3 py-2">
+                            <span className="text-xs text-[var(--color-ink-fade)]" dir="ltr">{unit.dateSold?.slice(0, 10)}</span>
+                            <span className="text-[13px] font-bold text-[var(--color-ink)] flex-1">
+                              {formatPrice(unit.price)}
+                              {linkedStore && <span className="ms-2 text-xs font-medium text-[var(--color-ink-fade)]">{m.profitLabel()} {formatPrice(unit.profit ?? 0)}</span>}
+                            </span>
+                            <span className={`text-[11px] px-2 py-0.5 rounded-full font-semibold ${STATUS_STYLE[unit.status] ?? ""}`}>
+                              {statusLabel[unit.status] ?? unit.status}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
               {/* Rejection reason */}
               {product.status === "rejected" && product.notes && (
                 <div className="mt-2.5 flex items-start gap-2 bg-red-50 border border-red-100 rounded-lg px-3 py-2">

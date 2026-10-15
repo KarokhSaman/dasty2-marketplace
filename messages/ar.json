@@ -302,5 +302,16 @@
   "listedBy": "منشور بواسطة",
   "postedLabel": "نُشر",
   "viewsCount": "{count} مشاهدة",
-  "safetyNote": "افحص المنتج وقابِل البائع في مكان عام قبل الدفع."
+  "safetyNote": "افحص المنتج وقابِل البائع في مكان عام قبل الدفع.",
+  "fieldStore": "المتجر",
+  "fieldStoreNone": "بدون متجر",
+  "fieldStock": "الكمية المتوفرة",
+  "stockLeft": "{count} متبقي",
+  "unitsSoldLeft": "{sold} مباع · {left} متبقي",
+  "storeAll": "جميع المتاجر",
+  "feePending": "رسوم معلقة",
+  "feePaid": "رسوم مدفوعة",
+  "postedForYou": "نُشر لأجلك",
+  "citiesLabel": "المدن",
+  "storesLabel": "المتاجر"
 }

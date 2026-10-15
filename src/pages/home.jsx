@@ -6,12 +6,13 @@ import { useState, useMemo, useRef, useEffect, useLayoutEffect } from "react";
 import ProductCard from "@/components/buyer/ProductCard";
 import VIPSpotlight from "@/components/buyer/VIPSpotlight";
 import CategoryBar from "@/components/buyer/CategoryBar";
-import LocationPicker from "@/components/buyer/LocationPicker";
+import MultiSelectMenu from "@/components/buyer/MultiSelectMenu";
 import { SegmentedControl, Skeleton } from "@/components/ui";
 import { Link } from "@tanstack/react-router";
 import * as m from "@/paraglide/messages";
 import { getCategoryLabel } from "@/lib/categories";
 import { getAllBrands } from "@/lib/brands";
+import { getCityLabel } from "@/lib/cities";
 import { getLocale } from "@/paraglide/runtime";
 import { seedProductCache } from "@/lib/productCache";
 import { useGlobalSellerSession } from "@/lib/SellerSessionContext";
@@ -41,13 +42,55 @@ function SortIcon() {
 }
 
 
-/** Row with City filter (left) and Brand + Sort filters (right) */
-function FiltersRow({ city, setCity, availableCities, brands, setBrands, sort, setSort }) {
+function PinIcon() {
+  return (
+    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+    </svg>
+  );
+}
+
+function StoreIcon() {
+  return (
+    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9l1-5h16l1 5M3 9v11h18V9M3 9h18M9 20v-6h6v6" />
+    </svg>
+  );
+}
+
+/** Row with City + Store filters (left) and Brand + Sort filters (right) — all multi-select */
+function FiltersRow({ cities, setCities, availableCities, stores, setStores, publicStores, brands, setBrands, sort, setSort }) {
+  const locale = getLocale();
   return (
     <div className={`flex items-center justify-between gap-2 mb-2.5 px-0.5`}>
-      <LocationPicker city={city} setCity={setCity} availableCities={availableCities} />
+      <div className="inline-flex items-center gap-1 min-w-0">
+        <MultiSelectMenu
+          label={m.citiesLabel()}
+          allLabel={m.allCities()}
+          leadingIcon={<PinIcon />}
+          options={availableCities.map((c) => ({ value: c, label: getCityLabel(c, locale) ?? c }))}
+          selected={cities}
+          onChange={setCities}
+        />
+        <MultiSelectMenu
+          label={m.storesLabel()}
+          allLabel={m.storeAll()}
+          leadingIcon={<StoreIcon />}
+          options={(publicStores ?? []).map((st) => ({ value: st._id, label: st.name }))}
+          selected={stores}
+          onChange={setStores}
+        />
+      </div>
       <div className="inline-flex items-center gap-1 shrink-0">
-        <BrandSelector brands={brands} setBrands={setBrands} />
+        <MultiSelectMenu
+          label={m.brandLabel()}
+          allLabel={m.allBrands()}
+          options={[...getAllBrands().map((b) => ({ value: b, label: b })), { value: "Other", label: "Other" }]}
+          selected={brands}
+          onChange={setBrands}
+          align="end"
+        />
         <SortMenu sort={sort} setSort={setSort} />
       </div>
     </div>
@@ -125,82 +168,6 @@ function SortMenu({ sort, setSort }) {
 }
 
 /** Brand multi-select dropdown component */
-function BrandSelector({ brands, setBrands }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
-  const allBrands = getAllBrands();
-  const selectedCount = brands.length;
-  const label = selectedCount > 0 ? `${m.brandLabel()} (${selectedCount})` : m.allBrands();
-  const isActive = selectedCount > 0;
-
-  useEffect(() => {
-    if (!open) return;
-    function handleClickOutside(e) {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [open]);
-
-  const toggleBrand = (brand) => {
-    if (brand === "all") {
-      setBrands([]);
-    } else {
-      if (brands.includes(brand)) {
-        setBrands(brands.filter(b => b !== brand));
-      } else {
-        setBrands([...brands, brand]);
-      }
-    }
-  };
-
-  return (
-    <div className="relative" ref={ref}>
-      <button
-        onClick={() => setOpen(!open)}
-        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all duration-200 text-[11.5px] font-semibold whitespace-nowrap ${
-          isActive
-            ? "border-[var(--color-ember-400)] bg-[var(--color-ember-50)] text-[var(--color-ember-600)]"
-            : "border-transparent bg-[var(--color-sand)] hover:bg-[var(--color-ember-50)] text-[var(--color-ink)]"
-        }`}
-      >
-        {label}
-        <svg className={`w-3 h-3 transition-transform duration-200 ${open ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
-      {open && (
-        <div className="absolute end-0 top-full mt-2 bg-white border border-[var(--color-hairline)] rounded-2xl shadow-[0_18px_44px_-20px_rgba(11,12,15,0.28)] z-[60] overflow-hidden min-w-[150px]">
-          <div className="max-h-48 overflow-y-auto">
-            {[{ value: "all", label: m.allBrands() }, ...allBrands.map(b => ({ value: b, label: b })), { value: "Other", label: "Other" }].map((item) => {
-              const isAllBrands = item.value === "all";
-              const isSelected = isAllBrands ? brands.length === 0 : brands.includes(item.value);
-              return (
-                <button
-                  key={item.value}
-                  type="button"
-                  onClick={() => toggleBrand(item.value)}
-                  className={`flex items-center justify-between gap-3 w-full px-3 py-2 text-xs text-start whitespace-nowrap transition-colors ${
-                    isSelected
-                      ? "bg-[var(--color-ember-50)] text-[var(--color-ember-600)] font-semibold"
-                      : "text-[var(--color-ink)] hover:bg-[var(--color-cream)]"
-                  }`}
-                >
-                  {item.label}
-                  {isSelected && (
-                    <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                    </svg>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
 
 /** Row: condition tabs (left) + reset button (right) */
 function ConditionRow({ condition, setCondition, hasActiveFilter, onReset }) {
@@ -264,7 +231,7 @@ function EndDivider({ label }) {
 
 // ── Filters state ──────────────────────────────────────────
 const INITIAL_FILTERS = {
-  category: "all", condition: "all", sort: "default", city: "all", brands: [],
+  category: "all", condition: "all", sort: "default", cities: [], stores: [], brands: [],
 };
 
 export default function HomePage() {
@@ -273,7 +240,9 @@ export default function HomePage() {
   const [filters, setFilters] = useState(INITIAL_FILTERS);
   const [rotationTick, setRotationTick] = useState(0); // Trigger re-render every 15 seconds
   const [isRotating, setIsRotating] = useState(false); // Animation state
-  const { category, condition, sort, city, brands } = filters;
+  const { category, condition, sort, brands } = filters;
+  const cities = filters.cities ?? [];
+  const stores = filters.stores ?? [];
   const updateFilter = (key) => (value) => setFilters((f) => ({ ...f, [key]: value }));
   const sentinelRef = useRef(null);
   // Shuffle seed — calculated after hydration to avoid server/client mismatch
@@ -303,6 +272,7 @@ export default function HomePage() {
   // preload) via React Query, still live-reactive. The paginated feed below
   // stays on usePaginatedQuery (convexQuery has no pagination).
   const { data: liveFeatured } = useReactQuery(convexQuery(api.products.getFeatured, {}));
+  const { data: publicStores } = useReactQuery(convexQuery(api.stores.listPublic, {}));
   const rawFeaturedProducts = liveFeatured ?? cachedFeatured ?? [];
 
   // Apply random shuffle to featured products (same seed throughout page session)
@@ -386,10 +356,11 @@ export default function HomePage() {
 
   const matchesFilters = (p, { skipCategory = false } = {}) => {
     const matchCond   = condition === "all" || p.condition === condition;
-    const matchCity   = city === "all" || p.city === city;
+    const matchCity   = cities.length === 0 || cities.includes(p.city);
     const matchCat    = skipCategory ? true : (category === "all" || p.category === category);
     const matchBrand  = brands.length === 0 || (p.brand && brands.includes(p.brand));
-    return matchCond && matchCity && matchCat && matchBrand;
+    const matchStore  = stores.length === 0 || stores.includes(p.storeId);
+    return matchCond && matchCity && matchCat && matchBrand && matchStore;
   };
 
   const applySort = (list) => {
@@ -401,7 +372,7 @@ export default function HomePage() {
 
   // Featured products for carousel — preserve position-based order from getFeatured query
   const featuredFiltered = useMemo(() => featuredProducts.filter((p) => matchesFilters(p, { skipCategory: category === "all" })),
-    [featuredProducts, condition, city, brands, category]);
+    [featuredProducts, condition, cities, stores, brands, category]);
 
   // VIP Carousel products — all featured products (no filter awareness)
   const vipCarouselProducts = useMemo(() => {
@@ -420,7 +391,7 @@ export default function HomePage() {
     const sortedFeatured = featured; // Already sorted by position in getFeatured query
     const combined = [...sortedFeatured, ...applySort(regular)];
     return combined;
-  }, [featuredProducts, results, condition, sort, city, category, brands]);
+  }, [featuredProducts, results, condition, sort, cities, stores, category, brands]);
   const totalCount = allProducts.length;
 
 
@@ -436,9 +407,12 @@ export default function HomePage() {
       </div>
 
       <FiltersRow
-        city={city}
-        setCity={updateFilter("city")}
+        cities={cities}
+        setCities={updateFilter("cities")}
         availableCities={availableCities}
+        stores={stores}
+        setStores={updateFilter("stores")}
+        publicStores={publicStores}
         brands={brands}
         setBrands={updateFilter("brands")}
         sort={sort}
@@ -450,7 +424,7 @@ export default function HomePage() {
           condition={condition}
           setCondition={updateFilter("condition")}
           hasActiveFilter={
-            condition !== "all" || city !== "all" || sort !== "default" || category !== "all" || brands.length > 0
+            condition !== "all" || cities.length > 0 || stores.length > 0 || sort !== "default" || category !== "all" || brands.length > 0
           }
           onReset={() => setFilters(INITIAL_FILTERS)}
         />

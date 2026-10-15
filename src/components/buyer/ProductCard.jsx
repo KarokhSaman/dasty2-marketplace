@@ -5,6 +5,7 @@ import { getCategoryLabel } from "@/lib/categories";
 import { getCityLabel } from "@/lib/cities";
 import { setProductCache } from "@/lib/productCache";
 import { Chip, PriceTag } from "@/components/ui";
+import { photoProps } from "@/lib/images";
 
 // The product currently being opened/returned-to. Only this card gets a
 // `view-transition-name`, so just ONE photo morphs into the detail hero — the
@@ -63,7 +64,7 @@ export default function ProductCard({ product, onSave }) {
         <div className="aspect-[4/5] md:aspect-square relative overflow-hidden bg-[var(--color-sand)]">
           {photo ? (
             <img
-              src={photo}
+              {...photoProps(photo, 600)}
               alt={product.title}
               loading="lazy"
               className="w-full h-full object-cover group-hover:scale-[1.05] transition-transform duration-[500ms] ease-out"

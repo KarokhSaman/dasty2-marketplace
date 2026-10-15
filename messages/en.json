@@ -302,5 +302,16 @@
   "listedBy": "Listed by",
   "postedLabel": "Posted",
   "viewsCount": "{count} views",
-  "safetyNote": "Inspect the item and meet in a public place before paying."
+  "safetyNote": "Inspect the item and meet in a public place before paying.",
+  "fieldStore": "Store",
+  "fieldStoreNone": "No store",
+  "fieldStock": "Quantity in stock",
+  "stockLeft": "{count} left",
+  "unitsSoldLeft": "{sold} sold · {left} left",
+  "storeAll": "All stores",
+  "feePending": "Fee pending",
+  "feePaid": "Fee paid",
+  "postedForYou": "Posted for you",
+  "citiesLabel": "Cities",
+  "storesLabel": "Stores"
 }
