@@ -19,3 +19,10 @@ export function photoProps(url, width) {
     },
   };
 }
+
+// Link-preview thumbnail (WhatsApp etc.): crawlers need an absolute URL, a small
+// file and a format they all read, so ask for a 600px JPEG when resizing is on.
+export function previewImageUrl(url) {
+  if (!ENABLED || !url || !BASE || !url.startsWith(`${BASE}/`)) return url;
+  return `${BASE}/cdn-cgi/image/width=600,quality=80,format=jpeg/${url.slice(BASE.length + 1)}`;
+}
