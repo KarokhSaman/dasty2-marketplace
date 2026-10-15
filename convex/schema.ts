@@ -83,6 +83,9 @@ export default defineSchema({
     // The store owner's own seller account: gets this store's products in its
     // dashboard, and its own listings are locked to this store.
     linkedUserId: v.optional(v.id("users")),
+    // Where the store really is. Products under the store show this city no
+    // matter which account posts them. Missing = the posting seller's city.
+    city: v.optional(v.string()),
     feeMode: v.optional(feeModeValidator),
     feeValue: v.optional(v.number()),
     createdAt: v.string(),

@@ -20,7 +20,7 @@ import {
 } from "./auth";
 import { resolveProfit } from "./fees";
 
-type PublicProduct = Omit<Doc<"products">, "sellerId" | "sellerPhone" | "profit" | "storeId" | "soldFromId">;
+type PublicProduct = Omit<Doc<"products">, "sellerId" | "sellerPhone" | "profit" | "soldFromId">;
 
 const publicProductValidator = v.object({
   _id: v.id("products"),
@@ -51,13 +51,14 @@ const publicProductValidator = v.object({
   dateAdded: v.string(),
   dateSold: v.optional(v.string()),
   stock: v.optional(v.number()),
+  storeId: v.optional(v.id("stores")),
+  storeName: v.optional(v.string()),
 });
 
 const toPublic = ({
   sellerId: _sellerId,
   sellerPhone: _sellerPhone,
   profit: _profit,
-  storeId: _storeId,
   soldFromId: _soldFromId,
   ...rest
 }: Doc<"products">): PublicProduct => rest;
@@ -172,7 +173,8 @@ export const getPublicById = query({
     if (!product || product.status !== "approved") return null;
     const inactiveIds = await getInactiveSellerIds(ctx);
     if (inactiveIds.has(product.sellerId)) return null;
-    return toPublic(product);
+    const store = product.storeId ? await ctx.db.get(product.storeId) : null;
+    return { ...toPublic(product), storeName: store?.name };
   },
 });
 
@@ -354,7 +356,7 @@ export const add = mutation({
       ...args,
       storeId,
       seq,
-      city: seller.city || "Erbil",
+      city: store?.city || seller.city || "Erbil",
       sellerId: seller._id.toString(),
       sellerName: seller.name,
       sellerPhone: seller.phone ?? "",
@@ -545,6 +547,7 @@ export const sellerUpdate = mutation({
     await ctx.db.patch(id, {
       ...fields,
       storeId,
+      ...(store?.city ? { city: store.city } : {}),
       profit,
       status: "pending",
     });

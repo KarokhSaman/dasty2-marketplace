@@ -311,5 +311,7 @@
   "storeAll": "جميع المتاجر",
   "feePending": "رسوم معلقة",
   "feePaid": "رسوم مدفوعة",
-  "postedForYou": "نُشر لأجلك"
+  "postedForYou": "نُشر لأجلك",
+  "citiesLabel": "المدن",
+  "storesLabel": "المتاجر"
 }

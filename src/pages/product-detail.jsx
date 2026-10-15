@@ -365,7 +365,19 @@ export default function ProductDetailPage() {
                 {product.brand}
               </Chip>
             )}
-            {product.stock > 1 && (
+            {product.storeName && (
+              <Chip
+                tone="neutral"
+                leadingIcon={
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9l1-5h16l1 5M3 9v11h18V9M3 9h18M9 20v-6h6v6" />
+                  </svg>
+                }
+              >
+                {product.storeName}
+              </Chip>
+            )}
+            {product.stock >= 1 && (
               <Chip tone="neutral">
                 {m.stockLeft({ count: product.stock })}
               </Chip>

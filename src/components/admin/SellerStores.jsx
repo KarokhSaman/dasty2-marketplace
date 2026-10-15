@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import CustomSelect from "@/components/ui/CustomSelect";
+import SearchableSelect from "@/components/ui/SearchableSelect";
+import { IRAQ_CITIES } from "@/lib/cities";
 
 const FEE_MODES = [
   { value: "default", label: "Default pricing table" },
@@ -25,6 +27,7 @@ function StoreForm({ initial, submitLabel, onSubmit, onCancel, sellerOptions }) 
   const [feeMode, setFeeMode] = useState(initial?.feeMode ?? "default");
   const [feeValue, setFeeValue] = useState(initial?.feeValue != null ? String(initial.feeValue) : "");
   const [linkedUserId, setLinkedUserId] = useState(initial?.linkedUserId ?? "");
+  const [city, setCity] = useState(initial?.city ?? "");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const needsValue = feeMode === "flat" || feeMode === "percentage";
@@ -38,7 +41,7 @@ function StoreForm({ initial, submitLabel, onSubmit, onCancel, sellerOptions }) 
     setSaving(true);
     setError("");
     try {
-      await onSubmit({ name: name.trim(), feeMode, feeValue: needsValue ? num : undefined, linkedUserId: linkedUserId || undefined });
+      await onSubmit({ name: name.trim(), feeMode, feeValue: needsValue ? num : undefined, linkedUserId: linkedUserId || undefined, city: city || undefined });
     } catch (err) {
       setError(err?.message?.split("\n")[0].replace(/^.*Uncaught Error:\s*/, "") || "Could not save");
       setSaving(false);
@@ -68,14 +71,32 @@ function StoreForm({ initial, submitLabel, onSubmit, onCancel, sellerOptions }) 
       )}
       <div>
         <p className="text-[11px] font-semibold text-[var(--color-ink-fade)] uppercase tracking-wide mb-1">Store owner account</p>
-        <CustomSelect
+        <SearchableSelect
           value={linkedUserId}
-          onChange={(id) => { setLinkedUserId(id); setError(""); }}
+          onChange={(id) => {
+            setLinkedUserId(id);
+            setError("");
+            const owner = sellerOptions.find((o) => o.value === id);
+            if (owner?.city && !city) setCity(owner.city);
+          }}
           placeholder="No linked account"
+          searchPlaceholder="Search by name or phone"
           options={[{ value: "", label: "No linked account" }, ...sellerOptions]}
         />
         <p className="text-[11px] text-[var(--color-ink-fade)] mt-1">
           This account sees the store's products and fees in its dashboard, and its own listings are locked to this store.
+        </p>
+      </div>
+      <div>
+        <p className="text-[11px] font-semibold text-[var(--color-ink-fade)] uppercase tracking-wide mb-1">Store city</p>
+        <CustomSelect
+          value={city}
+          onChange={setCity}
+          placeholder="Use the posting seller's city"
+          options={[{ value: "", label: "Use the posting seller's city" }, ...IRAQ_CITIES.map((c) => ({ value: c, label: c }))]}
+        />
+        <p className="text-[11px] text-[var(--color-ink-fade)] mt-1">
+          Products of this store show this city, whoever posts them. Changing it updates the store's existing products too.
         </p>
       </div>
       {error && <p className="text-xs text-red-500">{error}</p>}
@@ -96,7 +117,7 @@ function StoreForm({ initial, submitLabel, onSubmit, onCancel, sellerOptions }) 
 export default function SellerStores({ seller, stores, sellers }) {
   const sellerOptions = (sellers ?? [])
     .filter((u) => u._id !== seller._id)
-    .map((u) => ({ value: u._id, label: `${u.name || "Unnamed"} · ${u.phone ?? ""}` }));
+    .map((u) => ({ value: u._id, label: `${u.name || "Unnamed"} · ${u.phone ?? ""}`, city: u.city }));
   const linkedName = (id) => sellerOptions.find((o) => o.value === id)?.label;
   const createStore = useMutation(api.stores.create);
   const updateStore = useMutation(api.stores.update);
@@ -135,7 +156,7 @@ export default function SellerStores({ seller, stores, sellers }) {
             <div key={store._id} className="flex items-center gap-2 border border-[var(--color-hairline)] rounded-xl px-3 py-2">
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-[var(--color-ink)] truncate">{store.name}</p>
-                <p className="text-xs text-[var(--color-ink-fade)]">{feeLabel(store)}</p>
+                <p className="text-xs text-[var(--color-ink-fade)]">{feeLabel(store)}{store.city ? ` · ${store.city}` : ""}</p>
                 {store.linkedUserId && linkedName(store.linkedUserId) && (
                   <p className="text-xs text-[var(--color-ink-fade)] truncate">Owner account: {linkedName(store.linkedUserId)}</p>
                 )}

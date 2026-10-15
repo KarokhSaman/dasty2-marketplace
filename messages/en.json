@@ -311,5 +311,7 @@
   "storeAll": "All stores",
   "feePending": "Fee pending",
   "feePaid": "Fee paid",
-  "postedForYou": "Posted for you"
+  "postedForYou": "Posted for you",
+  "citiesLabel": "Cities",
+  "storesLabel": "Stores"
 }
