@@ -28,6 +28,7 @@ function StoreForm({ initial, submitLabel, onSubmit, onCancel, sellerOptions }) 
   const [feeValue, setFeeValue] = useState(initial?.feeValue != null ? String(initial.feeValue) : "");
   const [linkedUserId, setLinkedUserId] = useState(initial?.linkedUserId ?? "");
   const [city, setCity] = useState(initial?.city ?? "");
+  const [showInFilter, setShowInFilter] = useState(!initial?.hideFromFilter);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const needsValue = feeMode === "flat" || feeMode === "percentage";
@@ -41,7 +42,7 @@ function StoreForm({ initial, submitLabel, onSubmit, onCancel, sellerOptions }) 
     setSaving(true);
     setError("");
     try {
-      await onSubmit({ name: name.trim(), feeMode, feeValue: needsValue ? num : undefined, linkedUserId: linkedUserId || undefined, city: city || undefined });
+      await onSubmit({ name: name.trim(), feeMode, feeValue: needsValue ? num : undefined, linkedUserId: linkedUserId || undefined, city: city || undefined, hideFromFilter: !showInFilter });
     } catch (err) {
       setError(err?.message?.split("\n")[0].replace(/^.*Uncaught Error:\s*/, "") || "Could not save");
       setSaving(false);
@@ -99,6 +100,20 @@ function StoreForm({ initial, submitLabel, onSubmit, onCancel, sellerOptions }) 
           Products of this store show this city, whoever posts them. Changing it updates the store's existing products too.
         </p>
       </div>
+      <label className="flex items-start gap-2.5 cursor-pointer">
+        <input
+          type="checkbox"
+          checked={showInFilter}
+          onChange={(e) => setShowInFilter(e.target.checked)}
+          className="mt-0.5 w-4 h-4 accent-[var(--color-ember-600)]"
+        />
+        <span>
+          <span className="block text-sm font-semibold text-[var(--color-ink)]">Show in the home page Store filter</span>
+          <span className="block text-[11px] text-[var(--color-ink-fade)]">
+            Turn off to keep this store out of the buyer filter list. Its products still show on the site.
+          </span>
+        </span>
+      </label>
       {error && <p className="text-xs text-red-500">{error}</p>}
       <div className="flex gap-2">
         <button onClick={submit} disabled={saving}
@@ -156,7 +171,7 @@ export default function SellerStores({ seller, stores, sellers }) {
             <div key={store._id} className="flex items-center gap-2 border border-[var(--color-hairline)] rounded-xl px-3 py-2">
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-[var(--color-ink)] truncate">{store.name}</p>
-                <p className="text-xs text-[var(--color-ink-fade)]">{feeLabel(store)}{store.city ? ` · ${store.city}` : ""}</p>
+                <p className="text-xs text-[var(--color-ink-fade)]">{feeLabel(store)}{store.city ? ` · ${store.city}` : ""}{store.hideFromFilter ? " · Hidden from filter" : ""}</p>
                 {store.linkedUserId && linkedName(store.linkedUserId) && (
                   <p className="text-xs text-[var(--color-ink-fade)] truncate">Owner account: {linkedName(store.linkedUserId)}</p>
                 )}

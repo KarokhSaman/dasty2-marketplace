@@ -99,6 +99,9 @@ export default defineSchema({
     // Where the store really is. Products under the store show this city no
     // matter which account posts them. Missing = the posting seller's city.
     city: v.optional(v.string()),
+    // true = don't list this store in the buyer home page Store filter (its
+    // products still show everywhere else).
+    hideFromFilter: v.optional(v.boolean()),
     feeMode: v.optional(feeModeValidator),
     feeValue: v.optional(v.number()),
     createdAt: v.string(),

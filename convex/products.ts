@@ -224,7 +224,8 @@ export const getPublicById = query({
     const inactiveIds = await getInactiveSellerIds(ctx);
     if (inactiveIds.has(product.sellerId)) return null;
     const store = product.storeId ? await ctx.db.get(product.storeId) : null;
-    return { ...toPublic(product), storeName: store?.name };
+    // A store hidden from the home page filter stays anonymous on its products too.
+    return { ...toPublic(product), storeName: store && !store.hideFromFilter ? store.name : undefined };
   },
 });
 
