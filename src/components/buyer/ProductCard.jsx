@@ -6,6 +6,7 @@ import { getCityLabel } from "@/lib/cities";
 import { setProductCache } from "@/lib/productCache";
 import { Chip, PriceTag } from "@/components/ui";
 import { photoProps } from "@/lib/images";
+import { priceInfo } from "@/convex/discount";
 
 // The product currently being opened/returned-to. Only this card gets a
 // `view-transition-name`, so just ONE photo morphs into the detail hero — the
@@ -45,6 +46,7 @@ export default function ProductCard({ product, onSave }) {
   const photo = product.photos?.[photoIndex];
   const cityLabel = product.city ? (getCityLabel(product.city, locale) ?? product.city) : null;
   const categoryLabel = getCategoryLabel(product.category, locale);
+  const price = priceInfo(product);
   setProductCache(product);
 
   // Tag only the tapped card for the shared-element morph, synchronously,
@@ -87,6 +89,15 @@ export default function ProductCard({ product, onSave }) {
               {product.condition === "new" ? m.badgeNew() : product.condition === "likenew" ? m.conditionLikeNew() : m.badgeUsed()}
             </Chip>
           </div>
+
+          {/* Store discount, on the opposite corner from the other tags */}
+          {price.percent !== null && (
+            <div className="absolute top-2.5 end-2.5 flex flex-col gap-1">
+              <Chip tone="brand" className="backdrop-blur-md shadow-sm font-bold" dir="ltr">
+                -{price.percent}%
+              </Chip>
+            </div>
+          )}
         </div>
 
         {/* Info */}
@@ -106,7 +117,7 @@ export default function ProductCard({ product, onSave }) {
             )}
           </div>
 
-          <PriceTag amount={product.price} size="md" />
+          <PriceTag amount={price.price} original={price.original} size="md" />
         </div>
       </article>
     </Link>

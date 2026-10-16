@@ -423,7 +423,7 @@ export default function SellerDashboard() {
                   {hasStores && product.storeId && storeNames.get(product.storeId) && (
                     <p className="text-xs font-semibold text-[var(--color-ink-soft)] truncate mt-0.5">{storeNames.get(product.storeId)}</p>
                   )}
-                  <p className="text-[13px] font-bold text-[var(--color-ink)] mt-0.5">{formatPrice(product.price)}</p>
+                  <p className="text-[13px] font-bold text-[var(--color-ink)] mt-0.5">{formatPrice(product.salePrice ?? product.price)}</p>
                   {linkedStore && (
                     <p className="text-xs text-[var(--color-ink-fade)] mt-0.5 truncate">
                       {m.profitLabel()} <span className="font-semibold text-[var(--color-ink-soft)]">{formatPrice(product.profit ?? 0)}</span>
@@ -470,7 +470,7 @@ export default function SellerDashboard() {
                           <div key={unit._id} className="flex items-center gap-2 rounded-lg border border-[var(--color-hairline)] px-3 py-2">
                             <span className="text-xs text-[var(--color-ink-fade)]" dir="ltr">{unit.dateSold?.slice(0, 10)}</span>
                             <span className="text-[13px] font-bold text-[var(--color-ink)] flex-1">
-                              {formatPrice(unit.price)}
+                              {formatPrice(unit.salePrice ?? unit.price)}
                               {linkedStore && <span className="ms-2 text-xs font-medium text-[var(--color-ink-fade)]">{m.profitLabel()} {formatPrice(unit.profit ?? 0)}</span>}
                             </span>
                             <span className={`text-[11px] px-2 py-0.5 rounded-full font-semibold ${STATUS_STYLE[unit.status] ?? ""}`}>

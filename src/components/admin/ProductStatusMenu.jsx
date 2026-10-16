@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from "react";
 import { useIsDesktop } from "@/components/ui/useMediaQuery";
 import BottomSheet from "@/components/ui/BottomSheet";
 import * as m from "@/paraglide/messages";
+import { priceInfo } from "@/convex/discount";
+import { normalizeDigits } from "@/lib/utils";
 
 const STATUS_COLORS = {
   pending:  { bg: "bg-yellow-50", text: "text-yellow-600", hover: "hover:bg-yellow-100", border: "border-yellow-200" },
@@ -33,6 +35,7 @@ const STATUS_ICONS = {
 export default function ProductStatusMenu({ product, onStatusChange }) {
   const [open, setOpen] = useState(false);
   const [confirmStatus, setConfirmStatus] = useState(null);
+  const [salePriceInput, setSalePriceInput] = useState("");
   const isDesktop = useIsDesktop();
   const ref = useRef();
 
@@ -52,6 +55,15 @@ export default function ProductStatusMenu({ product, onStatusChange }) {
     setOpen(false);
     setConfirmStatus(null);
   };
+
+  // While a store discount runs, the sale price (what the buyer actually paid)
+  // is confirmed here, prefilled with the discounted price.
+  const discount = priceInfo(product);
+  const askSalePrice = (confirmStatus === "sold" || confirmStatus === "paid") && discount.original !== null;
+  useEffect(() => {
+    if (confirmStatus === "sold" || confirmStatus === "paid") setSalePriceInput(String(discount.price));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [confirmStatus]);
 
   const currentColor = STATUS_COLORS[product.status];
   const allStatuses = ["pending", "approved", "rejected", "sold", "paid"];
@@ -74,10 +86,31 @@ export default function ProductStatusMenu({ product, onStatusChange }) {
           ? `Records one unit as ${confirmStatus}. Stock goes from ${product.stock} to ${product.stock - 1} and the product stays live.`
           : "This will update the product status. The seller will be notified."}
       </p>
+      {askSalePrice && (
+        <div className="mb-3">
+          <p className="text-[11px] font-semibold text-[var(--color-ink-fade)] uppercase tracking-wide mb-1">
+            Sale price (IQD) — discount running: {discount.percent}% off {discount.original.toLocaleString("en-US")}
+          </p>
+          <input
+            type="text" inputMode="numeric" dir="ltr" value={salePriceInput}
+            onChange={(e) => setSalePriceInput(e.target.value)}
+            className="w-full border border-[var(--color-hairline)] rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-ember-300)]"
+          />
+          <p className="text-[11px] text-[var(--color-ink-fade)] mt-1">
+            The sale and the service fee are recorded on this price. Change it if the buyer paid something else.
+          </p>
+        </div>
+      )}
       <div className="flex gap-2">
         <button
           onClick={() => {
-            onStatusChange(confirmStatus);
+            if (askSalePrice) {
+              const price = Number(normalizeDigits(salePriceInput).replace(/[^\d]/g, ""));
+              if (!price) return;
+              onStatusChange(confirmStatus, { salePrice: price });
+            } else {
+              onStatusChange(confirmStatus);
+            }
             close();
           }}
           className="flex-1 text-sm bg-[var(--color-ember-600)] hover:bg-[var(--color-ember-700)] text-white font-semibold py-2.5 rounded-xl transition-colors"

@@ -21,6 +21,7 @@ import {
 import { resolveProfit } from "./fees";
 import { r2 } from "./r2";
 import { issueSeq } from "./seq";
+import { priceInfo, todayBaghdad, type StoreDiscount } from "./discount";
 
 type PublicProduct = Omit<Doc<"products">, "sellerId" | "sellerPhone" | "profit" | "soldFromId" | "deleteRequestedAt" | "deleteRequestReason" | "deleteRequestFrom">;
 
@@ -55,6 +56,8 @@ const publicProductValidator = v.object({
   stock: v.optional(v.number()),
   storeId: v.optional(v.id("stores")),
   storeName: v.optional(v.string()),
+  salePrice: v.optional(v.number()),
+  storeDiscount: v.optional(v.object({ percent: v.number(), start: v.string(), end: v.string() })),
 });
 
 const toPublic = ({
@@ -116,6 +119,74 @@ async function resolveStoreListing(
     throw new Error("Stock must be a whole number between 1 and 9999");
   }
   return { store, storeId: store._id };
+}
+
+// Stores that currently carry a (not yet ended) discount, keyed by store id.
+async function loadStoreDiscounts(ctx: QueryCtx): Promise<Map<string, StoreDiscount>> {
+  const today = todayBaghdad();
+  const map = new Map<string, StoreDiscount>();
+  for (const store of await ctx.db.query("stores").collect()) {
+    if (store.discountPercent && store.discountStart && store.discountEnd && store.discountEnd >= today) {
+      map.set(store._id, { percent: store.discountPercent, start: store.discountStart, end: store.discountEnd });
+    }
+  }
+  return map;
+}
+
+// Adds `storeDiscount` to products of discounted stores. Clients work out the
+// price for the current day from it (a cached query result can't notice that a
+// discount started or ended at midnight).
+async function withStoreDiscounts<T extends { storeId?: Id<"stores"> }>(
+  ctx: QueryCtx,
+  products: T[],
+): Promise<(T & { storeDiscount?: StoreDiscount })[]> {
+  const discounts = await loadStoreDiscounts(ctx);
+  if (discounts.size === 0) return products;
+  return products.map((p) => {
+    const d = p.storeId ? discounts.get(p.storeId) : undefined;
+    return d ? { ...p, storeDiscount: d } : p;
+  });
+}
+
+// Price actually paid and the fee on it, when a store discount applies. An
+// explicit price (set by the admin) wins; otherwise a running discount sets it.
+// The fee is worked out on that price: flat fees stay the same, percentage and
+// the price table change.
+async function saleTerms(
+  ctx: MutationCtx,
+  product: Doc<"products">,
+  explicit?: number,
+): Promise<{ salePrice?: number; profit?: number }> {
+  if (explicit === undefined && product.salePrice !== undefined) return {};
+  let salePrice = explicit;
+  const store = product.storeId ? await ctx.db.get(product.storeId) : null;
+  if (salePrice === undefined && store?.discountPercent && store.discountStart && store.discountEnd) {
+    const info = priceInfo({
+      price: product.price,
+      storeDiscount: { percent: store.discountPercent, start: store.discountStart, end: store.discountEnd },
+    });
+    if (info.original !== null) salePrice = info.price;
+  }
+  if (salePrice === undefined || salePrice === product.price) return {};
+  if (!Number.isInteger(salePrice) || salePrice <= 0) throw new Error("Sale price must be a whole number of IQD");
+
+  const sellerId = ctx.db.normalizeId("users", product.sellerId);
+  const seller = sellerId ? await ctx.db.get(sellerId) : null;
+  const today = todayBaghdad();
+  const offers = await ctx.db.query("offers").filter((q) => q.eq(q.field("isActive"), true)).collect();
+  const activeOffer = offers.find((o) => o.startDate <= today && o.endDate >= today) ?? null;
+  return { salePrice, profit: resolveProfit(salePrice, store ?? seller, activeOffer) };
+}
+
+// Undo saleTerms when a sale is reversed: back to the listed price and its fee.
+async function listingTerms(ctx: MutationCtx, product: Doc<"products">): Promise<{ salePrice: undefined; profit?: number }> {
+  const store = product.storeId ? await ctx.db.get(product.storeId) : null;
+  const sellerId = ctx.db.normalizeId("users", product.sellerId);
+  const seller = sellerId ? await ctx.db.get(sellerId) : null;
+  const today = todayBaghdad();
+  const offers = await ctx.db.query("offers").filter((q) => q.eq(q.field("isActive"), true)).collect();
+  const activeOffer = offers.find((o) => o.startDate <= today && o.endDate >= today) ?? null;
+  return { salePrice: undefined, profit: resolveProfit(product.price, store ?? seller, activeOffer) };
 }
 
 async function getInactiveSellerIds(ctx: QueryCtx): Promise<Set<string>> {
@@ -225,7 +296,8 @@ export const getPublicById = query({
     if (inactiveIds.has(product.sellerId)) return null;
     const store = product.storeId ? await ctx.db.get(product.storeId) : null;
     // A store hidden from the home page filter stays anonymous on its products too.
-    return { ...toPublic(product), storeName: store && !store.hideFromFilter ? store.name : undefined };
+    const [withDiscount] = await withStoreDiscounts(ctx, [toPublic(product)]);
+    return { ...withDiscount, storeName: store && !store.hideFromFilter ? store.name : undefined };
   },
 });
 
@@ -237,9 +309,10 @@ export const getPublic = query({
       .query("products")
       .withIndex("by_status", (q) => q.eq("status", "approved"))
       .collect();
-    return products
-      .filter((p) => !inactiveIds.has(p.sellerId))
-      .map(toPublic);
+    return await withStoreDiscounts(
+      ctx,
+      products.filter((p) => !inactiveIds.has(p.sellerId)).map(toPublic),
+    );
   },
 });
 
@@ -289,9 +362,10 @@ export const getRelated = query({
       )
       .order("desc")
       .take(60);
-    return products
-      .filter((p) => p._id !== excludeId && !inactiveIds.has(p.sellerId))
-      .map(toPublic);
+    return await withStoreDiscounts(
+      ctx,
+      products.filter((p) => p._id !== excludeId && !inactiveIds.has(p.sellerId)).map(toPublic),
+    );
   },
 });
 
@@ -344,7 +418,7 @@ export const getFeatured = query({
     });
 
     // Return positioned first, then unpositioned
-    return [...sortedPositioned, ...sortedUnpositioned].map(toPublic);
+    return await withStoreDiscounts(ctx, [...sortedPositioned, ...sortedUnpositioned].map(toPublic));
   },
 });
 
@@ -370,9 +444,10 @@ export const getPublicPaginated = query({
     const result = await q.order("desc").paginate(paginationOpts);
     return {
       ...result,
-      page: result.page
-        .filter((p) => !inactiveIds.has(p.sellerId))
-        .map(toPublic),
+      page: await withStoreDiscounts(
+        ctx,
+        result.page.filter((p) => !inactiveIds.has(p.sellerId)).map(toPublic),
+      ),
     };
   },
 });
@@ -421,10 +496,12 @@ export const getAll = query({
     const addrMap  = new Map(sellers.map(s => [s._id.toString(), s.address ?? ""]));
     const stores   = await ctx.db.query("stores").collect();
     const storeMap = new Map(stores.map(st => [st._id.toString(), st.name]));
+    const discounts = await loadStoreDiscounts(ctx);
     return products.map(p => ({
       ...p,
       sellerAddress: addrMap.get(p.sellerId) ?? "",
       storeName: p.storeId ? (storeMap.get(p.storeId.toString()) ?? "") : "",
+      storeDiscount: p.storeId ? discounts.get(p.storeId) : undefined,
     }));
   },
 });
@@ -497,12 +574,22 @@ export const updateStatus = mutation({
     approvedAt: v.optional(v.string()),
     notes: v.optional(v.string()),
     dateSold: v.optional(v.string()),
+    // Price the buyer actually paid, when it differs from the listed price.
+    salePrice: v.optional(v.number()),
   },
-  handler: async (ctx, { id, ...fields }) => {
+  handler: async (ctx, { id, salePrice, ...fields }) => {
     await requireAdmin(ctx);
-    const patch = Object.fromEntries(
+    const product = await ctx.db.get(id);
+    if (!product) throw new Error("Product not found");
+    const patch: Record<string, unknown> = Object.fromEntries(
       Object.entries(fields).filter(([, value]) => value !== undefined),
     );
+    if (fields.status === "sold" || fields.status === "paid") {
+      Object.assign(patch, await saleTerms(ctx, product, salePrice));
+    } else if (product.salePrice !== undefined) {
+      // Sale reversed (back to approved/pending/...): restore price and fee.
+      Object.assign(patch, await listingTerms(ctx, product));
+    }
     await ctx.db.patch(id, patch);
   },
 });
@@ -513,9 +600,13 @@ export const updateStatus = mutation({
 // visible until its last unit, which uses the normal sold/paid status flow. A
 // sold copy is later marked paid through the normal status menu.
 export const markUnitSold = mutation({
-  args: { id: v.id("products"), status: v.union(v.literal("sold"), v.literal("paid")) },
+  args: {
+    id: v.id("products"),
+    status: v.union(v.literal("sold"), v.literal("paid")),
+    salePrice: v.optional(v.number()),
+  },
   returns: v.null(),
-  handler: async (ctx, { id, status }) => {
+  handler: async (ctx, { id, status, salePrice }) => {
     await requireAdmin(ctx);
     const product = await ctx.db.get(id);
     if (!product) throw new Error("Product not found");
@@ -525,8 +616,10 @@ export const markUnitSold = mutation({
 
     const { _id, _creationTime, stock: _stock, featured: _featured, featuredUntil: _fu,
       featuredAt: _fa, featuredPosition: _fp, views: _views, ...snapshot } = product;
+    const terms = await saleTerms(ctx, product, salePrice);
     await ctx.db.insert("products", {
       ...snapshot,
+      ...terms,
       status,
       dateSold: new Date().toISOString(),
       soldFromId: id,
@@ -558,6 +651,7 @@ export const returnUnit = mutation({
         status: "approved",
         dateSold: undefined,
         soldFromId: undefined,
+        ...(await listingTerms(ctx, unit)),
       });
     }
     return null;
@@ -825,6 +919,7 @@ export const resolveDeleteRequest = mutation({
         deleteRequestedAt: undefined,
         deleteRequestReason: undefined,
         deleteRequestFrom: undefined,
+        ...(await saleTerms(ctx, product)),
       });
     }
     return null;

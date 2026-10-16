@@ -3,6 +3,7 @@ import { convexQuery } from '@convex-dev/react-query'
 import { api } from '@/convex/_generated/api'
 import ProductDetailPage from '@/pages/product-detail'
 import { previewImageUrl } from '@/lib/images'
+import { priceInfo } from '@/convex/discount'
 import { getLocale } from '@/paraglide/runtime'
 import * as m from '@/paraglide/messages'
 import { getCityLabel } from '@/lib/cities'
@@ -38,7 +39,7 @@ export const Route = createFileRoute('/_public/products/$id')({
     const description = [
       conditionLabel,
       product?.city ? (getCityLabel(product.city, locale) ?? product.city) : null,
-      product?.price != null ? ltr(`${product.price.toLocaleString('en-US')} IQD`) : null,
+      product ? ltr(`${priceInfo(product).price.toLocaleString('en-US')} IQD`) : null,
       product?.seq ? `${m.productCode()} ${ltr(product.seq)}` : null,
     ]
       .filter(Boolean)

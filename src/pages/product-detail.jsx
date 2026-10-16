@@ -20,6 +20,7 @@ import {
   formatAmount,
 } from "@/components/ui";
 import { photoProps } from "@/lib/images";
+import { priceInfo } from "@/convex/discount";
 
 const WHATSAPP = import.meta.env.VITE_WHATSAPP_NUMBER;
 
@@ -146,6 +147,7 @@ function ImagePlaceholder({ size = "lg" }) {
 function RelatedCard({ product }) {
   const photoIndex = product.mainPhotoIndex ?? 0;
   const photo = product.photos?.[photoIndex];
+  const price = priceInfo(product);
   setProductCache(product);
   return (
     <Link to={`/products/${product._id}`} className="group block">
@@ -167,7 +169,7 @@ function RelatedCard({ product }) {
           <h3 className="text-[12.5px] font-semibold text-[var(--color-ink)] line-clamp-2 leading-snug mb-1.5 min-h-[2rem]">
             {product.title}
           </h3>
-          <PriceTag amount={product.price} size="sm" />
+          <PriceTag amount={price.price} original={price.original} percent={price.percent} size="sm" />
         </div>
       </div>
     </Link>
@@ -211,7 +213,7 @@ function NotFoundState({ onBack }) {
 }
 
 // ── Sticky mobile CTA ─────────────────────────────────────
-function StickyMobileCTA({ price, waLink, seq }) {
+function StickyMobileCTA({ price, original, percent, waLink, seq }) {
   return (
     <div className="sm:hidden fixed inset-x-0 bottom-0 z-30 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 pointer-events-none">
       <div className="pointer-events-auto mx-auto max-w-md surface-frost rounded-[1.75rem] border border-[var(--color-hairline)] shadow-[0_18px_44px_-20px_rgba(11,12,15,0.22)] p-2.5 flex items-center gap-3">
@@ -222,7 +224,7 @@ function StickyMobileCTA({ price, waLink, seq }) {
             </span>
           )}
           <span className={seq ? "mt-1" : ""}>
-            <PriceTag amount={price} size="lg" />
+            <PriceTag amount={price} original={original} percent={percent} size="lg" />
           </span>
         </div>
         <WhatsAppButton href={waLink} size="md" className="shrink-0" />
@@ -292,11 +294,13 @@ export default function ProductDetailPage() {
   // swaps in the real origin after mount (e.g. localhost in dev).
   const productUrl = `${origin}${localizeHref(`/products/${id}`, { locale })}`;
 
+  const priceNow = priceInfo(product);
+
   const waLink = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(
     m.waMessage({
       seq: product.seq ?? "",
       title: product.title,
-      price: formatAmount(product.price) + " IQD",
+      price: formatAmount(priceNow.price) + " IQD",
       url: productUrl,
     })
   )}`;
@@ -334,7 +338,7 @@ export default function ProductDetailPage() {
             shareUrl={productUrl}
             story={{
               title: product.title,
-              price: `${formatAmount(product.price)} IQD`,
+              price: `${formatAmount(priceNow.price)} IQD`,
               photo: photos[0],
               meta: [cityLabel, categoryLabel].filter(Boolean).join(" · "),
               condition: isNew ? m.badgeNew() : product.condition === "likenew" ? m.conditionLikeNew() : m.badgeUsed(),
@@ -397,7 +401,7 @@ export default function ProductDetailPage() {
 
           {/* Price */}
           <div className="mb-3">
-            <PriceTag amount={product.price} size="xl" />
+            <PriceTag amount={priceNow.price} original={priceNow.original} percent={priceNow.percent} size="xl" />
           </div>
 
           {/* Metadata: views · posted · product code */}
@@ -451,7 +455,7 @@ export default function ProductDetailPage() {
         />
       )}
 
-      <StickyMobileCTA price={product.price} waLink={waLink} seq={product.seq} />
+      <StickyMobileCTA price={priceNow.price} original={priceNow.original} percent={priceNow.percent} waLink={waLink} seq={product.seq} />
     </div>
   );
 }
