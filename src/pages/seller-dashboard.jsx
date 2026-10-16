@@ -94,8 +94,8 @@ function ProductMenu({ product, onEdit, onRepost, onDelete, onRequestDelete }) {
 
   const close = () => { setOpen(false); setConfirmDel(false); setRequesting(false); setRequestError(""); };
   const canEdit   = EDITABLE_STATUSES.includes(product.status);
-  const canDelete = ["pending","rejected"].includes(product.status);
-  const canRequestDelete = product.status === "approved";
+  const canDelete = product.status === "rejected";
+  const canRequestDelete = ["pending", "approved"].includes(product.status);
 
   async function sendRequest() {
     if (!reason.trim()) { setRequestError(m.requestDeleteReasonPlaceholder()); return; }

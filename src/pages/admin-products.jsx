@@ -606,12 +606,15 @@ export default function AdminProductsPage() {
                     <div className="mt-3 rounded-xl border border-orange-200 bg-orange-50 p-3">
                       <p className="text-[11px] font-semibold uppercase tracking-wide text-orange-600 mb-0.5">{m.adminDeleteReasonLabel()}</p>
                       <p className="text-sm text-[var(--color-ink)] whitespace-pre-line">{product.deleteRequestReason}</p>
+                      {product.deleteRequestFrom === "pending" && (
+                        <p className="text-xs font-semibold text-orange-600 mt-1">{m.adminDeleteFromPending()}</p>
+                      )}
                       <div className="flex flex-wrap gap-2 mt-3">
                         <button onClick={() => handleDeleteRequest(product, "approve")}
                           className="text-xs font-semibold bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg transition-colors">
                           {m.adminApproveDelete()}
                         </button>
-                        {!(product.stock > 1) && (
+                        {!(product.stock > 1) && product.deleteRequestFrom !== "pending" && (
                           <button onClick={() => handleDeleteRequest(product, "sold")}
                             className="text-xs font-semibold bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg transition-colors">
                             {m.adminMarkSold()}

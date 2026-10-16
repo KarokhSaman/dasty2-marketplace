@@ -22,7 +22,7 @@ import { resolveProfit } from "./fees";
 import { r2 } from "./r2";
 import { issueSeq } from "./seq";
 
-type PublicProduct = Omit<Doc<"products">, "sellerId" | "sellerPhone" | "profit" | "soldFromId" | "deleteRequestedAt" | "deleteRequestReason">;
+type PublicProduct = Omit<Doc<"products">, "sellerId" | "sellerPhone" | "profit" | "soldFromId" | "deleteRequestedAt" | "deleteRequestReason" | "deleteRequestFrom">;
 
 const publicProductValidator = v.object({
   _id: v.id("products"),
@@ -64,6 +64,7 @@ const toPublic = ({
   soldFromId: _soldFromId,
   deleteRequestedAt: _deleteRequestedAt,
   deleteRequestReason: _deleteRequestReason,
+  deleteRequestFrom: _deleteRequestFrom,
   ...rest
 }: Doc<"products">): PublicProduct => rest;
 
@@ -739,8 +740,8 @@ export const duplicate = mutation({
   },
 });
 
-// Seller asks to take a live product down. It is hidden from buyers right away
-// and waits for an admin to approve the deletion, mark it sold, or restore it.
+// Seller asks to take a pending or live product down. It is hidden from buyers
+// right away and waits for an admin to approve the deletion, mark it sold, or restore it.
 export const requestDelete = mutation({
   args: { id: v.id("products"), reason: v.string() },
   returns: v.null(),
@@ -750,8 +751,8 @@ export const requestDelete = mutation({
     if (!product || product.sellerId !== seller._id.toString()) {
       throw new Error("Not authorized");
     }
-    if (product.status !== "approved") {
-      throw new Error("Only live products can be requested for deletion");
+    if (product.status !== "approved" && product.status !== "pending") {
+      throw new Error("Only pending or live products can be requested for deletion");
     }
     const text = reason.trim();
     if (!text) throw new Error("Please give a reason");
@@ -762,6 +763,7 @@ export const requestDelete = mutation({
       status: "deletion_requested",
       deleteRequestedAt: now,
       deleteRequestReason: text,
+      deleteRequestFrom: product.status,
     });
     await ctx.db.insert("notifications", {
       sellerId: "ADMIN",
@@ -804,11 +806,15 @@ export const resolveDeleteRequest = mutation({
       await deleteProductData(ctx, product);
     } else if (action === "reject") {
       await ctx.db.patch(id, {
-        status: "approved",
+        status: product.deleteRequestFrom ?? "approved",
         deleteRequestedAt: undefined,
         deleteRequestReason: undefined,
+        deleteRequestFrom: undefined,
       });
     } else {
+      if (product.deleteRequestFrom === "pending") {
+        throw new Error("This product was never approved, so it cannot be marked sold.");
+      }
       if ((product.stock ?? 1) > 1) {
         throw new Error("This product has several units in stock. Reject the request and sell units one at a time.");
       }
@@ -817,6 +823,7 @@ export const resolveDeleteRequest = mutation({
         dateSold: new Date().toISOString(),
         deleteRequestedAt: undefined,
         deleteRequestReason: undefined,
+        deleteRequestFrom: undefined,
       });
     }
     return null;
@@ -834,8 +841,8 @@ export const sellerRemove = mutation({
     if (!product || product.sellerId !== seller._id.toString()) {
       throw new Error("Not authorized");
     }
-    if (!["pending", "rejected"].includes(product.status)) {
-      throw new Error("Only pending or rejected products can be deleted");
+    if (product.status !== "rejected") {
+      throw new Error("Only rejected products can be deleted directly. Request deletion instead.");
     }
     await deleteProductData(ctx, product);
     await ctx.db.insert("adminLogs", {

@@ -324,5 +324,6 @@
   "adminMarkSold": "Mark as sold",
   "adminDeleteReasonLabel": "Seller's reason",
   "adminDeleteApprovedMsg": "Your request to delete \"{title}\" was approved and the product was removed.",
-  "adminDeleteRejectedMsg": "Your request to delete \"{title}\" was declined. The product is live again."
+  "adminDeleteRejectedMsg": "Your request to delete \"{title}\" was declined. The product is live again.",
+  "adminDeleteFromPending": "Not approved yet"
 }

@@ -55,6 +55,8 @@ export default defineSchema({
     // Set while status is "deletion_requested".
     deleteRequestedAt: v.optional(v.string()),
     deleteRequestReason: v.optional(v.string()),
+    // Status the product had when the request was made; a rejected request restores it.
+    deleteRequestFrom: v.optional(v.union(v.literal("pending"), v.literal("approved"))),
   })
     .index("by_status",          ["status"])
     .index("by_status_category", ["status", "category"])

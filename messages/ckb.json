@@ -324,5 +324,6 @@
   "adminMarkSold": "وەک فرۆشراو",
   "adminDeleteReasonLabel": "هۆکاری فرۆشیار",
   "adminDeleteApprovedMsg": "داواکاری سڕینەوەی \"{title}\" پەسەندکرا و کاڵاکە سڕایەوە.",
-  "adminDeleteRejectedMsg": "داواکاری سڕینەوەی \"{title}\" ڕەتکرایەوە. کاڵاکە دووبارە بڵاوکراوەتەوە."
+  "adminDeleteRejectedMsg": "داواکاری سڕینەوەی \"{title}\" ڕەتکرایەوە. کاڵاکە دووبارە بڵاوکراوەتەوە.",
+  "adminDeleteFromPending": "هێشتا پەسەند نەکراوە"
 }
