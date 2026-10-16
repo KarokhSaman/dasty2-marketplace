@@ -81,6 +81,13 @@ export default defineSchema({
     .index("by_email", ["email"])
     .index("by_phone", ["phone"]),
 
+  // Monotonic counters (e.g. "seq-26" for product codes issued in 2026).
+  counters: defineTable({
+    name: v.string(),
+    value: v.number(),
+  })
+    .index("by_name", ["name"]),
+
   stores: defineTable({
     name: v.string(),
     sellerId: v.string(),

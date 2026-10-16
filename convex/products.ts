@@ -20,6 +20,7 @@ import {
 } from "./auth";
 import { resolveProfit } from "./fees";
 import { r2 } from "./r2";
+import { issueSeq } from "./seq";
 
 type PublicProduct = Omit<Doc<"products">, "sellerId" | "sellerPhone" | "profit" | "soldFromId" | "deleteRequestedAt" | "deleteRequestReason">;
 
@@ -65,14 +66,6 @@ const toPublic = ({
   deleteRequestReason: _deleteRequestReason,
   ...rest
 }: Doc<"products">): PublicProduct => rest;
-
-async function generateSeq(ctx: QueryCtx | MutationCtx): Promise<string> {
-  const yy = String(new Date().getFullYear()).slice(-2); // "26"
-  const prefix = `${yy}-`;
-  const all = await ctx.db.query("products").collect();
-  const count = all.filter((p) => (p.seq ?? "").startsWith(prefix)).length;
-  return `${prefix}${String(count + 1).padStart(4, "0")}`;
-}
 
 function validateListingInput({
   title,
@@ -459,7 +452,7 @@ export const add = mutation({
       .filter(q => q.eq(q.field("isActive"), true)).collect();
     const activeOffer = allOffers.find(o => o.startDate <= today && o.endDate >= today);
     const profit = resolveProfit(args.price, store ?? seller, activeOffer ?? null);
-    const seq = await generateSeq(ctx);
+    const seq = await issueSeq(ctx);
     const id = await ctx.db.insert("products", {
       ...args,
       storeId,
@@ -711,7 +704,7 @@ export const duplicate = mutation({
     const srcStore = src.storeId ? await ctx.db.get(src.storeId) : null;
     const profit = resolveProfit(src.price, srcStore ?? seller, activeOffer ?? null);
 
-    const seq = await generateSeq(ctx);
+    const seq = await issueSeq(ctx);
     const newId = await ctx.db.insert("products", {
       seq,
       title:       src.title,
