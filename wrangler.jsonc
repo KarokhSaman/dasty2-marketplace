@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "dasty2-marketplace-dev",
+  "name": "dasty2-marketplace-pro",
   "compatibility_date": "2026-05-26",
   "compatibility_flags": ["nodejs_compat"],
   "main": "src/server.ts",
