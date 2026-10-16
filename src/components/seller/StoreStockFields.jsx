@@ -1,22 +1,25 @@
 import * as m from "@/paraglide/messages";
 import CustomSelect from "@/components/ui/CustomSelect";
+import { getLocale } from "@/paraglide/runtime";
 
 const inputCls =
   "w-full rounded-xl border border-[var(--color-hairline)] bg-white px-4 py-2.5 min-h-11 text-sm text-[var(--color-ink)] focus:outline-none focus:border-[var(--color-ember-300)] focus:ring-4 focus:ring-[var(--color-ember-100)]/50 transition";
 
 function StockInput({ stock, onStockChange }) {
+  const locale = getLocale();
   return (
     <div>
       <label className="block text-[13px] font-semibold text-[var(--color-ink)] mb-1.5">{m.fieldStock()}</label>
       <input
-        type="number"
+        type="text"
         inputMode="numeric"
-        min="1"
-        max="9999"
+        dir={locale === "en" ? "ltr" : "rtl"}
         value={stock}
-        onChange={(e) => onStockChange(e.target.value)}
+        onChange={(e) => {
+          // ASCII digits, Arabic-Indic (U+0660-U+0669) and Kurdish/Persian (U+06F0-U+06F9), same as the price field.
+          onStockChange(e.target.value.replace(/[^\d٠-٩۰-۹]/g, "").slice(0, 4));
+        }}
         placeholder="1"
-        dir="ltr"
         className={inputCls}
       />
     </div>
