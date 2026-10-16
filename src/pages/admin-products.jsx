@@ -26,9 +26,10 @@ const STATUS_STYLE = {
   rejected: "bg-red-100 text-red-700",
   sold:     "bg-blue-100 text-blue-700",
   paid:     "bg-purple-100 text-purple-700",
+  deletion_requested: "bg-orange-100 text-orange-700",
 };
 
-const TABS = ["all","pending","approved","rejected","sold","paid","sponsored"];
+const TABS = ["all","pending","approved","rejected","sold","paid","deletion_requested","sponsored"];
 
 export default function AdminProductsPage() {
   const searchParams = useSearchParams();
@@ -39,6 +40,8 @@ export default function AdminProductsPage() {
   const updateStatus    = useMutation(api.products.updateStatus);
   const markUnitSoldMutation = useMutation(api.products.markUnitSold);
   const returnUnitMutation = useMutation(api.products.returnUnit);
+  const resolveDeleteRequest = useMutation(api.products.resolveDeleteRequest);
+  const [deleteActionError, setDeleteActionError] = useState({});
   const adminUpdateCategory = useMutation(api.products.adminUpdateCategory);
   const adminUpdateTitle = useMutation(api.products.adminUpdateTitle);
   const adminUpdateBrand = useMutation(api.products.adminUpdateBrand);
@@ -77,6 +80,7 @@ export default function AdminProductsPage() {
     rejected:  m.statusRejected(),
     sold:      m.statusSold(),
     paid:      m.statusPaid(),
+    deletion_requested: m.adminDeleteRequests(),
     sponsored: "Sponsored",
   };
 
@@ -168,6 +172,27 @@ export default function AdminProductsPage() {
   async function returnUnit(product) {
     await returnUnitMutation({ id: product._id });
     await log("unit_returned", product, "Unit returned to stock");
+  }
+
+  async function handleDeleteRequest(product, action) {
+    setDeleteActionError((e) => ({ ...e, [product._id]: "" }));
+    try {
+      await resolveDeleteRequest({ id: product._id, action });
+    } catch (err) {
+      const msg = err?.message?.split("\n")[0].replace(/^.*Uncaught Error:\s*/, "") || "Failed";
+      setDeleteActionError((e) => ({ ...e, [product._id]: msg }));
+      return;
+    }
+    if (action === "approve") {
+      await createNotif({ sellerId: product.sellerId, productId: product._id, message: m.adminDeleteApprovedMsg({ title: product.title }), url: `/seller` });
+      await log("deleted", product, "Deletion request approved");
+    } else if (action === "reject") {
+      await createNotif({ sellerId: product.sellerId, productId: product._id, message: m.adminDeleteRejectedMsg({ title: product.title }), url: `/seller` });
+      await log("delete_rejected", product, "Deletion request declined");
+    } else {
+      await createNotif({ sellerId: product.sellerId, productId: product._id, message: m.adminSoldMsg({ title: product.title }), url: `/seller` });
+      await log("marked_sold", product, "From a deletion request");
+    }
   }
 
   async function deleteProduct(id) {
@@ -576,6 +601,30 @@ export default function AdminProductsPage() {
                       </p>
                     )}
                   </div>
+                  {/* Deletion request from the seller */}
+                  {product.status === "deletion_requested" && (
+                    <div className="mt-3 rounded-xl border border-orange-200 bg-orange-50 p-3">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-orange-600 mb-0.5">{m.adminDeleteReasonLabel()}</p>
+                      <p className="text-sm text-[var(--color-ink)] whitespace-pre-line">{product.deleteRequestReason}</p>
+                      <div className="flex flex-wrap gap-2 mt-3">
+                        <button onClick={() => handleDeleteRequest(product, "approve")}
+                          className="text-xs font-semibold bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg transition-colors">
+                          {m.adminApproveDelete()}
+                        </button>
+                        {!(product.stock > 1) && (
+                          <button onClick={() => handleDeleteRequest(product, "sold")}
+                            className="text-xs font-semibold bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg transition-colors">
+                            {m.adminMarkSold()}
+                          </button>
+                        )}
+                        <button onClick={() => handleDeleteRequest(product, "reject")}
+                          className="text-xs font-semibold bg-white border border-[var(--color-hairline)] hover:bg-[var(--color-cream)] text-[var(--color-ink)] px-3 py-2 rounded-lg transition-colors">
+                          {m.adminReject()}
+                        </button>
+                      </div>
+                      {deleteActionError[product._id] && <p className="text-xs text-red-500 mt-2">{deleteActionError[product._id]}</p>}
+                    </div>
+                  )}
                 </div>
 
                 {/* Actions — desktop only */}

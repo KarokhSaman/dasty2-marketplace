@@ -52,6 +52,9 @@ export default defineSchema({
     // Set on the sold/paid entry created for one unit of a stocked listing, so
     // the unit can be returned to that listing's stock.
     soldFromId: v.optional(v.id("products")),
+    // Set while status is "deletion_requested".
+    deleteRequestedAt: v.optional(v.string()),
+    deleteRequestReason: v.optional(v.string()),
   })
     .index("by_status",          ["status"])
     .index("by_status_category", ["status", "category"])

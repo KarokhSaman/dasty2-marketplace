@@ -313,5 +313,16 @@
   "feePaid": "کرێی دراو",
   "postedForYou": "بۆ تۆ بڵاوکراوەتەوە",
   "citiesLabel": "شارەکان",
-  "storesLabel": "فرۆشگاکان"
+  "storesLabel": "فرۆشگاکان",
+  "statusDeletionRequested": "داواکاری سڕینەوە",
+  "requestDeleteBtn": "داواکاری سڕینەوە",
+  "requestDeleteTitle": "داوای سڕینەوەی ئەم کاڵایە دەکەیت؟",
+  "requestDeleteReasonPlaceholder": "بۆچی دەتەوێت بیسڕیتەوە؟",
+  "requestDeleteSend": "ناردنی داواکاری",
+  "adminDeleteRequests": "داواکاری سڕینەوە",
+  "adminApproveDelete": "پەسەندکردنی سڕینەوە",
+  "adminMarkSold": "وەک فرۆشراو",
+  "adminDeleteReasonLabel": "هۆکاری فرۆشیار",
+  "adminDeleteApprovedMsg": "داواکاری سڕینەوەی \"{title}\" پەسەندکرا و کاڵاکە سڕایەوە.",
+  "adminDeleteRejectedMsg": "داواکاری سڕینەوەی \"{title}\" ڕەتکرایەوە. کاڵاکە دووبارە بڵاوکراوەتەوە."
 }

@@ -19,8 +19,9 @@ import {
   requireCurrentSeller,
 } from "./auth";
 import { resolveProfit } from "./fees";
+import { r2 } from "./r2";
 
-type PublicProduct = Omit<Doc<"products">, "sellerId" | "sellerPhone" | "profit" | "soldFromId">;
+type PublicProduct = Omit<Doc<"products">, "sellerId" | "sellerPhone" | "profit" | "soldFromId" | "deleteRequestedAt" | "deleteRequestReason">;
 
 const publicProductValidator = v.object({
   _id: v.id("products"),
@@ -60,6 +61,8 @@ const toPublic = ({
   sellerPhone: _sellerPhone,
   profit: _profit,
   soldFromId: _soldFromId,
+  deleteRequestedAt: _deleteRequestedAt,
+  deleteRequestReason: _deleteRequestReason,
   ...rest
 }: Doc<"products">): PublicProduct => rest;
 
@@ -131,6 +134,58 @@ async function getInactiveSellerIds(ctx: QueryCtx): Promise<Set<string>> {
   return new Set(inactive.map((s) => s._id.toString()));
 }
 
+// Uploaded photos are stored in R2 under a UUID name at the bucket root, and the
+// product keeps the public URL (https://<assets host>/<uuid>). Category icons and
+// seed images use other names, so only UUID keys on our own asset hosts count.
+// (R2_PUBLIC_URL in the Convex env is stale — it still names the old domain — so
+// the allowed hosts are listed here, plus whatever that variable says.)
+const UPLOADED_PHOTO_PATH = /^\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/;
+
+function uploadedPhotoKey(photoUrl: string): string | null {
+  let url: URL;
+  try {
+    url = new URL(photoUrl);
+  } catch {
+    return null;
+  }
+  const envHost = process.env.R2_PUBLIC_URL ? new URL(process.env.R2_PUBLIC_URL).hostname : null;
+  const ownHost =
+    url.hostname === envHost ||
+    url.hostname.endsWith("mndallan.com") ||
+    url.hostname.endsWith("dasty2mndalan.com");
+  if (!ownHost) return null;
+  return UPLOADED_PHOTO_PATH.exec(url.pathname)?.[1] ?? null;
+}
+
+// Removes the product's photo files from R2 — but only files no other product
+// uses (reposts and sold-unit entries share the original's photo URLs, possibly
+// under another host name, so files are compared by key). Best effort: a storage
+// hiccup must never block deleting the product itself.
+async function deleteUnusedR2Photos(ctx: MutationCtx, product: Doc<"products">) {
+  const keys = new Set<string>();
+  for (const url of product.photos) {
+    const key = uploadedPhotoKey(url);
+    if (key) keys.add(key);
+  }
+  if (keys.size === 0) return;
+
+  const others = await ctx.db.query("products").collect();
+  for (const p of others) {
+    if (p._id === product._id) continue;
+    for (const url of p.photos) {
+      const key = uploadedPhotoKey(url);
+      if (key) keys.delete(key);
+    }
+  }
+  for (const key of keys) {
+    try {
+      await r2.deleteObject(ctx, key);
+    } catch (err) {
+      console.error(`Could not delete R2 photo ${key}`, err);
+    }
+  }
+}
+
 async function deleteProductData(ctx: MutationCtx, product: Doc<"products">) {
   const notifications = await ctx.db
     .query("notifications")
@@ -160,6 +215,7 @@ async function deleteProductData(ctx: MutationCtx, product: Doc<"products">) {
     }
   }
 
+  await deleteUnusedR2Photos(ctx, product);
   await ctx.db.delete(product._id);
 }
 
@@ -590,6 +646,9 @@ export const sellerUpdate = mutation({
     if (product.status === "sold" || product.status === "paid") {
       throw new Error("Cannot edit a sold or paid product");
     }
+    if (product.status === "deletion_requested") {
+      throw new Error("This product has a pending deletion request");
+    }
     // Check for active offer and adjust fee accordingly
     const today = new Date().toISOString().slice(0, 10);
     const allOffers = await ctx.db.query("offers")
@@ -684,6 +743,90 @@ export const duplicate = mutation({
     });
 
     return newId;
+  },
+});
+
+// Seller asks to take a live product down. It is hidden from buyers right away
+// and waits for an admin to approve the deletion, mark it sold, or restore it.
+export const requestDelete = mutation({
+  args: { id: v.id("products"), reason: v.string() },
+  returns: v.null(),
+  handler: async (ctx, { id, reason }) => {
+    const seller = await requireCurrentSeller(ctx);
+    const product = await ctx.db.get(id);
+    if (!product || product.sellerId !== seller._id.toString()) {
+      throw new Error("Not authorized");
+    }
+    if (product.status !== "approved") {
+      throw new Error("Only live products can be requested for deletion");
+    }
+    const text = reason.trim();
+    if (!text) throw new Error("Please give a reason");
+    if (text.length > 300) throw new Error("Reason is too long");
+
+    const now = new Date().toISOString();
+    await ctx.db.patch(id, {
+      status: "deletion_requested",
+      deleteRequestedAt: now,
+      deleteRequestReason: text,
+    });
+    await ctx.db.insert("notifications", {
+      sellerId: "ADMIN",
+      productId: id,
+      message: `Deletion requested: "${product.title}" by ${seller.name}`,
+      url: "/admin/products?tab=deletion_requested",
+      read: false,
+      createdAt: now,
+    });
+    await ctx.db.insert("adminLogs", {
+      action: "delete_requested",
+      productId: id.toString(),
+      productTitle: product.title,
+      productCode: product.seq,
+      sellerName: seller.name,
+      price: product.price,
+      notes: text,
+      createdAt: now,
+    });
+    return null;
+  },
+});
+
+// Admin decision on a deletion request: delete it, put it back live, or record
+// that it sold (so the service fee is still tracked).
+export const resolveDeleteRequest = mutation({
+  args: {
+    id: v.id("products"),
+    action: v.union(v.literal("approve"), v.literal("reject"), v.literal("sold")),
+  },
+  returns: v.null(),
+  handler: async (ctx, { id, action }) => {
+    await requireAdmin(ctx);
+    const product = await ctx.db.get(id);
+    if (!product) throw new Error("Product not found");
+    if (product.status !== "deletion_requested") {
+      throw new Error("This product has no pending deletion request");
+    }
+    if (action === "approve") {
+      await deleteProductData(ctx, product);
+    } else if (action === "reject") {
+      await ctx.db.patch(id, {
+        status: "approved",
+        deleteRequestedAt: undefined,
+        deleteRequestReason: undefined,
+      });
+    } else {
+      if ((product.stock ?? 1) > 1) {
+        throw new Error("This product has several units in stock. Reject the request and sell units one at a time.");
+      }
+      await ctx.db.patch(id, {
+        status: "sold",
+        dateSold: new Date().toISOString(),
+        deleteRequestedAt: undefined,
+        deleteRequestReason: undefined,
+      });
+    }
+    return null;
   },
 });
 

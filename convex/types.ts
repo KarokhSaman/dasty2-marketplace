@@ -23,6 +23,8 @@ export const productStatusValidator = v.union(
   v.literal("rejected"),
   v.literal("sold"),
   v.literal("paid"),
+  // A seller asked to delete a live product; hidden from buyers until an admin decides.
+  v.literal("deletion_requested"),
 );
 export type ProductStatus = typeof productStatusValidator.type;
 
