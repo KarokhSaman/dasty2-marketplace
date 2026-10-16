@@ -12,6 +12,9 @@ const storeValidator = v.object({
   linkedUserId: v.optional(v.id("users")),
   city: v.optional(v.string()),
   hideFromFilter: v.optional(v.boolean()),
+  discountPercent: v.optional(v.number()),
+  discountStart: v.optional(v.string()),
+  discountEnd: v.optional(v.string()),
   feeMode: v.optional(feeModeValidator),
   feeValue: v.optional(v.number()),
   createdAt: v.string(),
@@ -203,6 +206,38 @@ export const update = mutation({
         if (p.city !== city) await ctx.db.patch(p._id, { city });
       }
     }
+    return null;
+  },
+});
+
+// Set or clear a store's discount. Passing no percent clears it.
+export const setDiscount = mutation({
+  args: {
+    id: v.id("stores"),
+    percent: v.optional(v.number()),
+    start: v.optional(v.string()),
+    end: v.optional(v.string()),
+  },
+  returns: v.null(),
+  handler: async (ctx, { id, percent, start, end }) => {
+    await requireAdmin(ctx);
+    const store = await ctx.db.get(id);
+    if (!store) throw new Error("Store not found");
+    if (percent === undefined) {
+      await ctx.db.patch(id, {
+        discountPercent: undefined,
+        discountStart: undefined,
+        discountEnd: undefined,
+      });
+      return null;
+    }
+    if (!(percent > 0 && percent <= 90)) throw new Error("Discount must be between 1 and 90 percent");
+    const date = /^\d{4}-\d{2}-\d{2}$/;
+    if (!start || !end || !date.test(start) || !date.test(end)) {
+      throw new Error("Choose a start and an end date");
+    }
+    if (end < start) throw new Error("The end date must not be before the start date");
+    await ctx.db.patch(id, { discountPercent: percent, discountStart: start, discountEnd: end });
     return null;
   },
 });

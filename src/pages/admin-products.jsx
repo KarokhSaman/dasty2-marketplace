@@ -150,20 +150,20 @@ export default function AdminProductsPage() {
     setRejectReason("");
   }
 
-  async function markSold(product) {
-    await updateStatus({ id: product._id, status: "sold", dateSold: new Date().toISOString() });
+  async function markSold(product, salePrice) {
+    await updateStatus({ id: product._id, status: "sold", dateSold: new Date().toISOString(), salePrice });
     await createNotif({ sellerId: product.sellerId, productId: product._id, message: m.adminSoldMsg({ title: product.title }), url: `/seller` });
     await log("marked_sold", product);
   }
 
-  async function markPaid(product) {
-    await updateStatus({ id: product._id, status: "paid" });
+  async function markPaid(product, salePrice) {
+    await updateStatus({ id: product._id, status: "paid", salePrice });
     await createNotif({ sellerId: product.sellerId, productId: product._id, message: m.adminPaidMsg({ title: product.title }), url: `/seller` });
     await log("marked_paid", product);
   }
 
-  async function markUnitSold(product, status) {
-    await markUnitSoldMutation({ id: product._id, status });
+  async function markUnitSold(product, status, salePrice) {
+    await markUnitSoldMutation({ id: product._id, status, salePrice });
     const msg = status === "sold" ? m.adminSoldMsg({ title: product.title }) : m.adminPaidMsg({ title: product.title });
     await createNotif({ sellerId: product.sellerId, productId: product._id, message: msg, url: `/seller` });
     await log(status === "sold" ? "marked_sold" : "marked_paid", product, `1 unit, ${product.stock - 1} left`);
@@ -202,7 +202,7 @@ export default function AdminProductsPage() {
     setConfirmDel(null);
   }
 
-  async function handleStatusChange(product, newStatus) {
+  async function handleStatusChange(product, newStatus, extra) {
     switch (newStatus) {
       case "pending":
         await updateStatus({ id: product._id, status: "pending" });
@@ -217,12 +217,12 @@ export default function AdminProductsPage() {
         setRejectReason("");
         break;
       case "sold":
-        if (product.status === "approved" && product.stock > 1) await markUnitSold(product, "sold");
-        else await markSold(product);
+        if (product.status === "approved" && product.stock > 1) await markUnitSold(product, "sold", extra?.salePrice);
+        else await markSold(product, extra?.salePrice);
         break;
       case "paid":
-        if (product.status === "approved" && product.stock > 1) await markUnitSold(product, "paid");
-        else await markPaid(product);
+        if (product.status === "approved" && product.stock > 1) await markUnitSold(product, "paid", extra?.salePrice);
+        else await markPaid(product, extra?.salePrice);
         break;
     }
   }
@@ -572,7 +572,12 @@ export default function AdminProductsPage() {
 
                   {/* Price + fee + date */}
                   <div className="flex items-center gap-3 mt-2 flex-wrap">
-                    <span className="text-sm font-bold text-gray-800">{formatPrice(product.price)}</span>
+                    <span className="text-sm font-bold text-gray-800">
+                      {formatPrice(product.salePrice ?? product.price)}
+                      {product.salePrice != null && product.salePrice !== product.price && (
+                        <span className="ms-1.5 text-xs font-medium text-[var(--color-ink-fade)] line-through">{formatPrice(product.price)}</span>
+                      )}
+                    </span>
                     <span className="text-xs text-rose-500 font-medium">{m.adminProfitLabel()}: {formatPrice(product.profit)}</span>
                     <span className="text-xs text-gray-300">{product.dateAdded?.slice(0,10)}</span>
                   </div>
@@ -632,7 +637,7 @@ export default function AdminProductsPage() {
 
                 {/* Actions — desktop only */}
                 <div className="hidden sm:flex items-center gap-2 shrink-0">
-                  <ProductStatusMenu product={product} onStatusChange={(newStatus) => handleStatusChange(product, newStatus)} />
+                  <ProductStatusMenu product={product} onStatusChange={(newStatus, extra) => handleStatusChange(product, newStatus, extra)} />
 
                   {/* Feature button with popover */}
                   <div className="relative">
@@ -694,7 +699,7 @@ export default function AdminProductsPage() {
 
               {/* Actions — mobile only */}
               <div className="flex sm:hidden items-center gap-2 mt-4 flex-wrap">
-                <ProductStatusMenu product={product} onStatusChange={(newStatus) => handleStatusChange(product, newStatus)} />
+                <ProductStatusMenu product={product} onStatusChange={(newStatus, extra) => handleStatusChange(product, newStatus, extra)} />
 
                 {/* Feature button with popover */}
                 <div className="relative">

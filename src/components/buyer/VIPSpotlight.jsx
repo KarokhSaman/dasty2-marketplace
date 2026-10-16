@@ -5,12 +5,14 @@ import { getLocale } from "@/paraglide/runtime";
 import { getCategoryLabel } from "@/lib/categories";
 import { getCityLabel } from "@/lib/cities";
 import { photoProps } from "@/lib/images";
+import { priceInfo } from "@/convex/discount";
 
 function VIPCard({ product, onViewProduct, isCenter }) {
   const locale = getLocale();
   const categoryLabel = getCategoryLabel(product.category, locale);
   const cityLabel = getCityLabel(product.city, locale);
   const photoIndex = product.mainPhotoIndex ?? 0;
+  const price = priceInfo(product);
 
   return (
     <Link
@@ -86,9 +88,15 @@ function VIPCard({ product, onViewProduct, isCenter }) {
           {/* Price */}
           <div className="flex items-baseline gap-2">
             <span className="text-2xl font-bold text-[var(--color-ember-300)]">
-              {(product.price ?? 0).toLocaleString()}
+              {(price.price ?? 0).toLocaleString()}
             </span>
             <span className="text-sm text-white/80">IQD</span>
+            {price.original !== null && (
+              <span dir="ltr" className="text-sm text-white/60 line-through">{price.original.toLocaleString()}</span>
+            )}
+            {price.percent !== null && (
+              <span dir="ltr" className="text-xs font-bold bg-white/20 text-white rounded-full px-1.5 py-0.5">-{price.percent}%</span>
+            )}
           </div>
         </div>
       )}

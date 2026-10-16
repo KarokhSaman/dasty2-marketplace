@@ -12,6 +12,7 @@ import type * as adminLogs from "../adminLogs.js";
 import type * as auth from "../auth.js";
 import type * as authActions from "../authActions.js";
 import type * as devUploads from "../devUploads.js";
+import type * as discount from "../discount.js";
 import type * as fees from "../fees.js";
 import type * as fixSeq from "../fixSeq.js";
 import type * as http from "../http.js";
@@ -40,6 +41,7 @@ declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   authActions: typeof authActions;
   devUploads: typeof devUploads;
+  discount: typeof discount;
   fees: typeof fees;
   fixSeq: typeof fixSeq;
   http: typeof http;

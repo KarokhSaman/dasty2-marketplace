@@ -57,6 +57,8 @@ export default defineSchema({
     deleteRequestReason: v.optional(v.string()),
     // Status the product had when the request was made; a rejected request restores it.
     deleteRequestFrom: v.optional(v.union(v.literal("pending"), v.literal("approved"))),
+    // Price the buyer actually paid when it differs from `price` (store discount).
+    salePrice: v.optional(v.number()),
   })
     .index("by_status",          ["status"])
     .index("by_status_category", ["status", "category"])
@@ -102,6 +104,11 @@ export default defineSchema({
     // true = don't list this store in the buyer home page Store filter (its
     // products still show everywhere else).
     hideFromFilter: v.optional(v.boolean()),
+    // Store-wide percentage discount, active between the two dates (YYYY-MM-DD,
+    // inclusive, Iraq time).
+    discountPercent: v.optional(v.number()),
+    discountStart: v.optional(v.string()),
+    discountEnd: v.optional(v.string()),
     feeMode: v.optional(feeModeValidator),
     feeValue: v.optional(v.number()),
     createdAt: v.string(),

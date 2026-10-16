@@ -21,6 +21,7 @@ import {
   restoreScroll,
   DEFAULT_PAGE_SIZE,
 } from "@/lib/useHomeStatePersistence";
+import { priceInfo } from "@/convex/discount";
 
 // Runs synchronously before paint on the client (so restored scroll is in place
 // before a View Transition snapshots the page), but degrades to useEffect on the
@@ -369,8 +370,8 @@ export default function HomePage() {
   };
 
   const applySort = (list) => {
-    if (sort === "price_asc")  return [...list].sort((a, b) => a.price - b.price);
-    if (sort === "price_desc") return [...list].sort((a, b) => b.price - a.price);
+    if (sort === "price_asc")  return [...list].sort((a, b) => priceInfo(a).price - priceInfo(b).price);
+    if (sort === "price_desc") return [...list].sort((a, b) => priceInfo(b).price - priceInfo(a).price);
     // Default: sort by publication date (newest first)
     return [...list].sort((a, b) => new Date(b.dateAdded) - new Date(a.dateAdded));
   };
