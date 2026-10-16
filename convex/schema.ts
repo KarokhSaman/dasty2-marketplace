@@ -52,6 +52,11 @@ export default defineSchema({
     // Set on the sold/paid entry created for one unit of a stocked listing, so
     // the unit can be returned to that listing's stock.
     soldFromId: v.optional(v.id("products")),
+    // Set while status is "deletion_requested".
+    deleteRequestedAt: v.optional(v.string()),
+    deleteRequestReason: v.optional(v.string()),
+    // Status the product had when the request was made; a rejected request restores it.
+    deleteRequestFrom: v.optional(v.union(v.literal("pending"), v.literal("approved"))),
   })
     .index("by_status",          ["status"])
     .index("by_status_category", ["status", "category"])
@@ -78,6 +83,13 @@ export default defineSchema({
     .index("by_email", ["email"])
     .index("by_phone", ["phone"]),
 
+  // Monotonic counters (e.g. "seq-26" for product codes issued in 2026).
+  counters: defineTable({
+    name: v.string(),
+    value: v.number(),
+  })
+    .index("by_name", ["name"]),
+
   stores: defineTable({
     name: v.string(),
     sellerId: v.string(),
@@ -87,6 +99,9 @@ export default defineSchema({
     // Where the store really is. Products under the store show this city no
     // matter which account posts them. Missing = the posting seller's city.
     city: v.optional(v.string()),
+    // true = don't list this store in the buyer home page Store filter (its
+    // products still show everywhere else).
+    hideFromFilter: v.optional(v.boolean()),
     feeMode: v.optional(feeModeValidator),
     feeValue: v.optional(v.number()),
     createdAt: v.string(),

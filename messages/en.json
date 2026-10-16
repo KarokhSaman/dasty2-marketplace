@@ -313,5 +313,17 @@
   "feePaid": "Fee paid",
   "postedForYou": "Posted for you",
   "citiesLabel": "Cities",
-  "storesLabel": "Stores"
+  "storesLabel": "Stores",
+  "statusDeletionRequested": "Deletion requested",
+  "requestDeleteBtn": "Request deletion",
+  "requestDeleteTitle": "Request to delete this product?",
+  "requestDeleteReasonPlaceholder": "Why do you want to delete it?",
+  "requestDeleteSend": "Send request",
+  "adminDeleteRequests": "Delete requests",
+  "adminApproveDelete": "Approve delete",
+  "adminMarkSold": "Mark as sold",
+  "adminDeleteReasonLabel": "Seller's reason",
+  "adminDeleteApprovedMsg": "Your request to delete \"{title}\" was approved and the product was removed.",
+  "adminDeleteRejectedMsg": "Your request to delete \"{title}\" was declined. The product is live again.",
+  "adminDeleteFromPending": "Not approved yet"
 }

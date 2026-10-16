@@ -28,6 +28,7 @@ const STATUS_STYLE = {
   rejected: "bg-red-100 text-red-700",
   sold:     "bg-blue-100 text-blue-700",
   paid:     "bg-purple-100 text-purple-700",
+  deletion_requested: "bg-orange-100 text-orange-700",
 };
 
 // ── Stat card ──────────────────────────────────────────────
@@ -72,28 +73,67 @@ function StatsPanel({ stats }) {
 }
 
 // ── Per-product actions — dropdown on desktop, action sheet on mobile ──
-function ProductMenu({ product, onEdit, onRepost, onDelete }) {
+function ProductMenu({ product, onEdit, onRepost, onDelete, onRequestDelete }) {
   const [open, setOpen] = useState(false);
   const [confirmDel, setConfirmDel] = useState(false);
+  const [requesting, setRequesting] = useState(false);
+  const [reason, setReason] = useState("");
+  const [sending, setSending] = useState(false);
+  const [requestError, setRequestError] = useState("");
   const isDesktop = useIsDesktop();
   const ref = useRef();
 
   useEffect(() => {
     if (!open || !isDesktop) return;
     function handler(e) {
-      if (ref.current && !ref.current.contains(e.target)) { setOpen(false); setConfirmDel(false); }
+      if (ref.current && !ref.current.contains(e.target)) { setOpen(false); setConfirmDel(false); setRequesting(false); }
     }
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [open, isDesktop]);
 
-  const close = () => { setOpen(false); setConfirmDel(false); };
+  const close = () => { setOpen(false); setConfirmDel(false); setRequesting(false); setRequestError(""); };
   const canEdit   = EDITABLE_STATUSES.includes(product.status);
-  const canDelete = ["pending","rejected"].includes(product.status);
+  const canDelete = product.status === "rejected";
+  const canRequestDelete = ["pending", "approved"].includes(product.status);
+
+  async function sendRequest() {
+    if (!reason.trim()) { setRequestError(m.requestDeleteReasonPlaceholder()); return; }
+    setSending(true);
+    setRequestError("");
+    try {
+      await onRequestDelete(reason.trim());
+      setReason("");
+      close();
+    } catch (err) {
+      setRequestError(err?.message?.split("\n")[0].replace(/^.*Uncaught Error:\s*/, "") || "Could not send");
+    } finally {
+      setSending(false);
+    }
+  }
 
   const rowCls = "flex items-center gap-3 w-full px-4 py-3 sm:py-2.5 text-[15px] sm:text-sm text-start transition-colors";
 
-  const actions = confirmDel ? (
+  const actions = requesting ? (
+    <div className="p-4 sm:p-3 sm:w-64">
+      <p className="text-[13px] font-semibold text-[var(--color-ink)] mb-3">{m.requestDeleteTitle()}</p>
+      <textarea
+        value={reason}
+        onChange={(e) => { setReason(e.target.value); setRequestError(""); }}
+        placeholder={m.requestDeleteReasonPlaceholder()}
+        rows={3}
+        maxLength={300}
+        className="w-full rounded-xl border border-[var(--color-hairline)] bg-white px-3 py-2 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-ink-fade)] focus:outline-none focus:border-[var(--color-ember-300)] focus:ring-4 focus:ring-[var(--color-ember-100)]/50 transition resize-none mb-2"
+      />
+      {requestError && <p className="text-xs text-red-500 mb-2">{requestError}</p>}
+      <div className="flex gap-2">
+        <button onClick={sendRequest} disabled={sending}
+          className="flex-1 text-sm bg-red-500 hover:bg-red-600 disabled:opacity-60 text-white font-semibold py-2.5 rounded-xl transition-colors">{m.requestDeleteSend()}</button>
+        <button onClick={() => { setRequesting(false); setRequestError(""); }}
+          className="flex-1 text-sm bg-[var(--color-cream-deep)] hover:bg-[var(--color-hairline)] text-[var(--color-ink)] py-2.5 rounded-xl transition-colors">{m.adminCancel()}</button>
+      </div>
+    </div>
+  ) : confirmDel ? (
     <div className="p-4 sm:p-3">
       <p className="text-[13px] text-red-600 font-medium mb-3">{m.sellerDeleteConfirm()}</p>
       <div className="flex gap-2">
@@ -119,6 +159,17 @@ function ProductMenu({ product, onEdit, onRepost, onDelete }) {
         </svg>
         {m.repostBtn()}
       </button>
+      {canRequestDelete && (
+        <>
+          <div className="border-t border-[var(--color-hairline)] mx-2 my-1"/>
+          <button onClick={() => setRequesting(true)} className={`${rowCls} text-red-500 hover:bg-red-50`}>
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+            </svg>
+            {m.requestDeleteBtn()}
+          </button>
+        </>
+      )}
       {canDelete && (
         <>
           <div className="border-t border-[var(--color-hairline)] mx-2 my-1"/>
@@ -168,6 +219,7 @@ export default function SellerDashboard() {
   const [storeFilter, setStoreFilter] = useState("all");
   const [expandedId, setExpandedId] = useState(null);
   const sellerRemove = useMutation(api.products.sellerRemove);
+  const requestDelete = useMutation(api.products.requestDelete);
 
   const products    = useQuery(api.products.getBySeller, seller ? {} : "skip");
   const activeOffer = useQuery(api.offers.getActive);
@@ -237,11 +289,15 @@ export default function SellerDashboard() {
     await sellerRemove({ id: product._id });
   }
 
+  async function handleRequestDelete(product, reason) {
+    await requestDelete({ id: product._id, reason });
+  }
+
   async function handleRepost(product) {
     router.navigate({ to: `/seller/repost/${product._id}` });
   }
 
-  const statusLabel = { pending: m.statusPending(), approved: m.statusApproved(), rejected: m.statusRejected(), sold: m.statusSold(), paid: m.statusPaid() };
+  const statusLabel = { pending: m.statusPending(), approved: m.statusApproved(), rejected: m.statusRejected(), sold: m.statusSold(), paid: m.statusPaid(), deletion_requested: m.statusDeletionRequested() };
 
   return (
     <div className="relative">
@@ -382,13 +438,14 @@ export default function SellerDashboard() {
                   <ProductMenu product={product}
                     onEdit={() => router.navigate({ to: `/seller/products/${product._id}/edit` })}
                     onRepost={() => handleRepost(product)}
-                    onDelete={() => handleDelete(product)}/>
+                    onDelete={() => handleDelete(product)}
+                    onRequestDelete={(reason) => handleRequestDelete(product, reason)}/>
                 )}
               </div>
               {/* Stock summary + sold units */}
               {(product.units.length > 0 || product.stock > 1) && (() => {
                 const sold = product.units.length + (product.status === "sold" || product.status === "paid" ? 1 : 0);
-                const left = product.status === "approved" ? (product.stock ?? 1) : 0;
+                const left = product.status === "approved" || product.status === "deletion_requested" ? (product.stock ?? 1) : 0;
                 const expandable = product.units.length > 0;
                 const isOpen = expandedId === product._id;
                 return (

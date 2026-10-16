@@ -11,6 +11,7 @@ const storeValidator = v.object({
   sellerId: v.string(),
   linkedUserId: v.optional(v.id("users")),
   city: v.optional(v.string()),
+  hideFromFilter: v.optional(v.boolean()),
   feeMode: v.optional(feeModeValidator),
   feeValue: v.optional(v.number()),
   createdAt: v.string(),
@@ -62,6 +63,7 @@ export const listPublic = query({
 
     const live = [];
     for (const store of stores) {
+      if (store.hideFromFilter) continue;
       for await (const p of ctx.db
         .query("products")
         .withIndex("by_store", (q) => q.eq("storeId", store._id))) {
@@ -132,9 +134,10 @@ export const create = mutation({
     feeValue: v.optional(v.number()),
     linkedUserId: v.optional(v.id("users")),
     city: v.optional(v.string()),
+    hideFromFilter: v.optional(v.boolean()),
   },
   returns: v.id("stores"),
-  handler: async (ctx, { sellerId, name, feeMode, feeValue, linkedUserId, city }) => {
+  handler: async (ctx, { sellerId, name, feeMode, feeValue, linkedUserId, city, hideFromFilter }) => {
     await requireAdmin(ctx);
     const seller = await ctx.db.get(sellerId);
     if (!seller || seller.role !== "seller") throw new Error("Seller not found");
@@ -154,6 +157,7 @@ export const create = mutation({
       sellerId: sellerId.toString(),
       linkedUserId,
       city: city || undefined,
+      hideFromFilter: hideFromFilter || undefined,
       feeMode: feeMode === "default" ? undefined : feeMode,
       feeValue: hasValue ? feeValue : undefined,
       createdAt: new Date().toISOString(),
@@ -169,9 +173,10 @@ export const update = mutation({
     feeValue: v.optional(v.number()),
     linkedUserId: v.optional(v.id("users")),
     city: v.optional(v.string()),
+    hideFromFilter: v.optional(v.boolean()),
   },
   returns: v.null(),
-  handler: async (ctx, { id, name, feeMode, feeValue, linkedUserId, city }) => {
+  handler: async (ctx, { id, name, feeMode, feeValue, linkedUserId, city, hideFromFilter }) => {
     await requireAdmin(ctx);
     const store = await ctx.db.get(id);
     if (!store) throw new Error("Store not found");
@@ -182,6 +187,7 @@ export const update = mutation({
     await ctx.db.patch(id, {
       linkedUserId,
       city: city || undefined,
+      hideFromFilter: hideFromFilter || undefined,
       name: name.trim(),
       feeMode: feeMode === "default" ? undefined : feeMode,
       feeValue: hasValue ? feeValue : undefined,

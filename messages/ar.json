@@ -313,5 +313,17 @@
   "feePaid": "رسوم مدفوعة",
   "postedForYou": "نُشر لأجلك",
   "citiesLabel": "المدن",
-  "storesLabel": "المتاجر"
+  "storesLabel": "المتاجر",
+  "statusDeletionRequested": "طلب حذف",
+  "requestDeleteBtn": "طلب الحذف",
+  "requestDeleteTitle": "هل تريد طلب حذف هذا المنتج؟",
+  "requestDeleteReasonPlaceholder": "لماذا تريد حذفه؟",
+  "requestDeleteSend": "إرسال الطلب",
+  "adminDeleteRequests": "طلبات الحذف",
+  "adminApproveDelete": "الموافقة على الحذف",
+  "adminMarkSold": "تحديد كمباع",
+  "adminDeleteReasonLabel": "سبب البائع",
+  "adminDeleteApprovedMsg": "تمت الموافقة على طلب حذف \"{title}\" وتمت إزالة المنتج.",
+  "adminDeleteRejectedMsg": "تم رفض طلب حذف \"{title}\". المنتج متاح مجدداً.",
+  "adminDeleteFromPending": "لم تتم الموافقة عليه بعد"
 }
