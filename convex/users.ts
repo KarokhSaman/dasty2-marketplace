@@ -1,4 +1,4 @@
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 import { internalMutation, mutation, query } from "./_generated/server";
 import type { Doc } from "./_generated/dataModel";
 import {
@@ -176,11 +176,11 @@ export const setFeeArrangement = mutation({
 
     if (feeMode === "flat") {
       if (feeValue === undefined || !Number.isInteger(feeValue) || feeValue <= 0) {
-        throw new Error("Flat fee must be a whole number of IQD greater than 0");
+        throw new ConvexError("Flat fee must be a whole number of IQD greater than 0");
       }
     } else if (feeMode === "percentage") {
       if (feeValue === undefined || !(feeValue > 0 && feeValue <= 100)) {
-        throw new Error("Percentage must be between 0 and 100");
+        throw new ConvexError("Percentage must be between 0 and 100");
       }
     }
 

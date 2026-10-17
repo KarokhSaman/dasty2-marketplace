@@ -17,6 +17,7 @@ import { getAllBrands } from "@/lib/brands";
 import ProductStatusMenu from "@/components/admin/ProductStatusMenu";
 import BottomSheet from "@/components/ui/BottomSheet";
 import CustomSelect from "@/components/ui/CustomSelect";
+import { errorMessage } from "@/lib/errors";
 
 const WHATSAPP = import.meta.env.VITE_WHATSAPP_NUMBER;
 
@@ -179,7 +180,7 @@ export default function AdminProductsPage() {
     try {
       await resolveDeleteRequest({ id: product._id, action });
     } catch (err) {
-      const msg = err?.message?.split("\n")[0].replace(/^.*Uncaught Error:\s*/, "") || "Failed";
+      const msg = errorMessage(err, "Failed");
       setDeleteActionError((e) => ({ ...e, [product._id]: msg }));
       return;
     }

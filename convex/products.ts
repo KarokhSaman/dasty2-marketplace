@@ -1,5 +1,5 @@
 import { paginationOptsValidator } from "convex/server";
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 import {
   mutation,
@@ -93,9 +93,10 @@ function validateListingInput({
   }
 }
 
-// Resolves the optional store/stock on a listing. A store-owner account (linked
-// to a store) is always locked to that store. Otherwise the store must be one the
-// seller manages. Stock only makes sense for a store product.
+// Resolves the optional store/stock on a listing. A seller may list under any
+// store they manage, under the store they own (the account linked to it), or —
+// unless they only own a store and manage none, which locks them to it — under
+// no store at all.
 async function resolveStoreListing(
   ctx: QueryCtx,
   seller: Doc<"users">,
@@ -106,22 +107,31 @@ async function resolveStoreListing(
     .query("stores")
     .withIndex("by_linked_user", (q) => q.eq("linkedUserId", seller._id))
     .first();
-  let store: Doc<"stores"> | null = linked;
-  if (!store && storeId) {
+  const managesStores =
+    (await ctx.db
+      .query("stores")
+      .withIndex("by_seller", (q) => q.eq("sellerId", seller._id.toString()))
+      .first()) !== null;
+
+  let store: Doc<"stores"> | null = null;
+  if (linked && !managesStores) {
+    store = linked;
+  } else if (storeId) {
     store = await ctx.db.get(storeId);
-    if (!store || store.sellerId !== seller._id.toString()) throw new Error("Store not found");
+    const allowed = store && (store.sellerId === seller._id.toString() || store._id === linked?._id);
+    if (!store || !allowed) throw new ConvexError("Store not found");
   }
+
   if (!store) {
-    if (stock !== undefined) throw new Error("Stock requires a store");
+    if (stock !== undefined) throw new ConvexError("Stock requires a store");
     return { store: null, storeId: undefined };
   }
   if (stock !== undefined && (!Number.isInteger(stock) || stock < 1 || stock > 9999)) {
-    throw new Error("Stock must be a whole number between 1 and 9999");
+    throw new ConvexError("Stock must be a whole number between 1 and 9999");
   }
   return { store, storeId: store._id };
 }
 
-// Stores that currently carry a (not yet ended) discount, keyed by store id.
 async function loadStoreDiscounts(ctx: QueryCtx): Promise<Map<string, StoreDiscount>> {
   const today = todayBaghdad();
   const map = new Map<string, StoreDiscount>();
@@ -844,14 +854,14 @@ export const requestDelete = mutation({
     const seller = await requireCurrentSeller(ctx);
     const product = await ctx.db.get(id);
     if (!product || product.sellerId !== seller._id.toString()) {
-      throw new Error("Not authorized");
+      throw new ConvexError("Not authorized");
     }
     if (product.status !== "approved" && product.status !== "pending") {
-      throw new Error("Only pending or live products can be requested for deletion");
+      throw new ConvexError("Only pending or live products can be requested for deletion");
     }
     const text = reason.trim();
-    if (!text) throw new Error("Please give a reason");
-    if (text.length > 300) throw new Error("Reason is too long");
+    if (!text) throw new ConvexError("Please give a reason");
+    if (text.length > 300) throw new ConvexError("Reason is too long");
 
     const now = new Date().toISOString();
     await ctx.db.patch(id, {
@@ -893,9 +903,9 @@ export const resolveDeleteRequest = mutation({
   handler: async (ctx, { id, action }) => {
     await requireAdmin(ctx);
     const product = await ctx.db.get(id);
-    if (!product) throw new Error("Product not found");
+    if (!product) throw new ConvexError("Product not found");
     if (product.status !== "deletion_requested") {
-      throw new Error("This product has no pending deletion request");
+      throw new ConvexError("This product has no pending deletion request");
     }
     if (action === "approve") {
       await deleteProductData(ctx, product);
@@ -908,10 +918,10 @@ export const resolveDeleteRequest = mutation({
       });
     } else {
       if (product.deleteRequestFrom === "pending") {
-        throw new Error("This product was never approved, so it cannot be marked sold.");
+        throw new ConvexError("This product was never approved, so it cannot be marked sold.");
       }
       if ((product.stock ?? 1) > 1) {
-        throw new Error("This product has several units in stock. Reject the request and sell units one at a time.");
+        throw new ConvexError("This product has several units in stock. Reject the request and sell units one at a time.");
       }
       await ctx.db.patch(id, {
         status: "sold",

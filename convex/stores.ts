@@ -1,4 +1,4 @@
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 import { mutation, query, type QueryCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import { requireAdmin, requireCurrentSeller } from "./auth";
@@ -92,17 +92,18 @@ export const listAll = query({
 function validateFee(feeMode: string, feeValue: number | undefined) {
   if (feeMode === "flat") {
     if (feeValue === undefined || !Number.isInteger(feeValue) || feeValue <= 0) {
-      throw new Error("Flat fee must be a whole number of IQD greater than 0");
+      throw new ConvexError("Flat fee must be a whole number of IQD greater than 0");
     }
   } else if (feeMode === "percentage") {
     if (feeValue === undefined || !(feeValue > 0 && feeValue <= 100)) {
-      throw new Error("Percentage must be between 0 and 100");
+      throw new ConvexError("Percentage must be between 0 and 100");
     }
   }
 }
 
-// A linked account must be a different seller, linked to at most one store, and
-// must not itself manage stores (so its add-product page has one clear store).
+// A linked (store owner) account must be a different seller and linked to at
+// most one store. It may also manage other stores: its add-product page then
+// offers its own store plus the ones it manages.
 async function validateLink(
   ctx: QueryCtx,
   managerId: string,
@@ -111,22 +112,17 @@ async function validateLink(
 ) {
   if (!linkedUserId) return;
   if (linkedUserId.toString() === managerId) {
-    throw new Error("The linked account must be different from the managing seller");
+    throw new ConvexError("The linked account must be different from the managing seller");
   }
   const user = await ctx.db.get(linkedUserId);
-  if (!user || user.role !== "seller") throw new Error("Linked account must be a seller");
+  if (!user || user.role !== "seller") throw new ConvexError("Linked account must be a seller");
   const existing = await ctx.db
     .query("stores")
     .withIndex("by_linked_user", (q) => q.eq("linkedUserId", linkedUserId))
     .first();
   if (existing && existing._id !== currentStoreId) {
-    throw new Error("That account is already linked to another store");
+    throw new ConvexError("That account is already linked to another store");
   }
-  const managed = await ctx.db
-    .query("stores")
-    .withIndex("by_seller", (q) => q.eq("sellerId", linkedUserId.toString()))
-    .first();
-  if (managed) throw new Error("That account manages stores, so it cannot be a store owner account");
 }
 
 export const create = mutation({
@@ -143,16 +139,9 @@ export const create = mutation({
   handler: async (ctx, { sellerId, name, feeMode, feeValue, linkedUserId, city, hideFromFilter }) => {
     await requireAdmin(ctx);
     const seller = await ctx.db.get(sellerId);
-    if (!seller || seller.role !== "seller") throw new Error("Seller not found");
-    if (!name.trim()) throw new Error("Store name is required");
+    if (!seller || seller.role !== "seller") throw new ConvexError("Seller not found");
+    if (!name.trim()) throw new ConvexError("Store name is required");
     validateFee(feeMode, feeValue);
-    const sellerIsLinked = await ctx.db
-      .query("stores")
-      .withIndex("by_linked_user", (q) => q.eq("linkedUserId", sellerId))
-      .first();
-    if (sellerIsLinked) {
-      throw new Error("This seller is a store owner account, so it cannot manage stores");
-    }
     await validateLink(ctx, sellerId.toString(), linkedUserId);
     const hasValue = feeMode === "flat" || feeMode === "percentage";
     return await ctx.db.insert("stores", {
@@ -182,8 +171,8 @@ export const update = mutation({
   handler: async (ctx, { id, name, feeMode, feeValue, linkedUserId, city, hideFromFilter }) => {
     await requireAdmin(ctx);
     const store = await ctx.db.get(id);
-    if (!store) throw new Error("Store not found");
-    if (!name.trim()) throw new Error("Store name is required");
+    if (!store) throw new ConvexError("Store not found");
+    if (!name.trim()) throw new ConvexError("Store name is required");
     validateFee(feeMode, feeValue);
     await validateLink(ctx, store.sellerId, linkedUserId, id);
     const hasValue = feeMode === "flat" || feeMode === "percentage";
@@ -222,7 +211,7 @@ export const setDiscount = mutation({
   handler: async (ctx, { id, percent, start, end }) => {
     await requireAdmin(ctx);
     const store = await ctx.db.get(id);
-    if (!store) throw new Error("Store not found");
+    if (!store) throw new ConvexError("Store not found");
     if (percent === undefined) {
       await ctx.db.patch(id, {
         discountPercent: undefined,
@@ -231,12 +220,12 @@ export const setDiscount = mutation({
       });
       return null;
     }
-    if (!(percent > 0 && percent <= 90)) throw new Error("Discount must be between 1 and 90 percent");
+    if (!(percent > 0 && percent <= 90)) throw new ConvexError("Discount must be between 1 and 90 percent");
     const date = /^\d{4}-\d{2}-\d{2}$/;
     if (!start || !end || !date.test(start) || !date.test(end)) {
-      throw new Error("Choose a start and an end date");
+      throw new ConvexError("Choose a start and an end date");
     }
-    if (end < start) throw new Error("The end date must not be before the start date");
+    if (end < start) throw new ConvexError("The end date must not be before the start date");
     await ctx.db.patch(id, { discountPercent: percent, discountStart: start, discountEnd: end });
     return null;
   },
@@ -249,7 +238,7 @@ export const remove = mutation({
   handler: async (ctx, { id }) => {
     await requireAdmin(ctx);
     const store = await ctx.db.get(id);
-    if (!store) throw new Error("Store not found");
+    if (!store) throw new ConvexError("Store not found");
     const products = await ctx.db
       .query("products")
       .withIndex("by_seller", (q) => q.eq("sellerId", store.sellerId))

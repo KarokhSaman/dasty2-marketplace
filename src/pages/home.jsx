@@ -74,14 +74,16 @@ function FiltersRow({ cities, setCities, availableCities, stores, setStores, pub
           selected={cities}
           onChange={setCities}
         />
-        <MultiSelectMenu
-          label={m.storesLabel()}
-          allLabel={m.storeAll()}
-          leadingIcon={<StoreIcon />}
-          options={(publicStores ?? []).map((st) => ({ value: st._id, label: st.name }))}
-          selected={stores}
-          onChange={setStores}
-        />
+        {SHOW_STORE_FILTER && (
+          <MultiSelectMenu
+            label={m.storesLabel()}
+            allLabel={m.storeAll()}
+            leadingIcon={<StoreIcon />}
+            options={(publicStores ?? []).map((st) => ({ value: st._id, label: st.name }))}
+            selected={stores}
+            onChange={setStores}
+          />
+        )}
       </div>
       <div className="inline-flex items-center gap-1 shrink-0">
         <MultiSelectMenu
@@ -230,6 +232,10 @@ function EndDivider({ label }) {
   );
 }
 
+// The buyer Store filter is switched off for now. Set to true to bring it back
+// (the pill, its server list and the filtering are all still in place).
+const SHOW_STORE_FILTER = false;
+
 // ── Filters state ──────────────────────────────────────────
 const INITIAL_FILTERS = {
   category: "all", condition: "all", sort: "default", cities: [], stores: [], brands: [],
@@ -243,7 +249,8 @@ export default function HomePage() {
   const [isRotating, setIsRotating] = useState(false); // Animation state
   const { category, condition, sort, brands } = filters;
   const cities = filters.cities ?? [];
-  const stores = filters.stores ?? [];
+  // A store picked in an earlier session must not keep filtering while the pill is hidden.
+  const stores = SHOW_STORE_FILTER ? (filters.stores ?? []) : [];
   const updateFilter = (key) => (value) => setFilters((f) => ({ ...f, [key]: value }));
   const sentinelRef = useRef(null);
   // Shuffle seed — calculated after hydration to avoid server/client mismatch
@@ -273,7 +280,10 @@ export default function HomePage() {
   // preload) via React Query, still live-reactive. The paginated feed below
   // stays on usePaginatedQuery (convexQuery has no pagination).
   const { data: liveFeatured } = useReactQuery(convexQuery(api.products.getFeatured, {}));
-  const { data: publicStores } = useReactQuery(convexQuery(api.stores.listPublic, {}));
+  const { data: publicStores } = useReactQuery({
+    ...convexQuery(api.stores.listPublic, {}),
+    enabled: SHOW_STORE_FILTER,
+  });
   const { data: publicCities } = useReactQuery(convexQuery(api.products.listCities, {}));
   const rawFeaturedProducts = liveFeatured ?? cachedFeatured ?? [];
 
