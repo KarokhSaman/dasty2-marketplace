@@ -7,6 +7,7 @@ import BottomSheet from "@/components/ui/BottomSheet";
 import { useIsDesktop } from "@/components/ui/useMediaQuery";
 import { todayBaghdad } from "@/convex/discount";
 import { IRAQ_CITIES } from "@/lib/cities";
+import { errorMessage } from "@/lib/errors";
 
 const FEE_MODES = [
   { value: "default", label: "Default pricing table" },
@@ -47,7 +48,7 @@ function StoreForm({ initial, submitLabel, onSubmit, onCancel, sellerOptions }) 
     try {
       await onSubmit({ name: name.trim(), feeMode, feeValue: needsValue ? num : undefined, linkedUserId: linkedUserId || undefined, city: city || undefined, hideFromFilter: !showInFilter });
     } catch (err) {
-      setError(err?.message?.split("\n")[0].replace(/^.*Uncaught Error:\s*/, "") || "Could not save");
+      setError(errorMessage(err, "Could not save"));
       setSaving(false);
     }
   }
@@ -197,7 +198,7 @@ function StoreMenu({ store, sellerOptions, onSave, onDelete }) {
       await setDiscount(clear ? { id: store._id } : { id: store._id, percent: num, start, end });
       close();
     } catch (err) {
-      setError(err?.message?.split("\n")[0].replace(/^.*Uncaught Error:\s*/, "") || "Could not save");
+      setError(errorMessage(err, "Could not save"));
     } finally {
       setSaving(false);
     }

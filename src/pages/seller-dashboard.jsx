@@ -19,6 +19,7 @@ import { BottomSheet, SelectMenu, useIsDesktop } from "@/components/ui";
 import { getCategoryLabel } from "@/lib/categories";
 import { Link } from "@tanstack/react-router";
 import { photoProps } from "@/lib/images";
+import { errorMessage } from "@/lib/errors";
 
 const EDITABLE_STATUSES = ["pending", "approved", "rejected"];
 
@@ -106,7 +107,7 @@ function ProductMenu({ product, onEdit, onRepost, onDelete, onRequestDelete }) {
       setReason("");
       close();
     } catch (err) {
-      setRequestError(err?.message?.split("\n")[0].replace(/^.*Uncaught Error:\s*/, "") || "Could not send");
+      setRequestError(errorMessage(err, "Could not send"));
     } finally {
       setSending(false);
     }

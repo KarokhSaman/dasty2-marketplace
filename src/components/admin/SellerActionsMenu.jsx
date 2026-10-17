@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useIsDesktop } from "@/components/ui/useMediaQuery";
 import BottomSheet from "@/components/ui/BottomSheet";
 import * as m from "@/paraglide/messages";
+import { errorMessage } from "@/lib/errors";
 
 const FEE_MODES = [
   { value: "default", label: "Default pricing table" },
@@ -67,7 +68,7 @@ export default function SellerActionsMenu({ seller, onPromote, onToggleActive, o
       await onSetFee(feeMode, needsValue ? num : undefined);
       close();
     } catch (err) {
-      setFeeError(err?.message?.split("\n")[0].replace(/^.*Uncaught Error:\s*/, "") || "Could not save");
+      setFeeError(errorMessage(err, "Could not save"));
     } finally {
       setFeeSaving(false);
     }

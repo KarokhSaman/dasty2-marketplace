@@ -70,13 +70,18 @@ export default function EditProductPage() {
   const priceNum = Number(normalizeDigits(price).replace(/[^\d]/g, "")) || 0;
   const standardProfit = calculateProfit(priceNum);
   const currentSeller = useQuery(api.users.getCurrentSeller);
-  const stores = useQuery(api.stores.listMine);
+  const managedStores = useQuery(api.stores.listMine);
   const linkedStore = useQuery(api.stores.getLinked);
-  const [pickedStoreId, setStoreId] = useState("");
+  // null = not chosen yet (an owner account then defaults to its own store); "" = no store
+  const [pickedStoreId, setStoreId] = useState(null);
   const [stock, setStock] = useState("");
-  // A store-owner account is always locked to its linked store.
-  const storeId = linkedStore ? linkedStore._id : pickedStoreId;
-  const feeSource = linkedStore ?? stores?.find((s) => s._id === storeId) ?? currentSeller;
+  // A store-owner account that manages no stores is locked to its own store.
+  // One that also manages stores picks from its own store plus the managed ones
+  // (defaulting to its own) or no store at all.
+  const ownerOnly = !!linkedStore && managedStores !== undefined && managedStores.length === 0;
+  const selectableStores = [...(linkedStore ? [linkedStore] : []), ...(managedStores ?? [])];
+  const storeId = ownerOnly ? linkedStore._id : (pickedStoreId ?? linkedStore?._id ?? "");
+  const feeSource = selectableStores.find((s) => s._id === storeId) ?? currentSeller;
   const customFee = !!feeSource?.feeMode && feeSource.feeMode !== "default";
   const profit = resolveProfit(priceNum, feeSource, activeOffer ?? null);
   const stockNum = storeId && stock ? Number(normalizeDigits(stock)) : undefined;
@@ -348,7 +353,7 @@ export default function EditProductPage() {
         </div>
 
         {/* Description */}
-        <StoreStockFields stores={stores} lockedStore={linkedStore} storeId={pickedStoreId} onStoreChange={setStoreId} stock={stock} onStockChange={setStock} />
+        <StoreStockFields stores={selectableStores} lockedStore={ownerOnly ? linkedStore : null} storeId={storeId} onStoreChange={setStoreId} stock={stock} onStockChange={setStock} />
 
         <div>
           <label className="block text-[13px] font-semibold text-[var(--color-ink)] mb-1.5">{m.fieldDescription()}</label>

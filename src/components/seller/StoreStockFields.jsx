@@ -28,7 +28,7 @@ function StockInput({ stock, onStockChange }) {
 
 // Renders nothing for normal sellers. A store-owner account (lockedStore) sees its
 // linked store fixed in place; a managing seller picks from their stores.
-export default function StoreStockFields({ stores, lockedStore, storeId, onStoreChange, stock, onStockChange }) {
+export default function StoreStockFields({ stores, lockedStore, allowNone = true, storeId, onStoreChange, stock, onStockChange }) {
   if (lockedStore) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -57,7 +57,7 @@ export default function StoreStockFields({ stores, lockedStore, storeId, onStore
           }}
           placeholder={m.fieldStoreNone()}
           options={[
-            { value: "", label: m.fieldStoreNone() },
+            ...(allowNone ? [{ value: "", label: m.fieldStoreNone() }] : []),
             ...stores.map((st) => ({ value: st._id, label: st.name })),
           ]}
         />
