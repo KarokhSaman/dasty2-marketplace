@@ -544,6 +544,8 @@ export const add = mutation({
     const seq = await issueSeq(ctx);
     const id = await ctx.db.insert("products", {
       ...args,
+      // Store products are always new.
+      condition: store ? "new" : args.condition,
       storeId,
       seq,
       city: store?.city || seller.city || "Erbil",
@@ -756,6 +758,7 @@ export const sellerUpdate = mutation({
     const profit = resolveProfit(fields.price, store ?? seller, activeOffer ?? null);
     await ctx.db.patch(id, {
       ...fields,
+      condition: store ? "new" : fields.condition,
       storeId,
       ...(store?.city ? { city: store.city } : {}),
       profit,
@@ -791,62 +794,6 @@ export const sellerUpdate = mutation({
   },
 });
 
-export const duplicate = mutation({
-  args: {
-    id: v.id("products"),
-  },
-  handler: async (ctx, { id }) => {
-    const seller = await requireCurrentSeller(ctx);
-    const src = await ctx.db.get(id);
-    if (!src || src.sellerId !== seller._id.toString()) {
-      throw new Error("Not authorized");
-    }
-
-    // Check for active offer and adjust fee accordingly
-    const today = new Date().toISOString().slice(0, 10);
-    const allOffers = await ctx.db.query("offers")
-      .filter(q => q.eq(q.field("isActive"), true)).collect();
-    const activeOffer = allOffers.find(o => o.startDate <= today && o.endDate >= today);
-    const srcStore = src.storeId ? await ctx.db.get(src.storeId) : null;
-    const profit = resolveProfit(src.price, srcStore ?? seller, activeOffer ?? null);
-
-    const seq = await issueSeq(ctx);
-    const newId = await ctx.db.insert("products", {
-      seq,
-      title:       src.title,
-      description: src.description,
-      category:    src.category,
-      condition:   src.condition,
-      price:       src.price,
-      storeId:     src.storeId,
-      stock:       src.stock,
-      profit,
-      photos:      src.photos,
-      city:        src.city,
-      sellerId:    src.sellerId,
-      sellerName:  src.sellerName,
-      sellerPhone: src.sellerPhone,
-      status:      "pending",
-      featured:    false,
-      views:       0,
-      dateAdded:   new Date().toISOString(),
-    });
-
-    await ctx.db.insert("notifications", {
-      sellerId:  "ADMIN",
-      productId: newId,
-      message:   `New product submitted: "${src.title}" by ${src.sellerName}`,
-      url:       "/admin/products?tab=pending",
-      read:      false,
-      createdAt: new Date().toISOString(),
-    });
-
-    return newId;
-  },
-});
-
-// Seller asks to take a pending or live product down. It is hidden from buyers
-// right away and waits for an admin to approve the deletion, mark it sold, or restore it.
 export const requestDelete = mutation({
   args: { id: v.id("products"), reason: v.string() },
   returns: v.null(),
@@ -856,8 +803,8 @@ export const requestDelete = mutation({
     if (!product || product.sellerId !== seller._id.toString()) {
       throw new ConvexError("Not authorized");
     }
-    if (product.status !== "approved" && product.status !== "pending") {
-      throw new ConvexError("Only pending or live products can be requested for deletion");
+    if (product.status !== "approved" && product.status !== "pending" && product.status !== "rejected") {
+      throw new ConvexError("This product cannot be requested for deletion");
     }
     const text = reason.trim();
     if (!text) throw new ConvexError("Please give a reason");
@@ -917,7 +864,7 @@ export const resolveDeleteRequest = mutation({
         deleteRequestFrom: undefined,
       });
     } else {
-      if (product.deleteRequestFrom === "pending") {
+      if (product.deleteRequestFrom === "pending" || product.deleteRequestFrom === "rejected") {
         throw new ConvexError("This product was never approved, so it cannot be marked sold.");
       }
       if ((product.stock ?? 1) > 1) {
@@ -932,34 +879,6 @@ export const resolveDeleteRequest = mutation({
         ...(await saleTerms(ctx, product)),
       });
     }
-    return null;
-  },
-});
-
-export const sellerRemove = mutation({
-  args: {
-    id: v.id("products"),
-  },
-  returns: v.null(),
-  handler: async (ctx, { id }) => {
-    const seller = await requireCurrentSeller(ctx);
-    const product = await ctx.db.get(id);
-    if (!product || product.sellerId !== seller._id.toString()) {
-      throw new Error("Not authorized");
-    }
-    if (product.status !== "rejected") {
-      throw new Error("Only rejected products can be deleted directly. Request deletion instead.");
-    }
-    await deleteProductData(ctx, product);
-    await ctx.db.insert("adminLogs", {
-      action: "product_deleted",
-      productId: id.toString(),
-      productTitle: product.title,
-      productCode: product.seq,
-      sellerName: seller.name,
-      price: product.price,
-      createdAt: new Date().toISOString(),
-    });
     return null;
   },
 });

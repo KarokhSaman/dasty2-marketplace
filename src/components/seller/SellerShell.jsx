@@ -114,7 +114,7 @@ export default function SellerShell({ children }) {
   const isHomeTab = pathname === "/";
   const isDash = pathname === "/seller";
   const isAccount = pathname === "/seller/account";
-  const isAddProduct = pathname === "/seller/add" || pathname.includes("/seller/repost/") || pathname.includes("/seller/products/") && pathname.includes("/edit");
+  const isAddProduct = pathname === "/seller/add" || pathname.includes("/seller/products/") && pathname.includes("/edit");
   const lastHomeTap = useRef(0);
 
   const handleHomeTap = useCallback((e) => {
