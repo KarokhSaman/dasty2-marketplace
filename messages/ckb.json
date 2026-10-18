@@ -27,7 +27,6 @@
   "notFound": "کاڵاکە نەدۆزرایەوە",
   "waMessage": "سڵاو، دەمەوێت ئەم کاڵایە بکڕم:\nکۆدی کاڵا: ‏{seq}‏\n{title} — {price}\n{url}",
   "productCode": "کۆدی کاڵا",
-  "sellerDeleteConfirm": "دڵنیای لە سڕینەوە؟",
   "footerText": "بازاڕی کاڵای منداڵان، کوردستان، عێراق",
 
   "sellerDashboard": "داشبۆرد",
@@ -84,10 +83,6 @@
   "errDescriptionRequired": "وەسفی کاڵاکە زیاد بکە",
   "atLeastOnePhoto": "لانیکەم پێویستت بە دوو وێنەیە",
   "priceRange": "نرخ دەبێت لانیکەم ٥٬٠٠٠ دینار بێت",
-  "repostBtn": "دووبارە بڵاوکردنەوە",
-  "repostPageTitle": "دووبارە بڵاوکردنەوەی کاڵا",
-  "repostNote": "پێش ناردن پێداچوونەوە بۆ زانیارییەکان بکە و هەڵەکان چاک بکەوە.",
-  "repostSuccess": "کاڵاکەت دووبارە بۆ پێداچوونەوە نێردرا!",
   "editBtn": "گۆڕین",
   "editProductTitle": "گۆڕینی پۆست",
   "editProductBtn": "دووبارە ناردن",

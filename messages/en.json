@@ -27,7 +27,6 @@
   "notFound": "Product not found",
   "waMessage": "Hi, I'm interested in:\nProduct Code: {seq}\n{title} — {price}\n{url}",
   "productCode": "Product Code",
-  "sellerDeleteConfirm": "Delete this product?",
   "footerText": "Baby Products Marketplace, Kurdistan, Iraq",
 
   "sellerDashboard": "Dashboard",
@@ -84,10 +83,6 @@
   "errDescriptionRequired": "Add a product description",
   "atLeastOnePhoto": "At least two photos are required",
   "priceRange": "Price must be at least 5,000 IQD",
-  "repostBtn": "Repost",
-  "repostPageTitle": "Repost Product",
-  "repostNote": "Review and update the details before submitting",
-  "repostSuccess": "Product reposted and sent for review!",
   "editBtn": "Edit",
   "editProductTitle": "Edit Product",
   "editProductBtn": "Save & Resubmit",

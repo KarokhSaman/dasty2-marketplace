@@ -123,7 +123,7 @@ export default function EditProductPage() {
         title: title.trim(),
         category,
         brand: brand || undefined,
-        condition,
+        condition: storeId ? "new" : condition,
         price: priceNum,
         description: description.trim(),
         photos,
@@ -245,7 +245,7 @@ export default function EditProductPage() {
         </div>
 
         {/* Category + Condition */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className={`grid gap-4 ${storeId ? "grid-cols-1" : "grid-cols-2"}`}>
           <div>
             <label className="block text-[13px] font-semibold text-[var(--color-ink)] mb-1.5">
               {m.fieldCategory()} <span className="text-rose-500">*</span>
@@ -259,19 +259,22 @@ export default function EditProductPage() {
             />
             {errors.category && <p className="mt-1 text-xs text-red-500">{m.errCategoryRequired()}</p>}
           </div>
-          <div>
-            <label className="block text-[13px] font-semibold text-[var(--color-ink)] mb-1.5">
-              {m.fieldCondition()} <span className="text-rose-500">*</span>
-            </label>
-            <div className="flex gap-1.5">
-              {["new","likenew","used"].map((c) => (
-                <button key={c} type="button" onClick={() => setCondition(c)}
-                  className={`flex-1 h-10 px-3 text-xs font-medium transition-colors rounded-xl border flex items-center justify-center ${condition === c ? "bg-[var(--color-ember-500)] text-white border-[var(--color-ember-500)]" : "border-[var(--color-hairline)] text-[var(--color-ink)] hover:border-[var(--color-ember-300)] hover:bg-[var(--color-cream)]"}`}>
-                  {c === "new" ? m.conditionNew() : c === "likenew" ? m.conditionLikeNew() : m.conditionUsed()}
-                </button>
-              ))}
+          {/* Store products are always "New", so the choice is hidden */}
+          {!storeId && (
+            <div>
+              <label className="block text-[13px] font-semibold text-[var(--color-ink)] mb-1.5">
+                {m.fieldCondition()} <span className="text-rose-500">*</span>
+              </label>
+              <div className="flex gap-1.5">
+                {["new","likenew","used"].map((c) => (
+                  <button key={c} type="button" onClick={() => setCondition(c)}
+                    className={`flex-1 h-10 px-3 text-xs font-medium transition-colors rounded-xl border flex items-center justify-center ${condition === c ? "bg-[var(--color-ember-500)] text-white border-[var(--color-ember-500)]" : "border-[var(--color-hairline)] text-[var(--color-ink)] hover:border-[var(--color-ember-300)] hover:bg-[var(--color-cream)]"}`}>
+                    {c === "new" ? m.conditionNew() : c === "likenew" ? m.conditionLikeNew() : m.conditionUsed()}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         <div>

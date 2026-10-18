@@ -80,7 +80,7 @@ export default function SellerActionsMenu({ seller, onPromote, onToggleActive, o
     <div className="p-4 sm:p-3 sm:w-72">
       <p className="text-[13px] font-semibold text-[var(--color-ink)] mb-1">Service fee for {seller.name}</p>
       <p className="text-xs text-[var(--color-ink-fade)] mb-3">
-        Applies to products this seller adds, edits or reposts from now on. Existing products keep their fee.
+        Applies to products this seller adds or edits from now on. Existing products keep their fee.
       </p>
       <div className="space-y-1.5 mb-3">
         {FEE_MODES.map((opt) => (

@@ -27,7 +27,6 @@
   "notFound": "المنتج غير موجود",
   "waMessage": "مرحباً، أريد الاستفسار عن:\nكود المنتج: ‏{seq}‏\n{title} — {price}\n{url}",
   "productCode": "كود المنتج",
-  "sellerDeleteConfirm": "هل أنت متأكد من الحذف؟",
   "footerText": "سوق منتجات الأطفال، كردستان، العراق",
 
   "sellerDashboard": "لوحة التحكم",
@@ -84,10 +83,6 @@
   "errDescriptionRequired": "أضف وصف المنتج",
   "atLeastOnePhoto": "يجب إضافة صورتين على الأقل",
   "priceRange": "يجب أن يكون السعر ٥٬٠٠٠ IQD على الأقل",
-  "repostBtn": "إعادة نشر",
-  "repostPageTitle": "إعادة نشر المنتج",
-  "repostNote": "راجع التفاصيل وعدّلها قبل الإرسال",
-  "repostSuccess": "تمت إعادة نشر المنتج وإرساله للمراجعة!",
   "editBtn": "تعديل",
   "editProductTitle": "تعديل المنتج",
   "editProductBtn": "حفظ وإعادة الإرسال",
