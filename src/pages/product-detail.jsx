@@ -152,8 +152,9 @@ function RelatedCard({ product }) {
   setProductCache(product);
   return (
     <Link to={`/products/${product._id}`} className="group block">
-      <div className="bg-white rounded-2xl border border-[var(--color-hairline)] overflow-hidden hover:border-[var(--color-ember-200)] hover:shadow-[0_18px_36px_-22px_rgba(11,12,15,0.22)] transition-all duration-300 active:scale-[0.98]">
-        <div className="aspect-square relative overflow-hidden bg-[var(--color-sand)]">
+      <div className="bg-white rounded-2xl border border-[var(--color-hairline)] hover:border-[var(--color-ember-200)] hover:shadow-[0_18px_36px_-22px_rgba(11,12,15,0.22)] transition-all duration-300 active:scale-[0.98]">
+        <div className="relative">
+          <div className="aspect-square relative overflow-hidden rounded-t-[15px] bg-[var(--color-sand)]">
           {photo ? (
             <img {...photoProps(photo, 600)} alt={product.title}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
@@ -167,12 +168,16 @@ function RelatedCard({ product }) {
               {product.condition === "new" ? m.badgeNew() : product.condition === "likenew" ? m.conditionLikeNew() : m.badgeUsed()}
             </Chip>
           </div>
+        </div>
           {product.storeId && (
-            <div className="absolute bottom-2 start-2 flex">
-              <Chip tone="glass" leadingIcon={<StoreIcon />} className="backdrop-blur-md shadow-sm">
-                {m.storeTag()}
-              </Chip>
-            </div>
+            <span className="absolute bottom-3 -start-1.5 z-10">
+              <span className="relative inline-flex items-center gap-1.5 min-w-[84px] ps-3 pe-3.5 py-1 text-[10.5px] font-bold tracking-[0.04em] leading-none whitespace-nowrap text-white bg-[linear-gradient(90deg,#a8740f,#d9a43a)] rtl:bg-[linear-gradient(270deg,#a8740f,#d9a43a)] rounded-e-[5px] shadow-[0_6px_12px_-6px_rgba(11,12,15,0.5)]">
+                <StoreIcon className="w-3 h-3 shrink-0" />
+                {m.storeFlag()}
+                {/* the fold where the ribbon wraps behind the card edge */}
+                <span aria-hidden="true" className="absolute top-full start-0 w-1.5 h-[5px] bg-[#6b4a06] [clip-path:polygon(0_0,100%_0,100%_100%)] rtl:[clip-path:polygon(0_0,100%_0,0_100%)]" />
+              </span>
+            </span>
           )}
         </div>
         <div className="px-3 py-2.5">
@@ -372,14 +377,14 @@ export default function ProductDetailPage() {
 
           {/* Quick chips */}
           <div className="flex flex-wrap items-center gap-2 mb-4">
-            {product.storeId ? (
-              <Chip tone="success" leadingIcon={<StoreIcon />}>
-                {m.newFromStore()}
-              </Chip>
-            ) : (
-              <Chip tone={isNew ? "success" : product.condition === "likenew" ? "neutral" : "warning"} dot>
-                {isNew ? m.badgeNew() : product.condition === "likenew" ? m.conditionLikeNew() : m.badgeUsed()}
-              </Chip>
+            <Chip tone={isNew ? "success" : product.condition === "likenew" ? "neutral" : "warning"} dot>
+              {isNew ? m.badgeNew() : product.condition === "likenew" ? m.conditionLikeNew() : m.badgeUsed()}
+            </Chip>
+            {product.storeId && (
+              <span className="chip-base gap-1 text-white bg-[linear-gradient(90deg,#a8740f,#d9a43a)] rtl:bg-[linear-gradient(270deg,#a8740f,#d9a43a)] shadow-sm">
+                <StoreIcon className="w-3.5 h-3.5" />
+                {m.storeFlag()}
+              </span>
             )}
             {product.brand && (
               <Chip tone="neutral">
@@ -402,6 +407,12 @@ export default function ProductDetailPage() {
               </Chip>
             )}
           </div>
+          {product.storeId && (
+            <p className="-mt-2 mb-4 text-[12.5px] text-[var(--color-ink-soft)] flex items-center gap-1.5">
+              <StoreIcon className="w-3.5 h-3.5 shrink-0" />
+              {m.storeTagHint()}
+            </p>
+          )}
 
           {/* Price */}
           <div className="mb-3">

@@ -62,9 +62,10 @@ export default function ProductCard({ product, onSave }) {
 
   return (
     <Link to={`/products/${product._id}`} className="group block" onClick={handleClick}>
-      <article className="bg-paper rounded-2xl overflow-hidden border border-[var(--color-hairline)] transition-all duration-300 hover:border-[var(--color-ember-200)] hover:shadow-[0_18px_36px_-22px_rgba(11,12,15,0.22)] hover:-translate-y-0.5 active:scale-[0.98]">
+      <article className="bg-paper rounded-2xl border border-[var(--color-hairline)] transition-all duration-300 hover:border-[var(--color-ember-200)] hover:shadow-[0_18px_36px_-22px_rgba(11,12,15,0.22)] hover:-translate-y-0.5 active:scale-[0.98]">
         {/* Image */}
-        <div className="aspect-[4/5] md:aspect-square relative overflow-hidden bg-[var(--color-sand)]">
+        <div className="relative">
+          <div className="aspect-[4/5] md:aspect-square relative overflow-hidden rounded-t-[15px] bg-[var(--color-sand)]">
           {photo ? (
             <img
               {...photoProps(photo, 600)}
@@ -91,15 +92,6 @@ export default function ProductCard({ product, onSave }) {
             </Chip>
           </div>
 
-          {/* Store products: tag in the bottom-left corner of the photo */}
-          {product.storeId && (
-            <div className="absolute bottom-2.5 start-2.5 flex">
-              <Chip tone="glass" leadingIcon={<StoreIcon />} className="backdrop-blur-md shadow-sm">
-                {m.storeTag()}
-              </Chip>
-            </div>
-          )}
-
           {/* Store discount, on the opposite corner from the other tags */}
           {price.percent !== null && (
             <div className="absolute top-2.5 end-2.5 flex flex-col gap-1">
@@ -107,6 +99,17 @@ export default function ProductCard({ product, onSave }) {
                 -{price.percent}%
               </Chip>
             </div>
+          )}
+        </div>
+          {product.storeId && (
+            <span className="absolute bottom-3 -start-1.5 z-10">
+              <span className="relative inline-flex items-center gap-1.5 min-w-[84px] ps-3 pe-3.5 py-1 text-[10.5px] font-bold tracking-[0.04em] leading-none whitespace-nowrap text-white bg-[linear-gradient(90deg,#a8740f,#d9a43a)] rtl:bg-[linear-gradient(270deg,#a8740f,#d9a43a)] rounded-e-[5px] shadow-[0_6px_12px_-6px_rgba(11,12,15,0.5)]">
+                <StoreIcon className="w-3 h-3 shrink-0" />
+                {m.storeFlag()}
+                {/* the fold where the ribbon wraps behind the card edge */}
+                <span aria-hidden="true" className="absolute top-full start-0 w-1.5 h-[5px] bg-[#6b4a06] [clip-path:polygon(0_0,100%_0,100%_100%)] rtl:[clip-path:polygon(0_0,100%_0,0_100%)]" />
+              </span>
+            </span>
           )}
         </div>
 

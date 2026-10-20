@@ -323,6 +323,6 @@
   "adminDeleteApprovedMsg": "Your request to delete \"{title}\" was approved and the product was removed.",
   "adminDeleteRejectedMsg": "Your request to delete \"{title}\" was declined. The product is live again.",
   "adminDeleteFromPending": "Not approved yet",
-  "storeTag": "Store",
-  "newFromStore": "New from a store"
+  "storeFlag": "Store",
+  "storeTagHint": "A brand-new item from one of our partner stores."
 }
