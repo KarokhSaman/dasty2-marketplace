@@ -1,10 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { setCookie } from '@tanstack/react-start/server'
 import { fetchAction } from 'convex/nextjs'
 import { api } from '@/convex/_generated/api'
 import { convexServerOptions } from '@/lib/convex'
-import { secureCookieOptions } from '@/lib/security'
-import { SESSION_COOKIE } from '@/lib/session'
+import { setSessionCookie } from '@/lib/session.server'
 
 type MockRole = 'seller' | 'admin'
 type Body = { role?: string }
@@ -37,10 +35,7 @@ export const Route = createFileRoute('/api/auth/mock-login')({
             { role },
             convexServerOptions(),
           )
-          setCookie(SESSION_COOKIE, result.jwt, {
-            ...secureCookieOptions(request),
-            maxAge: 2_592_000,
-          })
+          setSessionCookie(request, result.jwt)
           return Response.json({ ok: true, role: result.role })
         } catch (error) {
           console.error('Development mock login failed', error)

@@ -3,7 +3,7 @@
 import { v } from "convex/values";
 import { SignJWT, importPKCS8 } from "jose";
 import { action } from "./_generated/server";
-import { internal } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 import { vsCreate, vsValidateOtp, type VsMethod, type VsLanguage } from "./verifyspeed";
 
 const methodValidator = v.union(
@@ -39,7 +39,9 @@ async function mintSessionJwt(claims: {
     .setAudience("convex")
     .setSubject(claims.userId)
     .setIssuedAt()
-    .setExpirationTime("30d")
+    // Matches the cookie lifetime (browsers cap cookies at 400 days). The token
+    // is re-minted on use by refreshSession, so active users never reach it.
+    .setExpirationTime("400d")
     .sign(key);
 }
 
@@ -112,6 +114,25 @@ export const verifyOtp = action({
     });
     const jwt = await mintSessionJwt({ userId, phone, role });
     return { ok: true, userId, role, jwt };
+  },
+});
+
+// Sliding session: the Worker calls this with the current session JWT (as the
+// auth token) and gets back a freshly minted one, so a seller who keeps using
+// the app is never logged out. Convex has already verified the token's
+// signature and expiry; we only re-check the user still exists and is active.
+export const refreshSession = action({
+  args: {},
+  returns: v.union(v.object({ jwt: v.string() }), v.null()),
+  handler: async (ctx): Promise<{ jwt: string } | null> => {
+    const user = await ctx.runQuery(api.users.getCurrent, {});
+    if (!user || !user.isActive) return null;
+    const jwt = await mintSessionJwt({
+      userId: user._id,
+      phone: user.phone,
+      role: user.role,
+    });
+    return { jwt };
   },
 });
 

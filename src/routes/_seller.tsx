@@ -4,8 +4,8 @@ import { requireSeller } from '@/lib/route-guards'
 
 export const Route = createFileRoute('/_seller')({
   beforeLoad: async ({ context }) => {
-    const { seller } = await requireSeller(context.queryClient)
-    return { sellerId: seller._id }
+    const { seller } = await requireSeller(context.queryClient, context.token)
+    return { sellerId: seller?._id }
   },
   component: SellerLayout,
 })
