@@ -323,6 +323,6 @@
   "adminDeleteApprovedMsg": "داواکاری سڕینەوەی \"{title}\" پەسەندکرا و کاڵاکە سڕایەوە.",
   "adminDeleteRejectedMsg": "داواکاری سڕینەوەی \"{title}\" ڕەتکرایەوە. کاڵاکە دووبارە بڵاوکراوەتەوە.",
   "adminDeleteFromPending": "هێشتا پەسەند نەکراوە",
-  "storeTag": "فرۆشگا",
-  "newFromStore": "نوێ لە فرۆشگاوە"
+  "storeFlag": "فرۆشگا",
+  "storeTagHint": "کاڵایەکی نوێیە لە یەکێک لە فرۆشگا هاوبەشەکانمانەوە."
 }

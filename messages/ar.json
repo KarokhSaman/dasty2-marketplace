@@ -323,6 +323,6 @@
   "adminDeleteApprovedMsg": "تمت الموافقة على طلب حذف \"{title}\" وتمت إزالة المنتج.",
   "adminDeleteRejectedMsg": "تم رفض طلب حذف \"{title}\". المنتج متاح مجدداً.",
   "adminDeleteFromPending": "لم تتم الموافقة عليه بعد",
-  "storeTag": "متجر",
-  "newFromStore": "جديد من متجر"
+  "storeFlag": "متجر",
+  "storeTagHint": "منتج جديد من أحد متاجرنا الشريكة."
 }
