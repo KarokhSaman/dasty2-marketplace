@@ -329,9 +329,9 @@ export const getPublic = query({
 // can't work this out itself). Hops from city to city through the index, so it
 // reads a few documents per city rather than every product.
 export const listCities = query({
-  args: {},
+  args: { stores: v.optional(v.boolean()) },
   returns: v.array(v.string()),
-  handler: async (ctx) => {
+  handler: async (ctx, { stores }) => {
     const inactiveIds = await getInactiveSellerIds(ctx);
     const cities: string[] = [];
     let last = "";
@@ -346,13 +346,34 @@ export const listCities = query({
       for await (const p of ctx.db
         .query("products")
         .withIndex("by_status_city", (q) => q.eq("status", "approved").eq("city", city))) {
-        if (!inactiveIds.has(p.sellerId)) {
+        if (!inactiveIds.has(p.sellerId) && (!stores || !!p.storeId)) {
           cities.push(city);
           break;
         }
       }
     }
     return cities;
+  },
+});
+
+// Whether any store product is live right now — the home page shows its
+// "Stores" filter only then. Starts from the (few) stores and stops at the first
+// live product found.
+export const hasStoreProducts = query({
+  args: {},
+  returns: v.boolean(),
+  handler: async (ctx) => {
+    const stores = await ctx.db.query("stores").collect();
+    if (stores.length === 0) return false;
+    const inactiveIds = await getInactiveSellerIds(ctx);
+    for (const store of stores) {
+      for await (const p of ctx.db
+        .query("products")
+        .withIndex("by_store", (q) => q.eq("storeId", store._id))) {
+        if (p.status === "approved" && !inactiveIds.has(p.sellerId)) return true;
+      }
+    }
+    return false;
   },
 });
 
@@ -379,8 +400,8 @@ export const getRelated = query({
 
 // Returns featured products sorted by position (1-10) with rotation for same-position products
 export const getFeatured = query({
-  args: {},
-  handler: async (ctx) => {
+  args: { stores: v.optional(v.boolean()) },
+  handler: async (ctx, { stores }) => {
     const today = new Date().toISOString().slice(0, 10);
     const inactiveIds = await getInactiveSellerIds(ctx);
     const all = await ctx.db
@@ -391,6 +412,7 @@ export const getFeatured = query({
     const featured = all.filter(
       (p) =>
         !inactiveIds.has(p.sellerId) &&
+        (!stores || !!p.storeId) &&
         p.featured &&
         (!p.featuredUntil || p.featuredUntil >= today),
     );
@@ -435,10 +457,12 @@ export const getPublicPaginated = query({
   args: {
     paginationOpts: paginationOptsValidator,
     category: v.optional(v.string()),
+    // true = only store products (the home page "Stores" filter); otherwise all.
+    stores: v.optional(v.boolean()),
   },
-  handler: async (ctx, { paginationOpts, category }) => {
+  handler: async (ctx, { paginationOpts, category, stores }) => {
     const inactiveIds = await getInactiveSellerIds(ctx);
-    const q =
+    const base =
       category && category !== "all"
         ? ctx.db
             .query("products")
@@ -448,6 +472,7 @@ export const getPublicPaginated = query({
         : ctx.db
             .query("products")
             .withIndex("by_status", (q) => q.eq("status", "approved"));
+    const q = stores ? base.filter((f) => f.neq(f.field("storeId"), undefined)) : base;
 
     const result = await q.order("desc").paginate(paginationOpts);
     return {

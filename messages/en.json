@@ -324,5 +324,6 @@
   "adminDeleteRejectedMsg": "Your request to delete \"{title}\" was declined. The product is live again.",
   "adminDeleteFromPending": "Not approved yet",
   "storeFlag": "Store",
-  "storeTagHint": "A brand-new item from one of our partner stores."
+  "storeTagHint": "A brand-new item from one of our partner stores.",
+  "storesFilter": "Stores"
 }
