@@ -89,12 +89,16 @@ export default function ProductCard({ product, onSave }) {
             >
               {product.condition === "new" ? m.badgeNew() : product.condition === "likenew" ? m.conditionLikeNew() : m.badgeUsed()}
             </Chip>
-            {product.storeId && (
-              <Chip tone="glass" leadingIcon={<StoreIcon />} className="backdrop-blur-md shadow-sm w-fit">
+          </div>
+
+          {/* Store products: tag in the bottom-left corner of the photo */}
+          {product.storeId && (
+            <div className="absolute bottom-2.5 start-2.5 flex">
+              <Chip tone="glass" leadingIcon={<StoreIcon />} className="backdrop-blur-md shadow-sm">
                 {m.storeTag()}
               </Chip>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Store discount, on the opposite corner from the other tags */}
           {price.percent !== null && (

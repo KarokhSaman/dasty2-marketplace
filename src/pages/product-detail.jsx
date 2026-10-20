@@ -166,12 +166,14 @@ function RelatedCard({ product }) {
             >
               {product.condition === "new" ? m.badgeNew() : product.condition === "likenew" ? m.conditionLikeNew() : m.badgeUsed()}
             </Chip>
-            {product.storeId && (
-              <Chip tone="glass" leadingIcon={<StoreIcon />} className="backdrop-blur-md shadow-sm w-fit">
+          </div>
+          {product.storeId && (
+            <div className="absolute bottom-2 start-2 flex">
+              <Chip tone="glass" leadingIcon={<StoreIcon />} className="backdrop-blur-md shadow-sm">
                 {m.storeTag()}
               </Chip>
-            )}
-          </div>
+            </div>
+          )}
         </div>
         <div className="px-3 py-2.5">
           <h3 className="text-[12.5px] font-semibold text-[var(--color-ink)] line-clamp-2 leading-snug mb-1.5 min-h-[2rem]">
