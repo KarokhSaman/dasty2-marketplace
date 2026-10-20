@@ -7,6 +7,7 @@ import ProductCard from "@/components/buyer/ProductCard";
 import VIPSpotlight from "@/components/buyer/VIPSpotlight";
 import CategoryBar from "@/components/buyer/CategoryBar";
 import MultiSelectMenu from "@/components/buyer/MultiSelectMenu";
+import StoreIcon from "@/components/ui/StoreIcon";
 import { SegmentedControl, Skeleton } from "@/components/ui";
 import { Link } from "@tanstack/react-router";
 import * as m from "@/paraglide/messages";
@@ -52,20 +53,38 @@ function PinIcon() {
   );
 }
 
-/** Row with City filter (left) and Brand + Sort filters (right) */
-function FiltersRow({ cities, setCities, availableCities, brands, setBrands, sort, setSort }) {
+/** Row with the "Stores" filter (left) and City + Brand + Sort filters (right) */
+function FiltersRow({ cities, setCities, availableCities, showStores, storesOnly, setStoresOnly, brands, setBrands, sort, setSort }) {
   const locale = getLocale();
   return (
     <div className={`flex items-center justify-between gap-2 mb-2.5 px-0.5`}>
-      <MultiSelectMenu
-        label={m.citiesLabel()}
-        allLabel={m.allCities()}
-        leadingIcon={<PinIcon />}
-        options={availableCities.map((c) => ({ value: c, label: getCityLabel(c, locale) ?? c }))}
-        selected={cities}
-        onChange={setCities}
-      />
+      {showStores ? (
+        <button
+          type="button"
+          onClick={() => setStoresOnly(!storesOnly)}
+          aria-pressed={storesOnly}
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all duration-200 text-[11.5px] font-semibold whitespace-nowrap ${
+            storesOnly
+              ? "border-[var(--color-ember-400)] bg-[var(--color-ember-50)] text-[var(--color-ember-600)]"
+              : "border-transparent bg-[var(--color-sand)] hover:bg-[var(--color-ember-50)] text-[var(--color-ink)]"
+          }`}
+        >
+          <StoreIcon className="w-3.5 h-3.5" />
+          {m.storesFilter()}
+        </button>
+      ) : (
+        <span />
+      )}
       <div className="inline-flex items-center gap-1 shrink-0">
+        <MultiSelectMenu
+          label={m.citiesLabel()}
+          allLabel={m.allCities()}
+          leadingIcon={<PinIcon />}
+          options={availableCities.map((c) => ({ value: c, label: getCityLabel(c, locale) ?? c }))}
+          selected={cities}
+          onChange={setCities}
+          align="end"
+        />
         <MultiSelectMenu
           label={m.brandLabel()}
           allLabel={m.allBrands()}
@@ -153,7 +172,7 @@ function SortMenu({ sort, setSort }) {
 /** Brand multi-select dropdown component */
 
 /** Row: condition tabs (left) + reset button (right) */
-function ConditionRow({ condition, setCondition, hasActiveFilter, onReset }) {
+function ConditionRow({ condition, setCondition, hideConditions, hasActiveFilter, onReset }) {
   const conditionOptions = [
     { value: "all",  label: m.allItems() },
     { value: "new",  label: m.conditionNew() },
@@ -164,12 +183,16 @@ function ConditionRow({ condition, setCondition, hasActiveFilter, onReset }) {
   return (
     <div className="relative z-50">
       <div className="flex items-center justify-between gap-1.5 mb-2.5 px-0.5">
-        <SegmentedControl
-          variant="underline"
-          value={condition}
-          onChange={setCondition}
-          options={conditionOptions}
-        />
+        {hideConditions ? (
+          <span />
+        ) : (
+          <SegmentedControl
+            variant="underline"
+            value={condition}
+            onChange={setCondition}
+            options={conditionOptions}
+          />
+        )}
         {hasActiveFilter && (
           <button
             type="button"
@@ -215,7 +238,7 @@ function EndDivider({ label }) {
 
 // ── Filters state ──────────────────────────────────────────
 const INITIAL_FILTERS = {
-  category: "all", condition: "all", sort: "default", cities: [], brands: [],
+  category: "all", condition: "all", sort: "default", cities: [], brands: [], storesOnly: false,
 };
 
 export default function HomePage() {
@@ -255,9 +278,19 @@ export default function HomePage() {
   // Featured is non-paginated → prefetched in the route loader (SSR + intent
   // preload) via React Query, still live-reactive. The paginated feed below
   // stays on usePaginatedQuery (convexQuery has no pagination).
-  const { data: liveFeatured } = useReactQuery(convexQuery(api.products.getFeatured, {}));
-  const { data: publicCities } = useReactQuery(convexQuery(api.products.listCities, {}));
-  const rawFeaturedProducts = liveFeatured ?? cachedFeatured ?? [];
+  // "Stores" filter: narrows the one mixed list to store products only.
+  const { data: hasStoreProducts } = useReactQuery(convexQuery(api.products.hasStoreProducts, {}));
+  const storesOnly = !!filters.storesOnly && hasStoreProducts !== false;
+  const setStoresOnly = (on) => setFilters((f) => ({ ...f, storesOnly: on, cities: [], condition: "all" }));
+  const storeArgs = storesOnly ? { stores: true } : {};
+  // A list saved from earlier only counts while it matches the filter.
+  const forFilter = (list) => (storesOnly ? list?.filter((p) => !!p.storeId) : list);
+  const cachedFeaturedNow = forFilter(cachedFeatured);
+  const cachedResultsNow = forFilter(cachedResults);
+
+  const { data: liveFeatured } = useReactQuery(convexQuery(api.products.getFeatured, storeArgs));
+  const { data: publicCities } = useReactQuery(convexQuery(api.products.listCities, storeArgs));
+  const rawFeaturedProducts = liveFeatured ?? cachedFeaturedNow ?? [];
 
   // Apply random shuffle to featured products (same seed throughout page session)
   const applyClientRotation = (products) => {
@@ -295,12 +328,12 @@ export default function HomePage() {
 
   const { results: liveResults, status, loadMore } = usePaginatedQuery(
     api.products.getPublicPaginated,
-    { category: category === "all" ? undefined : category },
+    { category: category === "all" ? undefined : category, stores: storesOnly || undefined },
     { initialNumItems: initialItems },
   );
 
-  const results = (status === "LoadingFirstPage" && cachedResults && cachedResults.length > 0)
-    ? cachedResults
+  const results = (status === "LoadingFirstPage" && cachedResultsNow && cachedResultsNow.length > 0)
+    ? cachedResultsNow
     : liveResults;
 
   // Restore scroll before paint so a back-navigation View Transition snapshots
@@ -385,7 +418,7 @@ export default function HomePage() {
   const isLoading =
     status === "LoadingFirstPage" &&
     featuredProducts.length === 0 &&
-    !(cachedResults && cachedResults.length > 0);
+    !(cachedResultsNow && cachedResultsNow.length > 0);
 
   return (
     <div className="pb-6">
@@ -397,6 +430,9 @@ export default function HomePage() {
         cities={cities}
         setCities={updateFilter("cities")}
         availableCities={availableCities}
+        showStores={!!hasStoreProducts}
+        storesOnly={storesOnly}
+        setStoresOnly={setStoresOnly}
         brands={brands}
         setBrands={updateFilter("brands")}
         sort={sort}
@@ -407,8 +443,9 @@ export default function HomePage() {
         <ConditionRow
           condition={condition}
           setCondition={updateFilter("condition")}
+          hideConditions={storesOnly}
           hasActiveFilter={
-            condition !== "all" || cities.length > 0 || sort !== "default" || category !== "all" || brands.length > 0
+            condition !== "all" || cities.length > 0 || storesOnly || sort !== "default" || category !== "all" || brands.length > 0
           }
           onReset={() => setFilters(INITIAL_FILTERS)}
         />

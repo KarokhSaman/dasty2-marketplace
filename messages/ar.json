@@ -324,5 +324,6 @@
   "adminDeleteRejectedMsg": "تم رفض طلب حذف \"{title}\". المنتج متاح مجدداً.",
   "adminDeleteFromPending": "لم تتم الموافقة عليه بعد",
   "storeFlag": "متجر",
-  "storeTagHint": "منتج جديد من أحد متاجرنا الشريكة."
+  "storeTagHint": "منتج جديد من أحد متاجرنا الشريكة.",
+  "storesFilter": "المتاجر"
 }
