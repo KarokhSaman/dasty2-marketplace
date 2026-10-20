@@ -27,6 +27,7 @@ const ACTION_META = {
   title_changed:     { label: "Title Edited",      color: "bg-cyan-100 text-cyan-700"    },
   category_changed:  { label: "Category Edited",   color: "bg-cyan-100 text-cyan-700"    },
   brand_changed:     { label: "Brand Edited",      color: "bg-cyan-100 text-cyan-700"    },
+  details_changed:   { label: "Details Edited",    color: "bg-cyan-100 text-cyan-700"     },
   product_posted:    { label: "Product Posted",    color: "bg-green-50 text-green-700"   },
   product_edited:    { label: "Product Edited",    color: "bg-blue-50 text-blue-700"     },
   product_deleted:   { label: "Product Deleted",   color: "bg-red-50 text-red-600"       },

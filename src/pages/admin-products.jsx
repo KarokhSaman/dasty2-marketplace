@@ -12,14 +12,14 @@ const useSearchParams = () => {
 import { api } from "@/convex/_generated/api";
 import * as m from "@/paraglide/messages";
 import { formatPrice } from "@/lib/utils";
-import { CATEGORY_CONFIG } from "@/lib/categories";
-import { getAllBrands } from "@/lib/brands";
 import ProductStatusMenu from "@/components/admin/ProductStatusMenu";
 import BottomSheet from "@/components/ui/BottomSheet";
 import CustomSelect from "@/components/ui/CustomSelect";
 import { errorMessage } from "@/lib/errors";
 import FlipPanel from "@/components/ui/FlipPanel";
 import CopyButton from "@/components/admin/CopyButton";
+import ProductDetailsDialog from "@/components/admin/ProductDetailsDialog";
+import { StarIcon, EditIcon, TrashIcon, iconButtonCls } from "@/components/admin/ActionIcons";
 
 const WHATSAPP = import.meta.env.VITE_WHATSAPP_NUMBER;
 
@@ -45,9 +45,6 @@ export default function AdminProductsPage() {
   const returnUnitMutation = useMutation(api.products.returnUnit);
   const resolveDeleteRequest = useMutation(api.products.resolveDeleteRequest);
   const [deleteActionError, setDeleteActionError] = useState({});
-  const adminUpdateCategory = useMutation(api.products.adminUpdateCategory);
-  const adminUpdateTitle = useMutation(api.products.adminUpdateTitle);
-  const adminUpdateBrand = useMutation(api.products.adminUpdateBrand);
   const removeProduct       = useMutation(api.products.remove);
   const adminUpdatePhotos   = useMutation(api.products.adminUpdatePhotos);
   const setFeatured         = useMutation(api.products.setFeatured);
@@ -67,14 +64,7 @@ export default function AdminProductsPage() {
   const [confirmDel,   setConfirmDel]   = useState(null);
   const [confirmPhoto, setConfirmPhoto] = useState(null); // "productId:photoIndex"
   const [confirmFeature, setConfirmFeature] = useState(null); // { productId, action: 'feature' | 'unfeature', duration }
-  const [editingCategoryId, setEditingCategoryId] = useState(null); // Product ID being edited
-  const [selectedCategory, setSelectedCategory] = useState(null); // Selected category
-  const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(null); // Product ID with open dropdown
-  const [editingTitleId, setEditingTitleId] = useState(null); // Product ID being edited
-  const [editingTitleValue, setEditingTitleValue] = useState(""); // Title being edited
-  const [editingBrandId, setEditingBrandId] = useState(null); // Product ID being edited
-  const [selectedBrand, setSelectedBrand] = useState(null); // Selected brand
-  const [brandDropdownOpen, setBrandDropdownOpen] = useState(null); // Product ID with open dropdown
+  const [editingDetails, setEditingDetails] = useState(null); // product whose details dialog is open
 
   const statusLabels = {
     all:       m.adminAllStatus(),
@@ -230,39 +220,83 @@ export default function AdminProductsPage() {
     }
   }
 
-  async function updateCategory(product, newCategory) {
-    if (newCategory === product.category) {
-      setEditingCategoryId(null);
-      return;
-    }
-    await adminUpdateCategory({ id: product._id, category: newCategory });
-    await log("category_changed", product, `Changed from ${product.category} to ${newCategory}`);
-    setEditingCategoryId(null);
-    setSelectedCategory(null);
+  // Called after the Edit details dialog saved: log which fields changed.
+  async function logDetailsChange(product, next) {
+    const labels = { title: "title", category: "category", brand: "brand", condition: "condition", description: "description" };
+    const changed = Object.keys(labels).filter((k) => (product[k] ?? "") !== (next[k] ?? ""));
+    if (changed.length > 0) await log("details_changed", product, `Changed: ${changed.join(", ")}`);
   }
 
-  async function updateTitle(product, newTitle) {
-    if (!newTitle.trim() || newTitle === product.title) {
-      setEditingTitleId(null);
-      setEditingTitleValue("");
-      return;
-    }
-    await adminUpdateTitle({ id: product._id, title: newTitle.trim() });
-    await log("title_changed", product, `Changed from "${product.title}" to "${newTitle.trim()}"`);
-    setEditingTitleId(null);
-    setEditingTitleValue("");
-  }
 
-  async function updateBrand(product, newBrand) {
-    if (newBrand === (product.brand || "")) {
-      setEditingBrandId(null);
-      setSelectedBrand(null);
-      return;
-    }
-    await adminUpdateBrand({ id: product._id, brand: newBrand });
-    await log("brand_changed", product, `Changed from "${product.brand || "None"}" to "${newBrand || "None"}"`);
-    setEditingBrandId(null);
-    setSelectedBrand(null);
+  // Status, Sponsor, Edit and Delete as icon buttons (same row on desktop and mobile).
+  function renderActions(product) {
+    return (
+      <>
+        <ProductStatusMenu product={product} onStatusChange={(newStatus, extra) => handleStatusChange(product, newStatus, extra)} />
+
+        <div className="relative">
+          {product.featured ? (
+            <button
+              onClick={() => setConfirmFeature({ productId: product._id, action: 'unfeature' })}
+              title="Sponsored — tap to stop" aria-label="Stop sponsoring"
+              className={`${iconButtonCls} bg-amber-400 text-white ring-amber-400 hover:bg-amber-500`}
+            >
+              <StarIcon filled />
+            </button>
+          ) : (
+            <button
+              onClick={() => setFeaturedPickerId(featuredPickerId === product._id ? null : product._id)}
+              title="Sponsor" aria-label="Sponsor"
+              className={`${iconButtonCls} bg-amber-50 text-amber-500 ring-amber-200 hover:bg-amber-100`}
+            >
+              <StarIcon />
+            </button>
+          )}
+
+          {featuredPickerId === product._id && (
+            <FlipPanel gap="1.5" height={260} className="start-0 z-30 bg-white border border-[var(--color-hairline)] rounded-xl shadow-lg p-2 min-w-[160px]">
+              <p className="text-[10px] text-[var(--color-ink-fade)] font-semibold uppercase tracking-wide px-1 pb-1.5">Sponsor for</p>
+              {[
+                { label: "7 days",   days: 7  },
+                { label: "14 days",  days: 14 },
+                { label: "30 days",  days: 30 },
+                { label: "No expiry", days: null },
+              ].map(opt => (
+                <button key={opt.label}
+                  onClick={() => {
+                    const until = opt.days
+                      ? new Date(Date.now() + opt.days * 864e5).toISOString().slice(0, 10)
+                      : undefined;
+                    setConfirmFeature({ productId: product._id, action: 'feature', duration: opt.label, until });
+                    setFeaturedPickerId(null);
+                  }}
+                  className="w-full text-start px-2 py-1.5 text-xs text-[var(--color-ink)] hover:bg-amber-50 hover:text-amber-700 rounded-lg transition-colors"
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </FlipPanel>
+          )}
+        </div>
+
+        <div className="ms-auto sm:ms-0 flex items-center gap-2">
+          <button
+            onClick={() => setEditingDetails(product)}
+            title={m.editBtn()} aria-label={m.editBtn()}
+            className={`${iconButtonCls} bg-sky-50 text-sky-600 ring-sky-200 hover:bg-sky-100`}
+          >
+            <EditIcon />
+          </button>
+          <button
+            onClick={() => setConfirmDel(product._id)}
+            title={m.adminDelete()} aria-label={m.adminDelete()}
+            className={`${iconButtonCls} bg-red-50 text-red-500 ring-red-200 hover:bg-red-100`}
+          >
+            <TrashIcon />
+          </button>
+        </div>
+      </>
+    );
   }
 
   if (!products) {
@@ -348,229 +382,39 @@ export default function AdminProductsPage() {
             {/* Main row */}
             <div className="p-4">
               <div className="flex items-start gap-3">
-                {/* Photo */}
-                <div
-                  className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 shrink-0 cursor-pointer"
-                  onClick={() => setExpanded(expanded === product._id ? null : product._id)}
-                >
-                  {product.photos?.[0]
-                    ? <img src={product.photos[0]} alt="" className="w-full h-full object-cover" />
-                    : <div className="w-full h-full bg-gray-200" />
-                  }
-                </div>
-
                 {/* Info */}
                 <div className="flex-1 min-w-0">
-                  {/* Title - editable for pending products */}
-                  <div className="relative">
-                    {editingTitleId === product._id ? (
-                      <button
-                        onClick={() => setCategoryDropdownOpen(editingTitleId)}
-                        className="text-sm font-semibold text-gray-800 px-2 py-1 rounded-lg border-2 border-cyan-400 bg-cyan-50 hover:bg-cyan-100 transition-colors text-start"
-                      >
-                        {editingTitleValue || product.title}
-                      </button>
-                    ) : (
+                  {/* Header: title and details on the left, photo on the right */}
+                  <div className="flex items-start gap-3">
+                    <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-gray-800">{product.title}</p>
-                    )}
-
-                    {/* Popup editor for title */}
-                    {editingTitleId === product._id && (
-                      <FlipPanel gap="2" height={260} className="start-0 bg-white border border-[var(--color-hairline)] rounded-lg shadow-lg z-40 w-80 p-4">
-                        <label className="block text-xs font-semibold text-[var(--color-ink)] mb-2">Edit Title</label>
-                        <input
-                          type="text"
-                          value={editingTitleValue}
-                          onChange={(e) => setEditingTitleValue(e.target.value)}
-                          className="w-full text-sm border-2 border-cyan-400 rounded-lg px-3 py-2 mb-3 focus:outline-none focus:ring-2 focus:ring-cyan-300"
-                          autoFocus
-                          onKeyPress={(e) => e.key === 'Enter' && updateTitle(product, editingTitleValue)}
-                        />
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => updateTitle(product, editingTitleValue)}
-                            className="flex-1 text-xs font-medium border-2 bg-cyan-100 text-cyan-700 border-cyan-400 hover:bg-cyan-200 hover:border-cyan-500 px-3 py-1.5 rounded-lg transition-colors"
-                          >
-                            Save
-                          </button>
-                          <button
-                            onClick={() => {
-                              setEditingTitleId(null);
-                              setEditingTitleValue("");
-                            }}
-                            className="flex-1 text-xs font-medium border-2 bg-white text-gray-600 border-gray-300 hover:bg-gray-50 hover:border-gray-500 px-3 py-1.5 rounded-lg transition-colors"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </FlipPanel>
-                    )}
-                  </div>
-
-                  {/* Edit button */}
-                  {product.status === "pending" && editingTitleId !== product._id && (
-                    <button
-                      onClick={() => {
-                        setEditingTitleId(product._id);
-                        setEditingTitleValue(product.title);
-                      }}
-                      className="mt-1 text-xs font-medium border-2 bg-white text-cyan-600 border-cyan-300 hover:bg-cyan-50 hover:border-cyan-500 hover:text-cyan-700 px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap"
-                    >
-                      Edit Title
-                    </button>
-                  )}
-                  {/* Condition + seq + category */}
-                  <p className="text-xs text-[var(--color-ink-fade)] mt-0.5 flex items-center gap-1.5">
-                    <span>{product.condition === "new" ? m.conditionNew() : m.conditionUsed()}</span>
-                    {product.seq && <span className="font-mono font-bold text-rose-400">{product.seq}</span>}
-                    {product.storeName && <span className="font-semibold text-[var(--color-ink-soft)]">· {product.storeName}</span>}
-                    {product.stock > 0 && product.status === "approved" && (
-                      <span className="font-semibold bg-[var(--color-honey-50)] text-[var(--color-honey-600)] px-1.5 py-0.5 rounded-full">Stock {product.stock}</span>
-                    )}
-                  </p>
-
-                  {/* Category - editable for pending, view-only for others */}
-                  <div className="mt-2">
-                    {editingCategoryId === product._id ? (
-                      <div className="relative z-20 inline-block">
-                        <button
-                          onClick={() => setCategoryDropdownOpen(categoryDropdownOpen === product._id ? null : product._id)}
-                          className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg font-medium border-2 bg-cyan-100 text-cyan-700 border-cyan-400 hover:bg-cyan-200 hover:border-cyan-500 transition-colors"
-                        >
-                          {selectedCategory || product.category}
-                          <svg className={`w-3 h-3 transition-transform duration-200 ${categoryDropdownOpen === product._id ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
-                          </svg>
-                        </button>
-                        {categoryDropdownOpen === product._id && (
-                          <FlipPanel gap="2" height={260} className="start-0 bg-white border border-[var(--color-hairline)] rounded-lg shadow-lg z-40 overflow-hidden min-w-[180px]">
-                            <div className="max-h-56 overflow-y-auto">
-                              {CATEGORY_CONFIG.filter(c => c.value !== "all").map(cat => (
-                                <button
-                                  key={cat.value}
-                                  type="button"
-                                  onClick={() => {
-                                    setSelectedCategory(cat.value);
-                                    updateCategory(product, cat.value);
-                                    setCategoryDropdownOpen(null);
-                                  }}
-                                  className={`flex items-center justify-between w-full px-3 py-2 text-xs text-start whitespace-nowrap transition-colors ${
-                                    cat.value === (selectedCategory || product.category)
-                                      ? "bg-cyan-50 text-cyan-700 font-semibold"
-                                      : "text-[var(--color-ink)] hover:bg-gray-50"
-                                  }`}
-                                >
-                                  {cat.value}
-                                  {cat.value === (selectedCategory || product.category) && (
-                                    <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                                    </svg>
-                                  )}
-                                </button>
-                              ))}
-                            </div>
-                          </FlipPanel>
+                      <p className="text-xs text-[var(--color-ink-fade)] mt-0.5 flex flex-wrap items-center gap-1.5">
+                        <span>{product.condition === "new" ? m.conditionNew() : product.condition === "likenew" ? m.conditionLikeNew() : m.conditionUsed()}</span>
+                        {product.seq && <span className="font-mono font-bold text-rose-400">{product.seq}</span>}
+                        {product.storeName && <span className="font-semibold text-[var(--color-ink-soft)]">· {product.storeName}</span>}
+                        {product.stock > 0 && product.status === "approved" && (
+                          <span className="font-semibold bg-[var(--color-honey-50)] text-[var(--color-honey-600)] px-1.5 py-0.5 rounded-full">Stock {product.stock}</span>
                         )}
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2">
+                        {product.featured && (
+                          <span className="font-semibold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">
+                            {product.featuredPosition ? `Sponsored · Pos #${product.featuredPosition}` : product.featuredUntil ? `Sponsored · until ${product.featuredUntil}` : "Sponsored"}
+                          </span>
+                        )}
+                      </p>
+                      <div className="mt-2 flex flex-wrap items-center gap-1.5">
                         <span className="text-xs font-medium px-2.5 py-1 rounded-lg bg-gray-100 text-gray-700">{product.category}</span>
-                        {product.status === "pending" && (
-                          <button
-                            onClick={() => {
-                              setEditingCategoryId(product._id);
-                              setSelectedCategory(product.category);
-                              setCategoryDropdownOpen(null);
-                            }}
-                            className="text-xs font-medium border-2 bg-white text-cyan-600 border-cyan-300 hover:bg-cyan-50 hover:border-cyan-500 hover:text-cyan-700 px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap"
-                          >
-                            Edit
-                          </button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Brand - editable for pending products */}
-                  <div className="mt-2">
-                    {editingBrandId === product._id ? (
-                      <div className="relative z-20 inline-block">
-                        <button
-                          onClick={() => setBrandDropdownOpen(brandDropdownOpen === product._id ? null : product._id)}
-                          className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg font-medium border-2 bg-cyan-100 text-cyan-700 border-cyan-400 hover:bg-cyan-200 hover:border-cyan-500 transition-colors"
-                        >
-                          {selectedBrand || product.brand || "None"}
-                          <svg className={`w-3 h-3 transition-transform duration-200 ${brandDropdownOpen === product._id ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
-                          </svg>
-                        </button>
-                        {brandDropdownOpen === product._id && (
-                          <FlipPanel gap="2" height={260} className="start-0 bg-white border border-[var(--color-hairline)] rounded-lg shadow-lg z-40 overflow-hidden min-w-[180px]">
-                            <div className="max-h-56 overflow-y-auto">
-                              {getAllBrands().map(brand => (
-                                <button
-                                  key={brand}
-                                  type="button"
-                                  onClick={() => {
-                                    setSelectedBrand(brand);
-                                    updateBrand(product, brand);
-                                    setBrandDropdownOpen(null);
-                                  }}
-                                  className={`flex items-center justify-between w-full px-3 py-2 text-xs text-start whitespace-nowrap transition-colors ${
-                                    brand === (selectedBrand || product.brand)
-                                      ? "bg-cyan-50 text-cyan-700 font-semibold"
-                                      : "text-[var(--color-ink)] hover:bg-gray-50"
-                                  }`}
-                                >
-                                  {brand}
-                                  {brand === (selectedBrand || product.brand) && (
-                                    <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                                    </svg>
-                                  )}
-                                </button>
-                              ))}
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setSelectedBrand("Other");
-                                  updateBrand(product, "Other");
-                                  setBrandDropdownOpen(null);
-                                }}
-                                className={`flex items-center justify-between w-full px-3 py-2 text-xs text-start whitespace-nowrap transition-colors ${
-                                  "Other" === (selectedBrand || product.brand)
-                                    ? "bg-cyan-50 text-cyan-700 font-semibold"
-                                    : "text-[var(--color-ink)] hover:bg-gray-50"
-                                }`}
-                              >
-                                Other
-                                {"Other" === (selectedBrand || product.brand) && (
-                                  <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                                  </svg>
-                                )}
-                              </button>
-                            </div>
-                          </FlipPanel>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2">
                         <span className="text-xs font-medium px-2.5 py-1 rounded-lg bg-gray-100 text-gray-700">{product.brand || "None"}</span>
-                        {product.status === "pending" && (
-                          <button
-                            onClick={() => {
-                              setEditingBrandId(product._id);
-                              setSelectedBrand(product.brand || "");
-                              setBrandDropdownOpen(null);
-                            }}
-                            className="text-xs font-medium border-2 bg-white text-cyan-600 border-cyan-300 hover:bg-cyan-50 hover:border-cyan-500 hover:text-cyan-700 px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap"
-                          >
-                            Edit
-                          </button>
-                        )}
                       </div>
-                    )}
+                    </div>
+                    <div
+                      className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 shrink-0 cursor-pointer"
+                      onClick={() => setExpanded(expanded === product._id ? null : product._id)}
+                    >
+                      {product.photos?.[0]
+                        ? <img src={product.photos[0]} alt="" className="w-full h-full object-cover" />
+                        : <div className="w-full h-full bg-gray-200" />
+                      }
+                    </div>
                   </div>
 
                   {/* Price + fee + date */}
@@ -598,7 +442,7 @@ export default function AdminProductsPage() {
                           {m.adminContact()} {product.sellerPhone}
                         </a>
                       )}
-                      {product.sellerPhone && <CopyButton text={product.sellerPhone} />}
+                      {product.sellerPhone && <CopyButton text={`${m.adminContact()} ${product.sellerPhone}`} />}
                     </div>
                     {(product.city || product.sellerAddress) && (
                       <p className="text-xs text-[var(--color-ink-fade)] flex items-center gap-1">
@@ -641,125 +485,13 @@ export default function AdminProductsPage() {
 
                 {/* Actions — desktop only */}
                 <div className="hidden sm:flex items-center gap-2 shrink-0">
-                  <ProductStatusMenu product={product} onStatusChange={(newStatus, extra) => handleStatusChange(product, newStatus, extra)} />
-
-                  {/* Feature button with popover */}
-                  <div className="relative">
-                    {product.featured ? (
-                      <button
-                        onClick={() => setConfirmFeature({ productId: product._id, action: 'unfeature' })}
-                        className="flex items-center gap-1 text-xs px-2 py-1.5 rounded-lg font-medium border-2 bg-amber-100 text-amber-700 border-amber-400 hover:bg-amber-200 hover:border-amber-500 transition-colors"
-                      >
-                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
-                        </svg>
-                        {product.featuredPosition ? `Sponsored — Pos #${product.featuredPosition}` : product.featuredUntil ? `Sponsored — Until ${product.featuredUntil}` : "Sponsored"}
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => setFeaturedPickerId(featuredPickerId === product._id ? null : product._id)}
-                        className="flex items-center gap-1 text-xs px-2 py-1.5 rounded-lg font-medium border-2 bg-white text-[var(--color-ink-fade)] border-amber-300 hover:bg-amber-50 hover:text-amber-600 hover:border-amber-400 transition-colors"
-                      >
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
-                        </svg>
-                        Sponsor
-                      </button>
-                    )}
-
-                    {/* Duration picker popover */}
-                    {featuredPickerId === product._id && (
-                      <FlipPanel gap="1.5" height={260} className="start-0 z-30 bg-white border border-[var(--color-hairline)] rounded-xl shadow-lg p-2 min-w-[160px]">
-                        <p className="text-[10px] text-[var(--color-ink-fade)] font-semibold uppercase tracking-wide px-1 pb-1.5">Sponsor for</p>
-                        {[
-                          { label: "7 days",   days: 7  },
-                          { label: "14 days",  days: 14 },
-                          { label: "30 days",  days: 30 },
-                          { label: "No expiry", days: null },
-                        ].map(opt => (
-                          <button key={opt.label}
-                            onClick={() => {
-                              const until = opt.days
-                                ? new Date(Date.now() + opt.days * 864e5).toISOString().slice(0, 10)
-                                : undefined;
-                              setConfirmFeature({ productId: product._id, action: 'feature', duration: opt.label, until });
-                              setFeaturedPickerId(null);
-                            }}
-                            className="w-full text-start px-2 py-1.5 text-xs text-[var(--color-ink)] hover:bg-amber-50 hover:text-amber-700 rounded-lg transition-colors"
-                          >
-                            {opt.label}
-                          </button>
-                        ))}
-                      </FlipPanel>
-                    )}
-                  </div>
-
-                  <button onClick={() => setConfirmDel(product._id)}
-                    className="text-xs font-medium border-2 bg-white text-red-600 border-red-300 hover:bg-red-50 hover:border-red-500 hover:text-red-700 px-3 py-1.5 rounded-lg transition-colors">
-                    {m.adminDelete()}
-                  </button>
+                  {renderActions(product)}
                 </div>
               </div>
 
               {/* Actions — mobile only */}
-              <div className="flex sm:hidden items-center gap-2 mt-4 flex-wrap">
-                <ProductStatusMenu product={product} onStatusChange={(newStatus, extra) => handleStatusChange(product, newStatus, extra)} />
-
-                {/* Feature button with popover */}
-                <div className="relative">
-                  {product.featured ? (
-                    <button
-                      onClick={() => setConfirmFeature({ productId: product._id, action: 'unfeature' })}
-                      className="flex items-center gap-0.5 text-xs px-1.5 py-1 rounded-lg font-medium border-2 bg-amber-100 text-amber-700 border-amber-400 hover:bg-amber-200 hover:border-amber-500 transition-colors whitespace-nowrap"
-                    >
-                      <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
-                      </svg>
-                      <span className="text-[10px]">{product.featuredPosition ? `Pos #${product.featuredPosition}` : product.featuredUntil ? `Until ${product.featuredUntil}` : "Sponsored"}</span>
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => setFeaturedPickerId(featuredPickerId === product._id ? null : product._id)}
-                      className="flex items-center gap-0.5 text-xs px-1.5 py-1 rounded-lg font-medium border-2 bg-white text-[var(--color-ink-fade)] border-amber-300 hover:bg-amber-50 hover:text-amber-600 hover:border-amber-400 transition-colors whitespace-nowrap"
-                    >
-                      <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
-                      </svg>
-                      Sponsor
-                    </button>
-                  )}
-
-                  {/* Duration picker popover */}
-                  {featuredPickerId === product._id && (
-                    <FlipPanel gap="1.5" height={260} className="start-0 z-30 bg-white border border-[var(--color-hairline)] rounded-xl shadow-lg p-2 min-w-[160px]">
-                      <p className="text-[10px] text-[var(--color-ink-fade)] font-semibold uppercase tracking-wide px-1 pb-1.5">Sponsor for</p>
-                      {[
-                        { label: "7 days",   days: 7  },
-                        { label: "14 days",  days: 14 },
-                        { label: "30 days",  days: 30 },
-                        { label: "No expiry", days: null },
-                      ].map(opt => (
-                        <button key={opt.label}
-                          onClick={() => {
-                            const until = opt.days
-                              ? new Date(Date.now() + opt.days * 864e5).toISOString().slice(0, 10)
-                              : undefined;
-                            setConfirmFeature({ productId: product._id, action: 'feature', duration: opt.label, until });
-                            setFeaturedPickerId(null);
-                          }}
-                          className="w-full text-start px-2 py-1.5 text-xs text-[var(--color-ink)] hover:bg-amber-50 hover:text-amber-700 rounded-lg transition-colors"
-                        >
-                          {opt.label}
-                        </button>
-                      ))}
-                    </FlipPanel>
-                  )}
-                </div>
-
-                <button onClick={() => setConfirmDel(product._id)}
-                  className="text-xs font-medium border-2 bg-white text-red-600 border-red-300 hover:bg-red-50 hover:border-red-500 hover:text-red-700 px-2 py-1 rounded-lg transition-colors ms-auto whitespace-nowrap">
-                  {m.adminDelete()}
-                </button>
+              <div className="flex sm:hidden items-center gap-2 mt-4">
+                {renderActions(product)}
               </div>
             </div>
 
@@ -874,6 +606,14 @@ export default function AdminProductsPage() {
           </div>
         ))}
       </div>
+
+      {editingDetails && (
+        <ProductDetailsDialog
+          product={editingDetails}
+          onClose={() => setEditingDetails(null)}
+          onSaved={(next) => logDetailsChange(editingDetails, next)}
+        />
+      )}
 
       {/* Delete confirmation bottom sheet */}
       {confirmDel && (

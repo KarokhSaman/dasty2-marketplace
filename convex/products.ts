@@ -668,37 +668,31 @@ export const returnUnit = mutation({
   },
 });
 
-export const adminUpdateCategory = mutation({
-  args: {
-    id: v.id("products"),
-    category: categoryValidator,
-  },
-  handler: async (ctx, { id, category }) => {
-    await requireAdmin(ctx);
-    await ctx.db.patch(id, { category });
-  },
-});
-
-export const adminUpdateTitle = mutation({
+// Admin edit of a product's details, at any status. Store products are always
+// "new", so their condition is kept as new whatever is sent.
+export const adminUpdateDetails = mutation({
   args: {
     id: v.id("products"),
     title: v.string(),
+    category: categoryValidator,
+    brand: v.optional(v.string()),
+    condition: conditionValidator,
+    description: v.string(),
   },
-  handler: async (ctx, { id, title }) => {
+  returns: v.null(),
+  handler: async (ctx, { id, title, category, brand, condition, description }) => {
     await requireAdmin(ctx);
-    if (!title.trim()) throw new Error("Title cannot be empty");
-    await ctx.db.patch(id, { title: title.trim() });
-  },
-});
-
-export const adminUpdateBrand = mutation({
-  args: {
-    id: v.id("products"),
-    brand: v.string(),
-  },
-  handler: async (ctx, { id, brand }) => {
-    await requireAdmin(ctx);
-    await ctx.db.patch(id, { brand: brand.trim() || undefined });
+    const product = await ctx.db.get(id);
+    if (!product) throw new ConvexError("Product not found");
+    if (!title.trim()) throw new ConvexError("Title is required");
+    await ctx.db.patch(id, {
+      title: title.trim(),
+      category,
+      brand: brand?.trim() || undefined,
+      condition: product.storeId ? "new" : condition,
+      description: description.trim(),
+    });
+    return null;
   },
 });
 
