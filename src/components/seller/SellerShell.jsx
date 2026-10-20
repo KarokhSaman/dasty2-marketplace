@@ -90,8 +90,9 @@ export default function SellerShell({ children }) {
   const [authTimedOut, setAuthTimedOut] = useState(false);
   const bellRef = useRef();
 
-  // If the session token stops validating (expired / account removed), give the
-  // websocket a grace period to (re)authenticate, then offer a reset to login.
+  // If the websocket hasn't (re)authenticated after a grace period — usually a
+  // bad connection — offer a reload. Never clear the session cookie here: a
+  // network problem must not log the seller out.
   useEffect(() => {
     if (isAuthenticated) {
       setAuthTimedOut(false);
@@ -103,9 +104,7 @@ export default function SellerShell({ children }) {
   }, [isAuthenticated]);
 
   const handleAuthReset = useCallback(() => {
-    fetch("/api/auth/logout", { method: "POST" }).finally(() => {
-      window.location.href = "/seller/login";
-    });
+    window.location.reload();
   }, []);
 
   const notifications = useQuery(api.notifications.getBySeller, isAuthenticated && sellerId ? { sellerId } : "skip");
@@ -218,9 +217,9 @@ export default function SellerShell({ children }) {
             websocket is authenticated — server already gated via requireSellerFn. */}
         {isAuthenticated ? children : authTimedOut ? (
           <div className="max-w-md mx-auto py-20 text-center space-y-4">
-            <p className="text-sm font-semibold text-[var(--color-ink)]">{m.errSessionExpired()}</p>
+            <p className="text-sm font-semibold text-[var(--color-ink)]">{m.connectionLost()}</p>
             <Button variant="ink" size="sm" onClick={handleAuthReset}>
-              {m.loginTitle()}
+              {m.tryAgain()}
             </Button>
           </div>
         ) : (

@@ -239,6 +239,8 @@
   "errCodeInvalid": "Invalid code. Please try again.",
   "errAccountInactive": "Your account is not active. Contact support.",
   "errSessionExpired": "Session expired. Please log in again.",
+  "connectionLost": "Can't reach the server. Check your connection.",
+  "tryAgain": "Try again",
   "errUnauthorized": "You are not authorized to perform this action",
   "errNoFile": "No file provided",
 

@@ -1,10 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { setCookie } from '@tanstack/react-start/server'
 import { fetchAction } from 'convex/nextjs'
 import { api } from '@/convex/_generated/api'
 import { convexServerOptions } from '@/lib/convex'
-import { secureCookieOptions } from '@/lib/security'
-import { SESSION_COOKIE } from '@/lib/session'
+import { setSessionCookie } from '@/lib/session.server'
 
 type Body = { code?: string; verificationKey?: string }
 
@@ -47,11 +45,8 @@ export const Route = createFileRoute('/api/auth/verify-otp')({
           })
         }
 
-        // 30-day httpOnly session cookie carrying the RS256 JWT.
-        setCookie(SESSION_COOKIE, res.jwt, {
-          ...secureCookieOptions(request),
-          maxAge: 2_592_000,
-        })
+        // Long-lived httpOnly session cookie carrying the RS256 JWT (see session.ts).
+        setSessionCookie(request, res.jwt)
 
         return Response.json({ ok: true, role: res.role })
       },

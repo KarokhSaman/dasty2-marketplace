@@ -4,8 +4,10 @@ import { useRouter } from "@tanstack/react-router";
 import { api } from "@/convex/_generated/api";
 
 // Seller session over the VerifySpeed JWT connection. Reads the seller doc via
-// the authenticated Convex query and bounces to login when there's no session
-// or no seller record for the identity.
+// the authenticated Convex query. It only bounces to login when Convex has
+// confirmed the identity and there's no seller record for it — a websocket that
+// is briefly unauthenticated (reconnect, phone waking up) is not a logout, and
+// SellerShell already holds the page until auth is back.
 export function useSellerSession() {
   const router = useRouter();
   const { isLoading, isAuthenticated } = useConvexAuth();
@@ -15,8 +17,8 @@ export function useSellerSession() {
   );
 
   useEffect(() => {
-    if (isLoading) return;
-    if (!isAuthenticated || seller === null) {
+    if (isLoading || !isAuthenticated) return;
+    if (seller === null) {
       router.navigate({ to: "/seller/login", replace: true });
     }
   }, [isLoading, isAuthenticated, seller, router]);
