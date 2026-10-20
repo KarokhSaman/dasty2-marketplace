@@ -4,6 +4,7 @@ import BottomSheet from "@/components/ui/BottomSheet";
 import * as m from "@/paraglide/messages";
 import { priceInfo } from "@/convex/discount";
 import { normalizeDigits } from "@/lib/utils";
+import FlipPanel from "@/components/ui/FlipPanel";
 
 const STATUS_COLORS = {
   pending:  { bg: "bg-yellow-50", text: "text-yellow-600", hover: "hover:bg-yellow-100", border: "border-yellow-200" },
@@ -159,9 +160,9 @@ export default function ProductStatusMenu({ product, onStatusChange }) {
 
       {/* Desktop: anchored dropdown */}
       {open && isDesktop && (
-        <div className="absolute end-0 top-full mt-1 bg-white border border-[var(--color-hairline)] rounded-xl shadow-[0_18px_44px_-20px_rgba(11,12,15,0.28)] z-20 overflow-hidden min-w-[180px]">
+        <FlipPanel gap="1" height={240} className="end-0 bg-white border border-[var(--color-hairline)] rounded-xl shadow-[0_18px_44px_-20px_rgba(11,12,15,0.28)] z-20 overflow-hidden min-w-[180px]">
           {actions}
-        </div>
+        </FlipPanel>
       )}
 
       {/* Mobile: bottom sheet */}

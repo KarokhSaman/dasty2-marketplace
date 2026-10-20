@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { useClickOutside } from "@/components/ui/useClickOutside";
+import FlipPanel from "@/components/ui/FlipPanel";
 
 function CheckIcon() {
   return (
@@ -45,7 +46,7 @@ export default function MultiSelectMenu({ label, allLabel, options, selected, on
         </svg>
       </button>
       {open && (
-        <div className={`absolute ${align === "end" ? "end-0" : "start-0"} top-full mt-2 bg-white border border-[var(--color-hairline)] rounded-2xl shadow-[0_18px_44px_-20px_rgba(11,12,15,0.28)] z-[60] overflow-hidden min-w-[150px] scale-in origin-top`}>
+        <FlipPanel gap="2" height={240} className={`${align === "end" ? "end-0" : "start-0"} bg-white border border-[var(--color-hairline)] rounded-2xl shadow-[0_18px_44px_-20px_rgba(11,12,15,0.28)] z-[60] overflow-hidden min-w-[150px] scale-in origin-top`}>
           <div className="max-h-48 overflow-y-auto">
             {[{ value: "__all__", label: allLabel }, ...options].map((item) => {
               const isAll = item.value === "__all__";
@@ -67,7 +68,7 @@ export default function MultiSelectMenu({ label, allLabel, options, selected, on
               );
             })}
           </div>
-        </div>
+        </FlipPanel>
       )}
     </div>
   );

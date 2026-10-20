@@ -103,6 +103,7 @@ export default defineSchema({
     city: v.optional(v.string()),
     // true = don't list this store in the buyer home page Store filter (its
     // products still show everywhere else).
+    // No longer used (store names are never shown to buyers); kept so old rows stay valid.
     hideFromFilter: v.optional(v.boolean()),
     // Store-wide percentage discount, active between the two dates (YYYY-MM-DD,
     // inclusive, Iraq time).

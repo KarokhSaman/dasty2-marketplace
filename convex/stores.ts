@@ -47,39 +47,6 @@ export const getLinked = query({
   },
 });
 
-// Stores that currently have at least one live product — feeds the buyer home
-// page store filter. Public: only id and name are exposed. Starts from the (few)
-// stores and stops at the first live product of each, so it does almost no work
-// when there are no stores.
-export const listPublic = query({
-  args: {},
-  returns: v.array(v.object({ _id: v.id("stores"), name: v.string() })),
-  handler: async (ctx) => {
-    const stores = await ctx.db.query("stores").collect();
-    if (stores.length === 0) return [];
-
-    const inactive = await ctx.db
-      .query("users")
-      .withIndex("by_role_and_isActive", (q) => q.eq("role", "seller").eq("isActive", false))
-      .collect();
-    const inactiveIds = new Set(inactive.map((u) => u._id.toString()));
-
-    const live = [];
-    for (const store of stores) {
-      if (store.hideFromFilter) continue;
-      for await (const p of ctx.db
-        .query("products")
-        .withIndex("by_store", (q) => q.eq("storeId", store._id))) {
-        if (p.status === "approved" && !inactiveIds.has(p.sellerId)) {
-          live.push({ _id: store._id, name: store.name });
-          break;
-        }
-      }
-    }
-    return live.sort((a, b) => a.name.localeCompare(b.name));
-  },
-});
-
 export const listAll = query({
   args: {},
   returns: v.array(storeValidator),
@@ -133,10 +100,9 @@ export const create = mutation({
     feeValue: v.optional(v.number()),
     linkedUserId: v.optional(v.id("users")),
     city: v.optional(v.string()),
-    hideFromFilter: v.optional(v.boolean()),
   },
   returns: v.id("stores"),
-  handler: async (ctx, { sellerId, name, feeMode, feeValue, linkedUserId, city, hideFromFilter }) => {
+  handler: async (ctx, { sellerId, name, feeMode, feeValue, linkedUserId, city }) => {
     await requireAdmin(ctx);
     const seller = await ctx.db.get(sellerId);
     if (!seller || seller.role !== "seller") throw new ConvexError("Seller not found");
@@ -149,7 +115,6 @@ export const create = mutation({
       sellerId: sellerId.toString(),
       linkedUserId,
       city: city || undefined,
-      hideFromFilter: hideFromFilter || undefined,
       feeMode: feeMode === "default" ? undefined : feeMode,
       feeValue: hasValue ? feeValue : undefined,
       createdAt: new Date().toISOString(),
@@ -165,10 +130,9 @@ export const update = mutation({
     feeValue: v.optional(v.number()),
     linkedUserId: v.optional(v.id("users")),
     city: v.optional(v.string()),
-    hideFromFilter: v.optional(v.boolean()),
   },
   returns: v.null(),
-  handler: async (ctx, { id, name, feeMode, feeValue, linkedUserId, city, hideFromFilter }) => {
+  handler: async (ctx, { id, name, feeMode, feeValue, linkedUserId, city }) => {
     await requireAdmin(ctx);
     const store = await ctx.db.get(id);
     if (!store) throw new ConvexError("Store not found");
@@ -179,7 +143,6 @@ export const update = mutation({
     await ctx.db.patch(id, {
       linkedUserId,
       city: city || undefined,
-      hideFromFilter: hideFromFilter || undefined,
       name: name.trim(),
       feeMode: feeMode === "default" ? undefined : feeMode,
       feeValue: hasValue ? feeValue : undefined,

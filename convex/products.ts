@@ -55,7 +55,6 @@ const publicProductValidator = v.object({
   dateSold: v.optional(v.string()),
   stock: v.optional(v.number()),
   storeId: v.optional(v.id("stores")),
-  storeName: v.optional(v.string()),
   salePrice: v.optional(v.number()),
   storeDiscount: v.optional(v.object({ percent: v.number(), start: v.string(), end: v.string() })),
 });
@@ -304,10 +303,9 @@ export const getPublicById = query({
     if (!product || product.status !== "approved") return null;
     const inactiveIds = await getInactiveSellerIds(ctx);
     if (inactiveIds.has(product.sellerId)) return null;
-    const store = product.storeId ? await ctx.db.get(product.storeId) : null;
-    // A store hidden from the home page filter stays anonymous on its products too.
+    // Store names are never shown to buyers, only whether it is a store product.
     const [withDiscount] = await withStoreDiscounts(ctx, [toPublic(product)]);
-    return { ...withDiscount, storeName: store && !store.hideFromFilter ? store.name : undefined };
+    return withDiscount;
   },
 });
 

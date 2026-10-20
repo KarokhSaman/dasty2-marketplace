@@ -1,11 +1,19 @@
 import { useState, useRef, useEffect, useMemo } from "react";
+import FlipPanel from "@/components/ui/FlipPanel";
 
 const MAX_RESULTS = 50;
+
+const PANEL_CLS =
+  "w-full bg-white border border-[var(--color-hairline)] rounded-2xl shadow-[0_18px_44px_-20px_rgba(11,12,15,0.28)] overflow-hidden";
 
 // CustomSelect look-alike with a search box, for long lists (e.g. all sellers).
 // Options are `{ value, label }`; the first option with value "" is kept pinned
 // as the "none" choice. Search matches anywhere in the label.
-export default function SearchableSelect({ value, onChange, options, placeholder, searchPlaceholder = "Search…" }) {
+// `inline` opens the list in the page flow (pushing what is below it down) instead
+// of floating over it — use it inside dialogs and sheets, where a floating list
+// gets cut off by the bottom edge. A floating list opens above the field when
+// there is no room below it.
+export default function SearchableSelect({ value, onChange, options, placeholder, searchPlaceholder = "Search…", inline = false }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const ref = useRef(null);
@@ -20,9 +28,13 @@ export default function SearchableSelect({ value, onChange, options, placeholder
   }, []);
 
   useEffect(() => {
-    if (open) inputRef.current?.focus();
-    else setQuery("");
-  }, [open]);
+    if (open) {
+      inputRef.current?.focus({ preventScroll: true });
+      if (inline) ref.current?.scrollIntoView?.({ block: "nearest", behavior: "smooth" });
+    } else {
+      setQuery("");
+    }
+  }, [open, inline]);
 
   const selected = options.find((o) => o.value === value);
   const none = options.find((o) => o.value === "");
@@ -48,6 +60,42 @@ export default function SearchableSelect({ value, onChange, options, placeholder
     </svg>
   );
 
+  const panelBody = (
+    <>
+      <div className="p-2 border-b border-[var(--color-hairline)]">
+        <input
+          ref={inputRef}
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder={searchPlaceholder}
+          className="w-full border border-[var(--color-hairline)] rounded-lg px-3 py-2 text-sm bg-[var(--color-cream)] focus:outline-none focus:ring-2 focus:ring-rose-300"
+        />
+      </div>
+      <div className="max-h-56 overflow-y-auto">
+        {none && !query && (
+          <button type="button" onClick={() => pick("")} className={rowCls(value === "")}>
+            {none.label}
+            {value === "" && check}
+          </button>
+        )}
+        {shown.map((opt) => (
+          <button key={opt.value} type="button" onClick={() => pick(opt.value)} className={rowCls(opt.value === value)}>
+            <span className="truncate">{opt.label}</span>
+            {opt.value === value && check}
+          </button>
+        ))}
+        {shown.length === 0 && (
+          <p className="px-4 py-3 text-sm text-[var(--color-ink-fade)]">No results</p>
+        )}
+        {total > MAX_RESULTS && (
+          <p className="px-4 py-2 text-xs text-[var(--color-ink-fade)] border-t border-[var(--color-hairline)]">
+            Showing {MAX_RESULTS} of {total}. Keep typing to narrow it down.
+          </p>
+        )}
+      </div>
+    </>
+  );
+
   return (
     <div ref={ref} className="relative">
       <button
@@ -65,41 +113,11 @@ export default function SearchableSelect({ value, onChange, options, placeholder
         </svg>
       </button>
 
-      {open && (
-        <div className="absolute z-50 w-full mt-1.5 bg-white border border-[var(--color-hairline)] rounded-2xl shadow-[0_18px_44px_-20px_rgba(11,12,15,0.28)] overflow-hidden">
-          <div className="p-2 border-b border-[var(--color-hairline)]">
-            <input
-              ref={inputRef}
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={searchPlaceholder}
-              className="w-full border border-[var(--color-hairline)] rounded-lg px-3 py-2 text-sm bg-[var(--color-cream)] focus:outline-none focus:ring-2 focus:ring-rose-300"
-            />
-          </div>
-          <div className="max-h-56 overflow-y-auto">
-            {none && !query && (
-              <button type="button" onClick={() => pick("")} className={rowCls(value === "")}>
-                {none.label}
-                {value === "" && check}
-              </button>
-            )}
-            {shown.map((opt) => (
-              <button key={opt.value} type="button" onClick={() => pick(opt.value)} className={rowCls(opt.value === value)}>
-                <span className="truncate">{opt.label}</span>
-                {opt.value === value && check}
-              </button>
-            ))}
-            {shown.length === 0 && (
-              <p className="px-4 py-3 text-sm text-[var(--color-ink-fade)]">No results</p>
-            )}
-            {total > MAX_RESULTS && (
-              <p className="px-4 py-2 text-xs text-[var(--color-ink-fade)] border-t border-[var(--color-hairline)]">
-                Showing {MAX_RESULTS} of {total}. Keep typing to narrow it down.
-              </p>
-            )}
-          </div>
-        </div>
-      )}
+      {open && (inline ? (
+        <div className={`mt-1.5 ${PANEL_CLS}`}>{panelBody}</div>
+      ) : (
+        <FlipPanel gap="1.5" height={330} className={`z-50 ${PANEL_CLS}`}>{panelBody}</FlipPanel>
+      ))}
     </div>
   );
 }

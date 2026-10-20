@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { useClickOutside } from "./useClickOutside";
+import FlipPanel from "@/components/ui/FlipPanel";
 
 /**
  * A compact dropdown styled like a filter pill — used for City/Sort/etc.
@@ -72,8 +73,7 @@ export default function SelectMenu({
 
       {/* Anchored dropdown — all screen sizes */}
       {open && (
-        <div
-          className={`absolute ${alignCls} top-full mt-2 bg-white border border-[var(--color-hairline)] rounded-2xl shadow-[0_18px_44px_-20px_rgba(11,12,15,0.28)] z-30 overflow-hidden min-w-[190px] scale-in origin-top`}
+        <FlipPanel gap="2" height={260} className={`${alignCls} bg-white border border-[var(--color-hairline)] rounded-2xl shadow-[0_18px_44px_-20px_rgba(11,12,15,0.28)] z-30 overflow-hidden min-w-[190px] scale-in origin-top`}
         >
           {options.map((opt) => (
             <button
@@ -90,7 +90,7 @@ export default function SelectMenu({
               {value === opt.value && <CheckIcon />}
             </button>
           ))}
-        </div>
+        </FlipPanel>
       )}
     </div>
   );
