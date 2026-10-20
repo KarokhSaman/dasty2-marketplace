@@ -18,6 +18,8 @@ import ProductStatusMenu from "@/components/admin/ProductStatusMenu";
 import BottomSheet from "@/components/ui/BottomSheet";
 import CustomSelect from "@/components/ui/CustomSelect";
 import { errorMessage } from "@/lib/errors";
+import FlipPanel from "@/components/ui/FlipPanel";
+import CopyButton from "@/components/admin/CopyButton";
 
 const WHATSAPP = import.meta.env.VITE_WHATSAPP_NUMBER;
 
@@ -374,7 +376,7 @@ export default function AdminProductsPage() {
 
                     {/* Popup editor for title */}
                     {editingTitleId === product._id && (
-                      <div className="absolute start-0 top-full mt-2 bg-white border border-[var(--color-hairline)] rounded-lg shadow-lg z-40 w-80 p-4">
+                      <FlipPanel gap="2" height={260} className="start-0 bg-white border border-[var(--color-hairline)] rounded-lg shadow-lg z-40 w-80 p-4">
                         <label className="block text-xs font-semibold text-[var(--color-ink)] mb-2">Edit Title</label>
                         <input
                           type="text"
@@ -401,7 +403,7 @@ export default function AdminProductsPage() {
                             Cancel
                           </button>
                         </div>
-                      </div>
+                      </FlipPanel>
                     )}
                   </div>
 
@@ -441,7 +443,7 @@ export default function AdminProductsPage() {
                           </svg>
                         </button>
                         {categoryDropdownOpen === product._id && (
-                          <div className="absolute start-0 top-full mt-2 bg-white border border-[var(--color-hairline)] rounded-lg shadow-lg z-40 overflow-hidden min-w-[180px]">
+                          <FlipPanel gap="2" height={260} className="start-0 bg-white border border-[var(--color-hairline)] rounded-lg shadow-lg z-40 overflow-hidden min-w-[180px]">
                             <div className="max-h-56 overflow-y-auto">
                               {CATEGORY_CONFIG.filter(c => c.value !== "all").map(cat => (
                                 <button
@@ -467,7 +469,7 @@ export default function AdminProductsPage() {
                                 </button>
                               ))}
                             </div>
-                          </div>
+                          </FlipPanel>
                         )}
                       </div>
                     ) : (
@@ -503,7 +505,7 @@ export default function AdminProductsPage() {
                           </svg>
                         </button>
                         {brandDropdownOpen === product._id && (
-                          <div className="absolute start-0 top-full mt-2 bg-white border border-[var(--color-hairline)] rounded-lg shadow-lg z-40 overflow-hidden min-w-[180px]">
+                          <FlipPanel gap="2" height={260} className="start-0 bg-white border border-[var(--color-hairline)] rounded-lg shadow-lg z-40 overflow-hidden min-w-[180px]">
                             <div className="max-h-56 overflow-y-auto">
                               {getAllBrands().map(brand => (
                                 <button
@@ -549,7 +551,7 @@ export default function AdminProductsPage() {
                                 )}
                               </button>
                             </div>
-                          </div>
+                          </FlipPanel>
                         )}
                       </div>
                     ) : (
@@ -596,6 +598,7 @@ export default function AdminProductsPage() {
                           {m.adminContact()} {product.sellerPhone}
                         </a>
                       )}
+                      {product.sellerPhone && <CopyButton text={product.sellerPhone} />}
                     </div>
                     {(product.city || product.sellerAddress) && (
                       <p className="text-xs text-[var(--color-ink-fade)] flex items-center gap-1">
@@ -666,7 +669,7 @@ export default function AdminProductsPage() {
 
                     {/* Duration picker popover */}
                     {featuredPickerId === product._id && (
-                      <div className="absolute start-0 top-full mt-1.5 z-30 bg-white border border-[var(--color-hairline)] rounded-xl shadow-lg p-2 min-w-[160px]">
+                      <FlipPanel gap="1.5" height={260} className="start-0 z-30 bg-white border border-[var(--color-hairline)] rounded-xl shadow-lg p-2 min-w-[160px]">
                         <p className="text-[10px] text-[var(--color-ink-fade)] font-semibold uppercase tracking-wide px-1 pb-1.5">Sponsor for</p>
                         {[
                           { label: "7 days",   days: 7  },
@@ -687,7 +690,7 @@ export default function AdminProductsPage() {
                             {opt.label}
                           </button>
                         ))}
-                      </div>
+                      </FlipPanel>
                     )}
                   </div>
 
@@ -728,7 +731,7 @@ export default function AdminProductsPage() {
 
                   {/* Duration picker popover */}
                   {featuredPickerId === product._id && (
-                    <div className="absolute start-0 top-full mt-1.5 z-30 bg-white border border-[var(--color-hairline)] rounded-xl shadow-lg p-2 min-w-[160px]">
+                    <FlipPanel gap="1.5" height={260} className="start-0 z-30 bg-white border border-[var(--color-hairline)] rounded-xl shadow-lg p-2 min-w-[160px]">
                       <p className="text-[10px] text-[var(--color-ink-fade)] font-semibold uppercase tracking-wide px-1 pb-1.5">Sponsor for</p>
                       {[
                         { label: "7 days",   days: 7  },
@@ -749,7 +752,7 @@ export default function AdminProductsPage() {
                           {opt.label}
                         </button>
                       ))}
-                    </div>
+                    </FlipPanel>
                   )}
                 </div>
 

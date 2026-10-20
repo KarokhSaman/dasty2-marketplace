@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useIsDesktop } from "@/components/ui/useMediaQuery";
 import BottomSheet from "@/components/ui/BottomSheet";
+import FlipPanel from "@/components/ui/FlipPanel";
 
 export default function AdminActionsMenu({ admin, isCurrent, onPromoteToSuperAdmin, onDemoteToAdmin, onMakeSeller, onDelete }) {
   const [open, setOpen] = useState(false);
@@ -202,9 +203,9 @@ export default function AdminActionsMenu({ admin, isCurrent, onPromoteToSuperAdm
 
       {/* Desktop: anchored dropdown */}
       {open && isDesktop && (
-        <div className="absolute end-0 top-full mt-1 bg-white border border-[var(--color-hairline)] rounded-xl shadow-[0_18px_44px_-20px_rgba(11,12,15,0.28)] z-20 overflow-hidden min-w-[160px]">
+        <FlipPanel gap="1" height={240} className="end-0 bg-white border border-[var(--color-hairline)] rounded-xl shadow-[0_18px_44px_-20px_rgba(11,12,15,0.28)] z-20 overflow-hidden min-w-[160px]">
           {actions}
-        </div>
+        </FlipPanel>
       )}
 
       {/* Mobile: bottom sheet */}

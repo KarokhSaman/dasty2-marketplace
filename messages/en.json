@@ -288,6 +288,7 @@
   "aboutItem": "About this item",
   "shareLabel": "Share",
   "linkCopied": "Copied",
+  "copyNumber": "Copy number",
   "shareSheetTitle": "Share this item",
   "copyLink": "Copy link",
   "shareMore": "More options",
@@ -310,7 +311,6 @@
   "feePaid": "Fee paid",
   "postedForYou": "Posted for you",
   "citiesLabel": "Cities",
-  "storesLabel": "Stores",
   "statusDeletionRequested": "Deletion requested",
   "requestDeleteBtn": "Request deletion",
   "requestDeleteTitle": "Request to delete this product?",
@@ -322,5 +322,7 @@
   "adminDeleteReasonLabel": "Seller's reason",
   "adminDeleteApprovedMsg": "Your request to delete \"{title}\" was approved and the product was removed.",
   "adminDeleteRejectedMsg": "Your request to delete \"{title}\" was declined. The product is live again.",
-  "adminDeleteFromPending": "Not approved yet"
+  "adminDeleteFromPending": "Not approved yet",
+  "storeTag": "Store",
+  "newFromStore": "New from a store"
 }

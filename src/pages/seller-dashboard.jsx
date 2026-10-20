@@ -20,6 +20,7 @@ import { getCategoryLabel } from "@/lib/categories";
 import { Link } from "@tanstack/react-router";
 import { photoProps } from "@/lib/images";
 import { errorMessage } from "@/lib/errors";
+import FlipPanel from "@/components/ui/FlipPanel";
 
 const EDITABLE_STATUSES = ["pending", "approved", "rejected"];
 
@@ -170,9 +171,9 @@ function ProductMenu({ product, onEdit, onRequestDelete }) {
 
       {/* Desktop: anchored dropdown */}
       {open && isDesktop && (
-        <div className="absolute end-0 top-full mt-1 bg-white border border-[var(--color-hairline)] rounded-xl shadow-[0_18px_44px_-20px_rgba(11,12,15,0.28)] z-20 overflow-hidden min-w-[150px]">
+        <FlipPanel gap="1" height={200} className="end-0 bg-white border border-[var(--color-hairline)] rounded-xl shadow-[0_18px_44px_-20px_rgba(11,12,15,0.28)] z-20 overflow-hidden min-w-[150px]">
           {actions}
-        </div>
+        </FlipPanel>
       )}
 
       {/* Mobile: action sheet */}

@@ -52,39 +52,19 @@ function PinIcon() {
   );
 }
 
-function StoreIcon() {
-  return (
-    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9l1-5h16l1 5M3 9v11h18V9M3 9h18M9 20v-6h6v6" />
-    </svg>
-  );
-}
-
-/** Row with City + Store filters (left) and Brand + Sort filters (right) — all multi-select */
-function FiltersRow({ cities, setCities, availableCities, stores, setStores, publicStores, brands, setBrands, sort, setSort }) {
+/** Row with City filter (left) and Brand + Sort filters (right) */
+function FiltersRow({ cities, setCities, availableCities, brands, setBrands, sort, setSort }) {
   const locale = getLocale();
   return (
     <div className={`flex items-center justify-between gap-2 mb-2.5 px-0.5`}>
-      <div className="inline-flex items-center gap-1 min-w-0">
-        <MultiSelectMenu
-          label={m.citiesLabel()}
-          allLabel={m.allCities()}
-          leadingIcon={<PinIcon />}
-          options={availableCities.map((c) => ({ value: c, label: getCityLabel(c, locale) ?? c }))}
-          selected={cities}
-          onChange={setCities}
-        />
-        {SHOW_STORE_FILTER && (
-          <MultiSelectMenu
-            label={m.storesLabel()}
-            allLabel={m.storeAll()}
-            leadingIcon={<StoreIcon />}
-            options={(publicStores ?? []).map((st) => ({ value: st._id, label: st.name }))}
-            selected={stores}
-            onChange={setStores}
-          />
-        )}
-      </div>
+      <MultiSelectMenu
+        label={m.citiesLabel()}
+        allLabel={m.allCities()}
+        leadingIcon={<PinIcon />}
+        options={availableCities.map((c) => ({ value: c, label: getCityLabel(c, locale) ?? c }))}
+        selected={cities}
+        onChange={setCities}
+      />
       <div className="inline-flex items-center gap-1 shrink-0">
         <MultiSelectMenu
           label={m.brandLabel()}
@@ -232,13 +212,10 @@ function EndDivider({ label }) {
   );
 }
 
-// The buyer Store filter is switched off for now. Set to true to bring it back
-// (the pill, its server list and the filtering are all still in place).
-const SHOW_STORE_FILTER = false;
 
 // ── Filters state ──────────────────────────────────────────
 const INITIAL_FILTERS = {
-  category: "all", condition: "all", sort: "default", cities: [], stores: [], brands: [],
+  category: "all", condition: "all", sort: "default", cities: [], brands: [],
 };
 
 export default function HomePage() {
@@ -249,8 +226,7 @@ export default function HomePage() {
   const [isRotating, setIsRotating] = useState(false); // Animation state
   const { category, condition, sort, brands } = filters;
   const cities = filters.cities ?? [];
-  // A store picked in an earlier session must not keep filtering while the pill is hidden.
-  const stores = SHOW_STORE_FILTER ? (filters.stores ?? []) : [];
+
   const updateFilter = (key) => (value) => setFilters((f) => ({ ...f, [key]: value }));
   const sentinelRef = useRef(null);
   // Shuffle seed — calculated after hydration to avoid server/client mismatch
@@ -280,10 +256,6 @@ export default function HomePage() {
   // preload) via React Query, still live-reactive. The paginated feed below
   // stays on usePaginatedQuery (convexQuery has no pagination).
   const { data: liveFeatured } = useReactQuery(convexQuery(api.products.getFeatured, {}));
-  const { data: publicStores } = useReactQuery({
-    ...convexQuery(api.stores.listPublic, {}),
-    enabled: SHOW_STORE_FILTER,
-  });
   const { data: publicCities } = useReactQuery(convexQuery(api.products.listCities, {}));
   const rawFeaturedProducts = liveFeatured ?? cachedFeatured ?? [];
 
@@ -375,8 +347,7 @@ export default function HomePage() {
     const matchCity   = cities.length === 0 || cities.includes(p.city);
     const matchCat    = skipCategory ? true : (category === "all" || p.category === category);
     const matchBrand  = brands.length === 0 || (p.brand && brands.includes(p.brand));
-    const matchStore  = stores.length === 0 || stores.includes(p.storeId);
-    return matchCond && matchCity && matchCat && matchBrand && matchStore;
+    return matchCond && matchCity && matchCat && matchBrand;
   };
 
   const applySort = (list) => {
@@ -388,7 +359,7 @@ export default function HomePage() {
 
   // Featured products for carousel — preserve position-based order from getFeatured query
   const featuredFiltered = useMemo(() => featuredProducts.filter((p) => matchesFilters(p, { skipCategory: category === "all" })),
-    [featuredProducts, condition, cities, stores, brands, category]);
+    [featuredProducts, condition, cities, brands, category]);
 
   // VIP Carousel products — all featured products (no filter awareness)
   const vipCarouselProducts = useMemo(() => {
@@ -407,7 +378,7 @@ export default function HomePage() {
     const sortedFeatured = featured; // Already sorted by position in getFeatured query
     const combined = [...sortedFeatured, ...applySort(regular)];
     return combined;
-  }, [featuredProducts, results, condition, sort, cities, stores, category, brands]);
+  }, [featuredProducts, results, condition, sort, cities, category, brands]);
   const totalCount = allProducts.length;
 
 
@@ -426,9 +397,6 @@ export default function HomePage() {
         cities={cities}
         setCities={updateFilter("cities")}
         availableCities={availableCities}
-        stores={stores}
-        setStores={updateFilter("stores")}
-        publicStores={publicStores}
         brands={brands}
         setBrands={updateFilter("brands")}
         sort={sort}
@@ -440,7 +408,7 @@ export default function HomePage() {
           condition={condition}
           setCondition={updateFilter("condition")}
           hasActiveFilter={
-            condition !== "all" || cities.length > 0 || stores.length > 0 || sort !== "default" || category !== "all" || brands.length > 0
+            condition !== "all" || cities.length > 0 || sort !== "default" || category !== "all" || brands.length > 0
           }
           onReset={() => setFilters(INITIAL_FILTERS)}
         />

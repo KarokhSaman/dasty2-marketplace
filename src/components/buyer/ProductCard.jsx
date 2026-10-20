@@ -7,6 +7,7 @@ import { setProductCache } from "@/lib/productCache";
 import { Chip, PriceTag } from "@/components/ui";
 import { photoProps } from "@/lib/images";
 import { priceInfo } from "@/convex/discount";
+import StoreIcon from "@/components/ui/StoreIcon";
 
 // The product currently being opened/returned-to. Only this card gets a
 // `view-transition-name`, so just ONE photo morphs into the detail hero — the
@@ -88,6 +89,11 @@ export default function ProductCard({ product, onSave }) {
             >
               {product.condition === "new" ? m.badgeNew() : product.condition === "likenew" ? m.conditionLikeNew() : m.badgeUsed()}
             </Chip>
+            {product.storeId && (
+              <Chip tone="glass" leadingIcon={<StoreIcon />} className="backdrop-blur-md shadow-sm w-fit">
+                {m.storeTag()}
+              </Chip>
+            )}
           </div>
 
           {/* Store discount, on the opposite corner from the other tags */}

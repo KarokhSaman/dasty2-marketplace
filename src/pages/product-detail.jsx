@@ -21,6 +21,7 @@ import {
 } from "@/components/ui";
 import { photoProps } from "@/lib/images";
 import { priceInfo } from "@/convex/discount";
+import StoreIcon from "@/components/ui/StoreIcon";
 
 const WHATSAPP = import.meta.env.VITE_WHATSAPP_NUMBER;
 
@@ -157,13 +158,20 @@ function RelatedCard({ product }) {
             <img {...photoProps(photo, 600)} alt={product.title}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
           ) : <ImagePlaceholder size="sm" />}
-          <Chip
-            tone={product.condition === "new" ? "success" : product.condition === "likenew" ? "neutral" : "warning"}
-            className="absolute top-2 start-2 backdrop-blur-md shadow-sm"
-            dot
-          >
-            {product.condition === "new" ? m.badgeNew() : product.condition === "likenew" ? m.conditionLikeNew() : m.badgeUsed()}
-          </Chip>
+          <div className="absolute top-2 start-2 flex flex-col gap-1">
+            <Chip
+              tone={product.condition === "new" ? "success" : product.condition === "likenew" ? "neutral" : "warning"}
+              className="backdrop-blur-md shadow-sm w-fit"
+              dot
+            >
+              {product.condition === "new" ? m.badgeNew() : product.condition === "likenew" ? m.conditionLikeNew() : m.badgeUsed()}
+            </Chip>
+            {product.storeId && (
+              <Chip tone="glass" leadingIcon={<StoreIcon />} className="backdrop-blur-md shadow-sm w-fit">
+                {m.storeTag()}
+              </Chip>
+            )}
+          </div>
         </div>
         <div className="px-3 py-2.5">
           <h3 className="text-[12.5px] font-semibold text-[var(--color-ink)] line-clamp-2 leading-snug mb-1.5 min-h-[2rem]">
@@ -362,24 +370,18 @@ export default function ProductDetailPage() {
 
           {/* Quick chips */}
           <div className="flex flex-wrap items-center gap-2 mb-4">
-            <Chip tone={isNew ? "success" : product.condition === "likenew" ? "neutral" : "warning"} dot>
-              {isNew ? m.badgeNew() : product.condition === "likenew" ? m.conditionLikeNew() : m.badgeUsed()}
-            </Chip>
+            {product.storeId ? (
+              <Chip tone="success" leadingIcon={<StoreIcon />}>
+                {m.newFromStore()}
+              </Chip>
+            ) : (
+              <Chip tone={isNew ? "success" : product.condition === "likenew" ? "neutral" : "warning"} dot>
+                {isNew ? m.badgeNew() : product.condition === "likenew" ? m.conditionLikeNew() : m.badgeUsed()}
+              </Chip>
+            )}
             {product.brand && (
               <Chip tone="neutral">
                 {product.brand}
-              </Chip>
-            )}
-            {product.storeName && (
-              <Chip
-                tone="neutral"
-                leadingIcon={
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9l1-5h16l1 5M3 9v11h18V9M3 9h18M9 20v-6h6v6" />
-                  </svg>
-                }
-              >
-                {product.storeName}
               </Chip>
             )}
             {product.stock >= 1 && (

@@ -8,6 +8,7 @@ import { useIsDesktop } from "@/components/ui/useMediaQuery";
 import { todayBaghdad } from "@/convex/discount";
 import { IRAQ_CITIES } from "@/lib/cities";
 import { errorMessage } from "@/lib/errors";
+import FlipPanel from "@/components/ui/FlipPanel";
 
 const FEE_MODES = [
   { value: "default", label: "Default pricing table" },
@@ -32,7 +33,6 @@ function StoreForm({ initial, submitLabel, onSubmit, onCancel, sellerOptions }) 
   const [feeValue, setFeeValue] = useState(initial?.feeValue != null ? String(initial.feeValue) : "");
   const [linkedUserId, setLinkedUserId] = useState(initial?.linkedUserId ?? "");
   const [city, setCity] = useState(initial?.city ?? "");
-  const [showInFilter, setShowInFilter] = useState(!initial?.hideFromFilter);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const needsValue = feeMode === "flat" || feeMode === "percentage";
@@ -46,7 +46,7 @@ function StoreForm({ initial, submitLabel, onSubmit, onCancel, sellerOptions }) 
     setSaving(true);
     setError("");
     try {
-      await onSubmit({ name: name.trim(), feeMode, feeValue: needsValue ? num : undefined, linkedUserId: linkedUserId || undefined, city: city || undefined, hideFromFilter: !showInFilter });
+      await onSubmit({ name: name.trim(), feeMode, feeValue: needsValue ? num : undefined, linkedUserId: linkedUserId || undefined, city: city || undefined });
     } catch (err) {
       setError(errorMessage(err, "Could not save"));
       setSaving(false);
@@ -77,6 +77,7 @@ function StoreForm({ initial, submitLabel, onSubmit, onCancel, sellerOptions }) 
       <div>
         <p className="text-[11px] font-semibold text-[var(--color-ink-fade)] uppercase tracking-wide mb-1">Store owner account</p>
         <SearchableSelect
+          inline
           value={linkedUserId}
           onChange={(id) => {
             setLinkedUserId(id);
@@ -95,6 +96,8 @@ function StoreForm({ initial, submitLabel, onSubmit, onCancel, sellerOptions }) 
       <div>
         <p className="text-[11px] font-semibold text-[var(--color-ink-fade)] uppercase tracking-wide mb-1">Store city</p>
         <CustomSelect
+          inline
+          listClassName="max-h-56"
           value={city}
           onChange={setCity}
           placeholder="Use the posting seller's city"
@@ -104,20 +107,6 @@ function StoreForm({ initial, submitLabel, onSubmit, onCancel, sellerOptions }) 
           Products of this store show this city, whoever posts them. Changing it updates the store's existing products too.
         </p>
       </div>
-      <label className="flex items-start gap-2.5 cursor-pointer">
-        <input
-          type="checkbox"
-          checked={showInFilter}
-          onChange={(e) => setShowInFilter(e.target.checked)}
-          className="mt-0.5 w-4 h-4 accent-[var(--color-ember-600)]"
-        />
-        <span>
-          <span className="block text-sm font-semibold text-[var(--color-ink)]">Show in the home page Store filter</span>
-          <span className="block text-[11px] text-[var(--color-ink-fade)]">
-            Turn off to keep this store out of the buyer filter list. Its products still show on the site.
-          </span>
-        </span>
-      </label>
       {error && <p className="text-xs text-red-500">{error}</p>}
       <div className="flex gap-2">
         <button onClick={submit} disabled={saving}
@@ -297,9 +286,9 @@ function StoreMenu({ store, sellerOptions, onSave, onDelete }) {
         </svg>
       </button>
       {open && isDesktop && view === "menu" && (
-        <div className="absolute end-0 top-full mt-1 bg-white border border-[var(--color-hairline)] rounded-xl shadow-[0_18px_44px_-20px_rgba(11,12,15,0.28)] z-20 overflow-hidden min-w-[170px]">
+        <FlipPanel gap="1" height={240} className="end-0 bg-white border border-[var(--color-hairline)] rounded-xl shadow-[0_18px_44px_-20px_rgba(11,12,15,0.28)] z-20 overflow-hidden min-w-[170px]">
           {panel}
-        </div>
+        </FlipPanel>
       )}
       {open && (!isDesktop || view !== "menu") && (
         <BottomSheet open onClose={close} title={store.name}>
@@ -340,7 +329,7 @@ export default function SellerStores({ seller, stores, sellers }) {
             <div key={store._id} className="flex items-center gap-2 border border-[var(--color-hairline)] rounded-xl px-3 py-2">
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-[var(--color-ink)] truncate">{store.name}</p>
-                <p className="text-xs text-[var(--color-ink-fade)]">{feeLabel(store)}{store.city ? ` · ${store.city}` : ""}{store.hideFromFilter ? " · Hidden from filter" : ""}</p>
+                <p className="text-xs text-[var(--color-ink-fade)]">{feeLabel(store)}{store.city ? ` · ${store.city}` : ""}</p>
                 {discountSummary(store) && (
                   <p className="mt-0.5 inline-flex items-center gap-1.5 text-[11px] font-semibold text-[var(--color-ember-600)]">
                     <span className="bg-[var(--color-ember-50)] rounded-full px-2 py-0.5">{discountSummary(store).text}</span>

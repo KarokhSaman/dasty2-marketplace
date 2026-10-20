@@ -288,6 +288,7 @@
   "aboutItem": "دەربارەی ئەم کاڵایە",
   "shareLabel": "هاوبەشکردن",
   "linkCopied": "کۆپی کرا!",
+  "copyNumber": "کۆپیکردنی ژمارە",
   "shareSheetTitle": "هاوبەشکردنی ئەم کاڵایە",
   "copyLink": "کۆپیکردنی بەستەر",
   "shareMore": "بژاردەی زیاتر",
@@ -310,7 +311,6 @@
   "feePaid": "کرێی دراو",
   "postedForYou": "بۆ تۆ بڵاوکراوەتەوە",
   "citiesLabel": "شارەکان",
-  "storesLabel": "فرۆشگاکان",
   "statusDeletionRequested": "داواکاری سڕینەوە",
   "requestDeleteBtn": "داواکاری سڕینەوە",
   "requestDeleteTitle": "داوای سڕینەوەی ئەم کاڵایە دەکەیت؟",
@@ -322,5 +322,7 @@
   "adminDeleteReasonLabel": "هۆکاری فرۆشیار",
   "adminDeleteApprovedMsg": "داواکاری سڕینەوەی \"{title}\" پەسەندکرا و کاڵاکە سڕایەوە.",
   "adminDeleteRejectedMsg": "داواکاری سڕینەوەی \"{title}\" ڕەتکرایەوە. کاڵاکە دووبارە بڵاوکراوەتەوە.",
-  "adminDeleteFromPending": "هێشتا پەسەند نەکراوە"
+  "adminDeleteFromPending": "هێشتا پەسەند نەکراوە",
+  "storeTag": "فرۆشگا",
+  "newFromStore": "نوێ لە فرۆشگاوە"
 }
