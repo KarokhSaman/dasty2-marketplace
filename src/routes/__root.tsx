@@ -7,7 +7,8 @@ import {
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ConvexQueryClient } from '@convex-dev/react-query'
 import { ConvexReactClient, ConvexProviderWithAuth } from 'convex/react'
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
+import { api } from '@/convex/_generated/api'
 import {
   getLocale,
   getTextDirection,
@@ -15,7 +16,7 @@ import {
   localizeHref,
 } from '@/paraglide/runtime'
 import { SellerSessionProvider } from '@/lib/SellerSessionContext'
-import { fetchSession, useVerifySpeedAuth } from '@/lib/session'
+import { fetchSession, createVerifySpeedAuth } from '@/lib/session'
 import { PageScrollbar } from '@/components/ui/PageScrollbar'
 import appCss from '@/styles/globals.css?url'
 
@@ -33,10 +34,28 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 
     // Authenticate the SSR Convex client so route-loader queries prefetch as the
     // logged-in user (same token the browser will use over the websocket).
+    const http = ctx.context.convexQueryClient.serverHttpClient
     if (jwt) {
-      ctx.context.convexQueryClient.serverHttpClient?.setAuth(jwt)
+      http?.setAuth(jwt)
     }
-    return { locale, token: jwt }
+
+    // While rendering on the server, look up the seller too, so the header's
+    // bell and Sell button are in the page from the start instead of waiting
+    // for the browser to log in. undefined = unknown (client navigations or a
+    // failed lookup; the live query takes over), null = not a seller.
+    let seller: { _id: string } | null | undefined
+    if (http) {
+      seller = null
+      if (jwt) {
+        try {
+          const doc = await http.query(api.users.getCurrentSeller, {})
+          seller = doc ? { _id: doc._id } : null
+        } catch {
+          seller = undefined
+        }
+      }
+    }
+    return { locale, token: jwt, seller }
   },
   head: ({ matches }) => {
     // De-localized pathname (TanStack Router's rewrite.input strips the locale
@@ -89,13 +108,14 @@ function NotFoundComponent() {
 }
 
 function RootComponent() {
-  const { queryClient, convexClient } = Route.useRouteContext()
-
+  const { queryClient, convexClient, token, seller } = Route.useRouteContext()
+  // Built once from the first page's session; must stay the same hook after.
+  const [useAuth] = useState(() => createVerifySpeedAuth(token))
 
   return (
-    <ConvexProviderWithAuth client={convexClient} useAuth={useVerifySpeedAuth}>
+    <ConvexProviderWithAuth client={convexClient} useAuth={useAuth}>
       <QueryClientProvider client={queryClient}>
-        <SellerSessionProvider>
+        <SellerSessionProvider initialSeller={seller}>
           <Outlet />
         </SellerSessionProvider>
       </QueryClientProvider>

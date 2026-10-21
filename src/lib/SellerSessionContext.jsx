@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo } from "react";
+import { createContext, useContext, useMemo, useState } from "react";
 import { useConvexAuth, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 
@@ -16,17 +16,22 @@ const SellerSessionCtx = createContext({
   refreshSellerSession: () => {},
 });
 
-export function SellerSessionProvider({ children }) {
+// `initialSeller` is what the server found while rendering the page ({_id},
+// null for "not a seller", undefined if unknown). It is used until the live
+// query answers, so the header knows the seller from the first paint.
+export function SellerSessionProvider({ children, initialSeller }) {
   const { isLoading, isAuthenticated } = useConvexAuth();
+  const [initial] = useState(initialSeller);
 
   const seller = useQuery(
     api.users.getCurrentSeller,
     isAuthenticated ? {} : "skip",
   );
 
-  // Ready once we know the auth state and (if authenticated) the query resolved.
-  const ready = !isLoading && (!isAuthenticated || seller !== undefined);
-  const sellerId = seller?._id ?? null;
+  // Live answer once we know the auth state and (if authenticated) the query resolved.
+  const liveReady = !isLoading && (!isAuthenticated || seller !== undefined);
+  const ready = liveReady || initial !== undefined;
+  const sellerId = liveReady ? (seller?._id ?? null) : (initial?._id ?? null);
 
   const value = useMemo(
     () => ({
