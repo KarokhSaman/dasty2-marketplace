@@ -325,5 +325,17 @@
   "adminDeleteFromPending": "هێشتا پەسەند نەکراوە",
   "storeFlag": "فرۆشگا",
   "storeTagHint": "کاڵایەکی نوێیە لە یەکێک لە فرۆشگا هاوبەشەکانمانەوە.",
-  "storesFilter": "فرۆشگاکان"
+  "storesFilter": "فرۆشگاکان",
+  "noStoreProducts": "هێشتا کاڵای فرۆشگا نییە",
+  "noStoreProductsHint": "بەم زووانە کاڵای نوێی فرۆشگا هاوبەشەکانمان لێرە دەردەکەون.",
+  "adminOffersMaxPrice": "تەنها بۆ کاڵاکانی خوارووی (دینار)",
+  "adminOffersMaxPriceHint": "بەتاڵی بهێڵەوە بۆ ئەوەی ئۆفەرەکە بۆ هەموو نرخەکان بێت.",
+  "offerUnderPrice": "کاڵاکانی خوارووی {amount} دینار",
+  "brandPickCategoryFirst": "سەرەتا جۆری کاڵاکە هەڵبژێرە",
+  "offerTag": "ئۆفەر",
+  "offerTickerNoFeeUnder": "بێ کرێی خزمەتگوزاری بۆ کاڵاکانی خوارووی {amount} دینار",
+  "offerTickerFlatUnder": "کرێی جێگیر {fee} دینار بۆ کاڵاکانی خوارووی {amount} دینار",
+  "offerTickerPostNow": "ئێستا کاڵاکانت دابنێ بۆ سوود وەرگرتن لە ئۆفەرەکە",
+  "offerTickerAboveLimit": "کاڵاکانی {amount} دینار و زیاتر کرێی ئاسایی دەدەن",
+  "offerTickerTimeLeft": "کاتی ماوەی ئۆفەرەکە"
 }

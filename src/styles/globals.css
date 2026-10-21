@@ -220,6 +220,32 @@ html[dir='rtl'] .font-display {
 }
 
 /* ── Motion ─────────────────────────────────────────────── */
+/* Seller offer ticker: messages slide from one side to the other. */
+@keyframes offer-ticker {
+  from { transform: translateX(0); }
+  to { transform: translateX(-100%); }
+}
+@keyframes offer-ticker-rtl {
+  from { transform: translateX(0); }
+  to { transform: translateX(100%); }
+}
+@keyframes offer-tag-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.18) rotate(-8deg); }
+}
+.offer-ticker-run {
+  animation: offer-ticker var(--ticker-duration, 22s) linear infinite;
+}
+[dir="rtl"] .offer-ticker-run { animation-name: offer-ticker-rtl; }
+.offer-ticker:hover .offer-ticker-run,
+.offer-ticker:focus-within .offer-ticker-run,
+.offer-ticker[data-paused="true"] .offer-ticker-run { animation-play-state: paused; }
+.offer-tag-icon { animation: offer-tag-pulse 2.4s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .offer-ticker-run { animation: none; padding-inline-start: 0 !important; }
+  .offer-tag-icon { animation: none; }
+}
+
 @keyframes shimmer-sweep {
   0%   { background-position: -200% 0; }
   100% { background-position: 200% 0; }

@@ -9,10 +9,10 @@ import CategoryBar from "@/components/buyer/CategoryBar";
 import MultiSelectMenu from "@/components/buyer/MultiSelectMenu";
 import StoreIcon from "@/components/ui/StoreIcon";
 import { SegmentedControl, Skeleton } from "@/components/ui";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import * as m from "@/paraglide/messages";
 import { getCategoryLabel } from "@/lib/categories";
-import { getAllBrands } from "@/lib/brands";
+import { brandFitsCategory, getBrandsForCategory, OTHER_BRAND, sortByPopularity } from "@/lib/brands";
 import { getCityLabel } from "@/lib/cities";
 import { getLocale } from "@/paraglide/runtime";
 import { seedProductCache } from "@/lib/productCache";
@@ -54,7 +54,7 @@ function PinIcon() {
 }
 
 /** Row with the "Stores" filter (left) and City + Brand + Sort filters (right) */
-function FiltersRow({ cities, setCities, availableCities, showStores, storesOnly, setStoresOnly, brands, setBrands, sort, setSort }) {
+function FiltersRow({ cities, setCities, availableCities, showStores, storesOnly, setStoresOnly, brand, setBrand, brandOptions, sort, setSort }) {
   const locale = getLocale();
   return (
     <div className={`flex items-center justify-between gap-2 mb-2.5 px-0.5`}>
@@ -75,6 +75,7 @@ function FiltersRow({ cities, setCities, availableCities, showStores, storesOnly
       ) : (
         <span />
       )}
+
       <div className="inline-flex items-center gap-1 shrink-0">
         <MultiSelectMenu
           label={m.citiesLabel()}
@@ -86,11 +87,12 @@ function FiltersRow({ cities, setCities, availableCities, showStores, storesOnly
           align="end"
         />
         <MultiSelectMenu
+          single
           label={m.brandLabel()}
           allLabel={m.allBrands()}
-          options={[...getAllBrands().map((b) => ({ value: b, label: b })), { value: "Other", label: "Other" }]}
-          selected={brands}
-          onChange={setBrands}
+          options={brandOptions.map((b) => ({ value: b, label: b }))}
+          selected={brand ? [brand] : []}
+          onChange={(list) => setBrand(list[0] ?? "")}
           align="end"
         />
         <SortMenu sort={sort} setSort={setSort} />
@@ -210,7 +212,7 @@ function ConditionRow({ condition, setCondition, hideConditions, hasActiveFilter
   );
 }
 
-function EmptyState() {
+function EmptyState({ storesOnly = false }) {
   return (
     <div className="flex flex-col items-center justify-center py-24 px-6 text-center fade-up">
       <div className="relative w-20 h-20 mb-6">
@@ -219,8 +221,8 @@ function EmptyState() {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
       </div>
-      <p className="font-display text-2xl font-bold text-[var(--color-ink)] mb-2">{m.noProducts()}</p>
-      <p className="text-sm text-[var(--color-ink-soft)] max-w-xs">{m.tryDifferent()}</p>
+      <p className="font-display text-2xl font-bold text-[var(--color-ink)] mb-2">{storesOnly ? m.noStoreProducts() : m.noProducts()}</p>
+      <p className="text-sm text-[var(--color-ink-soft)] max-w-xs">{storesOnly ? m.noStoreProductsHint() : m.tryDifferent()}</p>
     </div>
   );
 }
@@ -238,7 +240,7 @@ function EndDivider({ label }) {
 
 // ── Filters state ──────────────────────────────────────────
 const INITIAL_FILTERS = {
-  category: "all", condition: "all", sort: "default", cities: [], brands: [], storesOnly: false,
+  condition: "all", sort: "default", cities: [], storesOnly: false,
 };
 
 export default function HomePage() {
@@ -247,10 +249,26 @@ export default function HomePage() {
   const [filters, setFilters] = useState(INITIAL_FILTERS);
   const [rotationTick, setRotationTick] = useState(0); // Trigger re-render every 15 seconds
   const [isRotating, setIsRotating] = useState(false); // Animation state
-  const { category, condition, sort, brands } = filters;
+  const { condition, sort } = filters;
   const cities = filters.cities ?? [];
 
   const updateFilter = (key) => (value) => setFilters((f) => ({ ...f, [key]: value }));
+
+  // Category and brand live in the URL (?category=Stroller&brand=Nuna) so they
+  // survive a refresh and can be shared; the other filters stay in page state.
+  const search = useSearch({ from: "/_public/" });
+  const navigate = useNavigate();
+  const category = search.category ?? "all";
+  const brand = search.brand ?? "";
+  const setUrlFilters = (next) =>
+    navigate({ to: ".", search: (prev) => ({ ...prev, ...next }), replace: true, resetScroll: false });
+  const setCategory = (next) =>
+    setUrlFilters({
+      category: next === "all" ? undefined : next,
+      // keep the brand only if it still fits the new category
+      brand: brand && brandFitsCategory(brand, next) ? brand : undefined,
+    });
+  const setBrand = (next) => setUrlFilters({ brand: next || undefined });
   const sentinelRef = useRef(null);
   // Shuffle seed — calculated after hydration to avoid server/client mismatch
   const shuffleSeedRef = useRef(0);
@@ -278,7 +296,8 @@ export default function HomePage() {
   // Featured is non-paginated → prefetched in the route loader (SSR + intent
   // preload) via React Query, still live-reactive. The paginated feed below
   // stays on usePaginatedQuery (convexQuery has no pagination).
-  // "Stores" filter: narrows the one mixed list to store products only.
+  // "Stores" filter: narrows the one mixed list to store products only. It is
+  // shown only while a store product is live (answer comes with the page).
   const { data: hasStoreProducts } = useReactQuery(convexQuery(api.products.hasStoreProducts, {}));
   const storesOnly = !!filters.storesOnly && hasStoreProducts !== false;
   const setStoresOnly = (on) => setFilters((f) => ({ ...f, storesOnly: on, cities: [], condition: "all" }));
@@ -326,9 +345,34 @@ export default function HomePage() {
   // Featured products now rotate only on page refresh, not automatically every 10 seconds.
   // This eliminates flickering when switching categories.
 
+  // Brands that real products have in this category (static list until loaded).
+  const brandArgs = {
+    ...(category !== "all" ? { category } : {}),
+    ...(storesOnly ? { stores: true } : {}),
+  };
+  const { data: liveBrands } = useReactQuery(convexQuery(api.products.listBrands, brandArgs));
+  // Most popular first: brands with more products, then the ranking in brands.js.
+  const brandOptions = useMemo(() => {
+    const list = liveBrands
+      ? sortByPopularity(liveBrands.map((b) => b.brand), Object.fromEntries(liveBrands.map((b) => [b.brand, b.count])))
+      : getBrandsForCategory(category);
+    // "Other" goes last
+    return [...list.filter((b) => b !== OTHER_BRAND), ...(list.includes(OTHER_BRAND) ? [OTHER_BRAND] : [])];
+  }, [liveBrands, category]);
+  // A chosen brand with no products in this category (e.g. after switching
+  // category, or from an old link) falls back to "All brands".
+  useEffect(() => {
+    if (brand && liveBrands && !liveBrands.some((b) => b.brand === brand)) setBrand("");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [brand, liveBrands]);
+
   const { results: liveResults, status, loadMore } = usePaginatedQuery(
     api.products.getPublicPaginated,
-    { category: category === "all" ? undefined : category, stores: storesOnly || undefined },
+    {
+      category: category === "all" ? undefined : category,
+      stores: storesOnly || undefined,
+      brand: brand || undefined,
+    },
     { initialNumItems: initialItems },
   );
 
@@ -379,7 +423,7 @@ export default function HomePage() {
     const matchCond   = condition === "all" || p.condition === condition;
     const matchCity   = cities.length === 0 || cities.includes(p.city);
     const matchCat    = skipCategory ? true : (category === "all" || p.category === category);
-    const matchBrand  = brands.length === 0 || (p.brand && brands.includes(p.brand));
+    const matchBrand  = !brand || p.brand === brand;
     return matchCond && matchCity && matchCat && matchBrand;
   };
 
@@ -392,7 +436,7 @@ export default function HomePage() {
 
   // Featured products for carousel — preserve position-based order from getFeatured query
   const featuredFiltered = useMemo(() => featuredProducts.filter((p) => matchesFilters(p, { skipCategory: category === "all" })),
-    [featuredProducts, condition, cities, brands, category]);
+    [featuredProducts, condition, cities, brand, category]);
 
   // VIP Carousel products — all featured products (no filter awareness)
   const vipCarouselProducts = useMemo(() => {
@@ -411,7 +455,7 @@ export default function HomePage() {
     const sortedFeatured = featured; // Already sorted by position in getFeatured query
     const combined = [...sortedFeatured, ...applySort(regular)];
     return combined;
-  }, [featuredProducts, results, condition, sort, cities, category, brands]);
+  }, [featuredProducts, results, condition, sort, cities, category, brand]);
   const totalCount = allProducts.length;
 
 
@@ -423,7 +467,7 @@ export default function HomePage() {
   return (
     <div className="pb-6">
       <div className={`mb-1 ${animateEntrance ? "fade-up" : ""}`}>
-        <CategoryBar selected={category} onSelect={updateFilter("category")} />
+        <CategoryBar selected={category} onSelect={setCategory} />
       </div>
 
       <FiltersRow
@@ -433,8 +477,9 @@ export default function HomePage() {
         showStores={!!hasStoreProducts}
         storesOnly={storesOnly}
         setStoresOnly={setStoresOnly}
-        brands={brands}
-        setBrands={updateFilter("brands")}
+        brand={brand}
+        setBrand={setBrand}
+        brandOptions={brandOptions}
         sort={sort}
         setSort={updateFilter("sort")}
       />
@@ -445,9 +490,9 @@ export default function HomePage() {
           setCondition={updateFilter("condition")}
           hideConditions={storesOnly}
           hasActiveFilter={
-            condition !== "all" || cities.length > 0 || storesOnly || sort !== "default" || category !== "all" || brands.length > 0
+            condition !== "all" || cities.length > 0 || storesOnly || sort !== "default" || category !== "all" || !!brand
           }
-          onReset={() => setFilters(INITIAL_FILTERS)}
+          onReset={() => { setFilters(INITIAL_FILTERS); setUrlFilters({ category: undefined, brand: undefined }); }}
         />
       )}
 
@@ -465,7 +510,7 @@ export default function HomePage() {
         </div>
       )}
 
-      {!isLoading && allProducts.length === 0 && featuredFiltered.length === 0 && <EmptyState />}
+      {!isLoading && allProducts.length === 0 && featuredFiltered.length === 0 && <EmptyState storesOnly={storesOnly} />}
 
       {allProducts.length > 0 && (
         <div suppressHydrationWarning className={`grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 mt-1 transition-all duration-300 ${animateEntrance ? "stagger" : ""}`}>
