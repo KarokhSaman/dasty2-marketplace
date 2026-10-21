@@ -77,16 +77,30 @@ async function fetchSessionWithRetry(attempts = 3): Promise<string | null> {
   }
 }
 
-// Drives <ConvexProviderWithAuth useAuth={useVerifySpeedAuth} />. The contract is
-// { isLoading, isAuthenticated, fetchAccessToken }. We probe the cookie once on
-// mount to decide isAuthenticated; login/logout do a hard navigation so this hook
-// re-runs with the fresh cookie rather than needing to mutate state in place.
-export function useVerifySpeedAuth() {
-  const [isLoading, setIsLoading] = useState(true)
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
+// Builds the hook for <ConvexProviderWithAuth useAuth={...} />. The contract is
+// { isLoading, isAuthenticated, fetchAccessToken }. `initialJwt` is the session
+// the server already read while rendering the page (undefined if unknown). With
+// it, auth is known on the first render and Convex gets the token at once, so
+// the page doesn't wait on an extra session request before logging in. Without
+// it we probe the cookie once on mount. Login/logout do a hard navigation, so
+// this re-runs with the fresh cookie rather than mutating state in place.
+export function createVerifySpeedAuth(initialJwt?: string | null) {
+  const known = initialJwt !== undefined
+  if (known) lastJwt = initialJwt ?? null
+  return function useVerifySpeedAuth() {
+    return useVerifySpeedAuthState(known, !!initialJwt)
+  }
+}
+
+function useVerifySpeedAuthState(known: boolean, initiallyAuthenticated: boolean) {
+  const [isLoading, setIsLoading] = useState(!known)
+  const [isAuthenticated, setIsAuthenticated] = useState(initiallyAuthenticated)
 
   const fetchAccessToken = useCallback(
-    async (_opts?: { forceRefreshToken?: boolean }) => {
+    async (opts?: { forceRefreshToken?: boolean }) => {
+      // The token from the page is fresh; only go back to the server when
+      // Convex asks for a new one (expired or rejected).
+      if (!opts?.forceRefreshToken && lastJwt) return lastJwt
       try {
         return await fetchSessionWithRetry()
       } catch {
@@ -97,6 +111,7 @@ export function useVerifySpeedAuth() {
   )
 
   useEffect(() => {
+    if (known) return
     let active = true
     let retry: ReturnType<typeof setTimeout> | undefined
 
@@ -119,7 +134,7 @@ export function useVerifySpeedAuth() {
       active = false
       if (retry) clearTimeout(retry)
     }
-  }, [])
+  }, [known])
 
   return useMemo(
     () => ({ isLoading, isAuthenticated, fetchAccessToken }),
