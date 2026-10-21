@@ -1,11 +1,11 @@
-import { useState } from "react";
-import { useMutation } from "convex/react";
+import { useMemo, useState } from "react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import * as m from "@/paraglide/messages";
 import BottomSheet from "@/components/ui/BottomSheet";
 import CustomSelect from "@/components/ui/CustomSelect";
 import { CATEGORY_CONFIG } from "@/lib/categories";
-import { getAllBrands } from "@/lib/brands";
+import { brandFitsCategory, getBrandChoices } from "@/lib/brands";
 import { errorMessage } from "@/lib/errors";
 
 const inputCls =
@@ -27,6 +27,8 @@ export default function ProductDetailsDialog({ product, onClose, onSaved }) {
   const [brand, setBrand] = useState(product.brand ?? "");
   const [condition, setCondition] = useState(product.storeId ? "new" : product.condition);
   const [description, setDescription] = useState(product.description ?? "");
+  const liveBrands = useQuery(api.products.listBrands, { category });
+  const brandCounts = useMemo(() => Object.fromEntries((liveBrands ?? []).map((b) => [b.brand, b.count])), [liveBrands]);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -60,7 +62,10 @@ export default function ProductDetailsDialog({ product, onClose, onSaved }) {
               inline
               listClassName="max-h-56"
               value={category}
-              onChange={setCategory}
+              onChange={(next) => {
+                setCategory(next);
+                setBrand((b) => (brandFitsCategory(b, next) ? b : ""));
+              }}
               options={CATEGORY_CONFIG.filter((c) => c.value !== "all").map((c) => ({ value: c.value, label: c.value }))}
             />
           </div>
@@ -74,8 +79,7 @@ export default function ProductDetailsDialog({ product, onClose, onSaved }) {
               placeholder="None"
               options={[
                 { value: "", label: "None" },
-                ...getAllBrands().map((b) => ({ value: b, label: b })),
-                { value: "Other", label: "Other" },
+                ...getBrandChoices(category, brand, brandCounts).map((b) => ({ value: b, label: b })),
               ]}
             />
           </div>

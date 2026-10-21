@@ -325,5 +325,17 @@
   "adminDeleteFromPending": "لم تتم الموافقة عليه بعد",
   "storeFlag": "متجر",
   "storeTagHint": "منتج جديد من أحد متاجرنا الشريكة.",
-  "storesFilter": "المتاجر"
+  "storesFilter": "المتاجر",
+  "noStoreProducts": "لا توجد منتجات متاجر بعد",
+  "noStoreProductsHint": "ستظهر هنا قريباً منتجات جديدة من متاجرنا الشريكة.",
+  "adminOffersMaxPrice": "فقط للمنتجات الأقل من (دينار)",
+  "adminOffersMaxPriceHint": "اتركه فارغاً ليشمل العرض جميع الأسعار.",
+  "offerUnderPrice": "المنتجات الأقل من {amount} دينار",
+  "brandPickCategoryFirst": "اختر الفئة أولاً",
+  "offerTag": "عرض",
+  "offerTickerNoFeeUnder": "بدون رسوم خدمة على المنتجات الأقل من {amount} دينار",
+  "offerTickerFlatUnder": "رسوم ثابتة {fee} دينار على المنتجات الأقل من {amount} دينار",
+  "offerTickerPostNow": "أضف منتجاتك الآن للاستفادة من العرض",
+  "offerTickerAboveLimit": "المنتجات من {amount} دينار فأكثر تدفع الرسوم العادية",
+  "offerTickerTimeLeft": "الوقت المتبقي للعرض"
 }

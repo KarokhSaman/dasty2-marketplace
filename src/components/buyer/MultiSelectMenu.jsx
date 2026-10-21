@@ -15,16 +15,25 @@ function CheckIcon() {
  * `selected` is an array of option values; empty means "all". The menu stays open
  * while toggling so several options can be picked.
  */
-export default function MultiSelectMenu({ label, allLabel, options, selected, onChange, leadingIcon, align = "start" }) {
+// `single`: one choice at a time — picking an option replaces the choice and
+// closes the menu, and the pill shows the chosen name.
+export default function MultiSelectMenu({ label, allLabel, options, selected, onChange, leadingIcon, align = "start", single = false }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   useClickOutside(ref, () => setOpen(false), open);
 
   const count = selected.length;
   const isActive = count > 0;
-  const pillLabel = count > 0 ? `${label} (${count})` : label;
+  const pillLabel = single
+    ? (count > 0 ? (options.find((o) => o.value === selected[0])?.label ?? selected[0]) : label)
+    : (count > 0 ? `${label} (${count})` : label);
 
   const toggle = (value) => {
+    if (single) {
+      onChange(selected.includes(value) ? [] : [value]);
+      setOpen(false);
+      return;
+    }
     onChange(selected.includes(value) ? selected.filter((v) => v !== value) : [...selected, value]);
   };
 
@@ -55,7 +64,7 @@ export default function MultiSelectMenu({ label, allLabel, options, selected, on
                 <button
                   key={item.value}
                   type="button"
-                  onClick={() => (isAll ? onChange([]) : toggle(item.value))}
+                  onClick={() => { if (isAll) { onChange([]); if (single) setOpen(false); } else toggle(item.value); }}
                   className={`flex items-center justify-between gap-3 w-full px-3 py-2 text-xs text-start whitespace-nowrap transition-colors ${
                     isSelected
                       ? "bg-[var(--color-ember-50)] text-[var(--color-ember-600)] font-semibold"

@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { useRouter, useParams, useLocation, useSearch } from "@tanstack/react-router";
 const usePathname = () => useLocation({ select: (l) => l.pathname });
@@ -14,12 +14,12 @@ import * as m from "@/paraglide/messages";
 import { getLocale } from "@/paraglide/runtime";
 import { useSellerSession } from "@/lib/useSellerSession";
 import { useImageUpload } from "@/lib/useImageUpload";
-import { resolveProfit } from "@/convex/fees";
+import { offerAppliesTo, resolveProfit } from "@/convex/fees";
 import StoreStockFields from "@/components/seller/StoreStockFields";
 import { calculateProfit, formatPrice, formatPriceLocale, normalizeDigits } from "@/lib/utils";
 import CustomSelect from "@/components/ui/CustomSelect";
 import { CATEGORY_CONFIG, getCategoryLabel } from "@/lib/categories";
-import { getAllBrands } from "@/lib/brands";
+import { brandFitsCategory, getBrandChoices } from "@/lib/brands";
 
 const CATEGORIES = CATEGORY_CONFIG.filter(c => c.value !== "all").map(c => c.value);
 
@@ -49,6 +49,9 @@ export default function AddProductPage() {
   const priceNum = Number(normalizeDigits(price).replace(/[^\d]/g, "")) || 0;
   const standardProfit = calculateProfit(priceNum);
   const currentSeller = useQuery(api.users.getCurrentSeller);
+  // How many live products each brand has in this category (most popular first).
+  const liveBrands = useQuery(api.products.listBrands, category ? { category } : "skip");
+  const brandCounts = useMemo(() => Object.fromEntries((liveBrands ?? []).map((b) => [b.brand, b.count])), [liveBrands]);
   const managedStores = useQuery(api.stores.listMine);
   const linkedStore = useQuery(api.stores.getLinked);
   // null = not chosen yet (an owner account then defaults to its own store); "" = no store
@@ -179,7 +182,8 @@ export default function AddProductPage() {
               value={category}
               onChange={(newCategory) => {
                 setCategory(newCategory);
-                setBrand("");
+                // keep the brand only if it still fits the new category
+                setBrand((b) => (brandFitsCategory(b, newCategory) ? b : ""));
               }}
               placeholder={m.fieldCategoryPlaceholder()}
               error={errors.category}
@@ -209,8 +213,9 @@ export default function AddProductPage() {
             <CustomSelect
               value={brand}
               onChange={setBrand}
-              placeholder={m.fieldBrandPlaceholder()}
-              options={[...getAllBrands().map(b => ({ value: b, label: b })), { value: "Other", label: "Other" }]}
+              disabled={!category}
+              placeholder={category ? m.fieldBrandPlaceholder() : m.brandPickCategoryFirst()}
+              options={getBrandChoices(category, brand, brandCounts).map(b => ({ value: b, label: b }))}
             />
             {brand && (
               <button type="button" onClick={() => setBrand("")}
@@ -250,7 +255,7 @@ export default function AddProductPage() {
           {errors.price && <p className="mt-1 text-xs text-red-500">{!price ? m.errPriceRequired() : m.priceRange()}</p>}
           {!errors.price && <p className="mt-1 text-xs text-[var(--color-ink-fade)]">{m.priceRange()}</p>}
           {price && priceNum >= 5000 && (
-            activeOffer && !customFee ? (
+            offerAppliesTo(activeOffer, priceNum) && !customFee ? (
               <div className={`mt-2 rounded-lg px-3 py-2 ${
                 activeOffer.type === "free"
                   ? "bg-green-50 border border-green-100"

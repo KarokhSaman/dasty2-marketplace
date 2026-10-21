@@ -82,7 +82,7 @@ export const CATEGORY_CONFIG = [
   },
   {
     value: "Other",
-    labels: { ckb: "کۆمەڵەی تر", ar: "أخرى / أخرى", en: "Other" },
+    labels: { ckb: "هیتر", ar: "أخرى", en: "Other" },
     bg: "bg-white",
     img: icon("other.png"),
   },

@@ -325,5 +325,17 @@
   "adminDeleteFromPending": "Not approved yet",
   "storeFlag": "Store",
   "storeTagHint": "A brand-new item from one of our partner stores.",
-  "storesFilter": "Stores"
+  "storesFilter": "Stores",
+  "noStoreProducts": "No store products yet",
+  "noStoreProductsHint": "New items from our partner stores will appear here soon.",
+  "adminOffersMaxPrice": "Only for products under (IQD)",
+  "adminOffersMaxPriceHint": "Leave empty to apply the offer to every price.",
+  "offerUnderPrice": "products under {amount} IQD",
+  "brandPickCategoryFirst": "Choose a category first",
+  "offerTag": "Offer",
+  "offerTickerNoFeeUnder": "No service fee on products under {amount} IQD",
+  "offerTickerFlatUnder": "Fixed fee of {fee} IQD on products under {amount} IQD",
+  "offerTickerPostNow": "Post your products now to use the offer",
+  "offerTickerAboveLimit": "Products from {amount} IQD and up pay the normal fee",
+  "offerTickerTimeLeft": "Time left in the offer"
 }

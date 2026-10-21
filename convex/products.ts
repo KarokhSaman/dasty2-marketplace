@@ -23,7 +23,7 @@ import { r2 } from "./r2";
 import { issueSeq } from "./seq";
 import { priceInfo, todayBaghdad, type StoreDiscount } from "./discount";
 
-type PublicProduct = Omit<Doc<"products">, "sellerId" | "sellerPhone" | "profit" | "soldFromId" | "deleteRequestedAt" | "deleteRequestReason" | "deleteRequestFrom">;
+type PublicProduct = Omit<Doc<"products">, "sellerId" | "sellerPhone" | "profit" | "soldFromId" | "deleteRequestedAt" | "deleteRequestReason" | "deleteRequestFrom" | "offerId">;
 
 const publicProductValidator = v.object({
   _id: v.id("products"),
@@ -67,6 +67,7 @@ const toPublic = ({
   deleteRequestedAt: _deleteRequestedAt,
   deleteRequestReason: _deleteRequestReason,
   deleteRequestFrom: _deleteRequestFrom,
+  offerId: _offerId,
   ...rest
 }: Doc<"products">): PublicProduct => rest;
 
@@ -157,6 +158,22 @@ async function withStoreDiscounts<T extends { storeId?: Id<"stores"> }>(
   });
 }
 
+// The offer that applies to a product's fee: the one running on the day it was
+// first posted, recorded as offerId. Editing later — during another offer or
+// after this one ended — never changes which offer applies. Products posted
+// before offerId was recorded fall back to a still-active offer whose dates cover
+// the posting day (switched-off offers are ignored, since we can't tell whether
+// they applied).
+async function postingOffer(ctx: QueryCtx, product: Doc<"products">): Promise<Doc<"offers"> | null> {
+  if (product.offerId) return await ctx.db.get(product.offerId);
+  const day = product.dateAdded.slice(0, 10);
+  const offers = await ctx.db
+    .query("offers")
+    .withIndex("by_isActive", (q) => q.eq("isActive", true))
+    .collect();
+  return offers.find((o) => o.startDate <= day && o.endDate >= day) ?? null;
+}
+
 // Price actually paid and the fee on it, when a store discount applies. An
 // explicit price (set by the admin) wins; otherwise a running discount sets it.
 // The fee is worked out on that price: flat fees stay the same, percentage and
@@ -181,10 +198,7 @@ async function saleTerms(
 
   const sellerId = ctx.db.normalizeId("users", product.sellerId);
   const seller = sellerId ? await ctx.db.get(sellerId) : null;
-  const today = todayBaghdad();
-  const offers = await ctx.db.query("offers").filter((q) => q.eq(q.field("isActive"), true)).collect();
-  const activeOffer = offers.find((o) => o.startDate <= today && o.endDate >= today) ?? null;
-  return { salePrice, profit: resolveProfit(salePrice, store ?? seller, activeOffer) };
+  return { salePrice, profit: resolveProfit(salePrice, store ?? seller, await postingOffer(ctx, product)) };
 }
 
 // Undo saleTerms when a sale is reversed: back to the listed price and its fee.
@@ -192,10 +206,7 @@ async function listingTerms(ctx: MutationCtx, product: Doc<"products">): Promise
   const store = product.storeId ? await ctx.db.get(product.storeId) : null;
   const sellerId = ctx.db.normalizeId("users", product.sellerId);
   const seller = sellerId ? await ctx.db.get(sellerId) : null;
-  const today = todayBaghdad();
-  const offers = await ctx.db.query("offers").filter((q) => q.eq(q.field("isActive"), true)).collect();
-  const activeOffer = offers.find((o) => o.startDate <= today && o.endDate >= today) ?? null;
-  return { salePrice: undefined, profit: resolveProfit(product.price, store ?? seller, activeOffer) };
+  return { salePrice: undefined, profit: resolveProfit(product.price, store ?? seller, await postingOffer(ctx, product)) };
 }
 
 async function getInactiveSellerIds(ctx: QueryCtx): Promise<Set<string>> {
@@ -377,6 +388,51 @@ export const hasStoreProducts = query({
   },
 });
 
+// Brands that live products have — in a category, or across all — with how many
+// live products each has, so brand lists can put the most popular first. Hops
+// from brand to brand through the index. `stores` limits it to store products.
+export const listBrands = query({
+  args: { category: v.optional(v.string()), stores: v.optional(v.boolean()) },
+  returns: v.array(v.object({ brand: v.string(), count: v.number() })),
+  handler: async (ctx, { category, stores }) => {
+    const inactiveIds = await getInactiveSellerIds(ctx);
+    const hasCategory = !!category && category !== "all";
+    const brands: { brand: string; count: number }[] = [];
+    let last = "";
+    for (let i = 0; i < 300; i++) {
+      const next = hasCategory
+        ? await ctx.db
+            .query("products")
+            .withIndex("by_status_category_brand", (q) =>
+              q.eq("status", "approved").eq("category", category!).gt("brand", last),
+            )
+            .first()
+        : await ctx.db
+            .query("products")
+            .withIndex("by_status_brand", (q) => q.eq("status", "approved").gt("brand", last))
+            .first();
+      if (!next || !next.brand) break;
+      const brand = next.brand;
+      last = brand;
+      const sameBrand = hasCategory
+        ? ctx.db
+            .query("products")
+            .withIndex("by_status_category_brand", (q) =>
+              q.eq("status", "approved").eq("category", category!).eq("brand", brand),
+            )
+        : ctx.db
+            .query("products")
+            .withIndex("by_status_brand", (q) => q.eq("status", "approved").eq("brand", brand));
+      let count = 0;
+      for await (const p of sameBrand) {
+        if (!inactiveIds.has(p.sellerId) && (!stores || !!p.storeId)) count++;
+      }
+      if (count > 0) brands.push({ brand, count });
+    }
+    return brands;
+  },
+});
+
 // "Similar products" strip on the product page: only same-category approved
 // products, capped, instead of the whole catalogue. The client shuffles and
 // shows 10.
@@ -459,19 +515,24 @@ export const getPublicPaginated = query({
     category: v.optional(v.string()),
     // true = only store products (the home page "Stores" filter); otherwise all.
     stores: v.optional(v.boolean()),
+    brand: v.optional(v.string()),
   },
-  handler: async (ctx, { paginationOpts, category, stores }) => {
+  handler: async (ctx, { paginationOpts, category, stores, brand }) => {
     const inactiveIds = await getInactiveSellerIds(ctx);
+    const hasCategory = !!category && category !== "all";
+    const products = ctx.db.query("products");
     const base =
-      category && category !== "all"
-        ? ctx.db
-            .query("products")
-            .withIndex("by_status_category", (q) =>
-              q.eq("status", "approved").eq("category", category),
-            )
-        : ctx.db
-            .query("products")
-            .withIndex("by_status", (q) => q.eq("status", "approved"));
+      hasCategory && brand
+        ? products.withIndex("by_status_category_brand", (q) =>
+            q.eq("status", "approved").eq("category", category!).eq("brand", brand),
+          )
+        : brand
+          ? products.withIndex("by_status_brand", (q) => q.eq("status", "approved").eq("brand", brand))
+          : hasCategory
+            ? products.withIndex("by_status_category", (q) =>
+                q.eq("status", "approved").eq("category", category!),
+              )
+            : products.withIndex("by_status", (q) => q.eq("status", "approved"));
     const q = stores ? base.filter((f) => f.neq(f.field("storeId"), undefined)) : base;
 
     const result = await q.order("desc").paginate(paginationOpts);
@@ -567,6 +628,7 @@ export const add = mutation({
     const seq = await issueSeq(ctx);
     const id = await ctx.db.insert("products", {
       ...args,
+      offerId: activeOffer?._id,
       // Store products are always new.
       condition: store ? "new" : args.condition,
       storeId,
@@ -728,13 +790,17 @@ export const getById = query({
     if (!product) return null;
 
     const { user } = await getCurrentUser(ctx);
-    if (isAdminUser(user)) return product;
-
-    const seller = await requireCurrentSeller(ctx);
-    if (product.sellerId !== seller._id.toString()) {
-      throw new Error("Not authorized");
+    if (!isAdminUser(user)) {
+      const seller = await requireCurrentSeller(ctx);
+      if (product.sellerId !== seller._id.toString()) {
+        throw new Error("Not authorized");
+      }
     }
-    return product;
+    const offer = await postingOffer(ctx, product);
+    return {
+      ...product,
+      postingOffer: offer ? { title: offer.title, type: offer.type, flatFeeAmount: offer.flatFeeAmount } : null,
+    };
   },
 });
 
@@ -767,12 +833,9 @@ export const sellerUpdate = mutation({
     if (product.status === "deletion_requested") {
       throw new Error("This product has a pending deletion request");
     }
-    // Check for active offer and adjust fee accordingly
-    const today = new Date().toISOString().slice(0, 10);
-    const allOffers = await ctx.db.query("offers")
-      .filter(q => q.eq(q.field("isActive"), true)).collect();
-    const activeOffer = allOffers.find(o => o.startDate <= today && o.endDate >= today);
-    const profit = resolveProfit(fields.price, store ?? seller, activeOffer ?? null);
+    // The fee follows the offer from the day the product was first posted, so
+    // editing an older product during an offer doesn't give it the offer's fee.
+    const profit = resolveProfit(fields.price, store ?? seller, await postingOffer(ctx, product));
     await ctx.db.patch(id, {
       ...fields,
       condition: store ? "new" : fields.condition,

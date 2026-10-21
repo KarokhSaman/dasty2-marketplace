@@ -1,4 +1,4 @@
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { requireAdmin } from "./auth";
 import { offerTypeValidator } from "./types";
@@ -30,11 +30,15 @@ export const create = mutation({
     description:   v.string(),
     type:          offerTypeValidator,
     flatFeeAmount: v.optional(v.number()),
+    maxPrice:      v.optional(v.number()),
     startDate:     v.string(),
     endDate:       v.string(),
   },
   handler: async (ctx, args) => {
     const { user } = await requireAdmin(ctx);
+    if (args.maxPrice !== undefined && !(Number.isInteger(args.maxPrice) && args.maxPrice > 0)) {
+      throw new ConvexError("The price limit must be a whole number of IQD");
+    }
 
     const offerId = await ctx.db.insert("offers", {
       ...args,
@@ -54,7 +58,8 @@ export const create = mutation({
       ? "No service fee"
       : `Fixed fee of ${args.flatFeeAmount?.toLocaleString()} IQD`;
 
-    const message = `🎉 Special Offer: ${args.title} — ${feeText} (${args.startDate} to ${args.endDate})`;
+    const limitText = args.maxPrice ? ` on products under ${args.maxPrice.toLocaleString()} IQD` : "";
+    const message = `🎉 Special Offer: ${args.title} — ${feeText}${limitText} (${args.startDate} to ${args.endDate})`;
 
     for (const seller of sellers) {
       await ctx.db.insert("notifications", {
@@ -72,7 +77,7 @@ export const create = mutation({
       adminName:    user!.name,
       action:       "offer_created",
       productTitle: args.title,
-      notes:        `${args.type === "free" ? "No fee" : `Flat ${args.flatFeeAmount?.toLocaleString()} IQD`} · ${args.startDate} → ${args.endDate}`,
+      notes:        `${args.type === "free" ? "No fee" : `Flat ${args.flatFeeAmount?.toLocaleString()} IQD`}${args.maxPrice ? ` · under ${args.maxPrice.toLocaleString()} IQD` : ""} · ${args.startDate} → ${args.endDate}`,
       createdAt:    new Date().toISOString(),
     });
 

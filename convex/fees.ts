@@ -8,7 +8,13 @@ export type FeeArrangement = {
 export type FeeOffer = {
   type: "free" | "flat_fee";
   flatFeeAmount?: number;
+  maxPrice?: number;
 } | null;
+
+// An offer can be limited to products priced below a set amount.
+export function offerAppliesTo(offer: FeeOffer | undefined, price: number): boolean {
+  return !!offer && (!offer.maxPrice || price < offer.maxPrice);
+}
 
 export function tableProfit(price: number): number {
   if (price >= 5000 && price <= 9000) return 2000;
@@ -40,8 +46,8 @@ export function resolveProfit(
     case "percentage":
       return Math.max(0, Math.round((price * (seller.feeValue ?? 0)) / 100));
     default:
-      if (activeOffer) {
-        return activeOffer.type === "free" ? 0 : (activeOffer.flatFeeAmount ?? 0);
+      if (offerAppliesTo(activeOffer, price)) {
+        return activeOffer!.type === "free" ? 0 : (activeOffer!.flatFeeAmount ?? 0);
       }
       return tableProfit(price);
   }

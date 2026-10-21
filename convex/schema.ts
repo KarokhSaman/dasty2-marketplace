@@ -59,10 +59,15 @@ export default defineSchema({
     deleteRequestFrom: v.optional(v.union(v.literal("pending"), v.literal("approved"), v.literal("rejected"))),
     // Price the buyer actually paid when it differs from `price` (store discount).
     salePrice: v.optional(v.number()),
+    // The offer that was running when the product was first posted. Its fee
+    // keeps following that offer, even when edited after the offer ends.
+    offerId: v.optional(v.id("offers")),
   })
     .index("by_status",          ["status"])
     .index("by_status_category", ["status", "category"])
     .index("by_status_city",     ["status", "city"])
+    .index("by_status_brand",          ["status", "brand"])
+    .index("by_status_category_brand", ["status", "category", "brand"])
     .index("by_seller",          ["sellerId"])
     .index("by_store",           ["storeId"]),
 
@@ -133,6 +138,8 @@ export default defineSchema({
     description:   v.string(),
     type:          offerTypeValidator,
     flatFeeAmount: v.optional(v.number()),
+    // The offer only covers products priced below this (IQD). Missing = any price.
+    maxPrice:      v.optional(v.number()),
     startDate:     v.string(),
     endDate:       v.string(),
     isActive:      v.boolean(),

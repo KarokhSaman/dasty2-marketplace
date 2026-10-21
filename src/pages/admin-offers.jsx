@@ -32,6 +32,7 @@ export default function AdminOffersPage() {
   const [description,        setDescription]        = useState("");
   const [type,               setType]               = useState("free");
   const [flatFeeAmount,      setFlatFeeAmount]      = useState("");
+  const [maxPrice,           setMaxPrice]           = useState("");
   const [startDate,          setStartDate]          = useState(today);
   const [endDate,            setEndDate]            = useState("");
   const [submitting,         setSubmitting]         = useState(false);
@@ -49,6 +50,7 @@ export default function AdminOffersPage() {
       description:   description.trim(),
       type,
       flatFeeAmount: type === "flat_fee" ? Number(flatFeeAmount) : undefined,
+      maxPrice: maxPrice ? Number(maxPrice) : undefined,
       startDate,
       endDate,
     });
@@ -56,7 +58,7 @@ export default function AdminOffersPage() {
       action: "offer_created",
       notes: title.trim(),
     });
-    setTitle(""); setDescription(""); setFlatFeeAmount(""); setEndDate("");
+    setTitle(""); setDescription(""); setFlatFeeAmount(""); setMaxPrice(""); setEndDate("");
     setType("free");
     setSubmitting(false);
     setSuccess(true);
@@ -168,6 +170,17 @@ export default function AdminOffersPage() {
             </div>
           )}
 
+          <div>
+            <label className="block text-sm font-medium text-[var(--color-ink)] mb-1.5">{m.adminOffersMaxPrice()}</label>
+            <input
+              type="number" min={1} step={1} value={maxPrice}
+              onChange={e => setMaxPrice(e.target.value)}
+              placeholder="100000"
+              className="w-full border border-[var(--color-hairline)] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-ember-300)]" dir="ltr"
+            />
+            <p className="text-xs text-[var(--color-ink-fade)] mt-1">{m.adminOffersMaxPriceHint()}</p>
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-[var(--color-ink)] mb-1.5">{m.adminOffersStartDate()} <span className="text-rose-500">*</span></label>
@@ -217,6 +230,7 @@ export default function AdminOffersPage() {
                     {offer.description && <p className="text-xs text-[var(--color-ink-fade)] mt-0.5">{offer.description}</p>}
                     <p className="text-xs text-[var(--color-ink-fade)] mt-1">
                       {offer.type === "free" ? m.adminOffersNoFeeShort() : `${offer.flatFeeAmount?.toLocaleString()} IQD`}
+                      {offer.maxPrice ? ` · ${m.offerUnderPrice({ amount: offer.maxPrice.toLocaleString() })}` : ""}
                       {" · "}{formatDate(offer.startDate)} → {formatDate(offer.endDate)}
                     </p>
                   </div>
