@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
@@ -9,7 +9,10 @@ import { errorMessage } from "@/lib/errors";
 import { photoProps } from "@/lib/images";
 import { useProductActions } from "@/components/admin/useProductActions";
 import { RejectBox } from "@/components/admin/ProductPanel";
-import { StoreTag, Code, btn, fmtIQD, useToast, IconX, IconCheck, IconRotate, IconStar, IconTrash } from "@/components/admin/ui";
+import CustomSelect from "@/components/ui/CustomSelect";
+import { CATEGORY_CONFIG } from "@/lib/categories";
+import { brandFitsCategory, getBrandChoices } from "@/lib/brands";
+import { StoreTag, Code, Segmented, btn, fmtIQD, inputCls, labelCls, useToast, IconX, IconCheck, IconRotate, IconStar, IconTrash } from "@/components/admin/ui";
 
 const CONDITION = { new: () => m.conditionNew(), likenew: () => m.conditionLikeNew(), used: () => m.conditionUsed() };
 
@@ -34,6 +37,8 @@ export default function ReviewMode({ queue, onClose }) {
   const [mounted, setMounted] = useState(false);
   const swipe = useRef(null);
   const [dx, setDx] = useState(0);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(null); // { title, category, brand, condition, description }
 
   // Live copies, so photo edits show at once; the queue is the fallback.
   const byId = Object.fromEntries(queue.map((p) => [p._id, p]));
@@ -48,8 +53,27 @@ export default function ReviewMode({ queue, onClose }) {
     return () => { document.body.style.overflow = prev; };
   }, []);
 
-  // Each product opens on its main photo.
-  useEffect(() => { setPhoto(byId[ids[index]]?.mainPhotoIndex ?? 0); setTurns(0); setConfirmDel(false); }, [index]);
+  // Each product opens on its main photo, with its details not being edited.
+  useEffect(() => { setPhoto(byId[ids[index]]?.mainPhotoIndex ?? 0); setTurns(0); setConfirmDel(false); setEditing(false); setDraft(null); }, [index]);
+
+  // Detail fixes made during review. Saved with "Save" or together with Approve.
+  const startEdit = () => {
+    setDraft({ title: p.title, category: p.category, brand: p.brand ?? "", condition: p.storeId ? "new" : p.condition, description: p.description ?? "" });
+    setEditing(true);
+  };
+  const dirty = !!draft && !!p && (
+    draft.title.trim() !== p.title || draft.category !== p.category ||
+    (draft.brand || "") !== (p.brand ?? "") || draft.condition !== (p.storeId ? "new" : p.condition) ||
+    draft.description.trim() !== (p.description ?? "").trim());
+  const liveBrands = useQuery(api.products.listBrands, draft?.category ? { category: draft.category } : "skip");
+  const brandCounts = useMemo(() => Object.fromEntries((liveBrands ?? []).map((b) => [b.brand, b.count])), [liveBrands]);
+  async function saveDraft() {
+    if (!draft.title.trim()) throw new Error("Title is required");
+    await actions.saveDetails(p, {
+      title: draft.title.trim(), category: draft.category, brand: draft.brand || undefined,
+      condition: draft.condition, description: draft.description.trim(), price: p.price,
+    });
+  }
   useEffect(() => { setTurns(0); setConfirmDel(false); }, [photo]);
   const count = p?.photos?.length ?? 0;
   useEffect(() => { if (count && photo > count - 1) setPhoto(count - 1); }, [count, photo]);
@@ -75,10 +99,11 @@ export default function ReviewMode({ queue, onClose }) {
     if (!p || busy) return;
     setBusy(true);
     try {
+      if (kind === "approve" && dirty) await saveDraft();
       if (kind === "approve") await actions.approve(p);
       else await actions.reject(p, reason);
       setDone((d) => ({ ...d, [kind === "approve" ? "approved" : "rejected"]: d[kind === "approve" ? "approved" : "rejected"] + 1 }));
-      toast(kind === "approve" ? `Approved ${p.seq ?? ""}` : `Rejected ${p.seq ?? ""}`);
+      toast(kind === "approve" ? `${dirty ? "Saved and approved" : "Approved"} ${p.seq ?? ""}` : `Rejected ${p.seq ?? ""}`);
       next();
     } catch (err) {
       toast(errorMessage(err, "Something went wrong"), "error");
@@ -102,7 +127,7 @@ export default function ReviewMode({ queue, onClose }) {
   });
 
   // Swipe on the photo. Direction is physical: right = approve in every language.
-  const onDown = (e) => { if (busy || turns || confirmDel || photoBusy) return; swipe.current = e.clientX; e.currentTarget.setPointerCapture?.(e.pointerId); };
+  const onDown = (e) => { if (busy || turns || confirmDel || photoBusy || editing) return; swipe.current = e.clientX; e.currentTarget.setPointerCapture?.(e.pointerId); };
   const onMove = (e) => { if (swipe.current != null) setDx(e.clientX - swipe.current); };
   const onUp = () => {
     if (swipe.current == null) return;
@@ -145,7 +170,7 @@ export default function ReviewMode({ queue, onClose }) {
         </div>
       ) : (
         <>
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain">
             <div className="max-w-5xl mx-auto p-4 lg:p-6 grid gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
               <div>
                 <div className="relative aspect-square rounded-2xl overflow-hidden bg-adm-sunk select-none touch-pan-y"
@@ -205,19 +230,65 @@ export default function ReviewMode({ queue, onClose }) {
                   {p.storeId && <StoreTag />}
                   <span>{new Date(p.dateAdded).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
                 </div>
-                <h2 className="text-[21px] font-bold leading-tight tracking-[-0.01em]">{p.title}</h2>
+                {!editing && (
+                  <div className="flex items-start gap-2">
+                    <h2 className="flex-1 min-w-0 text-[21px] font-bold leading-tight tracking-[-0.01em]">{p.title}</h2>
+                    <button type="button" onClick={startEdit} className={`${btn("outline", "sm")} shrink-0`}>Edit details</button>
+                  </div>
+                )}
                 <div className="flex items-baseline gap-3 flex-wrap">
                   <span className="text-[24px] font-bold text-adm-accent tabular-nums" dir="ltr">{fmtIQD(p.price)} IQD</span>
                   <span className="text-[13px] text-adm-soft">{m.adminProfitLabel()} {fmtIQD(p.profit)}</span>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
+                {editing && draft && (
+                  <div className="rounded-2xl border border-adm-line bg-adm-surface p-3.5 space-y-3">
+                    <div>
+                      <label htmlFor="rv-title" className={labelCls}>{m.fieldTitle()}</label>
+                      <input id="rv-title" value={draft.title} onChange={(e) => setDraft((d) => ({ ...d, title: e.target.value }))} className={inputCls} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <p className={labelCls}>{m.fieldCategory()}</p>
+                        <CustomSelect inline listClassName="max-h-56" value={draft.category}
+                          onChange={(c) => setDraft((d) => ({ ...d, category: c, brand: brandFitsCategory(d.brand, c) ? d.brand : "" }))}
+                          options={CATEGORY_CONFIG.filter((c) => c.value !== "all").map((c) => ({ value: c.value, label: c.value }))} />
+                      </div>
+                      <div>
+                        <p className={labelCls}>{m.fieldBrand()}</p>
+                        <CustomSelect inline listClassName="max-h-56" value={draft.brand} placeholder="None"
+                          onChange={(b) => setDraft((d) => ({ ...d, brand: b }))}
+                          options={[{ value: "", label: "None" }, ...getBrandChoices(draft.category, draft.brand, brandCounts).map((b) => ({ value: b, label: b }))]} />
+                      </div>
+                    </div>
+                    <div>
+                      <p className={labelCls}>{m.fieldCondition()}</p>
+                      <Segmented size="sm" value={draft.condition} onChange={(v) => !p.storeId && setDraft((d) => ({ ...d, condition: v }))}
+                        options={Object.entries(CONDITION).map(([value, label]) => ({ value, label: label() }))} />
+                      {p.storeId && <p className="text-[11.5px] text-adm-fade mt-1">Store products are always new.</p>}
+                    </div>
+                    <div>
+                      <label htmlFor="rv-desc" className={labelCls}>{m.fieldDescription()}</label>
+                      <textarea id="rv-desc" rows={4} dir="auto" value={draft.description}
+                        onChange={(e) => setDraft((d) => ({ ...d, description: e.target.value }))}
+                        className={`${inputCls} h-auto py-2.5 resize-y`} />
+                    </div>
+                    <div className="flex gap-2">
+                      <button type="button" disabled={!dirty || busy}
+                        onClick={async () => { setBusy(true); try { await saveDraft(); toast("Changes saved"); setEditing(false); setDraft(null); } catch (err) { toast(errorMessage(err, "Could not save"), "error"); } finally { setBusy(false); } }}
+                        className={`${btn("dark", "sm")} flex-1`}>Save</button>
+                      <button type="button" onClick={() => { setEditing(false); setDraft(null); }} className={`${btn("outline", "sm")} flex-1`}>{m.adminCancel()}</button>
+                    </div>
+                    {dirty && <p className="text-[11.5px] text-adm-fade">Approve also saves these changes.</p>}
+                  </div>
+                )}
+                {!editing && <div className="grid grid-cols-2 gap-2">
                   {[["Category", p.category], ["Brand", p.brand || "—"], ["Condition", CONDITION[p.condition]?.() ?? p.condition], ["City", p.city || "—"]].map(([k, v]) => (
                     <div key={k} className="rounded-xl border border-adm-line bg-adm-surface px-3 py-2">
                       <p className="text-[10.5px] font-bold uppercase tracking-[0.05em] text-adm-fade">{k}</p>
                       <p className="text-[13.5px] font-semibold truncate">{v}</p>
                     </div>
                   ))}
-                </div>
+                </div>}
                 <div className="rounded-xl border border-adm-line bg-adm-surface px-3 py-2.5 flex items-center gap-3">
                   <div className="flex-1 min-w-0">
                     <p className="text-[13.5px] font-semibold truncate">{p.sellerName}</p>
@@ -232,7 +303,7 @@ export default function ReviewMode({ queue, onClose }) {
                     </p>
                   ))}
                 </div>
-                {p.description && <p className="text-[13.5px] text-adm-soft leading-relaxed whitespace-pre-line">{p.description}</p>}
+                {!editing && p.description && <p className="text-[13.5px] text-adm-soft leading-relaxed whitespace-pre-line">{p.description}</p>}
                 {rejecting && <RejectBox busy={busy} onCancel={() => setRejecting(false)} onReject={(why) => decide("reject", why)} />}
               </div>
             </div>
@@ -245,7 +316,7 @@ export default function ReviewMode({ queue, onClose }) {
                 {m.adminReject()} <kbd className="max-lg:hidden text-[10px] border border-current rounded px-1 opacity-60">R</kbd>
               </button>
               <button type="button" disabled={busy} onClick={() => decide("approve")} className={`${btn("approve", "lg")}`}>
-                {m.adminApprove()} <kbd className="max-lg:hidden text-[10px] border border-current rounded px-1 opacity-60">A</kbd>
+                {dirty ? "Save & approve" : m.adminApprove()} <kbd className="max-lg:hidden text-[10px] border border-current rounded px-1 opacity-60">A</kbd>
               </button>
             </div>
           )}
