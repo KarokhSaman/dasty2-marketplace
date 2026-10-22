@@ -145,7 +145,7 @@ export default function ReviewMode({ queue, onClose }) {
         </div>
       ) : (
         <>
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain">
             <div className="max-w-5xl mx-auto p-4 lg:p-6 grid gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
               <div>
                 <div className="relative aspect-square rounded-2xl overflow-hidden bg-adm-sunk select-none touch-pan-y"

@@ -421,6 +421,9 @@ html[dir='rtl'] .font-display {
   --color-st-delete-bg: var(--a-orange-bg);
 }
 
+/* Nothing on an admin page may drag the page sideways (e.g. a swiped photo). */
+html:has(.admin-root), html:has(.admin-root) body { overflow-x: clip; }
+
 html:has(.admin-root) {
   --a-bg: #fefcf9;
   --a-surface: #ffffff;

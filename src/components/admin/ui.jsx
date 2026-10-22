@@ -316,7 +316,7 @@ export function Panel({ open, onClose, title, subtitle, leading, children, foote
             <IconX className="w-4 h-4" />
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-4 space-y-5">{children}</div>
+        <div className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-4 py-4 space-y-5">{children}</div>
         {footer && (
           <div className="flex items-center gap-2 px-4 pt-3 border-t border-adm-line bg-adm-bg" style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom))" }}>
             {footer}
