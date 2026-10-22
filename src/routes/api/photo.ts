@@ -3,6 +3,14 @@ import { createFileRoute } from '@tanstack/react-router'
 // Same-origin copy of a product photo, so the admin's browser can read its
 // pixels (to rotate it) without the R2 bucket needing a CORS rule for GET.
 // Only our own photo hosts are fetched; anything else is refused.
+function convexHost(): string {
+  try {
+    return new URL(import.meta.env.VITE_CONVEX_URL as string).hostname
+  } catch {
+    return ''
+  }
+}
+
 function allowedHost(hostname: string): boolean {
   const own = (import.meta.env.VITE_R2_PUBLIC_URL as string | undefined) ?? ''
   let ownHost = ''
@@ -15,8 +23,8 @@ function allowedHost(hostname: string): boolean {
     hostname.endsWith('.mndallan.com') ||
     hostname === 'dasty2mndalan.com' ||
     hostname.endsWith('.dasty2mndalan.com') ||
-    // local dev uploads live in Convex file storage
-    (import.meta.env.DEV && (hostname.endsWith('.convex.cloud') || hostname.endsWith('.convex.site')))
+    // test uploads live in this site's own Convex file storage
+    hostname === convexHost()
   )
 }
 
