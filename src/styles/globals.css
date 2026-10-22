@@ -388,3 +388,141 @@ html[dir='rtl'] .font-display {
     animation: none !important;
   }
 }
+
+/* ──────────────────────────────────────────────────────────
+   ADMIN THEME — only on admin pages (AdminShell renders .admin-root).
+   Colours are set on <html> so sheets portalled to <body> get them too.
+   Follows the phone/computer setting: light by default, dark when the
+   device is in dark mode. No switch.
+   ────────────────────────────────────────────────────────── */
+@theme inline {
+  --color-adm-bg: var(--a-bg);
+  --color-adm-surface: var(--a-surface);
+  --color-adm-sunk: var(--a-sunk);
+  --color-adm-ink: var(--a-ink);
+  --color-adm-soft: var(--a-soft);
+  --color-adm-fade: var(--a-fade);
+  --color-adm-line: var(--a-line);
+  --color-adm-accent: var(--a-accent);
+  --color-adm-accent-soft: var(--a-accent-soft);
+  --color-adm-navy: var(--a-navy);
+  --color-adm-wa: var(--a-wa);
+  --color-st-pending: var(--a-amber);
+  --color-st-pending-bg: var(--a-amber-bg);
+  --color-st-approved: var(--a-green);
+  --color-st-approved-bg: var(--a-green-bg);
+  --color-st-rejected: var(--a-red);
+  --color-st-rejected-bg: var(--a-red-bg);
+  --color-st-sold: var(--a-blue);
+  --color-st-sold-bg: var(--a-blue-bg);
+  --color-st-paid: var(--a-purple);
+  --color-st-paid-bg: var(--a-purple-bg);
+  --color-st-delete: var(--a-orange);
+  --color-st-delete-bg: var(--a-orange-bg);
+}
+
+html:has(.admin-root) {
+  --a-bg: #fefcf9;
+  --a-surface: #ffffff;
+  --a-sunk: #f3f4f6;
+  --a-ink: #0b0c0f;
+  --a-soft: #61656e;
+  --a-fade: #8e949e;
+  --a-line: #e6e8ec;
+  --a-accent: #c80037;
+  --a-accent-soft: #fff0f4;
+  --a-navy: #1b2a4a;
+  --a-wa: #128c4b;
+  --a-amber: #a86a12;  --a-amber-bg: #fdf5e6;
+  --a-green: #117855;  --a-green-bg: #e9f5ee;
+  --a-red: #c53030;    --a-red-bg: #fdecec;
+  --a-blue: #2563c9;   --a-blue-bg: #eaf1fd;
+  --a-purple: #7a3a85; --a-purple-bg: #f4ecf6;
+  --a-orange: #c2570c; --a-orange-bg: #fdf0e6;
+  --a-shadow: 0 24px 60px -24px rgba(11, 12, 15, 0.35);
+}
+
+@media (prefers-color-scheme: dark) {
+  html:has(.admin-root) {
+    color-scheme: dark;
+    --a-bg: #0f1115;
+    --a-surface: #171a20;
+    --a-sunk: #1f232a;
+    --a-ink: #f1f2f4;
+    --a-soft: #a9adb6;
+    --a-fade: #7b818c;
+    --a-line: #2a2e36;
+    --a-accent: #ff3b6e;
+    --a-accent-soft: #3a0d1a;
+    --a-navy: #8fa8d8;
+    --a-wa: #2fbf73;
+    --a-amber: #e2b05a;  --a-amber-bg: #33270f;
+    --a-green: #4cc597;  --a-green-bg: #0f2a20;
+    --a-red: #f07a7a;    --a-red-bg: #361414;
+    --a-blue: #7aa7f0;   --a-blue-bg: #13213a;
+    --a-purple: #c98fd3; --a-purple-bg: #2c1830;
+    --a-orange: #f0a06a; --a-orange-bg: #36200f;
+    --a-shadow: 0 24px 60px -24px rgba(0, 0, 0, 0.7);
+
+    /* Shared parts reused on admin pages (sheets, selects, notifications)
+       read the site tokens, so those follow the dark colours too. */
+    --color-cream: var(--a-bg);
+    --color-paper: var(--a-surface);
+    --color-cream-deep: var(--a-sunk);
+    --color-sand: var(--a-sunk);
+    --color-ink: var(--a-ink);
+    --color-ink-soft: var(--a-soft);
+    --color-ink-fade: var(--a-fade);
+    --color-hairline: var(--a-line);
+    --color-brand-50: var(--a-accent-soft);
+    --color-gray-50: #1b1e24;
+    --color-gray-100: #22262d;
+    --color-gray-200: #2c3038;
+    --color-gray-300: #3a3f48;
+    --color-gray-600: #b4b8c0;
+    --color-gray-700: #c9ccd2;
+    --color-gray-800: #e2e4e8;
+    --color-green-50: var(--a-green-bg);
+    --color-green-100: var(--a-green-bg);
+    --color-red-50: var(--a-red-bg);
+    --color-red-100: var(--a-red-bg);
+    --color-amber-50: var(--a-amber-bg);
+    --color-amber-100: var(--a-amber-bg);
+    --color-blue-50: var(--a-blue-bg);
+    --color-blue-100: var(--a-blue-bg);
+    --color-orange-50: var(--a-orange-bg);
+    --color-orange-100: var(--a-orange-bg);
+    --color-honey-50: var(--a-amber-bg);
+    --color-jade-50: var(--a-green-bg);
+  }
+  /* `white` is the site's off-white, also used for text on red buttons, so
+     only white backgrounds are switched, not the colour itself. */
+  html:has(.admin-root) .bg-white,
+  html:has(.admin-root) .hover\:bg-white:hover { background-color: var(--a-surface); }
+}
+
+/* Side panel (laptop) / bottom sheet (phone) used across the admin. */
+@keyframes adm-panel-side { from { transform: translateX(100%); } to { transform: none; } }
+@keyframes adm-panel-side-rtl { from { transform: translateX(-100%); } to { transform: none; } }
+.adm-panel { animation: sheet-up 300ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+@media (min-width: 1024px) {
+  .adm-panel { animation-name: adm-panel-side; animation-duration: 260ms; }
+  [dir="rtl"] .adm-panel { animation-name: adm-panel-side-rtl; }
+}
+@keyframes adm-toast { from { opacity: 0; transform: translate(-50%, -12px); } to { opacity: 1; transform: translate(-50%, 0); } }
+.adm-toast { animation: adm-toast 200ms ease both; }
+@media (prefers-reduced-motion: reduce) {
+  .adm-panel, .adm-toast { animation: none !important; }
+}
+/* Admin text is a mix of translated labels and English: each line takes its
+   direction from its own words (so English punctuation stays in place in
+   Kurdish/Arabic), while text still lines up with the page direction. In the
+   base layer, so utility classes like text-center still win. */
+@layer base {
+  .adm-scope :where(p, h1, h2, h3, h4, span, label, a, button, li) { unicode-bidi: plaintext; }
+  [dir="rtl"] .adm-scope :where(p, h1, h2, h3, h4, label, li, span):not(:where(.text-center, .text-end, [dir="ltr"]) *) { text-align: right; }
+  [dir="rtl"] .adm-scope :where(.text-end) :where(p, h1, h2, h3, h4, label, li) { text-align: left; }
+}
+@media (prefers-color-scheme: dark) {
+  .adm-logo { filter: invert(1) hue-rotate(180deg); }
+}

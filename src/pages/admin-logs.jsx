@@ -1,152 +1,95 @@
+import { useMemo, useState } from "react";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { formatPrice } from "@/lib/utils";
+import { PageHeader, SearchBox, FilterChips, Avatar, Code, Empty, Skeleton, btn } from "@/components/admin/ui";
+import { ACTIONS, TONE } from "@/components/admin/logActions";
 
-const ACTION_META = {
-  approved:          { label: "Approved",          color: "bg-green-100 text-green-700"  },
-  rejected:          { label: "Rejected",          color: "bg-red-100 text-red-600"      },
-  marked_sold:       { label: "Marked Sold",       color: "bg-blue-100 text-blue-700"    },
-  marked_paid:       { label: "Marked Paid",       color: "bg-purple-100 text-purple-700"},
-  deleted:           { label: "Deleted",           color: "bg-gray-100 text-[var(--color-ink-soft)]"    },
-  photo_removed:     { label: "Photo Removed",     color: "bg-orange-100 text-orange-600"},
-  seller_deleted:    { label: "Seller Deleted",    color: "bg-red-100 text-red-700"      },
-  seller_deactivated:{ label: "Seller Deactivated",color: "bg-orange-100 text-orange-700"},
-  seller_activated:  { label: "Seller Activated",  color: "bg-green-100 text-green-700"  },
-  unit_returned:     { label: "Unit Returned",     color: "bg-green-100 text-green-700"  },
-  delete_requested:  { label: "Delete Requested", color: "bg-orange-100 text-orange-700" },
-  delete_rejected:   { label: "Delete Declined",  color: "bg-gray-100 text-[var(--color-ink)]" },
-  seller_fee_changed:{ label: "Fee Changed", color: "bg-amber-100 text-amber-700" },
-  seller_promoted_to_admin:{ label: "Promoted Admin", color: "bg-indigo-100 text-indigo-700" },
-  admin_demoted_to_seller:{ label: "Made Seller", color: "bg-gray-100 text-[var(--color-ink)]" },
-  featured:          { label: "Sponsored",          color: "bg-amber-100 text-amber-700"  },
-  unfeatured:        { label: "Unsponsored",        color: "bg-[var(--color-ember-50)] text-[var(--color-ink-fade)]"    },
-  offer_created:     { label: "Offer Created",     color: "bg-rose-100 text-[var(--color-ember-600)]"    },
-  offer_deactivated: { label: "Offer Deactivated", color: "bg-[var(--color-ember-50)] text-[var(--color-ink-fade)]"    },
-  offer_reactivated: { label: "Offer Reactivated", color: "bg-green-100 text-green-600"  },
-  offer_deleted:     { label: "Offer Deleted",     color: "bg-red-100 text-red-500"      },
-  title_changed:     { label: "Title Edited",      color: "bg-cyan-100 text-cyan-700"    },
-  category_changed:  { label: "Category Edited",   color: "bg-cyan-100 text-cyan-700"    },
-  brand_changed:     { label: "Brand Edited",      color: "bg-cyan-100 text-cyan-700"    },
-  details_changed:   { label: "Details Edited",    color: "bg-cyan-100 text-cyan-700"     },
-  product_posted:    { label: "Product Posted",    color: "bg-green-50 text-green-700"   },
-  product_edited:    { label: "Product Edited",    color: "bg-blue-50 text-blue-700"     },
-  product_deleted:   { label: "Product Deleted",   color: "bg-red-50 text-red-600"       },
-  photos_added:      { label: "Photos Added",      color: "bg-violet-50 text-violet-700" },
-  photos_removed:    { label: "Photos Removed",    color: "bg-orange-50 text-orange-600" },
-  profile_updated:   { label: "Profile Updated",   color: "bg-pink-50 text-pink-700"     },
+const PAGE = 60;
+const dayLabel = (iso) => {
+  const d = new Date(iso);
+  const t = new Date();
+  const y = new Date(Date.now() - 864e5);
+  if (d.toDateString() === t.toDateString()) return "Today";
+  if (d.toDateString() === y.toDateString()) return "Yesterday";
+  return d.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
 };
+const time = (iso) => new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
 
-function timeAgo(iso) {
-  const diff = Date.now() - new Date(iso).getTime();
-  const m = Math.floor(diff / 60000);
-  if (m < 1) return "just now";
-  if (m < 60) return `${m}m ago`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
-  const d = Math.floor(h / 24);
-  return d === 1 ? "yesterday" : `${d}d ago`;
-}
-
+// Every admin and seller action, newest first, grouped by day.
 export default function AdminLogsPage() {
   const logs = useQuery(api.adminLogs.getAll);
+  const [q, setQ] = useState("");
+  const [who, setWho] = useState("all");
+  const [shown, setShown] = useState(PAGE);
 
-  // Group by admin name for the summary (support both new adminName and old adminEmail fields)
-  const summary = logs ? logs.reduce((acc, log) => {
-    const adminKey = log.adminName || log.adminEmail || "Unknown";
-    acc[adminKey] = (acc[adminKey] || 0) + 1;
-    return acc;
-  }, {}) : {};
+  const sorted = useMemo(() => [...(logs ?? [])].sort((a, b) => b.createdAt.localeCompare(a.createdAt)), [logs]);
+  const list = useMemo(() => {
+    const needle = q.trim().toLowerCase();
+    return sorted.filter((l) => {
+      const admin = !!(l.adminName || l.adminEmail);
+      if (who === "admins" && !admin) return false;
+      if (who === "sellers" && admin) return false;
+      if (!needle) return true;
+      return [l.productTitle, l.productCode, l.sellerName, l.adminName, l.notes, ACTIONS[l.action]?.[0] ?? l.action]
+        .some((v) => (v ?? "").toLowerCase().includes(needle));
+    });
+  }, [sorted, q, who]);
+
+  if (!logs) return <Skeleton rows={8} />;
+
+  const groups = [];
+  for (const l of list.slice(0, shown)) {
+    const label = dayLabel(l.createdAt);
+    if (groups.at(-1)?.label !== label) groups.push({ label, items: [] });
+    groups.at(-1).items.push(l);
+  }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-[var(--color-ink)]">Activity Log</h1>
-        <p className="text-sm text-[var(--color-ink-fade)] mt-0.5">Every admin action recorded in chronological order</p>
+    <div>
+      <PageHeader title="Admin log" sub="Who changed what, newest first" />
+      <div className="space-y-2.5 mb-4">
+        <SearchBox value={q} onChange={setQ} placeholder="Search product, code, seller or admin" />
+        <FilterChips value={who} onChange={setWho} options={[
+          { value: "all", label: "Everyone", count: sorted.length },
+          { value: "admins", label: "Admins" },
+          { value: "sellers", label: "Sellers" },
+        ]} />
       </div>
-
-      {/* ── Admin summary ── */}
-      {Object.keys(summary).length > 0 && (
-        <div className="bg-white rounded-2xl border border-[var(--color-hairline)] shadow-sm p-4">
-          <p className="text-xs font-semibold text-[var(--color-ink-fade)] uppercase tracking-widest mb-3">Admin Activity Summary</p>
-          <div className="flex flex-wrap gap-3">
-            {Object.entries(summary).map(([adminName, count]) => (
-              <div key={adminName} className="flex items-center gap-2 bg-white rounded-xl px-3 py-2">
-                <div className="w-7 h-7 rounded-full bg-rose-100 flex items-center justify-center text-xs font-bold text-[var(--color-ember-600)]">
-                  {adminName[0]?.toUpperCase()}
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-gray-800">{adminName}</p>
-                  <p className="text-[10px] text-[var(--color-ink-fade)]">{count} action{count !== 1 ? "s" : ""}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ── Log list ── */}
-      {!logs ? (
-        <div className="space-y-2 animate-pulse">
-          {Array.from({length: 5}).map((_, i) => (
-            <div key={i} className="h-20 bg-gray-200 rounded-2xl"/>
-          ))}
-        </div>
-      ) : logs.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-dashed border-[var(--color-hairline)] py-16 flex flex-col items-center text-gray-300">
-          <svg className="w-10 h-10 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-          </svg>
-          <p className="text-sm text-[var(--color-ink-fade)] font-medium">No actions logged yet</p>
-        </div>
-      ) : (
-        <div className="bg-white rounded-2xl border border-[var(--color-hairline)] shadow-sm overflow-hidden">
-          <div className="divide-y divide-gray-50">
-            {logs.map(log => {
-              const meta = ACTION_META[log.action] ?? { label: log.action, color: "bg-gray-100 text-[var(--color-ink-soft)]" };
-              const isAdminAction = !!log.adminName || !!log.adminEmail;
-              const actorName = log.adminName || log.adminEmail || log.sellerName || "Unknown";
-              const avatarBg = isAdminAction ? "bg-rose-100 text-[var(--color-ember-600)]" : "bg-blue-100 text-blue-700";
+      {groups.length === 0 && <div className="rounded-2xl border border-adm-line bg-adm-surface"><Empty>No actions match.</Empty></div>}
+      {groups.map((g) => (
+        <section key={g.label} className="mb-5">
+          <h2 className="text-[12px] font-bold uppercase tracking-[0.06em] text-adm-fade mb-2">{g.label}</h2>
+          <div className="bg-adm-surface border border-adm-line rounded-2xl overflow-hidden divide-y divide-adm-line">
+            {g.items.map((l) => {
+              const [label, tone] = ACTIONS[l.action] ?? [(l.action || "").replace(/_/g, " "), "grey"];
+              const isAdmin = !!(l.adminName || l.adminEmail);
+              const actor = l.adminName || l.adminEmail || l.sellerName || "Unknown";
               return (
-                <div key={log._id} className="px-4 py-3.5 flex items-start gap-3">
-                  {/* Avatar */}
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 ${avatarBg}`}>
-                    {actorName[0]?.toUpperCase()}
-                  </div>
-
+                <div key={l._id} className="flex items-start gap-3 px-3.5 py-3">
+                  <Avatar name={actor} size={34} />
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-xs font-semibold text-[var(--color-ink)]">{actorName} {!isAdminAction && <span className="text-[10px] font-normal text-[var(--color-ink-fade)]">(Seller)</span>}</span>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${meta.color}`}>
-                        {meta.label}
-                      </span>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-[13px] font-semibold">{actor}</span>
+                      {!isAdmin && <span className="text-[11px] text-adm-fade">seller</span>}
+                      <span className={`h-[20px] px-2 rounded-full text-[10.5px] font-bold inline-flex items-center ${TONE[tone]}`}>{label}</span>
                     </div>
-
-                    {(log.productTitle || log.sellerName || log.productCode) && (
-                      <p className="text-xs text-[var(--color-ink-soft)] mt-0.5 truncate">
-                        {log.productTitle && <span>"{log.productTitle}"</span>}
-                        {log.productTitle && (log.sellerName || log.productCode) && <span className="text-[var(--color-ink-fade)]"> · </span>}
-                        {log.sellerName && <span>{log.sellerName}</span>}
-                        {log.sellerName && log.productCode && <span className="text-[var(--color-ink-fade)]"> · </span>}
-                        {log.productCode && <span className="text-[var(--color-ink-fade)]">{log.productCode}</span>}
+                    {(l.productTitle || l.productCode || (isAdmin && l.sellerName)) && (
+                      <p className="text-[12.5px] text-adm-soft mt-0.5 flex items-center gap-1.5 min-w-0">
+                        {l.productCode && <Code>{l.productCode}</Code>}
+                        <span className="truncate">{[l.productTitle, isAdmin ? l.sellerName : null].filter(Boolean).join(" · ")}</span>
                       </p>
                     )}
-                    {log.notes && (
-                      <p className={`text-[11px] mt-0.5 rounded-lg px-2 py-1 inline-block ${
-                        log.action === "rejected"
-                          ? "text-red-500 bg-red-50"
-                          : "text-cyan-600 bg-cyan-50"
-                      }`}>
-                        {log.action === "rejected" ? "Reason: " : ""}{log.notes}
-                      </p>
-                    )}
+                    {l.notes && <p className={`text-[12px] mt-1 ${l.action === "rejected" ? "text-st-rejected" : "text-adm-fade"}`}>{l.notes}</p>}
                   </div>
-
-                  <span className="text-[10px] text-[var(--color-ink-fade)] shrink-0 mt-1">{timeAgo(log.createdAt)}</span>
+                  <span className="text-[11px] text-adm-fade tabular-nums shrink-0 mt-0.5">{time(l.createdAt)}</span>
                 </div>
               );
             })}
           </div>
-        </div>
+        </section>
+      ))}
+      {list.length > shown && (
+        <button type="button" onClick={() => setShown((n) => n + PAGE)} className={`${btn("outline")} w-full`}>Show more ({list.length - shown} left)</button>
       )}
     </div>
   );

@@ -59,6 +59,15 @@ export async function getCurrentSeller(ctx: Ctx) {
   return { identity, seller };
 }
 
+// Photo uploads: sellers adding products, and admins editing photos (e.g. a
+// rotated copy). Anyone else is refused.
+export async function requireUploader(ctx: Ctx): Promise<Doc<"users">> {
+  const { user } = await getCurrentUser(ctx);
+  const allowed = !!user && user.isActive && (user.role === "seller" || isAdminUser(user));
+  if (!allowed) throw new Error("Unauthorized");
+  return user!;
+}
+
 export async function requireCurrentSeller(ctx: Ctx): Promise<Doc<"users">> {
   const { seller } = await getCurrentSeller(ctx);
   if (!seller || !seller.isActive) throw new Error("Unauthorized");

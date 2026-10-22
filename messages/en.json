@@ -337,5 +337,16 @@
   "offerTickerFlatUnder": "Fixed fee of {fee} IQD on products under {amount} IQD",
   "offerTickerPostNow": "Post your products now to use the offer",
   "offerTickerAboveLimit": "Products from {amount} IQD and up pay the normal fee",
-  "offerTickerTimeLeft": "Time left in the offer"
+  "offerTickerTimeLeft": "Time left in the offer",
+  "rejectReasonPhotos": "Photos are blurry or too dark",
+  "rejectReasonCategory": "Wrong category",
+  "rejectReasonPrice": "The price looks wrong",
+  "rejectReasonNotBaby": "Not a baby product",
+  "rejectReasonDuplicate": "Already posted (duplicate)",
+  "rejectReasonDetails": "Please add more details",
+  "feesWaGreeting": "Hi dear, thank you for choosing Mndallan.",
+  "feesWaIntro": "Service fees for your sales:",
+  "feesWaTotal": "Total: {total} IQD",
+  "feesWaLine": "• {item}: {fee} IQD",
+  "feesWaPay": "You can pay through Super Qi, FIB or FastPay to this number: {number}"
 }

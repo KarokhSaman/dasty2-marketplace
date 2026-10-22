@@ -246,7 +246,7 @@
 
   "navHome": "سەرەکی",
   "navAccount": "ئەکاونت",
-  "adminOffers": "پێشکەشکردنەکان",
+  "adminOffers": "ئۆفەر",
 
   "adminOffersTitle": "پێشکەشکردن و داشکاندنەکان",
   "adminOffersActiveNow": "ئێستا چالاکە",
@@ -337,5 +337,16 @@
   "offerTickerFlatUnder": "کرێی جێگیر {fee} دینار بۆ کاڵاکانی خوارووی {amount} دینار",
   "offerTickerPostNow": "ئێستا کاڵاکانت دابنێ بۆ سوود وەرگرتن لە ئۆفەرەکە",
   "offerTickerAboveLimit": "کاڵاکانی {amount} دینار و زیاتر کرێی ئاسایی دەدەن",
-  "offerTickerTimeLeft": "کاتی ماوەی ئۆفەرەکە"
+  "offerTickerTimeLeft": "کاتی ماوەی ئۆفەرەکە",
+  "rejectReasonPhotos": "وێنەکان ڕوون نین یان زۆر تاریکن",
+  "rejectReasonCategory": "پۆلەکە هەڵەیە",
+  "rejectReasonPrice": "نرخەکە هەڵە دیارە",
+  "rejectReasonNotBaby": "ئەمە کاڵای منداڵان نییە",
+  "rejectReasonDuplicate": "پێشتر بڵاوکراوەتەوە (دووبارەیە)",
+  "rejectReasonDetails": "تکایە زانیاری زیاتر زیاد بکە",
+  "feesWaGreeting": "سڵاو گیان، سوپاس بۆ هەڵبژاردنی ماڵپەری Mndallan.",
+  "feesWaIntro": "کرێی خزمەتگوزاری بۆ فرۆشتنەکانت:",
+  "feesWaTotal": "کۆی گشتی: {total} دینار",
+  "feesWaLine": "• {item}: {fee} دینار",
+  "feesWaPay": "دەتوانیت لە ڕێگەی Super Qi یان FIB یان FastPay پارەکە بنێریت بۆ ئەم ژمارەیە: {number}"
 }

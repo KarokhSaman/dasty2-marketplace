@@ -184,6 +184,8 @@ async function saleTerms(
   explicit?: number,
 ): Promise<{ salePrice?: number; profit?: number }> {
   if (explicit === undefined && product.salePrice !== undefined) return {};
+  // Admin confirmed the listed price after an earlier, different sale price.
+  if (explicit === product.price && product.salePrice !== undefined) return await listingTerms(ctx, product);
   let salePrice = explicit;
   const store = product.storeId ? await ctx.db.get(product.storeId) : null;
   if (salePrice === undefined && store?.discountPercent && store.discountStart && store.discountEnd) {
@@ -247,8 +249,13 @@ function uploadedPhotoKey(photoUrl: string): string | null {
 // under another host name, so files are compared by key). Best effort: a storage
 // hiccup must never block deleting the product itself.
 async function deleteUnusedR2Photos(ctx: MutationCtx, product: Doc<"products">) {
+  await deleteUnusedR2Files(ctx, product.photos, product._id);
+}
+
+// Deletes the R2 files behind `urls` that no product other than `skipId` uses.
+async function deleteUnusedR2Files(ctx: MutationCtx, urls: string[], skipId?: Id<"products">) {
   const keys = new Set<string>();
-  for (const url of product.photos) {
+  for (const url of urls) {
     const key = uploadedPhotoKey(url);
     if (key) keys.add(key);
   }
@@ -256,7 +263,7 @@ async function deleteUnusedR2Photos(ctx: MutationCtx, product: Doc<"products">) 
 
   const others = await ctx.db.query("products").collect();
   for (const p of others) {
-    if (p._id === product._id) continue;
+    if (p._id === skipId) continue;
     for (const url of p.photos) {
       const key = uploadedPhotoKey(url);
       if (key) keys.delete(key);
@@ -757,6 +764,12 @@ export const returnUnit = mutation({
 
 // Admin edit of a product's details, at any status. Store products are always
 // "new", so their condition is kept as new whatever is sent.
+//
+// `price` lets the admin record a negotiated price for the seller. Before the
+// sale it changes the listed price; once sold or paid it sets the sale price
+// (the listed price stays as the original). Either way the service fee is
+// worked out again on the new price, with the offer from the posting day, and
+// the seller is told. The product keeps its status (no new review).
 export const adminUpdateDetails = mutation({
   args: {
     id: v.id("products"),
@@ -765,19 +778,48 @@ export const adminUpdateDetails = mutation({
     brand: v.optional(v.string()),
     condition: conditionValidator,
     description: v.string(),
+    price: v.optional(v.number()),
   },
   returns: v.null(),
-  handler: async (ctx, { id, title, category, brand, condition, description }) => {
+  handler: async (ctx, { id, title, category, brand, condition, description, price }) => {
     await requireAdmin(ctx);
     const product = await ctx.db.get(id);
     if (!product) throw new ConvexError("Product not found");
     if (!title.trim()) throw new ConvexError("Title is required");
+
+    let pricePatch: Partial<Doc<"products">> = {};
+    const sold = product.status === "sold" || product.status === "paid";
+    const current = sold ? (product.salePrice ?? product.price) : product.price;
+    if (price !== undefined && price !== current) {
+      if (!Number.isInteger(price) || price < 1_000) {
+        throw new ConvexError("Price must be a whole number of at least 1,000 IQD");
+      }
+      const store = product.storeId ? await ctx.db.get(product.storeId) : null;
+      const sellerId = ctx.db.normalizeId("users", product.sellerId);
+      const seller = sellerId ? await ctx.db.get(sellerId) : null;
+      const profit = resolveProfit(price, store ?? seller, await postingOffer(ctx, product));
+      pricePatch = sold
+        ? { salePrice: price === product.price ? undefined : price, profit }
+        : { price, profit };
+      if (sellerId) {
+        await ctx.db.insert("notifications", {
+          sellerId: sellerId.toString(),
+          productId: id,
+          message: `The price of "${title.trim()}" was updated to ${price.toLocaleString("en-US")} IQD (was ${current.toLocaleString("en-US")} IQD)`,
+          url: "/seller",
+          read: false,
+          createdAt: new Date().toISOString(),
+        });
+      }
+    }
+
     await ctx.db.patch(id, {
       title: title.trim(),
       category,
       brand: brand?.trim() || undefined,
       condition: product.storeId ? "new" : condition,
       description: description.trim(),
+      ...pricePatch,
     });
     return null;
   },
@@ -1009,6 +1051,32 @@ export const adminUpdatePhotos = mutation({
       patch.mainPhotoIndex = mainPhotoIndex;
     }
     await ctx.db.patch(id, patch);
+    return null;
+  },
+});
+
+// Admin swapped one photo for an edited copy (e.g. rotated). The copy takes the
+// same spot, so the main photo stays the same. The old file is deleted from R2
+// unless another product (a repost or sold unit) still uses it.
+export const adminReplacePhoto = mutation({
+  args: {
+    id: v.id("products"),
+    index: v.number(),
+    oldUrl: v.string(),
+    newUrl: v.string(),
+  },
+  returns: v.null(),
+  handler: async (ctx, { id, index, oldUrl, newUrl }) => {
+    await requireAdmin(ctx);
+    const product = await ctx.db.get(id);
+    if (!product) throw new ConvexError("Product not found");
+    if (product.photos[index] !== oldUrl) {
+      throw new ConvexError("The photos changed meanwhile. Refresh and try again.");
+    }
+    const photos = [...product.photos];
+    photos[index] = newUrl;
+    await ctx.db.patch(id, { photos });
+    if (!photos.includes(oldUrl)) await deleteUnusedR2Files(ctx, [oldUrl]);
     return null;
   },
 });

@@ -141,3 +141,33 @@ export default function LocaleSwitcher() {
     </div>
   )
 }
+
+// All three languages side by side, tap to switch. For sheets and side menus,
+// where a dropdown would be cut off.
+export function LanguagePicker() {
+  const locale = getLocale()
+  return (
+    <div role="radiogroup" aria-label="Language" className="grid grid-cols-3 gap-1 p-1 rounded-2xl bg-[var(--color-cream-deep)]">
+      {LANGS.map((lang) => {
+        const active = lang.code === locale
+        return (
+          <button
+            key={lang.code}
+            type="button"
+            role="radio"
+            aria-checked={active}
+            onClick={() => !active && setLocale(lang.code)}
+            className={`flex flex-col items-center justify-center gap-1 h-[58px] rounded-xl transition-colors ${
+              active
+                ? 'bg-[var(--color-paper)] text-[var(--color-ink)] shadow-[0_1px_3px_rgba(11,12,15,0.14)]'
+                : 'text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]'
+            }`}
+          >
+            <lang.Flag size={20} />
+            <span className="text-[12.5px] font-semibold leading-none">{lang.name}</span>
+          </button>
+        )
+      })}
+    </div>
+  )
+}
