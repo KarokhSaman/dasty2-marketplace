@@ -1,5 +1,6 @@
 import { ConvexError, v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { mutation, query, type MutationCtx } from "./_generated/server";
+import type { Id } from "./_generated/dataModel";
 import { requireAdmin } from "./auth";
 import { offerTypeValidator } from "./types";
 
@@ -24,6 +25,77 @@ export const getAll = query({
   },
 });
 
+type OfferFields = {
+  title: string;
+  type: "free" | "flat_fee";
+  flatFeeAmount?: number;
+  maxPrice?: number;
+  startDate: string;
+  endDate: string;
+};
+
+const DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+function validateOffer(o: OfferFields) {
+  if (!o.title.trim()) throw new ConvexError("Give the offer a name");
+  if (!DATE.test(o.startDate) || !DATE.test(o.endDate)) throw new ConvexError("Choose a start and an end date");
+  if (o.endDate < o.startDate) throw new ConvexError("The end date is before the start date");
+  if (o.type === "flat_fee" && !(Number.isInteger(o.flatFeeAmount) && (o.flatFeeAmount ?? 0) > 0)) {
+    throw new ConvexError("The flat fee must be a whole number of IQD");
+  }
+  if (o.maxPrice !== undefined && !(Number.isInteger(o.maxPrice) && o.maxPrice > 0)) {
+    throw new ConvexError("The price limit must be a whole number of IQD");
+  }
+}
+
+// Only one offer may run on any day, so a product's fee is never ambiguous.
+async function assertNoOverlap(ctx: MutationCtx, startDate: string, endDate: string, exceptId?: Id<"offers">) {
+  const active = await ctx.db
+    .query("offers")
+    .withIndex("by_isActive", (q) => q.eq("isActive", true))
+    .collect();
+  const clash = active.find((o) => o._id !== exceptId && o.startDate <= endDate && o.endDate >= startDate);
+  if (clash) {
+    throw new ConvexError(`Overlaps "${clash.title}" (${clash.startDate} to ${clash.endDate}). Only one offer can run at a time.`);
+  }
+}
+
+// Edit an offer (its name, fee, price limit or dates — e.g. extend it). Products
+// already posted under it keep pointing at it, so their fee follows the edit.
+export const update = mutation({
+  args: {
+    id: v.id("offers"),
+    title: v.string(),
+    description: v.string(),
+    type: offerTypeValidator,
+    flatFeeAmount: v.optional(v.number()),
+    maxPrice: v.optional(v.number()),
+    startDate: v.string(),
+    endDate: v.string(),
+  },
+  returns: v.null(),
+  handler: async (ctx, { id, ...fields }) => {
+    const { user } = await requireAdmin(ctx);
+    const offer = await ctx.db.get(id);
+    if (!offer) throw new ConvexError("Offer not found");
+    validateOffer(fields);
+    if (offer.isActive) await assertNoOverlap(ctx, fields.startDate, fields.endDate, id);
+    await ctx.db.patch(id, {
+      ...fields,
+      title: fields.title.trim(),
+      flatFeeAmount: fields.type === "flat_fee" ? fields.flatFeeAmount : undefined,
+    });
+    await ctx.db.insert("adminLogs", {
+      adminName: user!.name,
+      action: "offer_edited",
+      productTitle: fields.title.trim(),
+      notes: `${fields.type === "free" ? "No fee" : `Flat ${fields.flatFeeAmount?.toLocaleString()} IQD`}${fields.maxPrice ? ` · under ${fields.maxPrice.toLocaleString()} IQD` : ""} · ${fields.startDate} → ${fields.endDate}`,
+      createdAt: new Date().toISOString(),
+    });
+    return null;
+  },
+});
+
 export const create = mutation({
   args: {
     title:         v.string(),
@@ -36,9 +108,8 @@ export const create = mutation({
   },
   handler: async (ctx, args) => {
     const { user } = await requireAdmin(ctx);
-    if (args.maxPrice !== undefined && !(Number.isInteger(args.maxPrice) && args.maxPrice > 0)) {
-      throw new ConvexError("The price limit must be a whole number of IQD");
-    }
+    validateOffer(args);
+    await assertNoOverlap(ctx, args.startDate, args.endDate);
 
     const offerId = await ctx.db.insert("offers", {
       ...args,
@@ -107,6 +178,8 @@ export const reactivate = mutation({
     const { user } = await requireAdmin(ctx);
 
     const offer = await ctx.db.get(id);
+    if (!offer) throw new ConvexError("Offer not found");
+    await assertNoOverlap(ctx, offer.startDate, offer.endDate, id);
     await ctx.db.patch(id, { isActive: true });
     await ctx.db.insert("adminLogs", {
       adminName:    user!.name,

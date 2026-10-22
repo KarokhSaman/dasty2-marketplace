@@ -12,7 +12,7 @@ import { api } from "@/convex/_generated/api";
 import { useGlobalSellerSession } from "@/lib/SellerSessionContext";
 
 // ── Logo Animation Styles ─────────────────────────────────
-const logoAnimationStyles = `
+export const logoAnimationStyles = `
   @keyframes cartSlideIn {
     0% {
       opacity: 0;
@@ -38,7 +38,9 @@ const logoAnimationStyles = `
 `;
 
 // ── Wordmark ──────────────────────────────────────────────
-function Wordmark({ isAuthPage }) {
+// The cart slides in on load and again every 7 seconds. Shared with the admin
+// header so both logos move the same way.
+export function useLogoAnimation() {
   const [shouldAnimate, setShouldAnimate] = useState(true);
 
   useEffect(() => {
@@ -49,6 +51,12 @@ function Wordmark({ isAuthPage }) {
 
     return () => clearInterval(interval);
   }, []);
+
+  return shouldAnimate;
+}
+
+function Wordmark({ isAuthPage }) {
+  const shouldAnimate = useLogoAnimation();
 
   const content = (
     <>

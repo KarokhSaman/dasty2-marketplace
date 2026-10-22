@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { mutation } from "./_generated/server";
-import { requireCurrentSeller } from "./auth";
+import { requireUploader } from "./auth";
 
 function requireMockAuthEnabled() {
   if (process.env.ALLOW_MOCK_AUTH !== "true") {
@@ -16,7 +16,7 @@ export const generateUploadUrl = mutation({
   returns: v.string(),
   handler: async (ctx) => {
     requireMockAuthEnabled();
-    await requireCurrentSeller(ctx);
+    await requireUploader(ctx);
     return await ctx.storage.generateUploadUrl();
   },
 });
@@ -26,7 +26,7 @@ export const resolveUrl = mutation({
   returns: v.union(v.null(), v.string()),
   handler: async (ctx, { storageId }) => {
     requireMockAuthEnabled();
-    await requireCurrentSeller(ctx);
+    await requireUploader(ctx);
     return await ctx.storage.getUrl(storageId);
   },
 });

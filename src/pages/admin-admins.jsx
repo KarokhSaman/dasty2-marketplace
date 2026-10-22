@@ -2,6 +2,8 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import AdminActionsMenu from "@/components/admin/AdminActionsMenu";
+import { PageHeader, SearchBox, Avatar, Empty, Skeleton } from "@/components/admin/ui";
+import { RowList } from "@/components/admin/ProductRow";
 
 function formatDate(value) {
   if (!value) return "Unknown";
@@ -14,16 +16,6 @@ function formatDate(value) {
   });
 }
 
-function initials(admin) {
-  const source = admin.name || admin.email || "Admin";
-  return source
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join("") || "A";
-}
-
 export default function AdminAdminsPage() {
   const admins = useQuery(api.users.getAdmins);
   const currentUser = useQuery(api.users.getCurrent);
@@ -31,7 +23,6 @@ export default function AdminAdminsPage() {
   const deleteAdmin = useMutation(api.users.deleteAdmin);
   const createLog = useMutation(api.adminLogs.create);
   const [search, setSearch] = useState("");
-  const [expandedAdmin, setExpandedAdmin] = useState(null);
 
   const visibleAdmins = useMemo(() => {
     if (!admins) return [];
@@ -47,164 +38,50 @@ export default function AdminAdminsPage() {
       .sort((a, b) => new Date(b.registeredAt) - new Date(a.registeredAt));
   }, [admins, search]);
 
-  if (!admins) {
-    return (
-      <div className="space-y-3 animate-pulse">
-        <div className="h-10 bg-gray-200 rounded-xl w-44" />
-        <div className="h-11 bg-gray-200 rounded-xl" />
-        {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="h-20 bg-gray-200 rounded-xl" />
-        ))}
-      </div>
-    );
-  }
+  if (!admins) return <Skeleton rows={3} />;
+
+  const log = (action, admin) => createLog({ action, sellerName: admin.name, notes: admin.email || undefined });
 
   return (
     <div>
-      <div className="flex items-center justify-between gap-3 mb-5">
-        <div>
-          <h1 className="text-2xl font-bold text-[var(--color-ink)]">Admins</h1>
-          <p className="text-sm text-[var(--color-ink-fade)] mt-0.5">Accounts with admin access</p>
-        </div>
-        <span className="text-sm text-[var(--color-ink-fade)] shrink-0">
-          {admins.length} admin{admins.length === 1 ? "" : "s"}
-        </span>
-      </div>
-
-      <div className="mb-4">
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search admins"
-          className="w-full border border-[var(--color-hairline)] rounded-xl px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-ember-300"
-        />
-      </div>
-
-      {visibleAdmins.length === 0 ? (
-        <div className="bg-white rounded-xl border border-[var(--color-hairline)] py-16 text-center text-[var(--color-ink-fade)]">
-          <p className="text-sm font-medium">No admins found</p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {visibleAdmins.map((admin) => {
-            const isExpanded = expandedAdmin === admin._id;
-            const isCurrent = currentUser?._id === admin._id;
-            return (
-            <div
-              key={admin._id}
-              className="bg-white rounded-xl border border-[var(--color-hairline)]"
-            >
-              {/* Header Section - Clickable */}
-              <div className="px-4 py-4 flex items-start gap-3 border-b border-[var(--color-hairline)] hover:bg-[var(--color-cream)] transition-colors">
-                <button onClick={() => setExpandedAdmin(isExpanded ? null : admin._id)}
-                  className="flex-1 flex items-start gap-3 text-left min-w-0">
-                  <div className="w-12 h-12 rounded-full bg-indigo-50 flex items-center justify-center shrink-0">
-                    <span className="text-indigo-600 font-bold text-base">{initials(admin)}</span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-[var(--color-ink)]">{admin.name}</p>
-                    {admin.email && (
-                      <p className="text-xs text-[var(--color-ink-soft)] mt-1.5 truncate" dir="ltr">
-                        {admin.email}
-                      </p>
-                    )}
-                    {admin.registeredAt && (
-                      <p className="text-xs text-[var(--color-ink-fade)] mt-1 truncate">
-                        Joined {formatDate(admin.registeredAt)}
-                      </p>
-                    )}
-                  </div>
-                  <div className="text-end shrink-0">
-                    <p className="text-xs text-[var(--color-ink-fade)] font-semibold uppercase tracking-wide">Role</p>
-                    <p className="text-sm font-semibold text-[var(--color-ink)] mt-0.5">
-                      {admin.role === "super_admin" ? "Super Admin" : "Admin"}
-                    </p>
-                  </div>
-                  <div className="shrink-0 flex items-center pt-1">
-                    <svg className={`w-5 h-5 text-[var(--color-ink-fade)] transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
-                      fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                    </svg>
-                  </div>
-                </button>
-                {currentUser?.role === "super_admin" && (
-                  <div className="shrink-0 pt-1">
-                    <AdminActionsMenu
-                      admin={admin}
-                      isCurrent={isCurrent}
-                      onPromoteToSuperAdmin={async () => {
-                        await setRole({ id: admin._id, role: "super_admin" });
-                        await createLog({
-                          action: "admin_promoted_to_super_admin",
-                          sellerName: admin.name,
-                          notes: admin.email || undefined,
-                        });
-                      }}
-                      onDemoteToAdmin={async () => {
-                        await setRole({ id: admin._id, role: "admin" });
-                        await createLog({
-                          action: "super_admin_demoted_to_admin",
-                          sellerName: admin.name,
-                          notes: admin.email || undefined,
-                        });
-                      }}
-                      onMakeSeller={async () => {
-                        await setRole({ id: admin._id, role: "seller" });
-                        await createLog({
-                          action: "admin_demoted_to_seller",
-                          sellerName: admin.name,
-                          notes: admin.email || undefined,
-                        });
-                      }}
-                      onDelete={async () => {
-                        await deleteAdmin({ id: admin._id });
-                        await createLog({
-                          action: "admin_deleted",
-                          sellerName: admin.name,
-                          notes: admin.email || undefined,
-                        });
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
-
-              {/* Details Section - Collapsible */}
-              {isExpanded && (
-              <div className="px-4 py-4 space-y-2.5 border-b border-[var(--color-hairline)]">
-                <div>
-                  <p className="text-[11px] font-semibold text-[var(--color-ink-fade)] uppercase tracking-wide mb-0.5">Role</p>
-                  <p className="text-sm text-[var(--color-ink)]">
-                    {admin.role === "super_admin" ? "Super Admin" : "Admin"}
-                    {isCurrent && " (Current)"}
-                  </p>
+      <PageHeader title="Admins" sub={`${admins.length} account${admins.length === 1 ? "" : "s"} with admin access`} />
+      <div className="mb-3"><SearchBox value={search} onChange={setSearch} placeholder="Search admins" /></div>
+      <RowList>
+        {visibleAdmins.length === 0 && <Empty>No admins found</Empty>}
+        {visibleAdmins.map((admin) => {
+          const isCurrent = currentUser?._id === admin._id;
+          const superAdmin = admin.role === "super_admin";
+          return (
+            <div key={admin._id} className="flex items-center gap-3 px-3 lg:px-4 py-3 min-h-[72px]">
+              <Avatar name={admin.name || admin.email} size={44} />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[14.5px] font-semibold truncate">{admin.name || "Admin"}</span>
+                  <span className={`h-[20px] px-2 rounded-full text-[10.5px] font-bold inline-flex items-center ${superAdmin ? "bg-adm-accent-soft text-adm-accent" : "bg-adm-sunk text-adm-soft"}`}>
+                    {superAdmin ? "Super admin" : "Admin"}
+                  </span>
+                  {isCurrent && <span className="text-[11px] text-adm-fade">(you)</span>}
                 </div>
-                {admin.email && (
-                  <div>
-                    <p className="text-[11px] font-semibold text-[var(--color-ink-fade)] uppercase tracking-wide mb-0.5">Email</p>
-                    <p className="text-sm text-[var(--color-ink)]" dir="ltr">{admin.email}</p>
-                  </div>
-                )}
-                {admin.phone && (
-                  <div>
-                    <p className="text-[11px] font-semibold text-[var(--color-ink-fade)] uppercase tracking-wide mb-0.5">Phone</p>
-                    <p className="text-xs text-[var(--color-ink)]" dir="ltr">{admin.phone}</p>
-                  </div>
-                )}
-                {admin.registeredAt && (
-                  <div>
-                    <p className="text-[11px] font-semibold text-[var(--color-ink-fade)] uppercase tracking-wide mb-0.5">Joined</p>
-                    <p className="text-sm text-[var(--color-ink)]">{formatDate(admin.registeredAt)}</p>
-                  </div>
-                )}
+                {admin.email && <p className="text-[12px] text-adm-soft truncate" dir="ltr">{admin.email}</p>}
+                <p className="text-[11.5px] text-adm-fade">
+                  {admin.phone && <span dir="ltr" className="tabular-nums">{admin.phone} · </span>}
+                  Joined {formatDate(admin.registeredAt)}
+                </p>
               </div>
+              {currentUser?.role === "super_admin" && (
+                <AdminActionsMenu
+                  admin={admin}
+                  isCurrent={isCurrent}
+                  onPromoteToSuperAdmin={async () => { await setRole({ id: admin._id, role: "super_admin" }); await log("admin_promoted_to_super_admin", admin); }}
+                  onDemoteToAdmin={async () => { await setRole({ id: admin._id, role: "admin" }); await log("super_admin_demoted_to_admin", admin); }}
+                  onMakeSeller={async () => { await setRole({ id: admin._id, role: "seller" }); await log("admin_demoted_to_seller", admin); }}
+                  onDelete={async () => { await deleteAdmin({ id: admin._id }); await log("admin_deleted", admin); }}
+                />
               )}
             </div>
-            );
-          })}
-        </div>
-      )}
+          );
+        })}
+      </RowList>
     </div>
   );
 }

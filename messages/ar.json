@@ -337,5 +337,16 @@
   "offerTickerFlatUnder": "رسوم ثابتة {fee} دينار على المنتجات الأقل من {amount} دينار",
   "offerTickerPostNow": "أضف منتجاتك الآن للاستفادة من العرض",
   "offerTickerAboveLimit": "المنتجات من {amount} دينار فأكثر تدفع الرسوم العادية",
-  "offerTickerTimeLeft": "الوقت المتبقي للعرض"
+  "offerTickerTimeLeft": "الوقت المتبقي للعرض",
+  "rejectReasonPhotos": "الصور غير واضحة أو مظلمة جدًا",
+  "rejectReasonCategory": "الفئة غير صحيحة",
+  "rejectReasonPrice": "السعر يبدو غير صحيح",
+  "rejectReasonNotBaby": "ليس منتجًا للأطفال",
+  "rejectReasonDuplicate": "منشور مسبقًا (مكرر)",
+  "rejectReasonDetails": "يرجى إضافة تفاصيل أكثر",
+  "feesWaGreeting": "مرحبًا عزيزي، شكرًا لاختيارك موقع Mndallan.",
+  "feesWaIntro": "رسوم الخدمة لمبيعاتك:",
+  "feesWaTotal": "المجموع: {total} دينار",
+  "feesWaLine": "• {item}: {fee} دينار",
+  "feesWaPay": "يمكنك الدفع عبر Super Qi أو FIB أو FastPay على هذا الرقم: {number}"
 }

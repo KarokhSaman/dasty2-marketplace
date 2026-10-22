@@ -1,283 +1,211 @@
 import { Link, useLocation } from "@tanstack/react-router";
-const usePathname = () => useLocation({ select: (l) => l.pathname });
-import { useState, useRef, useEffect } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useConvexAuth } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import * as m from "@/paraglide/messages";
-import LocaleSwitcher from "@/components/LocaleSwitcher";
+import { LanguagePicker } from "@/components/LocaleSwitcher";
+import { logoAnimationStyles, useLogoAnimation } from "@/components/buyer/PublicShell";
 import NotificationPanel from "@/components/ui/NotificationPanel";
+import { Panel, ToastProvider, IconChevron } from "@/components/admin/ui";
 
 const ADMIN_ID = "ADMIN";
 
-// ── Logo Animation Styles ─────────────────────────────────
-const logoAnimationStyles = `
-  @keyframes cartSlideIn {
-    0% {
-      opacity: 0;
-      transform: translate3d(-15px, 0, 0);
-    }
-    100% {
-      opacity: 1;
-      transform: translate3d(0, 0, 0);
-    }
-  }
+const Icon = ({ children, filled }) => (
+  <svg className="w-[22px] h-[22px] lg:w-[19px] lg:h-[19px]" viewBox="0 0 24 24" fill={filled ? "currentColor" : "none"} fillOpacity={filled ? 0.12 : 1}
+    stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{children}</svg>
+);
+const ICONS = {
+  todo: <><path d="M22 12h-6l-2 3h-4l-2-3H2" /><path d="M5.5 5.1 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.5-6.9A2 2 0 0 0 16.8 4H7.2a2 2 0 0 0-1.7 1.1Z" /></>,
+  products: <><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" /></>,
+  sellers: <><circle cx="9" cy="8" r="4" /><path d="M2 21a7 7 0 0 1 14 0M16 3.5a4 4 0 0 1 0 9M22 21a7 7 0 0 0-4-6.3" /></>,
+  fees: <><rect x="2" y="6" width="20" height="13" rx="2" /><circle cx="12" cy="12.5" r="2.5" /><path d="M6 10v.01M18 15v.01" /></>,
+  offers: <><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8Z" /><circle cx="7.5" cy="7.5" r="1.5" /></>,
+  logs: <><path d="M12 8v4l3 2" /><circle cx="12" cy="12" r="9" /></>,
+  admins: <><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6Z" /><path d="m9 12 2 2 4-4" /></>,
+  more: <><circle cx="5" cy="12" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="19" cy="12" r="1.6" /></>,
+};
 
-  .logo-image-animate {
-    will-change: transform, opacity;
-    animation: cartSlideIn 3.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    animation-fill-mode: forwards;
-    backface-visibility: hidden;
-    -webkit-backface-visibility: hidden;
-    transform: translateZ(0);
-    -webkit-transform: translateZ(0);
-    contain: layout style paint;
-    isolation: isolate;
-  }
-`;
+function Badge({ children, hot }) {
+  if (!children) return null;
+  return (
+    <span className={`min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold grid place-items-center tabular-nums ${
+      hot ? "bg-adm-accent text-white" : "bg-adm-sunk text-adm-soft"}`}>
+      {children}
+    </span>
+  );
+}
+
+function Logo() {
+  const animate = useLogoAnimation();
+  return (
+    <Link to="/admin" dir="ltr" className="inline-flex items-center gap-1.5 shrink-0 select-none" aria-label="Mndallan admin">
+      <style>{logoAnimationStyles}</style>
+      <img src="/logo-mndallan.svg" alt="" className={`adm-logo w-9 h-9 ${animate ? "logo-image-animate" : ""}`} />
+      <span className="flex flex-col leading-none">
+        <span className="text-[15px] font-bold text-adm-accent tracking-tight">Mndallan</span>
+        <span className="text-[10px] font-semibold text-adm-fade mt-0.5">Admin</span>
+      </span>
+    </Link>
+  );
+}
 
 export default function AdminShell({ children }) {
-  const pathname = usePathname();
-  const [shouldAnimate, setShouldAnimate] = useState(true);
-  const [showNotifs, setShowNotifs] = useState(false);
-  const [showProfile, setShowProfile] = useState(false);
-  const [authTimedOut, setAuthTimedOut] = useState(false);
-  const bellRef = useRef();
-  const profileRef = useRef();
+  const pathname = useLocation({ select: (l) => l.pathname });
   const { isAuthenticated } = useConvexAuth();
+  const [authTimedOut, setAuthTimedOut] = useState(false);
+  const [showNotifs, setShowNotifs] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const bellRef = useRef();
+  const bellRefDesk = useRef();
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setShouldAnimate(true);
-      setTimeout(() => setShouldAnimate(false), 3600);
-    }, 7000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  // Current admin (for the avatar/email) over the authenticated Convex session.
   const me = useQuery(api.users.getCurrent, isAuthenticated ? {} : "skip");
-  const adminEmail = me?.email ?? "";
+  const products = useQuery(api.products.getAll, isAuthenticated ? {} : "skip");
+  const activeOffer = useQuery(api.offers.getActive, isAuthenticated ? {} : "skip");
+  const notifications = useQuery(api.notifications.getBySeller, isAuthenticated ? { sellerId: ADMIN_ID } : "skip");
+  const unread = (notifications ?? []).filter((n) => !n.read).length;
 
   useEffect(() => {
-    if (isAuthenticated) {
-      setAuthTimedOut(false);
-      return;
-    }
-
-    const timeout = window.setTimeout(() => setAuthTimedOut(true), 8000);
-    return () => window.clearTimeout(timeout);
+    if (isAuthenticated) { setAuthTimedOut(false); return; }
+    const t = window.setTimeout(() => setAuthTimedOut(true), 8000);
+    return () => window.clearTimeout(t);
   }, [isAuthenticated]);
 
-  useEffect(() => {
-    if (!showProfile) return;
-    function handleClick(e) {
-      if (profileRef.current && !profileRef.current.contains(e.target)) {
-        setShowProfile(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, [showProfile]);
+  useEffect(() => { setMoreOpen(false); setShowNotifs(false); }, [pathname]);
 
-  const notifications = useQuery(
-    api.notifications.getBySeller,
-    isAuthenticated ? { sellerId: ADMIN_ID } : "skip",
-  );
-  const unread = (notifications ?? []).filter(n => !n.read).length;
+  const counts = useMemo(() => {
+    const list = products ?? [];
+    const decide = list.filter((p) => p.status === "pending" || p.status === "deletion_requested").length;
+    const owing = new Set(list.filter((p) => p.status === "sold").map((p) => p.sellerId)).size;
+    return { decide, owing };
+  }, [products]);
 
-  async function handleSignOut() {
+  async function signOut() {
     await fetch("/api/auth/logout", { method: "POST" });
     window.location.href = "/admin/login";
   }
 
-  const isDashboard = pathname === "/admin";
-  const isProducts  = pathname.startsWith("/admin/products");
-  const isSellers   = pathname.startsWith("/admin/sellers");
-  const isAdmins    = pathname.startsWith("/admin/admins");
-  const isOffers    = pathname.startsWith("/admin/offers");
-
-  const navTabs = [
-    {
-      href: "/admin", active: isDashboard, label: "Dashboard", shortLabel: "Dashboard",
-      icon: (a) => (
-        <svg className="w-4 h-4 sm:w-4.5 sm:h-4.5" fill={a ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
-        </svg>
-      ),
-    },
-    {
-      href: "/admin/products", active: isProducts, label: "Products", shortLabel: "Products",
-      icon: (a) => (
-        <svg className="w-4 h-4 sm:w-4.5 sm:h-4.5" fill={a ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10"/>
-        </svg>
-      ),
-    },
-    {
-      href: "/admin/sellers", active: isSellers, label: "Sellers", shortLabel: "Sellers",
-      icon: (a) => (
-        <svg className="w-4 h-4 sm:w-4.5 sm:h-4.5" fill={a ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
-        </svg>
-      ),
-    },
-    {
-      href: "/admin/admins", active: isAdmins, label: "Admins", shortLabel: "Admins",
-      icon: (a) => (
-        <svg className="w-4 h-4 sm:w-4.5 sm:h-4.5" fill={a ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5-5.5A11.95 11.95 0 0112 2.75 11.95 11.95 0 014 4.5v6.75c0 5.05 3.4 9.75 8 10.95 4.6-1.2 8-5.9 8-10.95V4.5z"/>
-        </svg>
-      ),
-    },
-    {
-      href: "/admin/offers", active: isOffers, label: "Offers", shortLabel: "Offers",
-      icon: (a) => (
-        <svg className="w-4 h-4 sm:w-4.5 sm:h-4.5" fill={a ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
-        </svg>
-      ),
-    },
+  const is = (href) => (href === "/admin" ? pathname === "/admin" || pathname === "/admin/" : pathname.startsWith(href));
+  const nav = [
+    { href: "/admin", key: "todo", label: "To do", badge: counts.decide, hot: true },
+    { href: "/admin/products", key: "products", label: m.adminProducts() },
+    { href: "/admin/sellers", key: "sellers", label: m.adminSellers() },
+    { href: "/admin/fees", key: "fees", label: "Fees", long: "Fees to collect", badge: counts.owing, hot: true },
+    { href: "/admin/offers", key: "offers", label: m.adminOffers(), badge: activeOffer ? "Live" : null, extra: true },
+    { href: "/admin/logs", key: "logs", label: "Admin log", extra: true },
+    { href: "/admin/admins", key: "admins", label: "Admins", extra: true },
   ];
+  const moreActive = nav.some((n) => n.extra && is(n.href));
+
+  const bell = (ref) => (
+    <div ref={ref} className="relative">
+      <button onClick={() => setShowNotifs((v) => !v)} aria-label="Notifications" aria-expanded={showNotifs}
+        className="relative w-10 h-10 rounded-xl border border-adm-line bg-adm-surface grid place-items-center text-adm-soft hover:text-adm-ink">
+        <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+          <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+        </svg>
+        {unread > 0 && (
+          <span className="absolute -top-1 -end-1 min-w-[18px] h-[18px] px-1 rounded-full bg-adm-accent text-white text-[10px] font-bold grid place-items-center ring-2 ring-adm-bg">
+            {unread > 9 ? "9+" : unread}
+          </span>
+        )}
+      </button>
+      {showNotifs && (
+        <NotificationPanel notifications={notifications ?? []} sellerId={ADMIN_ID} label="Notifications" onClose={() => setShowNotifs(false)} bellRef={ref} />
+      )}
+    </div>
+  );
 
   return (
-    <div className="min-h-screen-dvh flex flex-col">
-      {/* Atmospheric backdrop */}
-      <div
-        aria-hidden
-        className="fixed inset-x-0 top-0 h-[320px] pointer-events-none -z-10"
-        style={{
-          background:
-            "radial-gradient(120% 80% at 0% 0%, rgba(237,0,64,0.06) 0%, rgba(244,245,247,0) 58%)," +
-            "radial-gradient(90% 70% at 100% 0%, rgba(11,12,15,0.04) 0%, rgba(244,245,247,0) 55%)",
-        }}
-      />
-
-      {/* ── Top bar ── */}
-      <style>{logoAnimationStyles}</style>
-      <header dir="ltr" className="sticky top-0 z-[70] bg-[var(--color-cream)] border-b border-[var(--color-hairline)] shadow-[0_1px_0_rgba(11,12,15,0.02)]">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
-
-          {/* Left: logo + desktop nav */}
-          <div className="flex items-center gap-2">
-            <Link to="/admin" dir="ltr" aria-label="Mndallan — admin dashboard" className="group inline-flex items-center gap-1 shrink-0 select-none">
-              <img
-                src="/logo-mndallan.svg"
-                alt=""
-                className={`w-10 h-10 ${shouldAnimate ? 'logo-image-animate' : ''}`}
-                style={{ color: 'var(--color-ink)' }}
-              />
-              <div className="flex flex-col gap-0 h-10 justify-center">
-                <span className="text-base font-bold text-[var(--color-ember-600)] tracking-tight leading-none">Mndallan</span>
-                <span className="text-[10px] text-[var(--color-ink-soft)] font-medium leading-none">Baby Marketplace</span>
-              </div>
+    <ToastProvider>
+      <div className="admin-root adm-scope min-h-screen-dvh bg-adm-bg text-adm-ink">
+        {/* ── Laptop: side menu ── */}
+        <aside className="hidden lg:flex fixed inset-y-0 start-0 w-[232px] flex-col gap-0.5 bg-adm-surface border-e border-adm-line px-3 py-4 z-40">
+          <div className="px-2 pb-5"><Logo /></div>
+          {nav.map((n) => (
+            <Link key={n.href} to={n.href}
+              className={`flex items-center gap-3 h-10 px-3 rounded-xl text-[13.5px] font-semibold transition-colors ${
+                is(n.href) ? "bg-adm-accent-soft text-adm-accent" : "text-adm-soft hover:bg-adm-sunk hover:text-adm-ink"}`}>
+              <Icon filled={is(n.href)}>{ICONS[n.key]}</Icon>
+              <span className="flex-1 truncate">{n.long ?? n.label}</span>
+              <Badge hot={n.hot || n.key === "offers"}>{n.badge}</Badge>
             </Link>
-            <div className="hidden xl:flex items-center gap-1 ms-2 ps-2 border-s border-[var(--color-hairline)]">
-              {navTabs.map(tab => (
-                <Link key={tab.href} to={tab.href}
-                  className={`text-sm font-medium px-3.5 py-2 rounded-full transition-all duration-200 ${
-                    tab.active ? "bg-[var(--color-ember-50)] text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] hover:bg-white/60"
-                  }`}>
-                  {tab.label}
-                </Link>
-              ))}
-            </div>
-          </div>
-
-          {/* Right: actions */}
-          <div className="flex items-center gap-2">
-            <LocaleSwitcher />
-
-            {/* Bell */}
-            <div ref={bellRef} className="relative">
-              <button onClick={() => setShowNotifs(v => !v)}
-                aria-label="Notifications"
-                aria-expanded={showNotifs}
-                className="relative inline-flex items-center justify-center w-8 h-8 rounded-full bg-white border border-[var(--color-hairline)] text-[var(--color-ink-soft)] hover:text-[var(--color-ember-600)] hover:border-[var(--color-ember-300)] transition-colors">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
-                </svg>
-                {unread > 0 && (
-                  <span className="absolute -top-0.5 -end-0.5 min-w-[1rem] h-4 px-1 text-[9.5px] font-bold bg-[var(--color-ember-500)] text-white rounded-full flex items-center justify-center ring-2 ring-[var(--color-cream)]">
-                    {unread > 9 ? "9+" : unread}
-                  </span>
-                )}
-              </button>
-              {showNotifs && (
-                <NotificationPanel
-                  notifications={notifications ?? []}
-                  sellerId={ADMIN_ID}
-                  label="Notifications"
-                  onClose={() => setShowNotifs(false)}
-                  bellRef={bellRef}
-                />
-              )}
-            </div>
-
-            {/* Profile avatar + dropdown */}
-            <div ref={profileRef} className="relative">
-              <button
-                onClick={() => setShowProfile(v => !v)}
-                className="w-8 h-8 rounded-full bg-[var(--color-ember-600)] flex items-center justify-center text-white text-sm font-bold hover:bg-[var(--color-ember-700)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--color-ember-400)] focus:ring-offset-2"
-              >
-                {adminEmail ? adminEmail[0].toUpperCase() : "A"}
-              </button>
-
-              {showProfile && (
-                <div className="absolute end-0 top-10 w-52 bg-white rounded-xl shadow-lg border border-[var(--color-hairline)] overflow-hidden z-30">
-                  <div className="px-4 py-3 border-b border-[var(--color-hairline)]">
-                    <p className="text-[10px] text-[var(--color-ink-fade)] uppercase tracking-widest font-semibold mb-0.5">Signed in as</p>
-                    <p className="text-xs font-semibold text-[var(--color-ink)] truncate" dir="ltr">{adminEmail || "Admin"}</p>
-                  </div>
-                  <button
-                    onClick={handleSignOut}
-                    className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-[var(--color-ember-600)] hover:bg-[var(--color-ember-50)] transition-colors font-medium"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-                    </svg>
-                    {m.adminSignOut()}
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* ── Main content ── */}
-      <main className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 md:px-7 xl:px-6 pt-3 pb-10 xl:pb-10">
-        {isAuthenticated ? children : authTimedOut ? (
-          <div className="mx-auto max-w-md py-20 text-center space-y-4">
-            <p className="text-sm font-semibold text-[var(--color-ink)]">{m.errSessionExpired()}</p>
-            <button
-              type="button"
-              onClick={handleSignOut}
-              className="inline-flex h-9 items-center justify-center rounded-lg bg-[var(--color-ink)] px-4 text-sm font-semibold text-white hover:opacity-90 transition-opacity"
-            >
+          ))}
+          <div className="mt-auto pt-3 border-t border-adm-line space-y-2">
+            <LanguagePicker />
+            <div className="px-2 text-[11.5px] text-adm-fade truncate" dir="ltr">{me?.email || me?.name || "Admin"}</div>
+            <button onClick={signOut} className="w-full text-start h-9 px-3 rounded-xl text-[13px] font-semibold text-st-rejected hover:bg-st-rejected-bg">
               {m.adminSignOut()}
             </button>
           </div>
-        ) : (
-          <div className="flex items-center justify-center py-24">
-            <div className="w-9 h-9 border-2 border-[var(--color-ember-200)] border-t-[var(--color-ember-500)] rounded-full animate-spin" />
+        </aside>
+
+        {/* ── Top bar ── */}
+        <header className="sticky top-0 z-30 bg-adm-bg/95 backdrop-blur border-b border-adm-line lg:ms-[232px]" style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}>
+          <div dir="ltr" className="h-14 px-4 lg:px-8 flex items-center gap-3">
+            <div className="lg:hidden"><Logo /></div>
+            <div className="flex-1" />
+            {bell(bellRef)}
           </div>
-        )}
-      </main>
+        </header>
 
-      {/* ── Mobile bottom nav — iPad optimization ── */}
-      <div className="xl:hidden h-20 sm:h-24" aria-hidden />
-      <nav className="xl:hidden fixed inset-x-0 z-30 bg-white border-t border-[var(--color-hairline)]" style={{ bottom: 0 }}>
-        <div className="flex items-center w-full py-1.5 px-4 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
-          {navTabs.map(tab => (
-            <Link key={tab.href} to={tab.href}
-              className={`flex flex-1 flex-col items-center gap-0.5 py-1 transition-all`}>
-              <div className={`flex items-center justify-center w-6 h-6 transition-all ${tab.active ? "text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)]"}`}>{tab.icon(tab.active)}</div>
-              <span className={`text-[9px] font-bold leading-tight text-center w-full transition-all ${tab.active ? "text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)]"}`}>{tab.shortLabel}</span>
-            </Link>
-          ))}
-        </div>
-      </nav>
+        {/* ── Page ── */}
+        <main className="lg:ms-[232px] px-4 lg:px-8 pt-4 pb-28 lg:pb-12 max-w-[1180px]">
+          {isAuthenticated ? children : authTimedOut ? (
+            <div className="mx-auto max-w-md py-20 text-center space-y-4">
+              <p className="text-sm font-semibold">{m.errSessionExpired()}</p>
+              <button onClick={signOut} className="h-10 px-4 rounded-xl bg-adm-ink text-adm-surface text-sm font-semibold">{m.adminSignOut()}</button>
+            </div>
+          ) : (
+            <div className="flex justify-center py-24">
+              <div className="w-9 h-9 border-2 border-adm-line border-t-adm-accent rounded-full animate-spin" />
+            </div>
+          )}
+        </main>
 
-    </div>
+        {/* ── Phone: bottom bar ── */}
+        <nav className="lg:hidden fixed inset-x-0 bottom-0 z-30 bg-adm-surface border-t border-adm-line"
+          style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
+          <div className="grid grid-cols-5 h-[60px]">
+            {nav.filter((n) => !n.extra).map((n) => (
+              <Link key={n.href} to={n.href}
+                className={`relative flex flex-col items-center justify-center gap-0.5 text-[10.5px] font-semibold ${is(n.href) ? "text-adm-accent" : "text-adm-soft"}`}>
+                <Icon filled={is(n.href)}>{ICONS[n.key]}</Icon>
+                <span>{n.label}</span>
+                {n.badge ? (
+                  <span className="absolute top-1.5 start-[calc(50%+6px)]"><Badge hot>{n.badge}</Badge></span>
+                ) : null}
+              </Link>
+            ))}
+            <button onClick={() => setMoreOpen(true)}
+              className={`flex flex-col items-center justify-center gap-0.5 text-[10.5px] font-semibold ${moreActive ? "text-adm-accent" : "text-adm-soft"}`}>
+              <Icon>{ICONS.more}</Icon>
+              <span>More</span>
+            </button>
+          </div>
+        </nav>
+
+        <Panel open={moreOpen} onClose={() => setMoreOpen(false)} title="More" short>
+          <div className="space-y-2">
+            {nav.filter((n) => n.extra).map((n) => (
+              <Link key={n.href} to={n.href}
+                className={`flex items-center gap-3 h-14 px-4 rounded-2xl border bg-adm-surface ${is(n.href) ? "border-adm-accent text-adm-accent" : "border-adm-line text-adm-ink"}`}>
+                <Icon>{ICONS[n.key]}</Icon>
+                <span className="flex-1 text-[15px] font-semibold">{n.label}</span>
+                {n.key === "offers" && activeOffer && <span className="text-[11.5px] font-bold text-st-approved">One is live</span>}
+                <IconChevron className="w-4 h-4 text-adm-fade rtl:rotate-180" />
+              </Link>
+            ))}
+          </div>
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.06em] text-adm-fade mb-2 px-1">Language</p>
+            <LanguagePicker />
+          </div>
+          <div className="text-[12px] text-adm-fade px-1" dir="ltr">{me?.email || me?.name || "Admin"}</div>
+          <button onClick={signOut} className="w-full h-12 rounded-2xl border border-adm-line bg-adm-surface text-st-rejected text-[15px] font-semibold">
+            {m.adminSignOut()}
+          </button>
+        </Panel>
+      </div>
+    </ToastProvider>
   );
 }

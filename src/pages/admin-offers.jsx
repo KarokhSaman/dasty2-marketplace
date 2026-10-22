@@ -1,366 +1,313 @@
-import { useState } from "react";
-import { useQuery, useMutation } from "convex/react";
+import { useMemo, useState } from "react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import * as m from "@/paraglide/messages";
-import BottomSheet from "@/components/ui/BottomSheet";
+import { tableProfit } from "@/convex/fees";
+import { errorMessage } from "@/lib/errors";
+import OfferTicker from "@/components/seller/OfferTicker";
+import {
+  PageHeader, Card, Panel, SectionTitle, ConfirmBox, AmountInput, Empty, Skeleton, btn, fmtIQD, inputCls, labelCls,
+  useToast, IconPlus, IconTrash,
+} from "@/components/admin/ui";
 
-function formatDate(d) {
-  if (!d) return "";
-  return new Date(d + "T00:00:00").toLocaleDateString("en-GB", {
-    day: "numeric", month: "short", year: "numeric",
-  });
+const today = () => new Date().toISOString().slice(0, 10);
+const addDays = (date, n) => { const d = new Date(`${date}T00:00:00Z`); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
+const daysBetween = (a, b) => Math.round((new Date(`${b}T00:00:00Z`) - new Date(`${a}T00:00:00Z`)) / 864e5);
+const nice = (d) => new Date(`${d}T00:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
+
+function stateOf(o) {
+  if (!o.isActive) return "off";
+  if (o.startDate > today()) return "scheduled";
+  if (o.endDate < today()) return "ended";
+  return "live";
+}
+const STATE = {
+  live: ["Live", "text-st-approved bg-st-approved-bg"],
+  scheduled: ["Scheduled", "text-st-sold bg-st-sold-bg"],
+  ended: ["Ended", "text-adm-soft bg-adm-sunk"],
+  off: ["Switched off", "text-st-rejected bg-st-rejected-bg"],
+};
+const feeText = (o) => (o.type === "free" ? "No service fee" : `Flat fee ${fmtIQD(o.flatFeeAmount)} IQD`);
+const limitText = (o) => (o.maxPrice ? `Under ${fmtIQD(o.maxPrice)} IQD` : "Any price");
+
+function sentence(d) {
+  const fee = d.type === "free" ? "pay no service fee" : `pay a flat ${fmtIQD(d.flatFeeAmount || 0)} IQD fee`;
+  const lim = d.maxPrice ? `on products under ${fmtIQD(d.maxPrice)} IQD` : "on every product";
+  return `Sellers ${fee} ${lim} posted from ${nice(d.startDate)} to ${nice(d.endDate)}. The fee stays even if they edit the product later.`;
 }
 
-function OfferTypeBadge({ type }) {
-  return type === "free"
-    ? <span className="text-xs font-semibold bg-green-100 text-green-700 px-2 py-0.5 rounded-full">{m.adminOffersBadgeNoFee()}</span>
-    : <span className="text-xs font-semibold bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">{m.adminOffersBadgeFlatFee()}</span>;
+function OfferForm({ initial, editingId, offers, onClose }) {
+  const create = useMutation(api.offers.create);
+  const update = useMutation(api.offers.update);
+  const toast = useToast();
+  const [d, setD] = useState(initial);
+  const [busy, setBusy] = useState(false);
+  const set = (patch) => setD((x) => ({ ...x, ...patch }));
+  const len = d.startDate && d.endDate ? daysBetween(d.startDate, d.endDate) + 1 : 0;
+  const clash = offers.find((o) => o._id !== editingId && o.isActive && o.startDate <= d.endDate && o.endDate >= d.startDate);
+  const valid = d.title.trim() && d.startDate && d.endDate && len > 0 && (d.type === "free" || d.flatFeeAmount > 0) && !clash;
+
+  async function save() {
+    setBusy(true);
+    const args = {
+      title: d.title.trim(), description: d.description.trim(), type: d.type,
+      flatFeeAmount: d.type === "flat_fee" ? d.flatFeeAmount : undefined,
+      maxPrice: d.maxPrice || undefined, startDate: d.startDate, endDate: d.endDate,
+    };
+    try {
+      if (editingId) { await update({ id: editingId, ...args }); toast("Offer saved"); }
+      else { await create(args); toast(d.startDate > today() ? "Offer scheduled. Sellers notified" : "Offer started. Sellers notified"); }
+      onClose();
+    } catch (err) {
+      toast(errorMessage(err, "Could not save the offer"), "error");
+      setBusy(false);
+    }
+  }
+
+  const chip = (on) => `h-9 px-3 rounded-full border text-[12.5px] font-semibold whitespace-nowrap ${on ? "bg-adm-ink text-adm-surface border-adm-ink" : "border-adm-line text-adm-soft bg-adm-surface"}`;
+  const preset = [null, 50000, 100000, 200000];
+
+  return (
+    <Panel open onClose={onClose} title={editingId ? "Edit offer" : "New offer"}
+      subtitle={<p className="text-[12px] text-adm-fade">{editingId ? "Products already posted keep this offer." : "Every active seller is notified."}</p>}
+      footer={<>
+        <button type="button" onClick={onClose} className={btn("outline", "lg")}>{m.adminCancel()}</button>
+        <button type="button" onClick={save} disabled={!valid || busy} className={`${btn("primary", "lg")} flex-1`}>
+          {editingId ? "Save offer" : d.startDate > today() ? "Schedule offer" : "Start offer"}
+        </button>
+      </>}>
+      <div>
+        <label htmlFor="o-title" className={labelCls}>Name sellers will see</label>
+        <input id="o-title" value={d.title} onChange={(e) => set({ title: e.target.value })} placeholder={m.adminOffersPlaceholderTitle()} className={inputCls} />
+      </div>
+      <div>
+        <label htmlFor="o-desc" className={labelCls}>Short note for sellers (optional)</label>
+        <input id="o-desc" value={d.description} onChange={(e) => set({ description: e.target.value })} placeholder={m.adminOffersPlaceholderDesc()} className={inputCls} />
+      </div>
+
+      <section>
+        <SectionTitle>Fee</SectionTitle>
+        <div className="grid grid-cols-2 gap-2">
+          {[["free", m.adminOffersNoFeeLabel(), m.adminOffersNoFeeSub()], ["flat_fee", m.adminOffersFlatLabel(), m.adminOffersFlatSub()]].map(([v, t, sub]) => (
+            <button key={v} type="button" onClick={() => set({ type: v, flatFeeAmount: v === "flat_fee" ? d.flatFeeAmount || 2000 : d.flatFeeAmount })} aria-pressed={d.type === v}
+              className={`text-start rounded-2xl border-[1.5px] p-3 ${d.type === v ? "border-adm-accent bg-adm-accent-soft" : "border-adm-line bg-adm-surface"}`}>
+              <span className="block text-[14px] font-bold">{t}</span>
+              <span className="block text-[11.5px] text-adm-fade mt-0.5">{sub}</span>
+            </button>
+          ))}
+        </div>
+        {d.type === "flat_fee" && (
+          <div className="mt-2"><label htmlFor="o-flat" className={labelCls}>{m.adminOffersFlatAmount()}</label><AmountInput id="o-flat" value={d.flatFeeAmount} onChange={(v) => set({ flatFeeAmount: v })} /></div>
+        )}
+      </section>
+
+      <section>
+        <SectionTitle>Which products</SectionTitle>
+        <div className="flex flex-wrap gap-1.5">
+          {preset.map((v) => (
+            <button key={v ?? "any"} type="button" onClick={() => set({ maxPrice: v, customMax: false })} className={chip(!d.customMax && (d.maxPrice ?? null) === v)}>
+              {v ? `Under ${fmtIQD(v)}` : "Any price"}
+            </button>
+          ))}
+          <button type="button" onClick={() => set({ customMax: true })} className={chip(d.customMax || (d.maxPrice && !preset.includes(d.maxPrice)))}>Other…</button>
+        </div>
+        {(d.customMax || (d.maxPrice && !preset.includes(d.maxPrice))) && (
+          <div className="mt-2"><label htmlFor="o-max" className={labelCls}>{m.adminOffersMaxPrice()}</label><AmountInput id="o-max" value={d.maxPrice} onChange={(v) => set({ maxPrice: v || null })} /></div>
+        )}
+      </section>
+
+      <section>
+        <SectionTitle>When</SectionTitle>
+        <div className="grid grid-cols-2 gap-2">
+          <div><label htmlFor="o-start" className={labelCls}>Starts</label><input id="o-start" type="date" dir="ltr" value={d.startDate} onChange={(e) => set({ startDate: e.target.value })} className={inputCls} /></div>
+          <div><label htmlFor="o-end" className={labelCls}>Ends (end of that day)</label><input id="o-end" type="date" dir="ltr" value={d.endDate} onChange={(e) => set({ endDate: e.target.value })} className={inputCls} /></div>
+        </div>
+        <div className="flex flex-wrap gap-1.5 mt-2">
+          {[[7, "1 week"], [14, "2 weeks"], [30, "1 month"]].map(([n, label]) => (
+            <button key={n} type="button" onClick={() => set({ endDate: addDays(d.startDate || today(), n - 1) })} className={chip(len === n)}>{label}</button>
+          ))}
+        </div>
+      </section>
+
+      <div className="rounded-2xl bg-adm-ink text-adm-surface px-4 py-3">
+        <p className="text-[10.5px] font-bold uppercase tracking-[0.06em] opacity-60 mb-1">In plain words</p>
+        <p className="text-[13.5px] leading-relaxed">{len > 0 ? sentence(d) : "The end date is before the start date."}</p>
+      </div>
+      {clash && (
+        <p className="rounded-2xl bg-st-pending-bg text-st-pending px-4 py-3 text-[12.5px] font-semibold">
+          Overlaps "{clash.title}" ({nice(clash.startDate)} – {nice(clash.endDate)}). Only one offer can run at a time; change the dates or switch that one off.
+        </p>
+      )}
+
+      <section>
+        <SectionTitle>What sellers will see</SectionTitle>
+        <OfferTicker offer={{ title: d.title || "Your offer name", description: d.description, type: d.type, flatFeeAmount: d.flatFeeAmount, maxPrice: d.maxPrice || undefined, endDate: d.endDate || today() }} />
+      </section>
+    </Panel>
+  );
+}
+
+function OfferRow({ offer: o, results, onEdit, onReuse }) {
+  const deactivate = useMutation(api.offers.deactivate);
+  const reactivate = useMutation(api.offers.reactivate);
+  const remove = useMutation(api.offers.deleteOffer);
+  const toast = useToast();
+  const [confirm, setConfirm] = useState(false);
+  const s = stateOf(o);
+  const run = async (fn, done) => { try { await fn(); toast(done); } catch (err) { toast(errorMessage(err, "Something went wrong"), "error"); } };
+
+  return (
+    <div className="px-3.5 py-3 lg:px-4 space-y-2.5">
+      <div className="flex items-start gap-3">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[14px] font-semibold">{o.title}</span>
+            <span className={`h-[22px] px-2 rounded-full text-[11px] font-bold inline-flex items-center ${STATE[s][1]}`}>{STATE[s][0]}</span>
+          </div>
+          <p className="text-[12px] text-adm-fade mt-1">{feeText(o)} · {limitText(o)} · {nice(o.startDate)} – {nice(o.endDate)}</p>
+          <p className="text-[12px] text-adm-soft mt-0.5">
+            {s === "scheduled" ? `Starts in ${daysBetween(today(), o.startDate)} days` : <><b className="text-adm-ink tabular-nums">{results.posted}</b> posted · <b className="text-adm-ink tabular-nums">{fmtIQD(results.waived)}</b> IQD waived</>}
+          </p>
+        </div>
+      </div>
+      {confirm ? (
+        <ConfirmBox title="Delete this offer?" text="It disappears from the list. Products posted with it keep their fee." confirmLabel="Delete offer"
+          onCancel={() => setConfirm(false)} onConfirm={() => run(() => remove({ id: o._id }), "Offer deleted")} />
+      ) : (
+        <div className="flex flex-wrap gap-2">
+          {(s === "scheduled" || s === "live") && <button type="button" onClick={onEdit} className={btn("outline", "sm")}>Edit</button>}
+          {(s === "ended" || s === "off") && <button type="button" onClick={onReuse} className={btn("outline", "sm")}>Run again</button>}
+          {o.isActive && s !== "ended" && <button type="button" onClick={() => run(() => deactivate({ id: o._id }), "Switched off")} className={btn("outline", "sm")}>Switch off</button>}
+          {!o.isActive && o.endDate >= today() && <button type="button" onClick={() => run(() => reactivate({ id: o._id }), "Switched on")} className={btn("outline", "sm")}>Switch on</button>}
+          <button type="button" onClick={() => setConfirm(true)} aria-label="Delete offer" className={`${btn("ghost", "sm")} ms-auto`}><IconTrash className="w-4 h-4" /></button>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function AdminOffersPage() {
-  const allOffers   = useQuery(api.offers.getAll);
-  const activeOffer = useQuery(api.offers.getActive);
-  const createOffer     = useMutation(api.offers.create);
-  const deactivateOffer = useMutation(api.offers.deactivate);
-  const reactivateOffer = useMutation(api.offers.reactivate);
-  const deleteOffer     = useMutation(api.offers.deleteOffer);
-  const createLog       = useMutation(api.adminLogs.create);
+  const offers = useQuery(api.offers.getAll);
+  const products = useQuery(api.products.getAll);
+  const update = useMutation(api.offers.update);
+  const deactivate = useMutation(api.offers.deactivate);
+  const toast = useToast();
+  const [form, setForm] = useState(null); // { initial, editingId }
+  const [confirmEnd, setConfirmEnd] = useState(false);
 
-  const today = new Date().toISOString().slice(0, 10);
+  // Results per offer: products posted with it, sellers, and fees not charged.
+  const results = useMemo(() => {
+    const r = {};
+    for (const p of products ?? []) {
+      if (!p.offerId) continue;
+      const x = (r[p.offerId] ??= { posted: 0, sellers: new Set(), waived: 0 });
+      x.posted++;
+      x.sellers.add(p.sellerId);
+      x.waived += Math.max(0, tableProfit(p.salePrice ?? p.price) - (p.profit ?? 0));
+    }
+    return r;
+  }, [products]);
+  const res = (id) => results[id] ?? { posted: 0, sellers: new Set(), waived: 0 };
 
-  const [title,              setTitle]              = useState("");
-  const [description,        setDescription]        = useState("");
-  const [type,               setType]               = useState("free");
-  const [flatFeeAmount,      setFlatFeeAmount]      = useState("");
-  const [maxPrice,           setMaxPrice]           = useState("");
-  const [startDate,          setStartDate]          = useState(today);
-  const [endDate,            setEndDate]            = useState("");
-  const [submitting,         setSubmitting]         = useState(false);
-  const [success,            setSuccess]            = useState(false);
-  const [confirmDelete,      setConfirmDelete]      = useState(null);
-  const [confirmDeactivate,  setConfirmDeactivate]  = useState(null);
-  const [confirmReactivate,  setConfirmReactivate]  = useState(null);
+  if (!offers || !products) return <Skeleton rows={4} />;
+  const live = offers.find((o) => stateOf(o) === "live");
+  const rest = offers.filter((o) => o !== live).sort((a, b) => b.startDate.localeCompare(a.startDate));
 
-  async function handleCreate(e) {
-    e.preventDefault();
-    if (!title.trim() || !startDate || !endDate) return;
-    setSubmitting(true);
-    await createOffer({
-      title:         title.trim(),
-      description:   description.trim(),
-      type,
-      flatFeeAmount: type === "flat_fee" ? Number(flatFeeAmount) : undefined,
-      maxPrice: maxPrice ? Number(maxPrice) : undefined,
-      startDate,
-      endDate,
-    });
-    await createLog({
-      action: "offer_created",
-      notes: title.trim(),
-    });
-    setTitle(""); setDescription(""); setFlatFeeAmount(""); setMaxPrice(""); setEndDate("");
-    setType("free");
-    setSubmitting(false);
-    setSuccess(true);
-    setTimeout(() => setSuccess(false), 3000);
+  const blank = () => ({ title: "", description: "", type: "free", flatFeeAmount: 2000, maxPrice: 100000, startDate: today(), endDate: addDays(today(), 13) });
+  const fromOffer = (o, keepDates) => ({
+    title: o.title, description: o.description ?? "", type: o.type, flatFeeAmount: o.flatFeeAmount ?? 2000, maxPrice: o.maxPrice ?? null,
+    startDate: keepDates ? o.startDate : today(),
+    endDate: keepDates ? o.endDate : addDays(today(), daysBetween(o.startDate, o.endDate)),
+  });
+
+  async function extend(o) {
+    try {
+      await update({ id: o._id, title: o.title, description: o.description ?? "", type: o.type, flatFeeAmount: o.flatFeeAmount, maxPrice: o.maxPrice, startDate: o.startDate, endDate: addDays(o.endDate, 7) });
+      toast(`Extended to ${nice(addDays(o.endDate, 7))}`);
+    } catch (err) { toast(errorMessage(err, "Could not extend"), "error"); }
+  }
+
+  let hero;
+  if (live) {
+    const total = daysBetween(live.startDate, live.endDate) + 1;
+    const gone = daysBetween(live.startDate, today());
+    const r = res(live._id);
+    hero = (
+      <Card className="p-4 space-y-4 mb-5">
+        <div className="flex items-start gap-3 flex-wrap">
+          <div className="flex-1 min-w-[200px]">
+            <span className="inline-flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[0.06em] text-st-approved">
+              <span className="w-2 h-2 rounded-full bg-current shadow-[0_0_0_4px_var(--a-green-bg)]" /> Live now
+            </span>
+            <h2 className="text-[19px] font-bold mt-1">{live.title}</h2>
+            {live.description && <p className="text-[13px] text-adm-soft mt-0.5">{live.description}</p>}
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              <span className="text-[12px] font-semibold px-2 py-1 rounded-lg bg-adm-accent-soft text-adm-accent">{feeText(live)}</span>
+              <span className="text-[12px] font-semibold px-2 py-1 rounded-lg bg-adm-sunk text-adm-soft">{limitText(live)}</span>
+              <span className="text-[12px] font-semibold px-2 py-1 rounded-lg bg-adm-sunk text-adm-soft">{nice(live.startDate)} – {nice(live.endDate)}</span>
+            </div>
+          </div>
+          <div className="text-end">
+            <p className="text-[22px] font-bold tabular-nums">{total - gone} days</p>
+            <p className="text-[12px] text-adm-fade">left · ends end of {nice(live.endDate)}</p>
+          </div>
+        </div>
+        <div>
+          <div className="h-1.5 rounded-full bg-adm-sunk overflow-hidden"><div className="h-full bg-adm-accent rounded-full" style={{ width: `${Math.min(100, ((gone + 1) / total) * 100)}%` }} /></div>
+          <p className="text-[11.5px] text-adm-fade mt-1 tabular-nums">Day {gone + 1} of {total}</p>
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          {[["Posted with it", res(live._id).posted], ["Sellers", r.sellers.size], ["Fees waived", fmtIQD(r.waived)]].map(([k, v]) => (
+            <div key={k} className="rounded-xl bg-adm-sunk px-3 py-2.5 min-w-0">
+              <p className="text-[11px] text-adm-fade font-semibold truncate">{k}</p>
+              <p className="text-[16px] font-bold tabular-nums truncate" dir="ltr">{v}</p>
+            </div>
+          ))}
+        </div>
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-[0.06em] text-adm-fade mb-2">What sellers see on their dashboard</p>
+          <OfferTicker offer={live} />
+        </div>
+        {confirmEnd ? (
+          <ConfirmBox title="End the offer now?" text="New products pay the normal fee from now on. Products already posted keep the offer fee." confirmLabel="End offer"
+            onCancel={() => setConfirmEnd(false)}
+            onConfirm={async () => { try { await deactivate({ id: live._id }); toast("Offer ended"); } catch (err) { toast(errorMessage(err, "Could not end"), "error"); } setConfirmEnd(false); }} />
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={() => extend(live)} className={btn("outline")}>Extend 7 days</button>
+            <button type="button" onClick={() => setForm({ initial: fromOffer(live, true), editingId: live._id })} className={btn("outline")}>Edit</button>
+            <button type="button" onClick={() => setConfirmEnd(true)} className={`${btn("ghost")} text-st-rejected`}>End now</button>
+          </div>
+        )}
+      </Card>
+    );
+  } else {
+    hero = (
+      <Card className="p-6 mb-5 text-center space-y-3">
+        <p className="text-[14px] text-adm-soft">{m.adminOffersNoActive()} Sellers pay the normal fee.</p>
+        <button type="button" onClick={() => setForm({ initial: blank() })} className={btn("primary")}><IconPlus className="w-4 h-4" /> Start an offer</button>
+      </Card>
+    );
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      <h1 className="text-2xl font-bold text-[var(--color-ink)]">{m.adminOffersTitle()}</h1>
-
-      {/* ── Active offer ── */}
-      {activeOffer ? (
-        <div className="bg-gradient-to-br from-green-500 to-emerald-400 rounded-2xl p-5 text-white relative overflow-hidden">
-          <div className="absolute top-0 end-0 w-32 h-32 bg-white/10 rounded-full -translate-y-12 translate-x-12 pointer-events-none"/>
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-xs font-bold bg-white/20 px-2 py-0.5 rounded-full">{m.adminOffersActiveNow()}</span>
-              </div>
-              <h2 className="text-xl font-bold">{activeOffer.title}</h2>
-              {activeOffer.description && <p className="text-green-100 text-sm mt-0.5">{activeOffer.description}</p>}
-              <p className="text-green-100 text-xs mt-2">
-                {activeOffer.type === "free"
-                  ? m.adminOffersNoFeeDesc()
-                  : m.adminOffersFlatFeeDesc({ amount: activeOffer.flatFeeAmount?.toLocaleString() })}
-              </p>
-              <p className="text-green-100 text-xs mt-1">
-                {formatDate(activeOffer.startDate)} → {formatDate(activeOffer.endDate)}
-              </p>
-            </div>
-            <button
-              onClick={() => setConfirmDeactivate(activeOffer._id)}
-              className="shrink-0 bg-white/20 hover:bg-white/30 text-white text-xs font-bold px-3 py-2 rounded-xl transition-colors"
-            >
-              {m.adminOffersDeactivate()}
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className="bg-gray-100 rounded-2xl px-5 py-4 text-sm text-[var(--color-ink-fade)] flex items-center gap-2">
-          <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-          </svg>
-          {m.adminOffersNoActive()}
-        </div>
-      )}
-
-      {/* ── Create new offer ── */}
-      <div className="bg-white rounded-2xl border border-[var(--color-hairline)] shadow-sm p-6">
-        <h2 className="text-base font-bold text-gray-800 mb-5">{m.adminOffersCreateTitle()}</h2>
-
-        {success && (
-          <div className="mb-4 flex items-center gap-2 bg-green-50 border border-green-100 rounded-xl px-4 py-3 text-sm text-green-700 font-medium">
-            <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/>
-            </svg>
-            {m.adminOffersSuccess()}
-          </div>
-        )}
-
-        <form onSubmit={handleCreate} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-[var(--color-ink)] mb-1.5">{m.adminOffersLabelTitle()} <span className="text-rose-500">*</span></label>
-            <input value={title} onChange={e => setTitle(e.target.value)} required
-              placeholder={m.adminOffersPlaceholderTitle()}
-              className="w-full border border-[var(--color-hairline)] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-ember-300"/>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-[var(--color-ink)] mb-1.5">{m.adminOffersLabelDesc()}</label>
-            <input value={description} onChange={e => setDescription(e.target.value)}
-              placeholder={m.adminOffersPlaceholderDesc()}
-              className="w-full border border-[var(--color-hairline)] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-ember-300"/>
-          </div>
-
-          {/* Fee type toggle */}
-          <div>
-            <label className="block text-sm font-medium text-[var(--color-ink)] mb-2">{m.adminOffersFeeType()} <span className="text-rose-500">*</span></label>
-            <div className="grid grid-cols-2 gap-3">
-              {[
-                { val: "free",     label: m.adminOffersNoFeeLabel(), sub: m.adminOffersNoFeeSub() },
-                { val: "flat_fee", label: m.adminOffersFlatLabel(),  sub: m.adminOffersFlatSub() },
-              ].map(opt => (
-                <button
-                  key={opt.val} type="button"
-                  onClick={() => setType(opt.val)}
-                  className={`text-start p-3.5 rounded-xl border-2 transition-colors ${
-                    type === opt.val
-                      ? "border-rose-500 bg-[var(--color-ember-50)]"
-                      : "border-[var(--color-hairline)] hover:border-rose-300"
-                  }`}
-                >
-                  <p className={`text-sm font-semibold ${type === opt.val ? "text-rose-700" : "text-gray-800"}`}>{opt.label}</p>
-                  <p className="text-xs text-[var(--color-ink-fade)] mt-0.5">{opt.sub}</p>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {type === "flat_fee" && (
-            <div>
-              <label className="block text-sm font-medium text-[var(--color-ink)] mb-1.5">{m.adminOffersFlatAmount()} <span className="text-rose-500">*</span></label>
-              <input
-                type="number" min={0} value={flatFeeAmount}
-                onChange={e => setFlatFeeAmount(e.target.value)}
-                placeholder="2000" required
-                className="w-full border border-[var(--color-hairline)] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-ember-300" dir="ltr"
-              />
-            </div>
-          )}
-
-          <div>
-            <label className="block text-sm font-medium text-[var(--color-ink)] mb-1.5">{m.adminOffersMaxPrice()}</label>
-            <input
-              type="number" min={1} step={1} value={maxPrice}
-              onChange={e => setMaxPrice(e.target.value)}
-              placeholder="100000"
-              className="w-full border border-[var(--color-hairline)] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-ember-300)]" dir="ltr"
-            />
-            <p className="text-xs text-[var(--color-ink-fade)] mt-1">{m.adminOffersMaxPriceHint()}</p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-[var(--color-ink)] mb-1.5">{m.adminOffersStartDate()} <span className="text-rose-500">*</span></label>
-              <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} required
-                className="w-full border border-[var(--color-hairline)] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-ember-300"/>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-[var(--color-ink)] mb-1.5">{m.adminOffersEndDate()} <span className="text-rose-500">*</span></label>
-              <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} required min={startDate}
-                className="w-full border border-[var(--color-hairline)] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-ember-300"/>
-            </div>
-          </div>
-
-          <div className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 flex items-start gap-2">
-            <svg className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-            <p className="text-xs text-amber-700">{m.adminOffersNote()}</p>
-          </div>
-
-          <button type="submit" disabled={submitting}
-            className="w-full bg-[var(--color-ember-600)] hover:bg-[var(--color-ember-700)] text-white font-semibold py-3 rounded-xl transition-colors disabled:opacity-50">
-            {submitting ? m.adminOffersSubmitting() : m.adminOffersSubmit()}
-          </button>
-        </form>
+    <div>
+      <PageHeader title={m.adminOffers()} sub="Lower or no service fee for a set time"
+        actions={<button type="button" onClick={() => setForm({ initial: blank() })} className={btn("primary")}><IconPlus className="w-4 h-4" /> New offer</button>} />
+      {hero}
+      <div className="flex items-center gap-2 mb-2">
+        <h2 className="text-[14px] font-bold">Planned and past offers</h2>
+        <span className="text-[12px] text-adm-fade">{rest.length}</span>
       </div>
-
-      {/* ── Past offers ── */}
-      {allOffers && allOffers.length > 0 && (
-        <div className="bg-white rounded-2xl border border-[var(--color-hairline)] shadow-sm overflow-hidden">
-          <p className="text-xs font-semibold text-[var(--color-ink-fade)] uppercase tracking-widest px-5 py-3 border-b border-[var(--color-hairline)]">
-            {m.adminOffersAllTitle()}
-          </p>
-          <div className="divide-y divide-gray-50">
-            {allOffers.map(offer => {
-              const today = new Date().toISOString().slice(0, 10);
-              const isCurrent = offer.isActive && offer.startDate <= today && offer.endDate >= today;
-              return (
-                <div key={offer._id} className="px-5 py-4 flex items-start justify-between gap-4">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-sm font-semibold text-gray-800">{offer.title}</p>
-                      <OfferTypeBadge type={offer.type} />
-                      {isCurrent && <span className="text-[10px] font-bold bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full">{m.adminOffersBadgeLive()}</span>}
-                      {!offer.isActive && <span className="text-[10px] font-bold bg-gray-100 text-[var(--color-ink-fade)] px-1.5 py-0.5 rounded-full">{m.adminOffersBadgeInactive()}</span>}
-                    </div>
-                    {offer.description && <p className="text-xs text-[var(--color-ink-fade)] mt-0.5">{offer.description}</p>}
-                    <p className="text-xs text-[var(--color-ink-fade)] mt-1">
-                      {offer.type === "free" ? m.adminOffersNoFeeShort() : `${offer.flatFeeAmount?.toLocaleString()} IQD`}
-                      {offer.maxPrice ? ` · ${m.offerUnderPrice({ amount: offer.maxPrice.toLocaleString() })}` : ""}
-                      {" · "}{formatDate(offer.startDate)} → {formatDate(offer.endDate)}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    {offer.isActive ? (
-                      <button onClick={() => setConfirmDeactivate(offer._id)}
-                        className="text-xs text-[var(--color-ink-fade)] hover:text-red-500 border border-[var(--color-hairline)] hover:border-red-200 px-3 py-1.5 rounded-lg transition-colors">
-                        {m.adminOffersDeactivate()}
-                      </button>
-                    ) : (
-                      <button onClick={() => setConfirmReactivate(offer._id)}
-                        className="text-xs text-[var(--color-ink-fade)] hover:text-green-600 border border-[var(--color-hairline)] hover:border-green-200 px-3 py-1.5 rounded-lg transition-colors">
-                        {m.adminOffersReactivate()}
-                      </button>
-                    )}
-                    <button onClick={() => setConfirmDelete(offer._id)}
-                      className="text-xs text-gray-300 hover:text-red-400 transition-colors p-1.5 rounded-lg hover:bg-red-50">
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Deactivate confirmation */}
-      {confirmDeactivate && (
-        <BottomSheet open={true} onClose={() => setConfirmDeactivate(null)}>
-          <div className="p-4 sm:p-3">
-            <p className="text-[13px] font-semibold text-[var(--color-ink)] mb-1">
-              Deactivate this offer?
-            </p>
-            <p className="text-xs text-[var(--color-ink-fade)] mb-3">
-              The offer will be deactivated and sellers will no longer see it.
-            </p>
-            <div className="flex gap-2">
-              <button
-                onClick={async () => {
-                  const offer = allOffers?.find(o => o._id === confirmDeactivate);
-                  await deactivateOffer({ id: confirmDeactivate });
-                  await createLog({
-                    action: "offer_deactivated",
-                    notes: offer?.title || undefined,
-                  });
-                  setConfirmDeactivate(null);
-                }}
-                className="flex-1 text-sm bg-[var(--color-ember-600)] hover:bg-[var(--color-ember-700)] text-white font-semibold py-2.5 rounded-xl transition-colors">
-                Deactivate
-              </button>
-              <button
-                onClick={() => setConfirmDeactivate(null)}
-                className="flex-1 text-sm bg-[var(--color-cream-deep)] hover:bg-[var(--color-hairline)] text-[var(--color-ink)] py-2.5 rounded-xl transition-colors">
-                {m.adminCancel()}
-              </button>
-            </div>
-          </div>
-        </BottomSheet>
-      )}
-
-      {/* Reactivate confirmation */}
-      {confirmReactivate && (
-        <BottomSheet open={true} onClose={() => setConfirmReactivate(null)}>
-          <div className="p-4 sm:p-3">
-            <p className="text-[13px] font-semibold text-[var(--color-ink)] mb-1">
-              Reactivate this offer?
-            </p>
-            <p className="text-xs text-[var(--color-ink-fade)] mb-3">
-              The offer will be reactivated and sellers will see it again.
-            </p>
-            <div className="flex gap-2">
-              <button
-                onClick={async () => {
-                  const offer = allOffers?.find(o => o._id === confirmReactivate);
-                  await reactivateOffer({ id: confirmReactivate });
-                  await createLog({
-                    action: "offer_reactivated",
-                    notes: offer?.title || undefined,
-                  });
-                  setConfirmReactivate(null);
-                }}
-                className="flex-1 text-sm bg-[var(--color-ember-600)] hover:bg-[var(--color-ember-700)] text-white font-semibold py-2.5 rounded-xl transition-colors">
-                Reactivate
-              </button>
-              <button
-                onClick={() => setConfirmReactivate(null)}
-                className="flex-1 text-sm bg-[var(--color-cream-deep)] hover:bg-[var(--color-hairline)] text-[var(--color-ink)] py-2.5 rounded-xl transition-colors">
-                {m.adminCancel()}
-              </button>
-            </div>
-          </div>
-        </BottomSheet>
-      )}
-
-      {/* Delete confirmation */}
-      {confirmDelete && (
-        <BottomSheet open={true} onClose={() => setConfirmDelete(null)}>
-          <div className="p-4 sm:p-3">
-            <p className="text-[13px] font-semibold text-[var(--color-ink)] mb-1">
-              Delete this offer?
-            </p>
-            <p className="text-xs text-[var(--color-ink-fade)] mb-3">
-              This action cannot be undone. The offer will be permanently deleted.
-            </p>
-            <div className="flex gap-2">
-              <button
-                onClick={async () => {
-                  const offer = allOffers?.find(o => o._id === confirmDelete);
-                  await deleteOffer({ id: confirmDelete });
-                  await createLog({
-                    action: "offer_deleted",
-                    notes: offer?.title || undefined,
-                  });
-                  setConfirmDelete(null);
-                }}
-                className="flex-1 text-sm bg-[var(--color-ember-600)] hover:bg-[var(--color-ember-700)] text-white font-semibold py-2.5 rounded-xl transition-colors">
-                Delete
-              </button>
-              <button
-                onClick={() => setConfirmDelete(null)}
-                className="flex-1 text-sm bg-[var(--color-cream-deep)] hover:bg-[var(--color-hairline)] text-[var(--color-ink)] py-2.5 rounded-xl transition-colors">
-                {m.adminCancel()}
-              </button>
-            </div>
-          </div>
-        </BottomSheet>
-      )}
+      <div className="bg-adm-surface border border-adm-line rounded-2xl overflow-hidden divide-y divide-adm-line">
+        {rest.length === 0 && <Empty>No other offers yet.</Empty>}
+        {rest.map((o) => (
+          <OfferRow key={o._id} offer={o} results={res(o._id)}
+            onEdit={() => setForm({ initial: fromOffer(o, true), editingId: o._id })}
+            onReuse={() => setForm({ initial: fromOffer(o, false) })} />
+        ))}
+      </div>
+      {form && <OfferForm initial={form.initial} editingId={form.editingId} offers={offers} onClose={() => setForm(null)} />}
     </div>
   );
 }
