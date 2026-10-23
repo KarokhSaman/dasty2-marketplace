@@ -22,13 +22,10 @@ const LRM = "\u200E";
 const REMINDER_LOCALE = { locale: "ckb" };
 
 function reminder(group) {
-  const lines = group.items.map((p) =>
-    m.feesWaLine({ item: `${LRM}${p.seq ? `${p.seq} ` : ""}${p.title}${LRM}`, fee: fmtIQD(p.profit) }, REMINDER_LOCALE));
   return [
     m.feesWaGreeting({}, REMINDER_LOCALE),
     "",
     m.feesWaIntro({}, REMINDER_LOCALE),
-    ...lines,
     m.feesWaTotal({ total: fmtIQD(group.total) }, REMINDER_LOCALE),
     "",
     m.feesWaPay({ number: `${LRM}${FEE_PAYMENT_NUMBER}` }, REMINDER_LOCALE),

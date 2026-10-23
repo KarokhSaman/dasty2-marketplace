@@ -54,6 +54,20 @@ export function useHomeStatePersistence(filters, setFilters, pageSize = DEFAULT_
     initialItems,
     cachedFeatured,
     cachedResults,
+    /**
+     * Keep just the loaded products (not scroll or filters) when leaving the
+     * home page another way, e.g. the bottom-bar tabs, so coming back shows
+     * them at once instead of filling in in two steps.
+     */
+    saveResultsOnly({ results, featuredProducts }) {
+      if (typeof window === "undefined" || !results.length) return;
+      try {
+        sessionStorage.setItem(KEYS.featured, JSON.stringify(featuredProducts));
+        sessionStorage.setItem(KEYS.results, JSON.stringify(results));
+      } catch {
+        // quota: the page just loads normally next time
+      }
+    },
     /** Snapshot current page state into sessionStorage before navigating away. */
     saveState({ results, featuredProducts }) {
       if (typeof window === "undefined") return;

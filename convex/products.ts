@@ -23,7 +23,7 @@ import { r2 } from "./r2";
 import { issueSeq } from "./seq";
 import { priceInfo, todayBaghdad, type StoreDiscount } from "./discount";
 
-type PublicProduct = Omit<Doc<"products">, "sellerId" | "sellerPhone" | "profit" | "soldFromId" | "deleteRequestedAt" | "deleteRequestReason" | "deleteRequestFrom" | "offerId">;
+type PublicProduct = Omit<Doc<"products">, "sellerId" | "sellerPhone" | "profit" | "soldFromId" | "deleteRequestedAt" | "deleteRequestReason" | "deleteRequestFrom" | "offerId" | "soldReportedAt">;
 
 const publicProductValidator = v.object({
   _id: v.id("products"),
@@ -68,6 +68,7 @@ const toPublic = ({
   deleteRequestReason: _deleteRequestReason,
   deleteRequestFrom: _deleteRequestFrom,
   offerId: _offerId,
+  soldReportedAt: _soldReportedAt,
   ...rest
 }: Doc<"products">): PublicProduct => rest;
 
@@ -556,6 +557,40 @@ export const getPublicPaginated = query({
 // A seller's dashboard list: their own products, plus — for a store-owner
 // account — every product of the linked store posted by the managing seller
 // (read-only, with the manager's identity and phone stripped).
+// "I sold it": the seller tells us an item sold. It shows on the admin To do
+// page, where an admin confirms the sale price and marks it sold.
+export const reportSold = mutation({
+  args: { id: v.id("products") },
+  returns: v.null(),
+  handler: async (ctx, { id }) => {
+    const seller = await requireCurrentSeller(ctx);
+    const product = await ctx.db.get(id);
+    if (!product || product.sellerId !== seller._id.toString()) throw new ConvexError("Product not found");
+    if (product.status !== "approved") throw new ConvexError("Only live products can be reported as sold");
+    if (product.soldReportedAt) return null;
+    const now = new Date().toISOString();
+    await ctx.db.patch(id, { soldReportedAt: now });
+    await ctx.db.insert("notifications", {
+      sellerId: "ADMIN",
+      productId: id,
+      message: `Seller says sold: "${product.title}" by ${seller.name}`,
+      url: "/admin",
+      read: false,
+      createdAt: now,
+    });
+    await ctx.db.insert("adminLogs", {
+      action: "sold_reported",
+      productId: id,
+      productTitle: product.title,
+      productCode: product.seq,
+      sellerName: seller.name,
+      price: product.price,
+      createdAt: now,
+    });
+    return null;
+  },
+});
+
 export const getBySeller = query({
   args: {},
   handler: async (ctx) => {
@@ -690,6 +725,7 @@ export const updateStatus = mutation({
     );
     if (fields.status === "sold" || fields.status === "paid") {
       Object.assign(patch, await saleTerms(ctx, product, salePrice));
+      patch.soldReportedAt = undefined;
     } else if (product.salePrice !== undefined) {
       // Sale reversed (back to approved/pending/...): restore price and fee.
       Object.assign(patch, await listingTerms(ctx, product));
@@ -728,7 +764,7 @@ export const markUnitSold = mutation({
       dateSold: new Date().toISOString(),
       soldFromId: id,
     });
-    await ctx.db.patch(id, { stock: stock - 1 });
+    await ctx.db.patch(id, { stock: stock - 1, soldReportedAt: undefined });
     return null;
   },
 });
@@ -885,6 +921,13 @@ export const sellerUpdate = mutation({
       ...(store?.city ? { city: store.city } : {}),
       profit,
       status: "pending",
+      // The main photo is the admin's choice: keep it if that photo is still
+      // there (it may have moved), otherwise the first photo is main.
+      mainPhotoIndex: (() => {
+        const mainUrl = product.photos[product.mainPhotoIndex ?? 0];
+        const at = mainUrl ? fields.photos.indexOf(mainUrl) : -1;
+        return at > 0 ? at : undefined;
+      })(),
     });
     await ctx.db.insert("notifications", {
       sellerId: "ADMIN",

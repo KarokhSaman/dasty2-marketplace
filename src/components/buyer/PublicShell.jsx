@@ -38,10 +38,21 @@ export const logoAnimationStyles = `
 `;
 
 // ── Wordmark ──────────────────────────────────────────────
-// The cart slides in on load and again every 7 seconds. Shared with the admin
-// header so both logos move the same way.
+// The cart slides in when the site first opens and again every 7 seconds.
+// Moving between pages that use a different header (home ↔ seller dashboard)
+// must not replay the slide-in, or the switch feels like a reload — so only the
+// very first header of this visit starts with it. Shared by every header.
+// The start time lives on window (not in this module) so it holds even when the
+// page code is loaded in separate chunks.
 export function useLogoAnimation() {
-  const [shouldAnimate, setShouldAnimate] = useState(true);
+  const [shouldAnimate, setShouldAnimate] = useState(() => {
+    if (typeof window === "undefined") return true;
+    // Every logo drawn while the intro is still running joins it (a page can
+    // show two logos), so the browser matches the server-rendered page.
+    const now = Date.now();
+    window.__mndallanLogoIntroAt ??= now;
+    return now - window.__mndallanLogoIntroAt < 3600;
+  });
 
   useEffect(() => {
     const interval = setInterval(() => {

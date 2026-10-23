@@ -76,7 +76,7 @@ export default function BottomSheet({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center"
+      className="fixed inset-0 z-[88] flex items-end justify-center sm:items-center"
       role="dialog"
       aria-modal="true"
       aria-label={title || "Dialog"}

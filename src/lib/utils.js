@@ -9,6 +9,17 @@ export function formatPriceLocale(price, locale) {
   return price.toLocaleString(bcp) + " IQD";
 }
 
+// Digits as people read them in each language: Kurdish and Arabic use
+// ٠١٢٣٤٥٦٧٨٩ with "٬" between thousands; English keeps 0-9 and ",".
+// For amounts and counts — phone numbers and product codes stay as they are.
+export function localDigits(text, locale) {
+  if (locale !== "ckb" && locale !== "ar") return String(text);
+  return String(text).replace(/\d/g, (d) => "٠١٢٣٤٥٦٧٨٩"[d]).replace(/,/g, "٬");
+}
+export function formatNumberLocale(n, locale) {
+  return localDigits(Number(n || 0).toLocaleString("en-US"), locale);
+}
+
 // Converts Arabic-Indic (U+0660-U+0669) and Extended Arabic-Indic/Kurdish (U+06F0-U+06F9)
 // digits to ASCII so Number() can parse them correctly.
 export function normalizeDigits(str) {

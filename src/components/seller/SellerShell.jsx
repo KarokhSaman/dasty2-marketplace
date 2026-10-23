@@ -8,45 +8,12 @@ import LocaleSwitcher from "@/components/LocaleSwitcher";
 import NotificationPanel from "@/components/ui/NotificationPanel";
 import { Button } from "@/components/ui";
 import { useGlobalSellerSession } from "@/lib/SellerSessionContext";
-
-// ── Logo Animation Styles ─────────────────────────────────
-const logoAnimationStyles = `
-  @keyframes cartSlideIn {
-    0% {
-      opacity: 0;
-      transform: translate3d(-15px, 0, 0);
-    }
-    100% {
-      opacity: 1;
-      transform: translate3d(0, 0, 0);
-    }
-  }
-
-  .logo-image-animate {
-    will-change: transform, opacity;
-    animation: cartSlideIn 3.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    animation-fill-mode: forwards;
-    backface-visibility: hidden;
-    -webkit-backface-visibility: hidden;
-    transform: translateZ(0);
-    -webkit-transform: translateZ(0);
-    contain: layout style paint;
-    isolation: isolate;
-  }
-`;
+import { ToastProvider } from "@/components/admin/ui";
+import { logoAnimationStyles, useLogoAnimation } from "@/components/buyer/PublicShell";
 
 // ── Wordmark — clean sans, matches the buyer header ───────
 function Wordmark() {
-  const [shouldAnimate, setShouldAnimate] = useState(true);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setShouldAnimate(true);
-      setTimeout(() => setShouldAnimate(false), 3600);
-    }, 7000);
-
-    return () => clearInterval(interval);
-  }, []);
+  const shouldAnimate = useLogoAnimation();
 
   return (
     <>
@@ -134,7 +101,7 @@ export default function SellerShell({ children }) {
     }`;
 
   return (
-    <div className="min-h-screen-dvh flex flex-col">
+    <div className="seller-root min-h-screen-dvh flex flex-col">
       {/* Atmospheric backdrop */}
       <div
         aria-hidden
@@ -215,7 +182,7 @@ export default function SellerShell({ children }) {
       <main className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 md:px-7 xl:px-6 pt-3 pb-10">
         {/* Hold child pages (and their authed queries) until the Convex
             websocket is authenticated — server already gated via requireSellerFn. */}
-        {isAuthenticated ? children : authTimedOut ? (
+        {isAuthenticated ? <ToastProvider>{children}</ToastProvider> : authTimedOut ? (
           <div className="max-w-md mx-auto py-20 text-center space-y-4">
             <p className="text-sm font-semibold text-[var(--color-ink)]">{m.connectionLost()}</p>
             <Button variant="ink" size="sm" onClick={handleAuthReset}>

@@ -24,6 +24,7 @@ export const ACTIONS = {
   seller_deactivated: ["Seller deactivated", "orange"],
   seller_activated: ["Seller activated", "green"],
   unit_returned: ["Unit returned", "green"],
+  sold_reported: ["Seller says sold", "blue"],
   delete_requested: ["Delete requested", "orange"],
   delete_rejected: ["Delete declined", "grey"],
   seller_fee_changed: ["Fee deal changed", "amber"],

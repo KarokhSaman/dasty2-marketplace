@@ -4,26 +4,27 @@ import { getLocale } from "@/paraglide/runtime";
 import { DEFAULT_DIAL_CODE, DIAL_CODES, isPlausiblePhone, toE164 } from "@/lib/phone";
 import CustomSelect from "@/components/ui/CustomSelect";
 
+const CODE_LENGTH = 6;
+const PHONE_MARK = "\u0000";
+
 function OtpPhoneMessage({ phone }) {
-  const locale = getLocale();
-  const isRTL = locale === "ckb" || locale === "ar";
-
-  if (isRTL) {
-    // For RTL: render message text and phone in separate LTR elements
-    // to prevent browser from reordering the + sign
-    return (
-      <p className="text-sm text-[var(--color-ink-soft)]" dir="auto">
-        {m.otpSent({ phone: "" })}
-        <span dir="ltr" className="font-semibold inline-block">{phone}</span>
-      </p>
-    );
-  }
-
+  // The phone sits wherever {phone} is in each language's sentence, in its own
+  // LTR span so RTL text doesn't move the + sign.
+  // Kurdish writes the + after the digits (9647501234567+).
+  const [before, after = ""] = m.otpSent({ phone: PHONE_MARK }).split(PHONE_MARK);
+  const shown = getLocale() === "ckb" ? phone.replace(/^\+(.*)$/, "$1+") : phone;
   return (
     <p className="text-sm text-[var(--color-ink-soft)]">
-      {m.otpSent({ phone })}
+      {before}
+      <span dir="ltr" className="font-semibold inline-block">{shown}</span>
+      {after}
     </p>
   );
+}
+
+// Accept Kurdish/Arabic digits too, stored as 0-9.
+function toAsciiDigits(text) {
+  return text.replace(/[٠-٩۰-۹]/g, (d) => String((d.charCodeAt(0) - 0x0660) % 0x90 % 10));
 }
 
 const METHODS = [
@@ -152,9 +153,9 @@ export default function OtpLogin({ onVerified }) {
             inputMode="numeric"
             autoComplete="one-time-code"
             value={code}
-            onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 5))}
-            placeholder="00000"
-            maxLength="5"
+            onChange={(e) => setCode(toAsciiDigits(e.target.value).replace(/\D/g, "").slice(0, CODE_LENGTH))}
+            placeholder={"0".repeat(CODE_LENGTH)}
+            maxLength={CODE_LENGTH}
             required
             dir="ltr"
             className={`${inputCls} text-center tracking-[0.3em] text-lg font-mono`}
@@ -163,7 +164,7 @@ export default function OtpLogin({ onVerified }) {
         <ErrorBox message={error} />
         <button
           type="submit"
-          disabled={loading || code.trim().length < 5}
+          disabled={loading || code.trim().length < CODE_LENGTH}
           className="w-full bg-rose-600 text-white font-semibold py-3 rounded-xl hover:bg-rose-700 transition-colors disabled:opacity-50"
         >
           {loading ? "..." : m.verifyBtn()}

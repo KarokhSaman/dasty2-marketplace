@@ -74,8 +74,8 @@ export default function OfferTicker({ offer }) {
       role="region"
       aria-label={m.offerTag()}
     >
-      <span className="shrink-0 inline-flex items-center gap-1 px-[7px] bg-[var(--color-ember-600)] text-[10.5px] font-extrabold uppercase tracking-[0.03em]">
-        <svg className="offer-tag-icon w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <span className="shrink-0 inline-flex items-center gap-1.5 px-2.5 bg-[var(--color-ember-600)] text-[13px] font-black uppercase tracking-[0.03em] rtl:tracking-normal [text-shadow:0_0_0.4px_currentColor]">
+        <svg className="offer-tag-icon w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8Z" />
           <circle cx="7.5" cy="7.5" r="1.5" />
         </svg>

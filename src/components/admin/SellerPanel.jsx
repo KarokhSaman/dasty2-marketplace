@@ -128,7 +128,7 @@ export default function SellerPanel({ seller: s, products, sellers, stores, onCl
           <Link to="/admin/products" search={{ tab: "all", sellerId: s._id }} onClick={onClose} className="text-[12.5px] font-semibold text-adm-accent">See all {mine.length}</Link>
         )}>{m.adminProducts()} · {mine.length}</SectionTitle>
         {mine.length ? (
-          <RowList>{mine.slice(0, 5).map((p) => <ProductRow key={p._id} product={p} onOpen={(x) => onOpenProduct(x._id)} />)}</RowList>
+          <RowList>{mine.slice(0, 5).map((p) => <ProductRow key={p._id} product={p} compact onOpen={(x) => onOpenProduct(x._id)} />)}</RowList>
         ) : <p className="text-[13px] text-adm-fade">No products yet.</p>}
       </section>
 

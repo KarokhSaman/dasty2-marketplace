@@ -110,11 +110,11 @@ function StoreForm({ initial, submitLabel, onSubmit, onCancel, sellerOptions }) 
       {error && <p className="text-xs text-red-500">{error}</p>}
       <div className="flex gap-2">
         <button onClick={submit} disabled={saving}
-          className="flex-1 text-sm bg-[var(--color-ember-600)] hover:bg-[var(--color-ember-700)] disabled:opacity-60 text-white font-semibold py-2 rounded-xl transition-colors">
+          className="flex-1 text-sm bg-[var(--color-ember-600)] hover:bg-[var(--color-ember-700)] disabled:opacity-60 text-white font-semibold py-2.5 rounded-xl transition-colors">
           {submitLabel}
         </button>
         <button onClick={onCancel}
-          className="flex-1 text-sm bg-white hover:bg-[var(--color-hairline)] text-[var(--color-ink)] py-2 rounded-xl transition-colors">
+          className="flex-1 text-sm bg-[var(--color-cream-deep)] hover:bg-[var(--color-hairline)] text-[var(--color-ink)] py-2.5 rounded-xl transition-colors">
           Cancel
         </button>
       </div>
@@ -213,8 +213,8 @@ function StoreMenu({ store, sellerOptions, onSave, onDelete }) {
           Applies to every product of this store between the two dates. The service fee is worked out on the discounted price.
         </p>
         <div className="space-y-2 mb-3">
-          <div className="relative">
-            <input type="number" inputMode="decimal" min="1" max="90" dir="ltr" value={percent}
+          <div className="relative" dir="ltr">
+            <input type="number" inputMode="decimal" min="1" max="90" value={percent}
               onChange={(e) => { setPercent(e.target.value); setError(""); }}
               placeholder="e.g. 10" className={`${inputCls2} pe-10`} />
             <span className="absolute end-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-[var(--color-ink-fade)]">%</span>
@@ -238,8 +238,15 @@ function StoreMenu({ store, sellerOptions, onSave, onDelete }) {
             className="flex-1 text-sm bg-[var(--color-cream-deep)] hover:bg-[var(--color-hairline)] text-[var(--color-ink)] py-2.5 rounded-xl transition-colors">Cancel</button>
         </div>
         {hasDiscount && (
-          <button onClick={() => save(true)} disabled={saving}
-            className="w-full mt-2 text-sm text-red-500 hover:bg-red-50 font-semibold py-2.5 rounded-xl transition-colors">Remove discount</button>
+          <div className="mt-4 pt-4 border-t border-[var(--color-hairline)]">
+            <button onClick={() => save(true)} disabled={saving}
+              className="w-full flex items-center justify-center gap-2 text-sm text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 disabled:opacity-60 font-semibold py-2.5 rounded-xl transition-colors">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 7h16M10 11v6M14 11v6M5 7l1 12a2 2 0 002 2h8a2 2 0 002-2l1-12M9 7V4h6v3" />
+              </svg>
+              Remove discount
+            </button>
+          </div>
         )}
       </div>
     ) : view === "delete" ? (

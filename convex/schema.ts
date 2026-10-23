@@ -40,6 +40,8 @@ export default defineSchema({
     pinnedUntil:   v.optional(v.string()), // Deprecated - kept for backward compatibility
     pinnedAt:      v.optional(v.string()), // Deprecated - kept for backward compatibility
     views: v.optional(v.number()),
+    // The seller said "I sold it"; an admin confirms by marking it sold.
+    soldReportedAt: v.optional(v.string()),
     notes: v.optional(v.string()),
     approvedBy: v.optional(v.string()),
     approvedAt: v.optional(v.string()),

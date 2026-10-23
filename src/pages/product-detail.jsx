@@ -4,6 +4,7 @@ import { convexQuery } from "@convex-dev/react-query";
 import { api } from "@/convex/_generated/api";
 import { useRouter, useParams, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { rememberProduct } from "@/lib/recentlyViewed";
 import * as m from "@/paraglide/messages";
 import { getLocale, localizeHref } from "@/paraglide/runtime";
 import { getCategoryLabel } from "@/lib/categories";
@@ -300,6 +301,13 @@ export default function ProductDetailPage() {
   // Keep hooks unconditional while the query moves through loading/not-found.
   const [origin, setOrigin] = useState("https://dasty2mndalan.com");
   useEffect(() => { setOrigin(window.location.origin); }, []);
+
+  // Remember it for the buyer's "Recently viewed" on the account page.
+  const loadedId = live?._id;
+  useEffect(() => {
+    if (live) rememberProduct(live);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadedId]);
 
   if (live === null) return <NotFoundState onBack={() => router.history.back()} />;
   if (!product)      return <ProductDetailSkeleton />;
