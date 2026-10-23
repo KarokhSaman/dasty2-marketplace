@@ -7,6 +7,12 @@ import { useState, useRef, useCallback, useEffect } from "react";
 
 function usePathname() { return useLocation({ select: (l) => l.pathname }); }
 
+// The add and edit product pages have their own floating submit button, so
+// the frame drops the bottom bar and the header's Sell now there.
+function isProductFormPath(pathname) {
+  return pathname === "/seller/add" || /^\/seller\/products\/[^/]+\/edit\/?$/.test(pathname);
+}
+
 import { useQuery, useConvexAuth } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useGlobalSellerSession } from "@/lib/SellerSessionContext";
@@ -214,13 +220,13 @@ function HeaderActions() {
           </div>
 
           {/* Sell Now — all screen sizes */}
-          <a
+          {!isProductFormPath(pathname) && <a
             href="/seller/add"
             className="inline-flex items-center justify-center h-7 sm:h-8 ps-2 sm:ps-2.5 pe-2.5 sm:pe-3 text-[10px] sm:text-[11.5px] font-bold tracking-wide gap-0.5 sm:gap-1 rounded-full bg-[#ed0040] hover:bg-[#c80037] text-white transition-all active:scale-[0.98] whitespace-nowrap"
           >
             <PlusIcon className="w-2.5 sm:w-3 h-2.5 sm:h-3" />
             {m.sellNow()}
-          </a>
+          </a>}
         </>
       ) : (
         <a
@@ -255,6 +261,7 @@ function SmartBottomNav() {
   if (!ready) return null;
 
   if (/\/(?:seller|admin)\/login\/?$/.test(pathname)) return null;
+  if (isProductFormPath(pathname)) return null;
 
   // Product detail page renders its own sticky bottom CTA (WhatsApp).
   // Hide the global nav there so the two don't stack.
@@ -366,7 +373,7 @@ export default function PublicShell({ children }) {
       <HomeScrollRestorer />
       <SmartBottomNav />
 
-      {!isAuthPage && (
+      {!isAuthPage && !pathname.startsWith("/seller") && (
         <footer className="hidden sm:block border-t border-[var(--color-hairline)] bg-white/40 mt-12 py-8">
           <p className="text-center text-sm text-[var(--color-ink-fade)]">
             © {new Date().getFullYear()} <span className="font-display font-semibold text-[var(--color-ink)]">Mndallan</span> — {m.footerText()}

@@ -5,8 +5,7 @@ import { api } from "@/convex/_generated/api";
 import * as m from "@/paraglide/messages";
 import { getLocale } from "@/paraglide/runtime";
 import { getCityOptions, getCityLabel } from "@/lib/cities";
-import { formatNumberLocale, localDigits } from "@/lib/utils";
-import { getLocale as currentLocale } from "@/paraglide/runtime";
+import { formatNumberLocale } from "@/lib/utils";
 import { todayBaghdad } from "@/convex/discount";
 import CustomSelect from "@/components/ui/CustomSelect";
 import ChangePhoneModal from "@/components/seller/ChangePhoneModal";
@@ -49,7 +48,8 @@ function MenuRow({ icon, label, sub, onClick, href, danger, chevron = true, icon
   );
 }
 
-const num = (v) => formatNumberLocale(v, currentLocale());
+// Numbers stay in English digits in every language, like the dashboard.
+const num = (v) => formatNumberLocale(v, "en");
 
 function feeDealText(source) {
   if (source?.feeMode === "flat") return m.feeDealFlat({ amount: num(source.feeValue) });
@@ -161,8 +161,8 @@ export default function SellerAccountPage() {
                     </div>
                     {FEE_TIERS.map(([range, fee], i) => (
                       <div key={range} className={`grid grid-cols-2 px-3 py-2 ${i % 2 === 0 ? "bg-white" : "bg-[var(--color-cream)]"}`}>
-                        <p className="text-xs text-[var(--color-ink-soft)] font-mono">{localDigits(range, locale)}</p>
-                        <p className="text-xs font-bold text-rose-600 text-end">{localDigits(fee, locale)} IQD</p>
+                        <p className="text-xs text-[var(--color-ink-soft)] font-mono"><span dir="ltr">{range}</span></p>
+                        <p className="text-xs font-bold text-rose-600 text-end"><span dir="ltr">{fee} IQD</span></p>
                       </div>
                     ))}
                   </div>
