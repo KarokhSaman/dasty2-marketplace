@@ -3,8 +3,6 @@ import { Link } from "@tanstack/react-router";
 import { useConvexAuth, useQuery } from "convex/react";
 import * as m from "@/paraglide/messages";
 import { api } from "@/convex/_generated/api";
-import { photoProps } from "@/lib/images";
-import { useRecentlyViewed } from "@/lib/recentlyViewed";
 
 const FEE_TIERS = [
   { range: "5,000 – 9,000",       fee: "2,000" },
@@ -46,7 +44,6 @@ export default function BuyerAccountPage() {
   const [showFees, setShowFees] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const { isLoading, isAuthenticated } = useConvexAuth();
-  const recent = useRecentlyViewed();
   const seller = useQuery(api.users.getCurrentSeller, isAuthenticated ? {} : "skip");
   const sellerReady = !isLoading && (!isAuthenticated || seller !== undefined);
   const sellerId = seller?._id ?? null;
@@ -91,24 +88,6 @@ export default function BuyerAccountPage() {
         </div>
         <p className="text-[var(--color-ink-soft)] text-[13.5px] leading-relaxed">{m.acctAppDesc()}</p>
       </div>
-
-      {/* ── Recently viewed (kept on this phone) ── */}
-      {recent.length > 0 && (
-        <section className="mb-3">
-          <SectionLabel label={m.recentlyViewed()} />
-          <div className="flex gap-2.5 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-1">
-            {recent.map((p) => (
-              <Link key={p.id} to="/products/$id" params={{ id: p.id }} className="w-[104px] shrink-0">
-                <div className="w-[104px] h-[104px] rounded-2xl overflow-hidden bg-[var(--color-sand)] border border-[var(--color-hairline)]">
-                  {p.photo && <img {...photoProps(p.photo, 220)} alt="" className="w-full h-full object-cover" loading="lazy" />}
-                </div>
-                <p dir="auto" className="text-[12px] font-semibold text-[var(--color-ink)] truncate mt-1.5">{p.title}</p>
-                <p className="text-[12px] font-bold text-[var(--color-ember-600)] tabular-nums" dir="ltr">{Number(p.price ?? 0).toLocaleString("en-US")} IQD</p>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
 
       {/* ── Start selling ── */}
       {isLoaded && !isSignedIn && (
