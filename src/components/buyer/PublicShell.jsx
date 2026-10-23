@@ -7,6 +7,12 @@ import { useState, useRef, useCallback, useEffect } from "react";
 
 function usePathname() { return useLocation({ select: (l) => l.pathname }); }
 
+// The add and edit product pages have their own floating submit button, so
+// the frame drops the bottom bar and the header's Sell now there.
+function isProductFormPath(pathname) {
+  return pathname === "/seller/add" || /^\/seller\/products\/[^/]+\/edit\/?$/.test(pathname);
+}
+
 import { useQuery, useConvexAuth } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useGlobalSellerSession } from "@/lib/SellerSessionContext";
@@ -38,10 +44,21 @@ export const logoAnimationStyles = `
 `;
 
 // ── Wordmark ──────────────────────────────────────────────
-// The cart slides in on load and again every 7 seconds. Shared with the admin
-// header so both logos move the same way.
+// The cart slides in when the site first opens and again every 7 seconds.
+// Moving between pages that use a different header (home ↔ seller dashboard)
+// must not replay the slide-in, or the switch feels like a reload — so only the
+// very first header of this visit starts with it. Shared by every header.
+// The start time lives on window (not in this module) so it holds even when the
+// page code is loaded in separate chunks.
 export function useLogoAnimation() {
-  const [shouldAnimate, setShouldAnimate] = useState(true);
+  const [shouldAnimate, setShouldAnimate] = useState(() => {
+    if (typeof window === "undefined") return true;
+    // Every logo drawn while the intro is still running joins it (a page can
+    // show two logos), so the browser matches the server-rendered page.
+    const now = Date.now();
+    window.__mndallanLogoIntroAt ??= now;
+    return now - window.__mndallanLogoIntroAt < 3600;
+  });
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -203,13 +220,13 @@ function HeaderActions() {
           </div>
 
           {/* Sell Now — all screen sizes */}
-          <a
+          {!isProductFormPath(pathname) && <a
             href="/seller/add"
             className="inline-flex items-center justify-center h-7 sm:h-8 ps-2 sm:ps-2.5 pe-2.5 sm:pe-3 text-[10px] sm:text-[11.5px] font-bold tracking-wide gap-0.5 sm:gap-1 rounded-full bg-[#ed0040] hover:bg-[#c80037] text-white transition-all active:scale-[0.98] whitespace-nowrap"
           >
             <PlusIcon className="w-2.5 sm:w-3 h-2.5 sm:h-3" />
             {m.sellNow()}
-          </a>
+          </a>}
         </>
       ) : (
         <a
@@ -244,6 +261,7 @@ function SmartBottomNav() {
   if (!ready) return null;
 
   if (/\/(?:seller|admin)\/login\/?$/.test(pathname)) return null;
+  if (isProductFormPath(pathname)) return null;
 
   // Product detail page renders its own sticky bottom CTA (WhatsApp).
   // Hide the global nav there so the two don't stack.
@@ -355,7 +373,7 @@ export default function PublicShell({ children }) {
       <HomeScrollRestorer />
       <SmartBottomNav />
 
-      {!isAuthPage && (
+      {!isAuthPage && !pathname.startsWith("/seller") && (
         <footer className="hidden sm:block border-t border-[var(--color-hairline)] bg-white/40 mt-12 py-8">
           <p className="text-center text-sm text-[var(--color-ink-fade)]">
             © {new Date().getFullYear()} <span className="font-display font-semibold text-[var(--color-ink)]">Mndallan</span> — {m.footerText()}

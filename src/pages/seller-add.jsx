@@ -1,348 +1,60 @@
-import { useState, useRef, useMemo } from "react";
+import { useState } from "react";
 import { useMutation, useQuery } from "convex/react";
-import { useRouter, useParams, useLocation, useSearch } from "@tanstack/react-router";
-const usePathname = () => useLocation({ select: (l) => l.pathname });
-const useSearchParams = () => {
-  const s = useSearch({ strict: false }) || {};
-  return {
-    get: (k) => (s[k] ?? null),
-    getAll: (k) => (Array.isArray(s[k]) ? s[k] : s[k] != null ? [s[k]] : []),
-  };
-};
+import { useRouter } from "@tanstack/react-router";
 import { api } from "@/convex/_generated/api";
 import * as m from "@/paraglide/messages";
 import { getLocale } from "@/paraglide/runtime";
 import { useSellerSession } from "@/lib/useSellerSession";
-import { useImageUpload } from "@/lib/useImageUpload";
-import { offerAppliesTo, resolveProfit } from "@/convex/fees";
-import StoreStockFields from "@/components/seller/StoreStockFields";
-import { calculateProfit, formatPrice, formatPriceLocale, normalizeDigits } from "@/lib/utils";
-import CustomSelect from "@/components/ui/CustomSelect";
-import { CATEGORY_CONFIG, getCategoryLabel } from "@/lib/categories";
-import { brandFitsCategory, getBrandChoices } from "@/lib/brands";
+import ProductForm from "@/components/seller/ProductForm";
+import { IconCheck } from "@/components/admin/ui";
 
-const CATEGORIES = CATEGORY_CONFIG.filter(c => c.value !== "all").map(c => c.value);
+export function BackLink({ onClick }) {
+  const locale = getLocale();
+  return (
+    <button type="button" onClick={onClick} className="inline-flex items-center gap-1 text-[13.5px] font-semibold text-[var(--color-ember-600)]">
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+        <path d={locale === "en" ? "M15 19l-7-7 7-7" : "M9 19l7-7-7-7"} />
+      </svg>
+      {m.back()}
+    </button>
+  );
+}
+
+export function SubmittedState({ onBack }) {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4 gap-3">
+      <div className="w-16 h-16 rounded-full bg-st-approved-bg text-st-approved grid place-items-center"><IconCheck className="w-8 h-8" /></div>
+      <p className="font-semibold max-w-sm">{m.productSubmitted()}</p>
+      <button type="button" onClick={onBack} className="mt-2 h-11 px-5 rounded-[13px] bg-adm-ink text-adm-surface text-[14px] font-bold">{m.sellerDashboard()}</button>
+    </div>
+  );
+}
 
 export default function AddProductPage() {
-  const locale = getLocale();
   const router = useRouter();
   const { seller, loading } = useSellerSession();
-  const fileInputRef = useRef(null);
   const addProduct = useMutation(api.products.add);
-  const uploadImage = useImageUpload();
-
-  const [title, setTitle]             = useState("");
-  const [category, setCategory]       = useState("");
-  const [brand, setBrand]             = useState("");
-  const [condition, setCondition]     = useState("used");
-  const [price, setPrice]             = useState("");
-  const [description, setDescription] = useState("");
-  const [photos, setPhotos]           = useState([]);
-  const [uploading, setUploading]     = useState(0);
-  const [uploadError, setUploadError] = useState("");
-  const [errors, setErrors]           = useState({});
-  const [submitting, setSubmitting]   = useState(false);
-  const [submitted, setSubmitted]     = useState(false);
-
-  const activeOffer   = useQuery(api.offers.getActive);
-  // Normalize Arabic/Kurdish digits to ASCII for calculations
-  const priceNum = Number(normalizeDigits(price).replace(/[^\d]/g, "")) || 0;
-  const standardProfit = calculateProfit(priceNum);
-  const currentSeller = useQuery(api.users.getCurrentSeller);
-  // How many live products each brand has in this category (most popular first).
-  const liveBrands = useQuery(api.products.listBrands, category ? { category } : "skip");
-  const brandCounts = useMemo(() => Object.fromEntries((liveBrands ?? []).map((b) => [b.brand, b.count])), [liveBrands]);
-  const managedStores = useQuery(api.stores.listMine);
-  const linkedStore = useQuery(api.stores.getLinked);
-  // null = not chosen yet (an owner account then defaults to its own store); "" = no store
-  const [pickedStoreId, setStoreId] = useState(null);
-  const [stock, setStock] = useState("");
-  // A store-owner account that manages no stores is locked to its own store.
-  // One that also manages stores picks from its own store plus the managed ones
-  // (defaulting to its own) or no store at all.
-  const ownerOnly = !!linkedStore && managedStores !== undefined && managedStores.length === 0;
-  const selectableStores = [...(linkedStore ? [linkedStore] : []), ...(managedStores ?? [])];
-  const storeId = ownerOnly ? linkedStore._id : (pickedStoreId ?? linkedStore?._id ?? "");
-  const feeSource = selectableStores.find((s) => s._id === storeId) ?? currentSeller;
-  const customFee = !!feeSource?.feeMode && feeSource.feeMode !== "default";
-  const profit = resolveProfit(priceNum, feeSource, activeOffer ?? null);
-  const stockNum = storeId && stock ? Number(normalizeDigits(stock)) : undefined;
-
-  const MAX_PHOTOS = 5;
-
-  async function uploadFile(file) {
-    setUploading((n) => n + 1);
-    setUploadError("");
-    try {
-      const url = await uploadImage(file);
-      setPhotos((prev) => prev.length < MAX_PHOTOS ? [url, ...prev] : prev);
-    } catch (err) {
-      console.error("Image upload failed:", err);
-      let errorMsg = "Upload error - please try again";
-      if (err.code === "unsupported_file_type") {
-        errorMsg = `File type not supported: ${file.type} (only JPEG, PNG, WEBP)`;
-      } else if (err.code === "file_too_large") {
-        errorMsg = `File too large: ${Math.round(file.size / 1024 / 1024)}MB (max 8MB)`;
-      } else if (err.message) {
-        errorMsg = `Upload failed: ${err.message}`;
-      } else {
-        errorMsg = `Upload failed: ${err.toString ? err.toString() : JSON.stringify(err)}`;
-      }
-      setUploadError(errorMsg);
-      console.error("Full error details:", {
-        code: err.code,
-        message: err.message,
-        name: err.name,
-        toString: err.toString(),
-        file: file.name,
-        size: file.size,
-        type: file.type,
-        error: err
-      });
-    } finally {
-      setUploading((n) => n - 1);
-    }
-  }
-
-  function handleFileChange(e) {
-    const remaining = MAX_PHOTOS - photos.length - uploading;
-    Array.from(e.target.files ?? []).slice(0, remaining).forEach(uploadFile);
-    e.target.value = "";
-  }
-
-  function validate() {
-    const errs = {};
-    if (!title.trim())                          errs.title    = true;
-    if (!category)                              errs.category = true;
-    if (!price || priceNum < 5000)              errs.price    = true;
-    if (photos.length < 2 && uploading === 0)   errs.photos   = true;
-    setErrors(errs);
-    return Object.keys(errs).length === 0;
-  }
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    if (!validate() || uploading > 0 || !seller) return;
-    setSubmitting(true);
-    try {
-      await addProduct({
-        title: title.trim(),
-        category,
-        brand: brand || undefined,
-        condition: storeId ? "new" : condition,
-        price: priceNum,
-        description: description.trim(),
-        photos,
-        storeId: storeId || undefined,
-        stock: stockNum,
-      });
-      setSubmitted(true);
-    } catch { setSubmitting(false); }
-  }
+  const activeOffer = useQuery(api.offers.getActive);
+  const [submitted, setSubmitted] = useState(false);
+  const toDashboard = () => router.navigate({ to: "/seller" });
 
   if (loading || !seller) {
     return <div className="flex items-center justify-center min-h-[60vh]"><div className="w-8 h-8 border-4 border-rose-200 border-t-rose-600 rounded-full animate-spin" /></div>;
   }
-
-  if (submitted) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
-        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-          <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-          </svg>
-        </div>
-        <p className="text-[var(--color-ink)] font-medium max-w-sm">{m.productSubmitted()}</p>
-        <button onClick={() => router.navigate({ to: "/seller" })} className="mt-6 text-sm text-rose-600 hover:underline flex items-center gap-1">{locale === "en" ? "←" : "→"} {m.sellerDashboard()}</button>
-      </div>
-    );
-  }
+  if (submitted) return <SubmittedState onBack={toDashboard} />;
 
   return (
-    <div className="max-w-2xl mx-auto sm:pb-0 pb-[140px]">
-      <button onClick={() => router.navigate({ to: "/seller" })} className="mb-4 text-sm text-rose-600 hover:underline flex items-center gap-1">
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={locale === "en" ? "M15 19l-7-7 7-7" : "M9 19l7-7-7-7"} />
-        </svg>
-        {m.back()}
-      </button>
-      <h1 className="font-display text-[22px] text-[var(--color-ink)] mb-6">{m.addProductTitle()}</h1>
-      <form id="add-product-form" onSubmit={handleSubmit} className="space-y-5">
-        <div>
-          <label className="block text-[13px] font-semibold text-[var(--color-ink)] mb-1.5">{m.fieldTitle()} <span className="text-rose-500">*</span></label>
-          <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={m.fieldTitlePlaceholder()}
-            className={`w-full rounded-xl border bg-white px-4 py-2.5 text-[var(--color-ink)] placeholder:text-[var(--color-ink-fade)] focus:outline-none focus:ring-4 transition ${errors.title ? "border-red-400 bg-red-50" : "border-[var(--color-hairline)] focus:border-[var(--color-ember-300)] focus:ring-[var(--color-ember-100)]/50"}`} />
-          {errors.title && <p className="mt-1 text-xs text-red-500">{m.errTitleRequired()}</p>}
+    <ProductForm
+      seller={seller}
+      activeOffer={activeOffer ?? null}
+      submitLabel={m.submitProductBtn()}
+      onSubmit={async (values) => { await addProduct(values); setSubmitted(true); }}
+      top={
+        <div className="space-y-3">
+          <BackLink onClick={toDashboard} />
+          <h1 className="text-[22px] font-bold tracking-[-0.01em]">{m.addProductTitle()}</h1>
         </div>
-
-        <div className={`grid gap-4 ${storeId ? "grid-cols-1" : "grid-cols-2"}`}>
-          <div>
-            <label className="block text-[13px] font-semibold text-[var(--color-ink)] mb-1.5">{m.fieldCategory()} <span className="text-rose-500">*</span></label>
-            <CustomSelect
-              value={category}
-              onChange={(newCategory) => {
-                setCategory(newCategory);
-                // keep the brand only if it still fits the new category
-                setBrand((b) => (brandFitsCategory(b, newCategory) ? b : ""));
-              }}
-              placeholder={m.fieldCategoryPlaceholder()}
-              error={errors.category}
-              options={CATEGORIES.map(c => ({ value: c, label: getCategoryLabel(c, locale) }))}
-            />
-            {errors.category && <p className="mt-1 text-xs text-red-500">{m.errCategoryRequired()}</p>}
-          </div>
-          {/* Store products are always "New", so the choice is hidden */}
-          {!storeId && (
-            <div>
-              <label className="block text-[13px] font-semibold text-[var(--color-ink)] mb-1.5">{m.fieldCondition()} <span className="text-rose-500">*</span></label>
-              <div className="flex gap-1.5">
-                {["new","likenew","used"].map((c) => (
-                  <button key={c} type="button" onClick={() => setCondition(c)}
-                    className={`flex-1 h-10 px-3 text-xs font-medium transition-colors rounded-xl border flex items-center justify-center ${condition === c ? "bg-[var(--color-ember-500)] text-white border-[var(--color-ember-500)]" : "border-[var(--color-hairline)] text-[var(--color-ink)] hover:border-[var(--color-ember-300)] hover:bg-[var(--color-cream)]"}`}>
-                    {c === "new" ? m.conditionNew() : c === "likenew" ? m.conditionLikeNew() : m.conditionUsed()}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div>
-          <label className="block text-[13px] font-semibold text-[var(--color-ink)] mb-1.5">{m.fieldBrand()}</label>
-          <div className="relative">
-            <CustomSelect
-              value={brand}
-              onChange={setBrand}
-              disabled={!category}
-              placeholder={category ? m.fieldBrandPlaceholder() : m.brandPickCategoryFirst()}
-              options={getBrandChoices(category, brand, brandCounts).map(b => ({ value: b, label: b }))}
-            />
-            {brand && (
-              <button type="button" onClick={() => setBrand("")}
-                className="absolute end-3 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded-full bg-[var(--color-cream-deep)] hover:bg-[var(--color-cream-deep)] text-[var(--color-ink-fade)] hover:text-[var(--color-ink-soft)] transition-colors">
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            )}
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-[13px] font-semibold text-[var(--color-ink)] mb-1.5">{m.fieldPrice()} <span className="text-rose-500">*</span></label>
-          <div className="relative">
-            <input
-              type="text" inputMode="decimal"
-              dir={locale === "en" ? "ltr" : "rtl"}
-              value={price}
-              onChange={(e) => {
-                // Allow ASCII digits, Arabic-Indic (U+0660-U+0669), Extended Arabic-Indic/Kurdish (U+06F0-U+06F9)
-                const val = e.target.value.replace(/[^\d٠-٩۰-۹]/g, "");
-                setPrice(val);
-              }}
-              placeholder={m.fieldPricePlaceholder()}
-              className={`w-full rounded-xl border bg-white px-4 py-2.5 text-[var(--color-ink)] placeholder:text-[var(--color-ink-fade)] focus:outline-none focus:ring-4 transition ${locale === "en" ? "pr-10" : "pl-10"} ${errors.price ? "border-red-400 bg-red-50" : "border-[var(--color-hairline)] focus:border-[var(--color-ember-300)] focus:ring-[var(--color-ember-100)]/50"}`}
-            />
-            {price && (
-              <button type="button" onClick={() => setPrice("")}
-                className={`absolute ${locale === "en" ? "right-3" : "left-3"} top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center rounded-full bg-[var(--color-cream-deep)] hover:bg-[var(--color-cream-deep)] text-[var(--color-ink-fade)] hover:text-[var(--color-ink-soft)] transition-colors`}>
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            )}
-          </div>
-          {errors.price && <p className="mt-1 text-xs text-red-500">{!price ? m.errPriceRequired() : m.priceRange()}</p>}
-          {!errors.price && <p className="mt-1 text-xs text-[var(--color-ink-fade)]">{m.priceRange()}</p>}
-          {price && priceNum >= 5000 && (
-            offerAppliesTo(activeOffer, priceNum) && !customFee ? (
-              <div className={`mt-2 rounded-lg px-3 py-2 ${
-                activeOffer.type === "free"
-                  ? "bg-green-50 border border-green-100"
-                  : "bg-amber-50 border border-amber-100"
-              }`}>
-                <div className="flex items-center gap-1.5 mb-0.5">
-                  <span className="text-xs font-bold bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded-full">🎉 {activeOffer.title}</span>
-                </div>
-                {activeOffer.type === "free" ? (
-                  <p className="text-sm text-green-700">
-                    {m.profitLabel()} <span className="font-bold line-through text-[var(--color-ink-fade)]">{formatPriceLocale(standardProfit, locale)}</span>{" "}
-                    <span className="font-bold text-green-600">{m.offerFreeLabel()}</span>
-                  </p>
-                ) : (
-                  <p className="text-sm text-amber-700">
-                    {m.profitLabel()} <span className="font-bold line-through text-[var(--color-ink-fade)]">{formatPriceLocale(standardProfit, locale)}</span>{" "}
-                    <span className="font-bold text-amber-600">{formatPriceLocale(profit, locale)}</span>
-                  </p>
-                )}
-              </div>
-            ) : profit > 0 ? (
-              <p className="mt-2 text-sm text-green-700 bg-green-50 rounded-lg px-3 py-2">
-                {m.profitLabel()} <span className="font-bold">{formatPriceLocale(profit, locale)}</span>
-              </p>
-            ) : null
-          )}
-        </div>
-
-        <StoreStockFields stores={selectableStores} lockedStore={ownerOnly ? linkedStore : null} storeId={storeId} onStoreChange={setStoreId} stock={stock} onStockChange={setStock} />
-
-        <div>
-          <label className="block text-[13px] font-semibold text-[var(--color-ink)] mb-1.5">{m.fieldDescription()}</label>
-          <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder={m.fieldDescriptionPlaceholder()} rows={4}
-            className="w-full rounded-xl border border-[var(--color-hairline)] bg-white px-4 py-2.5 text-[var(--color-ink)] placeholder:text-[var(--color-ink-fade)] focus:outline-none focus:border-[var(--color-ember-300)] focus:ring-4 focus:ring-[var(--color-ember-100)]/50 transition resize-none" />
-        </div>
-
-        <div>
-          <label className="block text-[13px] font-semibold text-[var(--color-ink)] mb-1.5">{m.fieldPhotos()} <span className="text-rose-500">*</span></label>
-          <button type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={photos.length + uploading >= MAX_PHOTOS}
-            className={`w-full border-2 border-dashed rounded-xl p-6 text-center transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${errors.photos ? "border-red-300 bg-red-50" : "border-[var(--color-hairline)] hover:border-rose-300 hover:bg-rose-50 disabled:hover:border-[var(--color-hairline)] disabled:hover:bg-white"}`}>
-            <svg className="w-8 h-8 text-[var(--color-ink-fade)] mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            <p className="text-sm text-[var(--color-ink-soft)]">{m.addPhotoBtn()}</p>
-            <p className="text-xs text-[var(--color-ink-fade)] mt-1">
-              {photos.length + uploading}/{MAX_PHOTOS} · JPEG · PNG · WEBP
-            </p>
-          </button>
-          <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleFileChange} />
-          {uploadError && <p className="mt-1 text-xs text-red-500 bg-red-50 p-2 rounded">{uploadError}</p>}
-          {errors.photos && <p className="mt-1 text-xs text-red-500">{m.atLeastOnePhoto()}</p>}
-
-          {(photos.length > 0 || uploading > 0) && (
-            <div className="flex gap-3 flex-wrap mt-3">
-              {photos.map((url) => (
-                <div key={url} className="relative w-20 h-20 rounded-lg overflow-hidden border border-[var(--color-hairline)]">
-                  <img src={url} alt="" className="w-full h-full object-cover" />
-                  <button type="button" onClick={() => setPhotos((p) => p.filter((u) => u !== url))}
-                    className="absolute top-0.5 end-0.5 w-5 h-5 bg-black/60 text-white rounded-full text-xs flex items-center justify-center">×</button>
-                </div>
-              ))}
-              {Array.from({ length: uploading }).map((_, i) => (
-                <div key={i} className="w-20 h-20 rounded-lg bg-[var(--color-cream-deep)] border border-[var(--color-hairline)] flex items-center justify-center">
-                  <div className="w-5 h-5 border-2 border-rose-200 border-t-rose-600 rounded-full animate-spin" />
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <button type="submit" disabled={submitting || uploading > 0}
-          className="hidden sm:block w-full bg-[var(--color-ember-500)] hover:bg-[var(--color-ember-600)] active:bg-[var(--color-ember-700)] text-white font-semibold py-3.5 rounded-full active:scale-[0.98] transition disabled:opacity-50">
-          {submitting ? m.submitting() : uploading > 0 ? m.uploading() : m.submitProductBtn()}
-        </button>
-      </form>
-
-      {/* Mobile sticky submit button */}
-      <div className="sm:hidden fixed inset-x-0 bottom-0 z-30 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 pointer-events-none">
-        <div className="pointer-events-auto mx-auto max-w-md surface-frost rounded-[1.75rem] border border-[var(--color-hairline)] shadow-[0_18px_44px_-20px_rgba(11,12,15,0.22)] p-3">
-          <button form="add-product-form" type="submit" disabled={submitting || uploading > 0}
-            className="w-full bg-[var(--color-ember-500)] hover:bg-[var(--color-ember-600)] active:bg-[var(--color-ember-700)] text-white font-semibold py-3 rounded-full active:scale-[0.98] transition disabled:opacity-50 text-[15px]">
-            {submitting ? m.submitting() : uploading > 0 ? m.uploading() : m.submitProductBtn()}
-          </button>
-        </div>
-      </div>
-    </div>
+      }
+    />
   );
 }

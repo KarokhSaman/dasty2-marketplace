@@ -1,319 +1,276 @@
 import { useState } from "react";
 import { useMutation, useQuery, useConvexAuth } from "convex/react";
-import { useRouter } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { api } from "@/convex/_generated/api";
 import * as m from "@/paraglide/messages";
-import { getLocale, getTextDirection } from "@/paraglide/runtime";
-
+import { getLocale } from "@/paraglide/runtime";
 import { getCityOptions, getCityLabel } from "@/lib/cities";
+import { formatNumberLocale } from "@/lib/utils";
+import { todayBaghdad } from "@/convex/discount";
 import CustomSelect from "@/components/ui/CustomSelect";
 import ChangePhoneModal from "@/components/seller/ChangePhoneModal";
+import { FEE_PAYMENT_NUMBER } from "@/pages/seller-dashboard";
+import { Panel, btn, useCopy, useToast, IconCopy, IconChevron, IconWhatsApp } from "@/components/admin/ui";
 
 const FEE_TIERS = [
-  { range: "5,000 – 9,000",       fee: "2,000" },
-  { range: "10,000 – 29,000",     fee: "3,000" },
-  { range: "30,000 – 49,000",     fee: "4,000" },
-  { range: "50,000 – 99,000",     fee: "5,000" },
-  { range: "100,000 – 199,000",   fee: "10,000" },
-  { range: "200,000 – 299,000",   fee: "15,000" },
-  { range: "300,000 – 399,000",   fee: "20,000" },
-  { range: "400,000 – 499,000",   fee: "25,000" },
-  { range: "500,000 – 1,000,000", fee: "30,000" },
-  { range: "1,000,000+",          fee: "35,000" },
+  ["5,000 – 9,000", "2,000"], ["10,000 – 29,000", "3,000"], ["30,000 – 49,000", "4,000"],
+  ["50,000 – 99,000", "5,000"], ["100,000 – 199,000", "10,000"], ["200,000 – 299,000", "15,000"],
+  ["300,000 – 399,000", "20,000"], ["400,000 – 499,000", "25,000"], ["500,000 – 1,000,000", "30,000"], ["1,000,000+", "35,000"],
 ];
+const CONTACT_WHATSAPP = "9647509717177";
 
-function MenuItem({ icon, label, sub, onClick, danger, chevron = true, locale = "en" }) {
+const sectionLabel = "text-[11px] font-bold uppercase tracking-[0.06em] rtl:tracking-normal text-adm-fade mb-2";
+const card = "rounded-2xl border border-adm-line bg-adm-surface";
+const field = "w-full h-12 rounded-[13px] border-[1.5px] border-adm-line bg-adm-surface px-3.5 text-[15px] outline-none focus:border-adm-fade";
+
+const Icon = ({ d, className = "" }) => (
+  <svg className={`w-[18px] h-[18px] ${className}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{d}</svg>
+);
+
+function MenuRow({ icon, label, sub, onClick, href, danger, chevron = true, iconTone, children }) {
+  const inner = (
+    <>
+      <span className={`w-9 h-9 rounded-xl grid place-items-center shrink-0 ${danger ? "bg-st-rejected-bg text-st-rejected" : iconTone ?? "bg-adm-sunk text-adm-soft"}`}>{icon}</span>
+      <span className="flex-1 min-w-0">
+        <span className={`block text-[14.5px] font-semibold ${danger ? "text-st-rejected" : ""}`}>{label}</span>
+        {sub && <span className="block text-[12px] text-adm-fade mt-0.5 truncate">{sub}</span>}
+      </span>
+      {chevron && <IconChevron className="w-4 h-4 text-adm-fade rtl:rotate-180" />}
+    </>
+  );
+  const cls = "w-full flex items-center gap-3 px-4 py-3 text-start hover:bg-adm-sunk";
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`w-full flex items-center gap-4 px-4 py-3.5 hover:bg-[var(--color-cream)] transition-colors text-start ${danger ? "text-red-500" : "text-[var(--color-ink)]"}`}
-    >
-      <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${danger ? "bg-red-50" : "bg-[var(--color-cream-deep)]"}`}>
-        {icon}
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className={`text-sm font-semibold ${danger ? "text-red-500" : "text-[var(--color-ink)]"}`} dir="auto">{label}</p>
-        {sub && <p className={`text-xs text-[var(--color-ink-fade)] mt-0.5 ${getTextDirection(locale) === "rtl" ? "text-end" : "text-start"}`} dir="ltr">{sub}</p>}
-      </div>
-      {chevron && (
-        <svg className="w-4 h-4 text-[var(--color-ink-fade)] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-        </svg>
-      )}
-    </button>
+    <div className="border-t border-adm-line first:border-t-0">
+      {href ? <a href={href} target="_blank" rel="noopener noreferrer" className={cls}>{inner}</a>
+        : <button type="button" onClick={onClick} className={cls}>{inner}</button>}
+      {children}
+    </div>
   );
 }
 
-function SectionLabel({ label }) {
-  return <p className="text-xs font-semibold text-[var(--color-ink-fade)] uppercase tracking-widest px-4 pt-5 pb-1">{label}</p>;
+// Numbers stay in English digits in every language, like the dashboard.
+const num = (v) => formatNumberLocale(v, "en");
+
+function feeDealText(source) {
+  if (source?.feeMode === "flat") return m.feeDealFlat({ amount: num(source.feeValue) });
+  if (source?.feeMode === "percentage") return m.feeDealPercent({ percent: num(source.feeValue) });
+  if (source?.feeMode === "none") return m.adminOffersNoFeeLabel();
+  return m.feeDealTable();
+}
+
+function offerText(offer) {
+  const amount = offer.maxPrice ? num(offer.maxPrice) : null;
+  if (offer.type === "free") return amount ? m.offerTickerNoFeeUnder({ amount }) : m.offerNoFeeNote();
+  return amount ? m.offerTickerFlatUnder({ fee: num(offer.flatFeeAmount), amount }) : m.offerFlatFeeNote({ amount: num(offer.flatFeeAmount) });
 }
 
 export default function SellerAccountPage() {
-  const router = useRouter();
   const locale = getLocale();
+  const copy = useCopy();
+  const toast = useToast();
   const { isLoading, isAuthenticated } = useConvexAuth();
   const seller = useQuery(api.users.getCurrentSeller, isAuthenticated ? {} : "skip");
-  const loading = isLoading || (isAuthenticated && seller === undefined);
+  const activeOffer = useQuery(api.offers.getActive);
+  const linkedStore = useQuery(api.stores.getLinked, seller ? {} : "skip");
+  const managedStores = useQuery(api.stores.listMine, seller ? {} : "skip");
+  const products = useQuery(api.products.getBySeller, seller ? {} : "skip");
   const updateProfile = useMutation(api.users.updateProfile);
 
-  const [editing, setEditing]   = useState(false);
-  const [showHow, setShowHow]   = useState(false);
-  const [showFees, setShowFees] = useState(false);
-  const [showAbout, setShowAbout] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [open, setOpen] = useState(null); // "fees" | "how" | "about"
   const [showChangePhone, setShowChangePhone] = useState(false);
-
-  const [name, setName]       = useState("");
-  const [city, setCity]       = useState("");
+  const [name, setName] = useState("");
+  const [city, setCity] = useState("");
   const [address, setAddress] = useState("");
-  const [saving, setSaving]   = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  function startEdit() {
-    setName(seller.name);
-    setCity(seller.city ?? "Erbil");
-    setAddress(seller.address ?? "");
-    setEditing(true);
-  }
-
-  async function handleSave(e) {
-    e.preventDefault();
-    setSaving(true);
-    await updateProfile({ name: name.trim(), city, address: address.trim() });
-    setSaving(false);
-    setEditing(false);
-  }
-
-  async function handleLogout() {
-    await fetch("/api/auth/logout", { method: "POST" });
-    window.location.href = "/";
-  }
-
-  if (loading || !seller) {
+  if (isLoading || !seller) {
     return (
-      <div className="space-y-4 animate-pulse p-4">
-        <div className="h-28 bg-[var(--color-cream-deep)] rounded-2xl" />
-        <div className="h-12 bg-[var(--color-cream-deep)] rounded-xl" />
-        <div className="h-12 bg-[var(--color-cream-deep)] rounded-xl" />
-        <div className="h-12 bg-[var(--color-cream-deep)] rounded-xl" />
+      <div className="max-w-lg mx-auto space-y-3 animate-pulse">
+        <div className="h-28 bg-adm-sunk rounded-2xl" />
+        <div className="h-24 bg-adm-sunk rounded-2xl" />
+        <div className="h-40 bg-adm-sunk rounded-2xl" />
       </div>
     );
   }
 
-  const initial = seller.name?.[0]?.toUpperCase() ?? "S";
+  function startEdit() {
+    setName(seller.name); setCity(seller.city ?? "Erbil"); setAddress(seller.address ?? ""); setEditing(true);
+  }
+  async function save(e) {
+    e.preventDefault();
+    setSaving(true);
+    try { await updateProfile({ name: name.trim(), city, address: address.trim() }); setEditing(false); }
+    catch { toast(m.errorGeneral(), "error"); }
+    finally { setSaving(false); }
+  }
+  async function signOut() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    window.location.href = "/";
+  }
+
+  const stores = [...(linkedStore ? [linkedStore] : []), ...(managedStores ?? [])];
+  const isDefault = !seller.feeMode || seller.feeMode === "default";
+  const today = todayBaghdad();
+  const toggle = (k) => setOpen((v) => (v === k ? null : k));
 
   return (
-    <div className="max-w-lg mx-auto pb-8">
-
-      {/* ── Profile card ── */}
-      <div className="bg-white rounded-2xl border border-[var(--color-hairline)] p-5 mb-2">
-        <div className="flex items-center gap-4">
-          {/* Avatar with edit button overlaid at bottom corner */}
-          <div className="relative shrink-0">
-            <div className="w-16 h-16 rounded-2xl bg-[var(--color-ember-500)] flex items-center justify-center">
-              <span className="text-2xl font-bold text-white">{initial}</span>
-            </div>
-            <button onClick={startEdit}
-              className="absolute -bottom-1.5 -end-1.5 w-7 h-7 bg-white rounded-xl flex items-center justify-center shadow-md border border-[var(--color-hairline)] hover:bg-[var(--color-cream)] transition-colors">
-              <svg className="w-5 h-5 text-[var(--color-ember-600)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-              </svg>
-            </button>
+    <div className="max-w-lg mx-auto space-y-5 pb-8">
+      {/* Profile */}
+      <div className={`${card} p-4`}>
+        <div className="flex items-center gap-3">
+          <div className="w-14 h-14 rounded-2xl bg-[var(--color-ember-500)] text-white grid place-items-center text-[22px] font-bold shrink-0">
+            {seller.name?.[0]?.toUpperCase() ?? "S"}
           </div>
-
           <div className="flex-1 min-w-0">
-            <h1 className="font-display text-[18px] text-[var(--color-ink)] truncate">{seller.name}</h1>
-            <p className="text-[var(--color-ink-soft)] text-xs mt-0.5 flex items-center gap-1">
-              <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-              </svg>
-              <span className="truncate">{getCityLabel(seller.city, locale)}{seller.address ? ` · ${seller.address}` : ""}</span>
-            </p>
-            <p className={`text-[var(--color-ink-soft)] text-xs mt-0.5 ${getTextDirection(locale) === "rtl" ? "text-end" : "text-start"}`} dir="ltr">{seller.phone}</p>
-            {seller.email && (
-              <p className="text-[var(--color-ink-soft)] text-xs mt-0.5 flex items-center gap-1">
-                <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-                </svg>
-                <span className="truncate" dir="ltr">{seller.email}</span>
-              </p>
-            )}
+            <h1 className="text-[17px] font-bold truncate">{seller.name}</h1>
+            <p className="text-[13px] text-adm-soft tabular-nums" dir="ltr" style={{ textAlign: locale === "en" ? "left" : "right" }}>{seller.phone}</p>
           </div>
+          <button type="button" onClick={startEdit} className={btn("dark", "sm")}>{m.editProfileBtn()}</button>
+        </div>
+        <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 mt-3 pt-3 border-t border-adm-line text-[13px]">
+          <span className="text-adm-fade">{m.registerCityLabel()}</span><span className="font-semibold">{getCityLabel(seller.city, locale)}</span>
+          {seller.address && <><span className="text-adm-fade">{m.registerAddressLabel()}</span><span className="font-semibold">{seller.address}</span></>}
+          {seller.email && <><span className="text-adm-fade">Email</span><span className="font-semibold truncate" dir="ltr">{seller.email}</span></>}
         </div>
       </div>
 
-      {/* ── Edit profile form ── */}
-      {editing && (
-        <form onSubmit={handleSave} className="bg-white rounded-2xl border border-[var(--color-hairline)] p-5 mb-2 space-y-3">
-          <h2 className="text-sm font-bold text-[var(--color-ink)] mb-1">{m.accountUpdateTitle()}</h2>
+      {/* Fee */}
+      <section>
+        <p className={sectionLabel}>{m.yourServiceFee()}</p>
+        <div className={`${card} p-4 space-y-3`}>
           <div>
-            <label className="block text-xs font-medium text-[var(--color-ink-soft)] mb-1">{m.registerNameLabel()}</label>
-            <input value={name} onChange={e => setName(e.target.value)} required
-              className="w-full rounded-xl border border-[var(--color-hairline)] bg-white px-4 py-2.5 text-[var(--color-ink)] placeholder:text-[var(--color-ink-fade)] focus:outline-none focus:border-[var(--color-ember-300)] focus:ring-4 focus:ring-[var(--color-ember-100)]/50 transition" />
+            <p className="text-[15px] font-bold">{feeDealText(seller)}</p>
+            <p className="text-[12.5px] text-adm-soft mt-0.5">{m.acctSellerFeesNote()}</p>
           </div>
-          <div>
-            <label className="block text-xs font-medium text-[var(--color-ink-soft)] mb-1">{m.registerCityLabel()}</label>
-            <CustomSelect
-              value={city}
-              onChange={setCity}
-              options={getCityOptions(locale)}
-            />
+          {isDefault && activeOffer && (
+            <p className="rounded-xl bg-st-approved-bg text-st-approved px-3 py-2 text-[13px] font-bold">{m.offerTag()}: {offerText(activeOffer)}</p>
+          )}
+          {isDefault && (
+            <>
+              <button type="button" onClick={() => toggle("fees")} className="w-full flex items-center justify-between text-[13px] font-semibold text-adm-accent">
+                {m.loginFeesViewFull()}
+                <IconChevron className={`w-4 h-4 transition-transform ${open === "fees" ? "rotate-90" : "rtl:rotate-180"}`} />
+              </button>
+              {open === "fees" && (
+                <div>
+                  <div className="rounded-xl overflow-hidden border border-[var(--color-hairline)]">
+                    <div className="grid grid-cols-2 bg-[var(--color-cream-deep)] px-3 py-2">
+                      <p className="text-xs font-semibold text-[var(--color-ink-soft)]">{m.acctFeesPriceCol()}</p>
+                      <p className="text-xs font-semibold text-[var(--color-ink-soft)] text-end">{m.acctFeesFeeCol()}</p>
+                    </div>
+                    {FEE_TIERS.map(([range, fee], i) => (
+                      <div key={range} className={`grid grid-cols-2 px-3 py-2 ${i % 2 === 0 ? "bg-white" : "bg-[var(--color-cream)]"}`}>
+                        <p className="text-xs text-[var(--color-ink-soft)] font-mono"><span dir="ltr">{range}</span></p>
+                        <p className="text-xs font-bold text-rose-600 text-end"><span dir="ltr">{fee} IQD</span></p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </section>
+
+      {/* How to pay */}
+      <section>
+        <p className={sectionLabel}>{m.howToPayFees()}</p>
+        <div className={`${card} p-3 ps-4 flex items-center gap-3`}>
+          <div className="flex-1 min-w-0">
+            <p className="text-[12px] text-adm-fade">{m.payFeesVia()}</p>
+            <p className="text-[17px] font-bold tabular-nums" dir="ltr" style={{ textAlign: locale === "en" ? "left" : "right" }}>{FEE_PAYMENT_NUMBER}</p>
           </div>
-          <div>
-            <label className="block text-xs font-medium text-[var(--color-ink-soft)] mb-1">{m.registerAddressLabel()} <span className="text-rose-500">*</span></label>
-            <input value={address} onChange={e => setAddress(e.target.value)} required
-              placeholder={m.registerAddressPlaceholder()}
-              className="w-full rounded-xl border border-[var(--color-hairline)] bg-white px-4 py-2.5 text-[var(--color-ink)] placeholder:text-[var(--color-ink-fade)] focus:outline-none focus:border-[var(--color-ember-300)] focus:ring-4 focus:ring-[var(--color-ember-100)]/50 transition" />
+          <button type="button" onClick={() => copy(`‎${FEE_PAYMENT_NUMBER}`, m.numberCopied())} className={btn("outline", "sm")}>
+            <IconCopy className="w-4 h-4" /> {m.copyNumber()}
+          </button>
+        </div>
+      </section>
+
+      {/* Stores */}
+      {stores.length > 0 && (
+        <section>
+          <p className={sectionLabel}>{m.yourStore()}</p>
+          <div className="space-y-2">
+            {stores.map((st) => {
+              const count = (products ?? []).filter((p) => p.storeId === st._id && p.status === "approved").length;
+              const discount = st.discountPercent && st.discountEnd >= today ? m.storeDiscountUntil({ percent: st.discountPercent, date: st.discountEnd }) : null;
+              return (
+                <div key={st._id} className={`${card} p-3.5 flex items-center gap-3`}>
+                  <span className="w-11 h-11 rounded-xl bg-adm-sunk text-adm-navy grid place-items-center shrink-0">
+                    <Icon d={<path d="M3 9l1-5h16l1 5M3 9v11h18V9M3 9h18M9 20v-6h6v6" />} />
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[14.5px] font-bold flex items-center gap-1.5">{st.name}
+                      <span className="h-[18px] px-1.5 rounded-[5px] text-[10px] font-bold bg-adm-navy text-white inline-flex items-center">{m.storeFlag()}</span>
+                    </p>
+                    <p className="text-[12.5px] text-adm-soft">{[discount, m.storeProductsCount({ count: num(count) })].filter(Boolean).join(" · ")}</p>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-          <div className="flex gap-2 pt-1">
-            <button type="submit" disabled={saving}
-              className="flex-1 bg-[var(--color-ember-500)] hover:bg-[var(--color-ember-600)] text-white text-sm font-semibold py-2.5 rounded-xl transition-colors disabled:opacity-50">
-              {saving ? m.accountSaving() : m.accountSaveBtn()}
-            </button>
-            <button type="button" onClick={() => setEditing(false)}
-              className="flex-1 bg-[var(--color-cream-deep)] text-[var(--color-ink)] text-sm font-semibold py-2.5 rounded-xl hover:bg-[var(--color-cream-deep)] transition-colors">
-              {m.adminCancel()}
-            </button>
-          </div>
-        </form>
+        </section>
       )}
 
-      {/* ── Menu ── */}
-      <div className="bg-white rounded-2xl border border-[var(--color-hairline)] overflow-hidden">
-
-        <SectionLabel label={m.acctMyAccountSec()} />
-
-        <MenuItem
-          label={m.sellerMyProducts()}
-          sub={m.acctMyProductsSub()}
-          onClick={() => router.navigate({ to: "/seller" })}
-          locale={locale}
-          icon={<svg className="w-4 h-4 text-[var(--color-ink-soft)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10"/></svg>}
-        />
-
-        <div className="border-t border-[var(--color-hairline)]" />
-
-        <MenuItem
-          label={m.changePhoneTitle()}
-          sub={seller.phone}
-          onClick={() => setShowChangePhone(true)}
-          locale={locale}
-          icon={<svg className="w-4 h-4 text-[var(--color-ink-soft)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>}
-        />
-
-        <div className="border-t border-[var(--color-hairline)]" />
-
-        {/* How it works */}
-        <button onClick={() => setShowHow(v => !v)}
-          className="w-full flex items-center gap-4 px-4 py-3.5 hover:bg-[var(--color-cream)] transition-colors text-start">
-          <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
-            <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-          </div>
-          <div className="flex-1">
-            <p className="text-sm font-semibold text-[var(--color-ink)]">{m.acctHowItWorks()}</p>
-            <p className="text-xs text-[var(--color-ink-fade)] mt-0.5">{m.acctStepByStep()}</p>
-          </div>
-          <svg className={`w-4 h-4 text-[var(--color-ink-fade)] transition-transform duration-200 ${showHow ? "rotate-90" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg>
-        </button>
-        {showHow && (
-          <div className="px-4 pb-4 space-y-3 bg-[var(--color-cream)]">
-            {[
-              { n: "1", title: m.loginStep1T(), desc: m.loginStep1D() },
-              { n: "2", title: m.loginStep2T(), desc: m.loginStep2D() },
-              { n: "3", title: m.loginStep3T(), desc: m.loginStep3D() },
-              { n: "4", title: m.loginStep4T(), desc: m.loginStep4D() },
-            ].map(s => (
-              <div key={s.n} className="flex items-start gap-3 pt-3">
-                <div className="w-6 h-6 rounded-full bg-rose-100 text-rose-600 text-xs font-bold flex items-center justify-center shrink-0">{s.n}</div>
-                <div>
-                  <p className="text-sm font-semibold text-[var(--color-ink)]">{s.title}</p>
-                  <p className="text-xs text-[var(--color-ink-soft)] mt-0.5">{s.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        <div className="border-t border-[var(--color-hairline)]" />
-
-        {/* Service fees */}
-        <button onClick={() => setShowFees(v => !v)}
-          className="w-full flex items-center gap-4 px-4 py-3.5 hover:bg-[var(--color-cream)] transition-colors text-start">
-          <div className="w-9 h-9 rounded-xl bg-green-50 flex items-center justify-center shrink-0">
-            <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-          </div>
-          <div className="flex-1">
-            <p className="text-sm font-semibold text-[var(--color-ink)]">{m.acctServiceFeesSec()}</p>
-            <p className="text-xs text-[var(--color-ink-fade)] mt-0.5">{m.acctFeesSub()}</p>
-          </div>
-          <svg className={`w-4 h-4 text-[var(--color-ink-fade)] transition-transform duration-200 ${showFees ? "rotate-90" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg>
-        </button>
-        {showFees && (
-          <div className="px-4 pb-4 bg-[var(--color-cream)]">
-            <div className="rounded-xl overflow-hidden border border-[var(--color-hairline)] mt-3">
-              <div className="grid grid-cols-2 bg-[var(--color-cream-deep)] px-3 py-2">
-                <p className="text-xs font-semibold text-[var(--color-ink-soft)]">{m.acctFeesPriceCol()}</p>
-                <p className="text-xs font-semibold text-[var(--color-ink-soft)] text-end">{m.acctFeesFeeCol()}</p>
-              </div>
-              {FEE_TIERS.map((tier, i) => (
-                <div key={i} className={`grid grid-cols-2 px-3 py-2 ${i % 2 === 0 ? "bg-white" : "bg-[var(--color-cream)]"}`}>
-                  <p className="text-xs text-[var(--color-ink-soft)] font-mono">{tier.range}</p>
-                  <p className="text-xs font-bold text-rose-600 text-end">{tier.fee} IQD</p>
+      {/* Menu */}
+      <div className={`${card} overflow-hidden`}>
+        <Link to="/seller" className="w-full flex items-center gap-3 px-4 py-3 text-start hover:bg-adm-sunk">
+          <span className="w-9 h-9 rounded-xl grid place-items-center bg-adm-sunk text-adm-soft shrink-0"><Icon d={<path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10" />} /></span>
+          <span className="flex-1 min-w-0"><span className="block text-[14.5px] font-semibold">{m.sellerMyProducts()}</span><span className="block text-[12px] text-adm-fade mt-0.5">{m.acctMyProductsSub()}</span></span>
+          <IconChevron className="w-4 h-4 text-adm-fade rtl:rotate-180" />
+        </Link>
+        <MenuRow label={m.changePhoneTitle()} sub={<span dir="ltr">{seller.phone}</span>} onClick={() => setShowChangePhone(true)}
+          icon={<Icon d={<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2" />} />} />
+        <MenuRow label={m.acctHowItWorks()} sub={m.acctStepByStep()} onClick={() => toggle("how")} iconTone="bg-blue-50 text-blue-500"
+          icon={<Icon d={<><circle cx="12" cy="12" r="9" /><path d="M12 11v5M12 8h.01" /></>} />}>
+          {open === "how" && (
+            <div className="px-4 pb-4 space-y-3">
+              {[[m.loginStep1T(), m.loginStep1D()], [m.loginStep2T(), m.loginStep2D()], [m.loginStep3T(), m.loginStep3D()], [m.loginStep4T(), m.loginStep4D()]].map(([t, d], i) => (
+                <div key={t} className="flex gap-3">
+                  <span className="w-6 h-6 rounded-full bg-adm-accent-soft text-adm-accent text-[12px] font-bold grid place-items-center shrink-0">{i + 1}</span>
+                  <div><p className="text-[13.5px] font-semibold">{t}</p><p className="text-[12.5px] text-adm-soft mt-0.5">{d}</p></div>
                 </div>
               ))}
             </div>
-            <p className="text-xs text-[var(--color-ink-fade)] mt-2 text-center">{m.acctSellerFeesNote()}</p>
-          </div>
-        )}
-
-        <SectionLabel label={m.acctSupportSec()} />
-        <div className="border-t border-[var(--color-hairline)]" />
-
-        <MenuItem
-          label={m.acctAboutTitle()}
-          sub={m.acctAboutMarketplace()}
-          onClick={() => setShowAbout(v => !v)}
-          locale={locale}
-          icon={<svg className="w-4 h-4 text-[var(--color-ink-soft)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>}
-        />
-        {showAbout && (
-          <div className="px-4 py-4 bg-[var(--color-cream)] border-t border-[var(--color-hairline)]">
-            <p className="text-sm text-[var(--color-ink-soft)] leading-relaxed">{m.acctAppDesc()}</p>
-          </div>
-        )}
-        <div className="border-t border-[var(--color-hairline)]" />
-        <MenuItem
-          label={m.acctContactTitle()}
-          sub={m.acctContactSub()}
-          onClick={() => window.open("https://wa.me/9647509717177")}
-          locale={locale}
-          icon={<svg className="w-4 h-4 text-green-500" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>}
-        />
-
-        <SectionLabel label="" />
-        <div className="border-t border-[var(--color-hairline)]" />
-
-        <MenuItem
-          label={m.accountSignOut()}
-          onClick={handleLogout}
-          danger
-          chevron={false}
-          icon={<svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>}
-        />
+          )}
+        </MenuRow>
+        <MenuRow label={m.acctAboutTitle()} sub={m.acctAboutMarketplace()} onClick={() => toggle("about")}
+          icon={<Icon d={<path d="M3 11 12 4l9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1Z" />} />}>
+          {open === "about" && <p className="px-4 pb-4 text-[13px] text-adm-soft leading-relaxed">{m.acctAppDesc()}</p>}
+        </MenuRow>
+        <MenuRow label={m.acctContactTitle()} sub={m.acctContactSub()} href={`https://wa.me/${CONTACT_WHATSAPP}`}
+          icon={<span className="text-adm-wa"><IconWhatsApp /></span>} />
+        <MenuRow label={m.accountSignOut()} onClick={signOut} danger chevron={false}
+          icon={<Icon d={<path d="M15 17l5-5-5-5M20 12H9M12 21H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h7" />} />} />
       </div>
 
-      <p className="text-center text-xs text-[var(--color-ink-fade)] mt-6">{m.acctFooter()}</p>
+      <p className="text-center text-[12px] text-adm-fade">{m.acctFooter()}</p>
 
-      {/* ── Change Phone Modal ── */}
+      <Panel open={editing} onClose={() => setEditing(false)} title={m.accountUpdateTitle()} short>
+        <form onSubmit={save} className="space-y-3">
+          <div>
+            <label htmlFor="acct-name" className="block text-[12px] font-semibold text-adm-fade mb-1">{m.registerNameLabel()}</label>
+            <input id="acct-name" required dir="auto" value={name} onChange={(e) => setName(e.target.value)} className={field} />
+          </div>
+          <div>
+            <p className="block text-[12px] font-semibold text-adm-fade mb-1">{m.registerCityLabel()}</p>
+            <CustomSelect inline listClassName="max-h-56" value={city} onChange={setCity} options={getCityOptions(locale)} />
+          </div>
+          <div>
+            <label htmlFor="acct-addr" className="block text-[12px] font-semibold text-adm-fade mb-1">{m.registerAddressLabel()} <span className="text-[var(--color-ember-500)]">*</span></label>
+            <input id="acct-addr" required dir="auto" value={address} onChange={(e) => setAddress(e.target.value)} placeholder={m.registerAddressPlaceholder()} className={field} />
+          </div>
+          <div className="flex gap-2 pt-1">
+            <button type="button" onClick={() => setEditing(false)} className={`${btn("outline", "lg")} flex-1`}>{m.adminCancel()}</button>
+            <button type="submit" disabled={saving} className={`${btn("primary", "lg")} flex-1`}>{saving ? m.accountSaving() : m.accountSaveBtn()}</button>
+          </div>
+        </form>
+      </Panel>
+
       {showChangePhone && (
-        <ChangePhoneModal
-          currentPhone={seller.phone}
-          onClose={() => setShowChangePhone(false)}
-          onSuccess={(newPhone) => {
-            setShowChangePhone(false);
-            window.location.reload();
-          }}
-        />
+        <ChangePhoneModal currentPhone={seller.phone} onClose={() => setShowChangePhone(false)}
+          onSuccess={() => { setShowChangePhone(false); window.location.reload(); }} />
       )}
     </div>
   );

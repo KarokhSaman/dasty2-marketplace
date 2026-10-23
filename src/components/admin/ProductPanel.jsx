@@ -297,6 +297,12 @@ export default function ProductPanel({ product, onClose }) {
           onConfirm={() => run(async () => { await actions.remove(p); onClose(); }, "Product deleted")} />
       )}
 
+      {p.soldReportedAt && p.status === "approved" && (
+        <p className="rounded-2xl bg-st-sold-bg text-st-sold px-4 py-3 text-[13px] font-semibold">
+          The seller says this sold ({new Date(p.soldReportedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}). Set it to Sold below and confirm the sale price.
+        </p>
+      )}
+
       {/* Seller asked to delete */}
       {p.status === "deletion_requested" && (
         <div className="rounded-2xl bg-st-delete-bg p-3.5 space-y-2.5">

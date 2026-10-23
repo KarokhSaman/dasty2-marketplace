@@ -36,6 +36,8 @@ export default function AdminTodoPage() {
     return {
       pending: by("pending").sort((a, b) => a.dateAdded.localeCompare(b.dateAdded)),
       deletes: by("deletion_requested"),
+      // The seller tapped "I sold it": confirm the sale price and mark it sold.
+      reported: all.filter((p) => p.status === "approved" && p.soldReportedAt).sort((a, b) => a.soldReportedAt.localeCompare(b.soldReportedAt)),
       sold,
       owed: sold.reduce((s, p) => s + (p.profit ?? 0), 0),
       owing: new Set(sold.map((p) => p.sellerId)).size,
@@ -46,7 +48,7 @@ export default function AdminTodoPage() {
 
   if (!products) return <Skeleton rows={6} />;
   const open = products.find((p) => p._id === openId) ?? null;
-  const nothing = !data.pending.length && !data.deletes.length && !data.sold.length;
+  const nothing = !data.pending.length && !data.deletes.length && !data.sold.length && !data.reported.length;
   const today = new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
 
   const tile = "rounded-2xl border border-adm-line bg-adm-surface px-3.5 py-3 text-start flex flex-col items-start gap-0.5 hover:border-adm-fade transition-colors min-w-0";
@@ -92,6 +94,13 @@ export default function AdminTodoPage() {
         <Group title="To review" count={data.pending.length}
           action={<button type="button" onClick={() => setReviewing(true)} className={btn("outline", "sm")}>One by one</button>}>
           <RowList>{data.pending.map((p) => <ProductRow key={p._id} product={p} onOpen={(x) => setOpenId(x._id)} />)}</RowList>
+        </Group>
+      )}
+
+      {data.reported.length > 0 && (
+        <Group title="Seller says sold" count={data.reported.length}>
+          <p className="text-[12.5px] text-adm-fade -mt-1 mb-2">Open each one, set Sold and confirm the price the buyer paid.</p>
+          <RowList>{data.reported.map((p) => <ProductRow key={p._id} product={p} onOpen={(x) => setOpenId(x._id)} />)}</RowList>
         </Group>
       )}
 

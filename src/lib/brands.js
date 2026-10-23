@@ -54,6 +54,7 @@ export const BRAND_CATEGORIES = {
   "Elvie": ["Breast Pump"],
   "Halo": ["Bassinet"],
   "Happiest Baby": ["Bassinet"],
+  "Dsland": ["Stroller", "Carry Cot", "Car Seat"],
 };
 
 export const OTHER_BRAND = "Other";

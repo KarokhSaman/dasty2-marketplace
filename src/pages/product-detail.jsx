@@ -301,6 +301,7 @@ export default function ProductDetailPage() {
   const [origin, setOrigin] = useState("https://dasty2mndalan.com");
   useEffect(() => { setOrigin(window.location.origin); }, []);
 
+
   if (live === null) return <NotFoundState onBack={() => router.history.back()} />;
   if (!product)      return <ProductDetailSkeleton />;
 

@@ -290,7 +290,7 @@ export default function HomePage() {
   }, []);
 
 
-  const { initialItems, cachedFeatured, cachedResults, saveState } =
+  const { initialItems, cachedFeatured, cachedResults, saveState, saveResultsOnly } =
     useHomeStatePersistence(filters, setFilters, DEFAULT_PAGE_SIZE);
 
   // Featured is non-paginated → prefetched in the route loader (SSR + intent
@@ -404,6 +404,17 @@ export default function HomePage() {
   }, [status, loadMore]);
 
   const onSave = () => saveState({ results, featuredProducts });
+
+  // Leaving the home page (any link): keep the unfiltered feed for a quick
+  // return. Only when the feed isn't narrowed by category, brand or Stores,
+  // since a plain "Home" link always comes back to the full list.
+  const latest = useRef({});
+  latest.current = { results, featuredProducts, plain: category === "all" && !brand && !storesOnly };
+  useEffect(() => () => {
+    const { results: r, featuredProducts: f, plain } = latest.current;
+    if (plain) saveResultsOnly({ results: r, featuredProducts: f });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const featuredIds = useMemo(
     () => new Set(featuredProducts.map((p) => p._id)),

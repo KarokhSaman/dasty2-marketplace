@@ -4,8 +4,10 @@ import { StatusChip, StoreTag, Code, Thumb, fmtIQD, IconStar } from "@/component
 const shortDay = (iso) => (iso ? new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : "");
 
 // One product in a list: tap to open its panel. On phones it is a compact
-// two-line card; on laptops the seller gets its own column.
-export default function ProductRow({ product: p, onOpen, selected, onToggle }) {
+// two-line card; on laptops the seller gets its own column. `compact` keeps the
+// phone layout everywhere, for narrow places like a side panel.
+export default function ProductRow({ product: p, onOpen, selected, onToggle, compact = false }) {
+  const wide = (cls) => (compact ? "" : cls);
   const soldish = p.status === "sold" || p.status === "paid";
   const shown = soldish ? (p.salePrice ?? p.price) : p.price;
   return (
@@ -23,23 +25,25 @@ export default function ProductRow({ product: p, onOpen, selected, onToggle }) {
           {p.seq && <Code>{p.seq}</Code>}
           {p.storeId && <StoreTag />}
           {p.featured && <span className="text-st-pending"><IconStar filled className="w-3.5 h-3.5" /></span>}
-          <span className="truncate lg:hidden">{p.sellerName}</span>
-          <span className="truncate max-lg:hidden">{p.category} · {shortDay(soldish ? p.dateSold : p.dateAdded)}</span>
+          <span className={`truncate ${wide("lg:hidden")}`}>{p.sellerName}</span>
+          {!compact && <span className="truncate max-lg:hidden">{p.category} · {shortDay(soldish ? p.dateSold : p.dateAdded)}</span>}
         </div>
       </div>
-      <div className="max-lg:hidden w-[170px] min-w-0 text-[12.5px]">
-        <p className="font-semibold truncate">{p.sellerName}</p>
-        <p className="text-adm-fade truncate">{p.city}</p>
-      </div>
-      <div className="flex flex-col items-end gap-1 shrink-0 lg:flex-row lg:items-center lg:gap-4">
-        <div className="text-end lg:w-[112px]">
+      {!compact && (
+        <div className="max-lg:hidden w-[170px] min-w-0 text-[12.5px]">
+          <p className="font-semibold truncate">{p.sellerName}</p>
+          <p className="text-adm-fade truncate">{p.city}</p>
+        </div>
+      )}
+      <div className={`flex flex-col items-end gap-1 shrink-0 ${wide("lg:flex-row lg:items-center lg:gap-4")}`}>
+        <div className={`text-end ${wide("lg:w-[112px]")}`}>
           <p className="text-[14px] font-bold tabular-nums" dir="ltr">
             {p.salePrice != null && p.salePrice !== p.price && <s className="text-[11px] font-medium text-adm-fade me-1">{fmtIQD(p.price)}</s>}
             {fmtIQD(shown)}
           </p>
-          <p className="text-[11px] font-semibold text-adm-accent tabular-nums max-lg:hidden">{m.adminProfitLabel()} {fmtIQD(p.profit)}</p>
+          {!compact && <p className="text-[11px] font-semibold text-adm-accent tabular-nums max-lg:hidden">{m.adminProfitLabel()} {fmtIQD(p.profit)}</p>}
         </div>
-        <div className="lg:w-[118px] flex lg:justify-end"><StatusChip status={p.status} /></div>
+        <div className={`flex ${wide("lg:w-[118px] lg:justify-end")}`}><StatusChip status={p.status} /></div>
       </div>
     </div>
   );

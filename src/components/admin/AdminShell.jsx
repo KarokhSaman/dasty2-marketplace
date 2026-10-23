@@ -74,7 +74,7 @@ export default function AdminShell({ children }) {
 
   const counts = useMemo(() => {
     const list = products ?? [];
-    const decide = list.filter((p) => p.status === "pending" || p.status === "deletion_requested").length;
+    const decide = list.filter((p) => p.status === "pending" || p.status === "deletion_requested" || (p.status === "approved" && p.soldReportedAt)).length;
     const owing = new Set(list.filter((p) => p.status === "sold").map((p) => p.sellerId)).size;
     return { decide, owing };
   }, [products]);

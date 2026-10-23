@@ -1,445 +1,334 @@
-import { useState, useMemo, useEffect, useRef } from "react";
-import { useQuery, useMutation } from "convex/react";
-import { useRouter, useParams, useLocation, useSearch } from "@tanstack/react-router";
-const usePathname = () => useLocation({ select: (l) => l.pathname });
-const useSearchParams = () => {
-  const s = useSearch({ strict: false }) || {};
-  return {
-    get: (k) => (s[k] ?? null),
-    getAll: (k) => (Array.isArray(s[k]) ? s[k] : s[k] != null ? [s[k]] : []),
-  };
-};
+import { useMemo, useState } from "react";
+import { useMutation, useQuery } from "convex/react";
+import { Link, useRouter } from "@tanstack/react-router";
 import { api } from "@/convex/_generated/api";
 import * as m from "@/paraglide/messages";
-import { getLocale } from "@/paraglide/runtime";
+import { getLocale, localizeHref } from "@/paraglide/runtime";
 import { useSellerSession } from "@/lib/useSellerSession";
-import { calculateProfit, formatPrice } from "@/lib/utils";
-import CustomSelect from "@/components/ui/CustomSelect";
-import { BottomSheet, SelectMenu, useIsDesktop } from "@/components/ui";
-import { getCategoryLabel } from "@/lib/categories";
-import { Link } from "@tanstack/react-router";
+import { formatNumberLocale } from "@/lib/utils";
 import { photoProps } from "@/lib/images";
 import { errorMessage } from "@/lib/errors";
-import FlipPanel from "@/components/ui/FlipPanel";
+import { SelectMenu } from "@/components/ui";
 import OfferTicker from "@/components/seller/OfferTicker";
+import { Panel, ConfirmBox, btn, useToast, useCopy, IconCopy, IconCheck, IconWhatsApp, IconTrash, IconChevron } from "@/components/admin/ui";
 
-const EDITABLE_STATUSES = ["pending", "approved", "rejected"];
+// Where sellers send their service fees.
+export const FEE_PAYMENT_NUMBER = "07724944244";
 
-const STATUS_STYLE = {
-  pending:  "bg-amber-100 text-amber-700",
-  approved: "bg-green-100 text-green-700",
-  rejected: "bg-red-100 text-red-700",
-  sold:     "bg-blue-100 text-blue-700",
-  paid:     "bg-purple-100 text-purple-700",
-  deletion_requested: "bg-orange-100 text-orange-700",
+const EDITABLE = ["pending", "approved", "rejected"];
+const STATUS = {
+  pending: [() => m.statusPending(), "text-st-pending bg-st-pending-bg"],
+  approved: [() => m.statusApproved(), "text-st-approved bg-st-approved-bg"],
+  rejected: [() => m.statusRejected(), "text-st-rejected bg-st-rejected-bg"],
+  sold: [() => m.statusSold(), "text-st-sold bg-st-sold-bg"],
+  paid: [() => m.statusPaid(), "text-st-paid bg-st-paid-bg"],
+  deletion_requested: [() => m.statusDeletionRequested(), "text-st-delete bg-st-delete-bg"],
 };
+const FILTERS = ["all", "approved", "pending", "rejected", "sold", "paid"];
 
-// ── Stat card ──────────────────────────────────────────────
-function StatsPanel({ stats }) {
+function Status({ status }) {
+  const [label, cls] = STATUS[status] ?? [() => status, "text-adm-soft bg-adm-sunk"];
   return (
-    <div className="space-y-3 mb-6">
-
-      {/* ── Featured: the two most actionable metrics ── */}
-      <div className="grid grid-cols-2 gap-3">
-        {/* Approved — live listings */}
-        <div className="bg-gradient-to-br from-green-500 to-emerald-400 rounded-2xl p-4 relative overflow-hidden">
-          <div className="absolute -top-3 -end-3 w-16 h-16 bg-white/10 rounded-full" />
-          <p className="text-[11px] font-semibold text-green-100 uppercase tracking-widest mb-1">{m.statApproved()}</p>
-          <p className="text-4xl font-bold text-white leading-none">{stats.approved}</p>
-          <p className="text-[11px] text-green-100 mt-2">{m.statLiveListings()}</p>
-        </div>
-
-        {/* Pending — awaiting review */}
-        <div className="bg-gradient-to-br from-amber-500 to-orange-400 rounded-2xl p-4 relative overflow-hidden">
-          <div className="absolute -top-3 -end-3 w-16 h-16 bg-white/10 rounded-full" />
-          <p className="text-[11px] font-semibold text-amber-100 uppercase tracking-widest mb-1">{m.statPending()}</p>
-          <p className="text-4xl font-bold text-white leading-none">{stats.pending}</p>
-          <p className="text-[11px] text-amber-100 mt-2">{m.statAwaitingReview()}</p>
-        </div>
-      </div>
-
-      {/* ── Secondary metrics strip ── */}
-      <div className="bg-white rounded-2xl border border-[var(--color-hairline)] shadow-sm flex divide-x divide-[var(--color-hairline)] overflow-hidden">
-        {[
-          { label: m.statTotal(), value: stats.total,    color: "text-[var(--color-ink)]"   },
-          { label: m.statSold(),  value: stats.sold,     color: "text-blue-600"   },
-          { label: m.statPaid(),  value: stats.paid,     color: "text-purple-600" },
-        ].map((item, i) => (
-          <div key={i} className="flex-1 flex flex-col items-center py-4 gap-0.5">
-            <span className={`text-2xl font-bold ${item.color}`}>{item.value}</span>
-            <span className="text-[11px] text-[var(--color-ink-fade)] font-medium">{item.label}</span>
-          </div>
-        ))}
-      </div>
-    </div>
+    <span className={`inline-flex items-center gap-1.5 h-6 px-2.5 rounded-full text-[11.5px] font-bold whitespace-nowrap shrink-0 ${cls}`}>
+      <span className="w-1.5 h-1.5 rounded-full bg-current" />{label()}
+    </span>
   );
 }
 
-// ── Per-product actions — dropdown on desktop, action sheet on mobile ──
-function ProductMenu({ product, onEdit, onRequestDelete }) {
-  const [open, setOpen] = useState(false);
-  const [requesting, setRequesting] = useState(false);
+// What a seller can do with one product: edit, share, "I sold it", request
+// deletion. Products a store manager posted for this account are view-only.
+function ProductSheet({ product: p, onClose }) {
+  const router = useRouter();
+  const toast = useToast();
+  const locale = getLocale();
+  const reportSold = useMutation(api.products.reportSold);
+  const requestDelete = useMutation(api.products.requestDelete);
+  const [view, setView] = useState("menu"); // menu | sold | delete
   const [reason, setReason] = useState("");
-  const [sending, setSending] = useState(false);
-  const [requestError, setRequestError] = useState("");
-  const isDesktop = useIsDesktop();
-  const ref = useRef();
+  const [busy, setBusy] = useState(false);
 
-  useEffect(() => {
-    if (!open || !isDesktop) return;
-    function handler(e) {
-      if (ref.current && !ref.current.contains(e.target)) { setOpen(false); setRequesting(false); }
-    }
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [open, isDesktop]);
+  const canEdit = !p.postedByManager && EDITABLE.includes(p.status);
+  const canShare = p.status === "approved";
+  const canSold = !p.postedByManager && p.status === "approved" && !p.soldReportedAt;
+  const canDelete = !p.postedByManager && EDITABLE.includes(p.status);
+  const link = `${typeof window !== "undefined" ? window.location.origin : ""}${localizeHref(`/products/${p._id}`, { locale })}`;
 
-  const close = () => { setOpen(false); setRequesting(false); setRequestError(""); };
-  const canEdit   = EDITABLE_STATUSES.includes(product.status);
-  const canRequestDelete = ["pending", "approved", "rejected"].includes(product.status);
-
-  // Sold, paid and deletion-requested products have no actions left, so no menu.
-  if (!canEdit && !canRequestDelete) return null;
-
-  async function sendRequest() {
-    if (!reason.trim()) { setRequestError(m.requestDeleteReasonPlaceholder()); return; }
-    setSending(true);
-    setRequestError("");
-    try {
-      await onRequestDelete(reason.trim());
-      setReason("");
-      close();
-    } catch (err) {
-      setRequestError(errorMessage(err, "Could not send"));
-    } finally {
-      setSending(false);
-    }
+  async function run(fn, done) {
+    setBusy(true);
+    try { await fn(); toast(done); onClose(); }
+    catch (err) { toast(errorMessage(err, m.errorGeneral()), "error"); setBusy(false); }
   }
 
-  const rowCls = "flex items-center gap-3 w-full px-4 py-3 sm:py-2.5 text-[15px] sm:text-sm text-start transition-colors";
-
-  const actions = requesting ? (
-    <div className="p-4 sm:p-3 sm:w-64">
-      <p className="text-[13px] font-semibold text-[var(--color-ink)] mb-3">{m.requestDeleteTitle()}</p>
-      <textarea
-        value={reason}
-        onChange={(e) => { setReason(e.target.value); setRequestError(""); }}
-        placeholder={m.requestDeleteReasonPlaceholder()}
-        rows={3}
-        maxLength={300}
-        className="w-full rounded-xl border border-[var(--color-hairline)] bg-white px-3 py-2 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-ink-fade)] focus:outline-none focus:border-[var(--color-ember-300)] focus:ring-4 focus:ring-[var(--color-ember-100)]/50 transition resize-none mb-2"
-      />
-      {requestError && <p className="text-xs text-red-500 mb-2">{requestError}</p>}
-      <div className="flex gap-2">
-        <button onClick={sendRequest} disabled={sending}
-          className="flex-1 text-sm bg-red-500 hover:bg-red-600 disabled:opacity-60 text-white font-semibold py-2.5 rounded-xl transition-colors">{m.requestDeleteSend()}</button>
-        <button onClick={() => { setRequesting(false); setRequestError(""); }}
-          className="flex-1 text-sm bg-[var(--color-cream-deep)] hover:bg-[var(--color-hairline)] text-[var(--color-ink)] py-2.5 rounded-xl transition-colors">{m.adminCancel()}</button>
-      </div>
-    </div>
-  ) : (
-    <div className="py-1">
-      {canEdit && (
-        <button onClick={() => { onEdit(); close(); }} className={`${rowCls} text-[var(--color-ink)] hover:bg-[var(--color-cream)]`}>
-          <svg className="w-5 h-5 text-[var(--color-ink-fade)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-          </svg>
-          {m.editBtn()}
-        </button>
-      )}
-      {canRequestDelete && (
-        <>
-          <div className="border-t border-[var(--color-hairline)] mx-2 my-1"/>
-          <button onClick={() => setRequesting(true)} className={`${rowCls} text-red-500 hover:bg-red-50`}>
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-            </svg>
-            {m.requestDeleteBtn()}
-          </button>
-        </>
-      )}
-    </div>
-  );
+  const row = "w-full flex items-center gap-3 px-4 h-14 text-start border-t border-adm-line first:border-t-0";
+  const ic = "w-9 h-9 rounded-xl grid place-items-center bg-adm-sunk shrink-0";
 
   return (
-    <div ref={ref} className="relative shrink-0">
-      <button onClick={() => { setOpen(v => !v); }} aria-label="Actions"
-        className="p-1.5 text-[var(--color-ink-fade)] hover:text-[var(--color-ink)] hover:bg-[var(--color-cream-deep)] rounded-lg transition-colors">
-        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-          <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
-        </svg>
-      </button>
-
-      {/* Desktop: anchored dropdown */}
-      {open && isDesktop && (
-        <FlipPanel gap="1" height={200} className="end-0 bg-white border border-[var(--color-hairline)] rounded-xl shadow-[0_18px_44px_-20px_rgba(11,12,15,0.28)] z-20 overflow-hidden min-w-[150px]">
-          {actions}
-        </FlipPanel>
+    <Panel open onClose={onClose} short
+      leading={<div className="w-12 h-12 rounded-xl overflow-hidden bg-adm-sunk shrink-0">{p.photos?.[0] && <img {...photoProps(p.photos[0], 120)} alt="" className="w-full h-full object-cover" />}</div>}
+      title={p.title}
+      subtitle={<div className="flex items-center gap-2 text-[12px] text-adm-fade"><span className="tabular-nums">{formatNumberLocale(p.salePrice ?? p.price, "en")} IQD</span><Status status={p.status} /></div>}>
+      {view === "sold" ? (
+        <ConfirmBox tone="neutral" busy={busy} title={m.confirmSoldTitle()} text={m.iSoldItSub()} confirmLabel={m.yesSold()}
+          onCancel={() => setView("menu")} onConfirm={() => run(() => reportSold({ id: p._id }), m.soldReportedToast())} />
+      ) : view === "delete" ? (
+        <div className="rounded-2xl bg-st-rejected-bg p-3.5 space-y-2.5">
+          <p className="text-[14px] font-bold">{m.requestDeleteTitle()}</p>
+          <textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={3} maxLength={300} dir="auto"
+            placeholder={m.requestDeleteReasonPlaceholder()}
+            className="w-full rounded-xl border border-adm-line bg-adm-surface px-3 py-2.5 text-[14px] outline-none resize-none" />
+          <div className="flex gap-2">
+            <button type="button" disabled={!reason.trim() || busy} className={`${btn("primary")} flex-1`}
+              onClick={() => run(() => requestDelete({ id: p._id, reason: reason.trim() }), m.requestSentToast())}>{m.requestDeleteSend()}</button>
+            <button type="button" className={`${btn("outline")} flex-1`} onClick={() => setView("menu")}>{m.adminCancel()}</button>
+          </div>
+        </div>
+      ) : (
+        <>
+          {p.postedByManager && <p className="rounded-2xl bg-adm-sunk px-4 py-3 text-[13px] text-adm-soft">{m.postedForYou()}</p>}
+          {p.soldReportedAt && <p className="rounded-2xl bg-st-sold-bg text-st-sold px-4 py-3 text-[13px] font-bold">✓ {m.soldReported()}</p>}
+          {(canEdit || canShare || canSold || canDelete) && (
+            <div className="rounded-2xl border border-adm-line bg-adm-surface overflow-hidden">
+              {canEdit && (
+                <button type="button" className={row} onClick={() => router.navigate({ to: `/seller/products/${p._id}/edit` })}>
+                  <span className={ic}><svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M4 20h4L18.5 9.5a2.1 2.1 0 0 0-3-3L5 17v3Z" /></svg></span>
+                  <span className="flex-1 text-[14.5px] font-semibold">{m.editBtn()}</span>
+                  <IconChevron className="w-4 h-4 text-adm-fade rtl:rotate-180" />
+                </button>
+              )}
+              {canShare && (
+                <a className={row} target="_blank" rel="noopener noreferrer" href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`${p.title}\n${link}`)}`}>
+                  <span className={`${ic} text-adm-wa`}><IconWhatsApp /></span>
+                  <span className="flex-1 text-[14.5px] font-semibold">{m.shareWhatsApp()}</span>
+                  <IconChevron className="w-4 h-4 text-adm-fade rtl:rotate-180" />
+                </a>
+              )}
+              {canSold && (
+                <button type="button" className={row} onClick={() => setView("sold")}>
+                  <span className={`${ic} text-st-sold`}><IconCheck /></span>
+                  <span className="flex-1 min-w-0">
+                    <span className="block text-[14.5px] font-semibold">{m.iSoldIt()}</span>
+                    <span className="block text-[12px] text-adm-fade truncate">{m.iSoldItSub()}</span>
+                  </span>
+                  <IconChevron className="w-4 h-4 text-adm-fade rtl:rotate-180" />
+                </button>
+              )}
+              {canDelete && (
+                <button type="button" className={`${row} text-st-rejected`} onClick={() => setView("delete")}>
+                  <span className={`${ic} text-st-rejected`}><IconTrash /></span>
+                  <span className="flex-1 text-[14.5px] font-semibold">{m.requestDeleteBtn()}</span>
+                </button>
+              )}
+            </div>
+          )}
+        </>
       )}
-
-      {/* Mobile: action sheet */}
-      {!isDesktop && (
-        <BottomSheet open={open} onClose={close} title={product.title}>
-          {actions}
-        </BottomSheet>
-      )}
-    </div>
+    </Panel>
   );
 }
 
-// ── Main page ──────────────────────────────────────────────
 export default function SellerDashboard() {
   const locale = getLocale();
-  const router = useRouter();
   const { seller, loading } = useSellerSession();
-  const [categoryFilter, setCategoryFilter] = useState("all");
-  const [storeFilter, setStoreFilter] = useState("all");
-  const [expandedId, setExpandedId] = useState(null);
-  const requestDelete = useMutation(api.products.requestDelete);
-
-  const products    = useQuery(api.products.getBySeller, seller ? {} : "skip");
+  const copy = useCopy();
+  const products = useQuery(api.products.getBySeller, seller ? {} : "skip");
   const activeOffer = useQuery(api.offers.getActive);
-  const stores      = useQuery(api.stores.listMine, seller ? {} : "skip");
+  const stores = useQuery(api.stores.listMine, seller ? {} : "skip");
   const linkedStore = useQuery(api.stores.getLinked, seller ? {} : "skip");
-  const storeNames  = useMemo(() => new Map((stores ?? []).map(st => [st._id, st.name])), [stores]);
-  const hasStores   = (stores?.length ?? 0) > 0;
+  const [filter, setFilter] = useState("all");
+  const [store, setStore] = useState("all");
+  const [expanded, setExpanded] = useState(null);
+  const [openId, setOpenId] = useState(null);
 
-  const sellerCategories = useMemo(() => {
-    if (!products) return [];
-    const seen = new Set();
-    return products.filter((p) => { if (seen.has(p.category)) return false; seen.add(p.category); return true; }).map(p => p.category);
-  }, [products]);
+  const storeNames = useMemo(() => new Map((stores ?? []).map((st) => [st._id, st.name])), [stores]);
+  const hasStores = (stores?.length ?? 0) > 0;
 
-  // Sold/paid units of a stocked product are listed under that product instead
-  // of as separate rows (unless the original listing no longer exists).
-  const visibleProducts = useMemo(() => {
+  // Sold units of a stocked product are listed under that product.
+  const rows = useMemo(() => {
     if (!products) return [];
-    const ids = new Set(products.map(p => p._id));
-    const unitsByParent = new Map();
+    const ids = new Set(products.map((p) => p._id));
+    const units = new Map();
     for (const p of products) {
-      if (p.soldFromId && ids.has(p.soldFromId)) {
-        const list = unitsByParent.get(p.soldFromId) ?? [];
-        list.push(p);
-        unitsByParent.set(p.soldFromId, list);
-      }
+      if (p.soldFromId && ids.has(p.soldFromId)) units.set(p.soldFromId, [...(units.get(p.soldFromId) ?? []), p]);
     }
-    const top = products
-      .filter(p => !(p.soldFromId && ids.has(p.soldFromId)))
-      .map(p => ({
-        ...p,
-        units: (unitsByParent.get(p._id) ?? []).sort((a, b) => (b.dateSold ?? "").localeCompare(a.dateSold ?? "")),
-      }))
+    return products
+      .filter((p) => !(p.soldFromId && ids.has(p.soldFromId)))
+      .map((p) => ({ ...p, units: (units.get(p._id) ?? []).sort((a, b) => (b.dateSold ?? "").localeCompare(a.dateSold ?? "")) }))
       .reverse();
-    return top.filter(p =>
-      (categoryFilter === "all" || p.category === categoryFilter) &&
-      (storeFilter === "all" || (storeFilter === "none" ? !p.storeId : p.storeId === storeFilter)),
-    );
-  }, [products, categoryFilter, storeFilter]);
+  }, [products]);
 
   if (loading || !seller || products === undefined) {
     return (
-      <div className="space-y-5 animate-pulse">
-        <div className="h-28 bg-[var(--color-cream-deep)] rounded-2xl"/>
-        <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
-          {Array.from({length:5}).map((_,i) => <div key={i} className="h-20 bg-[var(--color-cream-deep)] rounded-2xl"/>)}
-        </div>
-        <div className="h-48 bg-[var(--color-cream-deep)] rounded-2xl"/>
+      <div className="space-y-3 animate-pulse">
+        <div className="h-10 w-40 bg-adm-sunk rounded-xl" />
+        <div className="h-24 bg-adm-sunk rounded-2xl" />
+        <div className="h-20 bg-adm-sunk rounded-2xl" />
+        {Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-[76px] bg-adm-sunk rounded-2xl" />)}
       </div>
     );
   }
 
-  if (!seller) return null;
+  const own = products.filter((p) => !p.postedByManager);
+  const rejected = own.filter((p) => p.status === "rejected");
+  const owed = products.filter((p) => p.status === "sold");
+  const feeOwed = owed.reduce((n, p) => n + (p.profit ?? 0), 0);
+  const feePaid = products.filter((p) => p.status === "paid").reduce((n, p) => n + (p.profit ?? 0), 0);
+  const month = new Date().toISOString().slice(0, 7);
+  const soldThisMonth = products.filter((p) => (p.status === "sold" || p.status === "paid") && (p.dateSold ?? "").startsWith(month)).length;
 
-  const stats = {
-    total:    products.length,
-    pending:  products.filter(p => p.status === "pending").length,
-    approved: products.filter(p => p.status === "approved").length,
-    sold:     products.filter(p => p.status === "sold").length,
-    paid:     products.filter(p => p.status === "paid").length,
-  };
-
-  const feePending = products.filter(p => p.status === "sold").reduce((n, p) => n + (p.profit ?? 0), 0);
-  const feePaid    = products.filter(p => p.status === "paid").reduce((n, p) => n + (p.profit ?? 0), 0);
-
-  async function handleRequestDelete(product, reason) {
-    await requestDelete({ id: product._id, reason });
-  }
-
-  const statusLabel = { pending: m.statusPending(), approved: m.statusApproved(), rejected: m.statusRejected(), sold: m.statusSold(), paid: m.statusPaid(), deletion_requested: m.statusDeletionRequested() };
+  const counts = { all: rows.length };
+  for (const p of rows) counts[p.status] = (counts[p.status] ?? 0) + 1;
+  const visible = rows.filter((p) =>
+    (filter === "all" || p.status === filter) &&
+    (store === "all" || (store === "none" ? !p.storeId : p.storeId === store)));
+  const open = products.find((p) => p._id === openId) ?? null;
+  const firstName = (seller.name || "").split(/\s+/)[0];
+  // Numbers on the dashboard stay in English digits in every language.
+  const n = (v) => formatNumberLocale(v, "en");
 
   return (
-    <div className="relative">
-
-      {/* ── Active offer: news-style ticker with a countdown ── */}
+    <div className="max-w-2xl mx-auto space-y-5 pb-6">
       {activeOffer && <OfferTicker offer={activeOffer} />}
 
-      <StatsPanel stats={stats} />
-
-      <div className="bg-white rounded-2xl border border-[var(--color-hairline)] shadow-sm flex divide-x divide-[var(--color-hairline)] overflow-hidden mb-6 -mt-3">
-        <div className="flex-1 flex flex-col items-center py-3.5 gap-0.5">
-          <span className="text-lg font-bold text-blue-600">{formatPrice(feePending)}</span>
-          <span className="text-[11px] text-[var(--color-ink-fade)] font-medium">{m.feePending()}</span>
-        </div>
-        <div className="flex-1 flex flex-col items-center py-3.5 gap-0.5">
-          <span className="text-lg font-bold text-purple-600">{formatPrice(feePaid)}</span>
-          <span className="text-[11px] text-[var(--color-ink-fade)] font-medium">{m.feePaid()}</span>
-        </div>
+      <div>
+        <h1 className="text-[21px] font-bold tracking-[-0.01em]">{m.sellerHello({ name: firstName })}</h1>
+        {/* Browsers have no Kurdish date format, so the date shows in English and Arabic only. */}
+        {locale !== "ckb" && <p className="text-[12.5px] text-adm-fade mt-0.5">{new Date().toLocaleDateString(locale === "ar" ? "ar-IQ" : "en-GB", { weekday: "long", day: "numeric", month: "long" })}</p>}
       </div>
 
-      {/* ── My Products — sticky below header ──────────── */}
-      <div className="sticky top-14 z-10 -mx-4 px-4 bg-[var(--color-cream)] pb-2 shadow-[0_4px_8px_-4px_rgba(0,0,0,0.06)]">
-        <div className="flex items-center justify-between pt-3 mb-3">
-          <h2 className="text-base font-bold text-[var(--color-ink)]">{m.sellerMyProducts()}</h2>
-          <span className="text-xs text-[var(--color-ink-fade)]">{products.length} {m.statTotal().toLowerCase()}</span>
-        </div>
-
-        {/* Category filter (scroll buttons) — sellers without stores */}
-        {!hasStores && sellerCategories.length > 1 && (
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-            {["all", ...sellerCategories].map((cat) => (
-              <button key={cat} onClick={() => setCategoryFilter(cat)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap border transition-colors shrink-0 ${
-                  categoryFilter === cat ? "bg-rose-600 text-white border-rose-600" : "bg-white text-[var(--color-ink-soft)] border-[var(--color-hairline)] hover:border-rose-300"
-                }`}>{cat === "all" ? m.categoryAll() : getCategoryLabel(cat, locale)}</button>
-            ))}
-          </div>
-        )}
-
-        {/* Store + category dropdowns — only for sellers that have stores */}
-        {hasStores && (
-          <div className="flex items-center gap-2 pb-2">
-            <SelectMenu
-              value={storeFilter}
-              onChange={setStoreFilter}
-              options={[
-                { value: "all", label: m.storeAll() },
-                ...stores.map(st => ({ value: st._id, label: st.name })),
-                { value: "none", label: m.fieldStoreNone() },
-              ]}
-            />
-            <SelectMenu
-              value={categoryFilter}
-              onChange={setCategoryFilter}
-              align="end"
-              options={[
-                { value: "all", label: m.categoryAll() },
-                ...sellerCategories.map(cat => ({ value: cat, label: getCategoryLabel(cat, locale) })),
-              ]}
-            />
-          </div>
-        )}
-      </div>
-
-      {/* Empty */}
-      {products.length === 0 && (
-        <div className="mt-4 flex flex-col items-center justify-center py-16 bg-white rounded-2xl border border-dashed border-[var(--color-hairline)]">
-          <svg className="w-12 h-12 text-[var(--color-ink-fade)] mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10"/>
-          </svg>
-          <p className="text-[var(--color-ink-fade)] font-medium text-sm">{m.noSellerProducts()}</p>
-          <Link to="/seller/add" className="mt-3 text-xs font-semibold text-rose-500 hover:underline">{m.addFirstProduct()} →</Link>
-        </div>
-      )}
-
-      {products.length > 0 && visibleProducts.length === 0 && (
-        <p className="text-sm text-[var(--color-ink-fade)] text-center py-10">{m.noProducts()}</p>
-      )}
-
-      {/* Product list */}
-      {visibleProducts.length > 0 && (
-        <div className="mt-4 space-y-2">
-          {visibleProducts.map((product) => (
-            <div key={product._id} className={`bg-white rounded-2xl border p-3.5 hover:shadow-[0_10px_30px_-22px_rgba(11,12,15,0.25)] transition-all ${
-              product.status === "rejected" ? "border-red-100" : "border-[var(--color-hairline)] hover:border-[var(--color-ember-200)]"
-            }`}>
-              <div className="flex items-center gap-3">
-                <div className="w-14 h-14 rounded-xl overflow-hidden bg-[var(--color-sand)] shrink-0">
-                  {product.photos?.[0]
-                    ? <img {...photoProps(product.photos[0], 200)} alt={product.title} className="w-full h-full object-cover"/>
-                    : <div className="w-full h-full flex items-center justify-center"><svg className="w-5 h-5 text-[var(--color-ink-fade)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></div>
-                  }
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-[var(--color-ink)] truncate">{product.title}</p>
-                  <div className="flex items-center gap-2 mt-0.5 min-w-0">
-                    <span className="text-xs text-[var(--color-ink-fade)] truncate min-w-0">{getCategoryLabel(product.category, locale)}</span>
-                    {product.seq && <span className="text-xs font-mono text-rose-400 bg-rose-50 px-1.5 py-0.5 rounded shrink-0">{product.seq}</span>}
-                  </div>
-                  {hasStores && product.storeId && storeNames.get(product.storeId) && (
-                    <p className="text-xs font-semibold text-[var(--color-ink-soft)] truncate mt-0.5">{storeNames.get(product.storeId)}</p>
-                  )}
-                  <p className="text-[13px] font-bold text-[var(--color-ink)] mt-0.5">{formatPrice(product.salePrice ?? product.price)}</p>
-                  {linkedStore && (
-                    <p className="text-xs text-[var(--color-ink-fade)] mt-0.5 truncate">
-                      {m.profitLabel()} <span className="font-semibold text-[var(--color-ink-soft)]">{formatPrice(product.profit ?? 0)}</span>
-                      {product.postedByManager && <span className="ms-2 text-[10.5px] font-semibold bg-[var(--color-cream-deep)] text-[var(--color-ink-soft)] px-1.5 py-0.5 rounded-full">{m.postedForYou()}</span>}
-                    </p>
-                  )}
-                </div>
-                <span className={`text-xs px-2.5 py-1 rounded-full font-semibold shrink-0 ${STATUS_STYLE[product.status] ?? "bg-[var(--color-cream-deep)] text-[var(--color-ink-soft)]"}`}>
-                  {statusLabel[product.status] ?? product.status}
-                </span>
-                {!product.postedByManager && (
-                  <ProductMenu product={product}
-                    onEdit={() => router.navigate({ to: `/seller/products/${product._id}/edit` })}
-                    onRequestDelete={(reason) => handleRequestDelete(product, reason)}/>
-                )}
+      <section>
+        <p className="text-[11px] font-bold uppercase tracking-[0.06em] rtl:tracking-normal text-adm-fade mb-2">{m.needsAttention()}</p>
+        <div className="space-y-2">
+          {rejected.map((p) => (
+            <div key={p._id} className="rounded-2xl bg-st-rejected-bg p-3 flex items-center gap-3">
+              <div className="w-11 h-11 rounded-xl overflow-hidden bg-adm-surface shrink-0">{p.photos?.[0] && <img {...photoProps(p.photos[0], 100)} alt="" className="w-full h-full object-cover" />}</div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[13.5px] font-bold truncate">{m.rejectedNotice({ title: p.title })}</p>
+                {p.notes && <p className="text-[12.5px] font-semibold text-st-rejected line-clamp-2">{p.notes}</p>}
               </div>
-              {/* Stock summary + sold units */}
-              {(product.units.length > 0 || product.stock > 1) && (() => {
-                const sold = product.units.length + (product.status === "sold" || product.status === "paid" ? 1 : 0);
-                const left = product.status === "approved" || product.status === "deletion_requested" ? (product.stock ?? 1) : 0;
-                const expandable = product.units.length > 0;
-                const isOpen = expandedId === product._id;
-                return (
-                  <>
-                    <button
-                      type="button"
-                      disabled={!expandable}
-                      onClick={() => setExpandedId(isOpen ? null : product._id)}
-                      className={`mt-2.5 w-full flex items-center justify-between gap-2 rounded-lg bg-[var(--color-cream)] px-3 py-2 text-xs font-semibold text-[var(--color-ink)] ${expandable ? "hover:bg-[var(--color-cream-deep)] cursor-pointer" : "cursor-default"}`}
-                    >
-                      <span>{m.unitsSoldLeft({ sold, left })}</span>
-                      {expandable && (
-                        <svg className={`w-4 h-4 text-[var(--color-ink-fade)] transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
-                          fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      )}
-                    </button>
-                    {isOpen && (
-                      <div className="mt-2 space-y-1.5">
-                        {product.units.map((unit) => (
-                          <div key={unit._id} className="flex items-center gap-2 rounded-lg border border-[var(--color-hairline)] px-3 py-2">
-                            <span className="text-xs text-[var(--color-ink-fade)]" dir="ltr">{unit.dateSold?.slice(0, 10)}</span>
-                            <span className="text-[13px] font-bold text-[var(--color-ink)] flex-1">
-                              {formatPrice(unit.salePrice ?? unit.price)}
-                              {linkedStore && <span className="ms-2 text-xs font-medium text-[var(--color-ink-fade)]">{m.profitLabel()} {formatPrice(unit.profit ?? 0)}</span>}
-                            </span>
-                            <span className={`text-[11px] px-2 py-0.5 rounded-full font-semibold ${STATUS_STYLE[unit.status] ?? ""}`}>
-                              {statusLabel[unit.status] ?? unit.status}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </>
-                );
-              })()}
-              {/* Rejection reason */}
-              {product.status === "rejected" && product.notes && (
-                <div className="mt-2.5 flex items-start gap-2 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
-                  <svg className="w-3.5 h-3.5 text-red-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
-                  </svg>
-                  <p className="text-xs text-red-600 leading-snug">{product.notes}</p>
-                </div>
-              )}
+              <Link to={`/seller/products/${p._id}/edit`} search={{ from: "rejection" }} className={`${btn("dark", "sm")} shrink-0`}>{m.fixBtn()}</Link>
             </div>
           ))}
+          {feeOwed > 0 && (
+            <div className="rounded-2xl bg-st-sold-bg p-3 space-y-2.5">
+              <div>
+                <p className="text-[14px] font-bold">{m.feesToPayTitle({ amount: formatNumberLocale(feeOwed, "en") })}</p>
+                <p className="text-[12.5px] text-adm-soft">{m.feesFromSales({ count: formatNumberLocale(owed.length, "en") })}</p>
+              </div>
+              <div className="flex items-center gap-2 rounded-xl bg-adm-surface p-2 ps-3">
+                <div className="flex-1 min-w-0">
+                  <p className="text-[11.5px] text-adm-fade">{m.payFeesVia()}</p>
+                  <p className="text-[16px] font-bold tabular-nums"><span dir="ltr">{FEE_PAYMENT_NUMBER}</span></p>
+                </div>
+                <button type="button" onClick={() => copy(`‎${FEE_PAYMENT_NUMBER}`, m.numberCopied())} className={btn("outline", "sm")}>
+                  <IconCopy className="w-4 h-4" /> {m.copyNumber()}
+                </button>
+              </div>
+            </div>
+          )}
+          {!rejected.length && !feeOwed && (
+            <div className="rounded-2xl bg-st-approved-bg p-3 flex items-center gap-3">
+              <span className="w-9 h-9 rounded-xl bg-adm-surface text-st-approved grid place-items-center"><IconCheck /></span>
+              <div>
+                <p className="text-[14px] font-bold">{m.allGoodTitle()}</p>
+                <p className="text-[12.5px] text-adm-soft">{m.allGoodSub()}</p>
+              </div>
+            </div>
+          )}
         </div>
-      )}
+      </section>
 
+      <div className="grid grid-cols-3 rounded-2xl border border-adm-line bg-adm-surface overflow-hidden">
+        {[[m.soldThisMonth(), n(soldThisMonth), ""], [m.feePending(), n(feeOwed), "text-st-sold"], [m.feePaid(), n(feePaid), "text-st-paid"]].map(([k, v, tone], i) => (
+          <div key={k} className={`px-3 py-2.5 min-w-0 ${i ? "border-s border-adm-line" : ""}`}>
+            <p className="text-[11px] font-semibold text-adm-fade truncate">{k}</p>
+            <p className={`text-[17px] font-bold tabular-nums truncate ${tone}`}>{v}</p>
+          </div>
+        ))}
+      </div>
+
+      <section>
+        <div className="flex items-center gap-2 mb-2">
+          <h2 className="text-[15px] font-bold flex-1">{m.sellerMyProducts()}</h2>
+          {/* Only sellers with more than one store get a filter here (which store);
+              everyone has the status chips below. */}
+          {(stores?.length ?? 0) > 1 && (
+            <SelectMenu value={store} onChange={setStore} align="end" options={[
+              { value: "all", label: m.storeAll() },
+              ...stores.map((st) => ({ value: st._id, label: st.name })),
+              { value: "none", label: m.fieldStoreNone() },
+            ]} />
+          )}
+        </div>
+        <div className="flex gap-1.5 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-1">
+          {FILTERS.filter((f) => f === "all" || counts[f]).map((f) => (
+            <button key={f} type="button" aria-pressed={filter === f} onClick={() => setFilter(f)}
+              className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-full border text-[12.5px] font-semibold whitespace-nowrap shrink-0 ${
+                filter === f ? "bg-adm-ink text-adm-surface border-adm-ink" : "bg-adm-surface text-adm-soft border-adm-line"}`}>
+              {f === "all" ? m.categoryAll() : STATUS[f][0]()}<span className="text-[11px] opacity-70 tabular-nums">{n(counts[f] ?? 0)}</span>
+            </button>
+          ))}
+        </div>
+
+        {rows.length === 0 ? (
+          <div className="mt-3 rounded-2xl border border-dashed border-adm-line bg-adm-surface py-12 text-center">
+            <p className="text-[14px] text-adm-fade">{m.noSellerProducts()}</p>
+            <Link to="/seller/add" className={`${btn("primary")} mt-3`}>{m.addFirstProduct()}</Link>
+          </div>
+        ) : visible.length === 0 ? (
+          <p className="text-[13px] text-adm-fade text-center py-10">{m.noProducts()}</p>
+        ) : (
+          <div className="mt-3 rounded-2xl border border-adm-line bg-adm-surface overflow-hidden divide-y divide-adm-line">
+            {visible.map((p) => {
+              const sold = p.units.length + (p.status === "sold" || p.status === "paid" ? 1 : 0);
+              const left = p.status === "approved" || p.status === "deletion_requested" ? (p.stock ?? 1) : 0;
+              return (
+                <div key={p._id}>
+                  <button type="button" onClick={() => setOpenId(p._id)} className="w-full flex items-center gap-3 px-3 py-3 text-start hover:bg-adm-sunk">
+                    <div className="w-14 h-14 rounded-xl overflow-hidden bg-[var(--color-sand)] shrink-0">
+                      {p.photos?.[0] && <img {...photoProps(p.photos[p.mainPhotoIndex ?? 0] ?? p.photos[0], 160)} alt="" className="w-full h-full object-cover" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[14px] font-semibold truncate">{p.title}</p>
+                      <p className="text-[13.5px] font-bold tabular-nums mt-0.5">{n(p.salePrice ?? p.price)} IQD</p>
+                      <div className="flex items-center gap-2 mt-0.5 text-[11.5px] text-adm-fade min-w-0">
+                        {p.seq && <span dir="ltr" className="font-mono">{p.seq}</span>}
+                        {linkedStore && <span className="truncate">{m.profitLabel()} <b className="text-adm-soft tabular-nums">{n(p.profit ?? 0)}</b></span>}
+                        {hasStores && p.storeId && storeNames.get(p.storeId) && <span className="truncate">· {storeNames.get(p.storeId)}</span>}
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                      <Status status={p.status} />
+                      {p.soldReportedAt && p.status === "approved" && <span className="text-[10.5px] font-bold text-st-sold">{m.soldReported()}</span>}
+                    </div>
+                  </button>
+                  {(p.units.length > 0 || p.stock > 1) && (
+                    <div className="px-3 pb-3">
+                      <button type="button" disabled={!p.units.length} onClick={() => setExpanded(expanded === p._id ? null : p._id)}
+                        className="w-full flex items-center justify-between rounded-lg bg-adm-sunk px-3 py-2 text-[12px] font-semibold">
+                        <span>{m.unitsSoldLeft({ sold: n(sold), left: n(left) })}</span>
+                        {p.units.length > 0 && <IconChevron className={`w-4 h-4 text-adm-fade transition-transform ${expanded === p._id ? "rotate-90" : "rtl:rotate-180"}`} />}
+                      </button>
+                      {expanded === p._id && (
+                        <div className="mt-1.5 space-y-1">
+                          {p.units.map((u) => (
+                            <div key={u._id} className="flex items-center gap-2 rounded-lg border border-adm-line px-3 py-2 text-[12.5px]">
+                              <span className="text-adm-fade tabular-nums" dir="ltr">{u.dateSold?.slice(0, 10)}</span>
+                              <span className="flex-1 font-bold tabular-nums">{n(u.salePrice ?? u.price)}</span>
+                              <Status status={u.status} />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      {open && <ProductSheet product={open} onClose={() => setOpenId(null)} />}
     </div>
   );
 }

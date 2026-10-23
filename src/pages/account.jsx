@@ -72,9 +72,15 @@ export default function BuyerAccountPage() {
       {/* ── App header card ── */}
       <div className="surface-card p-5 mb-3">
         <div className="flex items-center gap-3.5 mb-3">
-          <div className="w-12 h-12 rounded-2xl bg-[var(--color-ember-500)] flex items-center justify-center shrink-0 shadow-[0_8px_18px_-8px_rgba(237,0,64,0.6)]">
-            <span dir="ltr" className="text-xl font-display text-white">{isSignedIn ? signedInInitial : "M"}</span>
-          </div>
+          {isSignedIn ? (
+            <div className="w-12 h-12 rounded-2xl bg-[var(--color-ember-500)] flex items-center justify-center shrink-0 shadow-[0_8px_18px_-8px_rgba(237,0,64,0.6)]">
+              <span dir="ltr" className="text-xl font-display text-white">{signedInInitial}</span>
+            </div>
+          ) : (
+            <div className="w-12 h-12 rounded-2xl bg-[var(--color-sand)] border border-[var(--color-hairline)] flex items-center justify-center shrink-0">
+              <img src="/logo-mndallan.svg" alt="Mndallan" className="w-9 h-9" />
+            </div>
+          )}
           <div className="min-w-0">
             <p className="font-display text-[17px] text-[var(--color-ink)] leading-tight">{isSignedIn ? (displayName || m.acctMyAccountSec()) : "Mndallan"}</p>
             <p className="text-[var(--color-ink-soft)] text-[12.5px] mt-0.5">{isSignedIn ? email : m.acctAppTagline()}</p>
@@ -82,6 +88,18 @@ export default function BuyerAccountPage() {
         </div>
         <p className="text-[var(--color-ink-soft)] text-[13.5px] leading-relaxed">{m.acctAppDesc()}</p>
       </div>
+
+      {/* ── Start selling ── */}
+      {isLoaded && !isSignedIn && (
+        <div className="rounded-2xl bg-[var(--color-ink)] text-white p-5 mb-3 space-y-2">
+          <p className="text-[16px] font-bold">{m.becomeSellerTitle()}</p>
+          <p className="text-[13px] text-white/75 leading-relaxed">{m.acctStartSellingSub()}. {m.acctSellerFeesNote()}</p>
+          <Link to="/seller/login" className="mt-1 flex items-center justify-center gap-1.5 h-11 rounded-[13px] bg-[var(--color-ember-500)] text-white text-[14px] font-bold">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4"/></svg>
+            {m.acctStartSelling()}
+          </Link>
+        </div>
+      )}
 
       {/* ── Menu ── */}
       <div className="bg-white rounded-2xl border border-[var(--color-hairline)] overflow-hidden">
@@ -136,24 +154,6 @@ export default function BuyerAccountPage() {
               iconBg="bg-gray-50"
               icon={<svg className="w-4 h-4 text-[var(--color-ink-soft)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H9m4 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1"/></svg>}
             />
-          </>
-        )}
-
-        {(!isLoaded || !isSignedIn) && (
-          <>
-            <SectionLabel label={m.acctSellingSec()} />
-            <div className="border-t border-[var(--color-hairline)]"/>
-
-            <Link to="/seller/login" className="w-full flex items-center gap-4 px-4 py-3.5 hover:bg-[var(--color-cream)] transition-colors text-start">
-              <div className="w-9 h-9 rounded-xl bg-[var(--color-ember-50)] flex items-center justify-center shrink-0">
-                <svg className="w-4 h-4 text-[var(--color-ember-500)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/></svg>
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-[var(--color-ink)]">{m.acctStartSelling()}</p>
-                <p className="text-xs text-[var(--color-ink-fade)] mt-0.5">{m.acctStartSellingSub()}</p>
-              </div>
-              <svg className="w-4 h-4 text-[var(--color-ink-fade)] shrink-0 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg>
-            </Link>
           </>
         )}
 
