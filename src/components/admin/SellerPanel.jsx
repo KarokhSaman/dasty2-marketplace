@@ -137,7 +137,7 @@ export default function SellerPanel({ seller: s, products, sellers, stores, onCl
         <div className="rounded-2xl border border-adm-line bg-adm-surface p-3.5 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-[13px]">
           {s.email && <><span className="text-adm-fade">Email</span><span className="truncate" dir="ltr">{s.email}</span></>}
           {(s.city || s.address) && <><span className="text-adm-fade">Address</span><span>{[s.city, s.address].filter(Boolean).join(", ")}</span></>}
-          {s.registeredAt && <><span className="text-adm-fade">Joined</span><span>{new Date(s.registeredAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</span></>}
+          {s.registeredAt && <><span className="text-adm-fade">Joined</span><span dir="ltr">{new Date(s.registeredAt).toLocaleString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit", hour12: true, timeZone: "Asia/Baghdad" })}</span></>}
         </div>
         <div className="flex items-center gap-3 rounded-2xl border border-adm-line bg-adm-surface p-3.5">
           <div className="flex-1 min-w-0">
