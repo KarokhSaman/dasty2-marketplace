@@ -6,7 +6,7 @@ import * as m from "@/paraglide/messages";
 import SellerPanel, { feeDeal } from "@/components/admin/SellerPanel";
 import ProductPanel from "@/components/admin/ProductPanel";
 import { RowList } from "@/components/admin/ProductRow";
-import { PageHeader, SearchBox, FilterChips, Avatar, StoreTag, Empty, Skeleton, fmtIQD } from "@/components/admin/ui";
+import { PageHeader, SearchBox, FilterChips, Avatar, StoreTag, Empty, Skeleton, fmtIQD, useCopy, ltrPhone, IconWhatsApp } from "@/components/admin/ui";
 
 export default function AdminSellersPage() {
   const search = useSearch({ strict: false }) ?? {};
@@ -17,13 +17,15 @@ export default function AdminSellersPage() {
   const [filter, setFilter] = useState("all");
   const [openId, setOpenId] = useState(search.seller ?? null);
   const [productId, setProductId] = useState(null);
+  const copy = useCopy();
 
   const rows = useMemo(() => {
     if (!sellers || !products || !stores) return [];
     const storeOwners = new Set(stores.flatMap((st) => [st.sellerId, st.linkedUserId].filter(Boolean).map(String)));
     const stats = new Map();
     for (const p of products) {
-      const s = stats.get(p.sellerId) ?? { live: 0, waiting: 0, sold: 0, owes: 0 };
+      const s = stats.get(p.sellerId) ?? { live: 0, waiting: 0, sold: 0, owes: 0, total: 0 };
+      s.total++;
       if (p.status === "approved") s.live++;
       if (p.status === "pending") s.waiting++;
       if (p.status === "sold" || p.status === "paid") s.sold++;
@@ -31,13 +33,14 @@ export default function AdminSellersPage() {
       stats.set(p.sellerId, s);
     }
     return sellers
-      .map((s) => ({ ...s, ...(stats.get(s._id) ?? { live: 0, waiting: 0, sold: 0, owes: 0 }), hasStore: storeOwners.has(String(s._id)) }))
+      .map((s) => ({ ...s, ...(stats.get(s._id) ?? { live: 0, waiting: 0, sold: 0, owes: 0, total: 0 }), hasStore: storeOwners.has(String(s._id)) }))
       .sort((a, b) => (b.registeredAt ?? "").localeCompare(a.registeredAt ?? ""));
   }, [sellers, products, stores]);
 
   const counts = useMemo(() => ({
     all: rows.length,
     owes: rows.filter((s) => s.owes > 0).length,
+    empty: rows.filter((s) => s.total === 0).length,
     stores: rows.filter((s) => s.hasStore).length,
     custom: rows.filter((s) => s.feeMode && s.feeMode !== "default").length,
     off: rows.filter((s) => !s.isActive).length,
@@ -46,7 +49,7 @@ export default function AdminSellersPage() {
   const list = useMemo(() => {
     const needle = q.trim().toLowerCase();
     return rows.filter((s) =>
-      (filter === "all" || (filter === "owes" && s.owes > 0) || (filter === "stores" && s.hasStore) ||
+      (filter === "all" || (filter === "owes" && s.owes > 0) || (filter === "empty" && s.total === 0) || (filter === "stores" && s.hasStore) ||
         (filter === "custom" && s.feeMode && s.feeMode !== "default") || (filter === "off" && !s.isActive)) &&
       (!needle || [s.name, s.phone, s.email, s.city].some((v) => (v ?? "").toLowerCase().includes(needle))))
       .sort((a, b) => (filter === "owes" ? b.owes - a.owes : 0));
@@ -64,6 +67,8 @@ export default function AdminSellersPage() {
         <FilterChips value={filter} onChange={setFilter} options={[
           { value: "all", label: m.adminAllStatus(), count: counts.all },
           { value: "owes", label: "Owes fees", count: counts.owes },
+          // Signed up but never posted — copy their number to offer help.
+          { value: "empty", label: "No products", count: counts.empty },
           { value: "stores", label: m.storesFilter(), count: counts.stores },
           { value: "custom", label: "Custom fee", count: counts.custom },
           { value: "off", label: m.adminInactive(), count: counts.off },
@@ -96,7 +101,13 @@ export default function AdminSellersPage() {
                   <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-adm-fade">Owes</p>
                   <p className="text-[15px] font-bold text-st-sold tabular-nums" dir="ltr">{fmtIQD(s.owes)}</p>
                 </>
-              ) : <p className="text-[12px] text-adm-fade">Nothing owed</p>}
+              ) : (
+                <button type="button" aria-label={`Copy ${s.phone}`}
+                  onClick={(e) => { e.stopPropagation(); copy(ltrPhone(s.phone), "Number copied"); }}
+                  className="inline-flex items-center gap-1.5 h-9 px-3 rounded-full border border-adm-line bg-adm-surface text-[12.5px] font-semibold text-adm-ink active:bg-adm-sunk">
+                  <IconWhatsApp className="w-4 h-4 text-[#25D366]" /> Copy
+                </button>
+              )}
             </div>
           </div>
         ))}

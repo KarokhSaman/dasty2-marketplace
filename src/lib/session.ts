@@ -1,7 +1,8 @@
 import { createServerFn } from '@tanstack/react-start'
-import { getCookie, getRequest } from '@tanstack/react-start/server'
+import { getCookie, getRequest, setResponseHeader } from '@tanstack/react-start/server'
 import { fetchAction } from 'convex/nextjs'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useConvexAuth } from 'convex/react'
 import { api } from '@/convex/_generated/api'
 import { convexServerOptions } from '@/lib/convex'
 import { setSessionCookie } from '@/lib/session.server'
@@ -37,6 +38,8 @@ function needsRefresh(jwt: string): boolean {
 }
 
 export const fetchSession = createServerFn({ method: 'GET' }).handler(async () => {
+  // Per-user answer: never let a browser or proxy replay an old one.
+  setResponseHeader('Cache-Control', 'private, no-store')
   const jwt = getCookie(SESSION_COOKIE)
   if (!jwt) return { jwt: null }
 
@@ -65,7 +68,9 @@ async function fetchSessionWithRetry(attempts = 3): Promise<string | null> {
   for (let i = 0; ; i++) {
     try {
       const { jwt } = await fetchSession()
-      lastJwt = jwt ?? null
+      // Sign-out is always a full page load, so an empty answer while this
+      // tab holds a session is a glitch — keep the session we have.
+      lastJwt = jwt ?? lastJwt
       return lastJwt
     } catch (err) {
       if (i >= attempts - 1) {
@@ -86,15 +91,34 @@ async function fetchSessionWithRetry(attempts = 3): Promise<string | null> {
 // this re-runs with the fresh cookie rather than mutating state in place.
 export function createVerifySpeedAuth(initialJwt?: string | null) {
   const known = initialJwt !== undefined
-  if (known) lastJwt = initialJwt ?? null
+  // Browser only: on the server this module is shared by every request.
+  if (known && typeof window !== 'undefined') lastJwt = initialJwt ?? null
   return function useVerifySpeedAuth() {
     return useVerifySpeedAuthState(known, !!initialJwt)
   }
 }
 
+// Set while the auth hook is mounted: asks Convex to log in again from scratch.
+let restartConvexAuth: (() => void) | null = null
+
+/** Whether this tab holds a session (the user is signed in, as far as we know). */
+export function hasSessionToken() {
+  return typeof window !== 'undefined' && !!lastJwt
+}
+
 function useVerifySpeedAuthState(known: boolean, initiallyAuthenticated: boolean) {
   const [isLoading, setIsLoading] = useState(!known)
   const [isAuthenticated, setIsAuthenticated] = useState(initiallyAuthenticated)
+  // A new fetchAccessToken makes ConvexProviderWithAuth call client.setAuth
+  // again, which re-sends the token even if it is the same one.
+  const [authAttempt, setAuthAttempt] = useState(0)
+
+  useEffect(() => {
+    restartConvexAuth = () => setAuthAttempt((n) => n + 1)
+    return () => {
+      restartConvexAuth = null
+    }
+  }, [])
 
   const fetchAccessToken = useCallback(
     async (opts?: { forceRefreshToken?: boolean }) => {
@@ -107,7 +131,8 @@ function useVerifySpeedAuthState(known: boolean, initiallyAuthenticated: boolean
         return lastJwt
       }
     },
-    [],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [authAttempt],
   )
 
   useEffect(() => {
@@ -140,4 +165,42 @@ function useVerifySpeedAuthState(known: boolean, initiallyAuthenticated: boolean
     () => ({ isLoading, isAuthenticated, fetchAccessToken }),
     [isLoading, isAuthenticated, fetchAccessToken],
   )
+}
+
+// When the Convex server rejects the token once (e.g. a hiccup verifying it),
+// the client fetches it again, gets the same token back, and gives up — the
+// tab then looks signed out until a full reload, although the session cookie
+// is fine. While we still hold a session, keep asking Convex to log in again:
+// soon, then less often, and at once when the phone is back online or the
+// tab is in front again. Must be used inside ConvexProviderWithAuth.
+const RETRY_DELAYS_MS = [1000, 3000, 10000, 30000, 60000]
+
+export function useKeepConvexAuth() {
+  const { isLoading, isAuthenticated } = useConvexAuth()
+  const lost = !isLoading && !isAuthenticated && hasSessionToken()
+  const attempts = useRef(0)
+
+  useEffect(() => {
+    if (isAuthenticated) attempts.current = 0
+  }, [isAuthenticated])
+
+  useEffect(() => {
+    if (!lost) return
+    const delay = RETRY_DELAYS_MS[Math.min(attempts.current, RETRY_DELAYS_MS.length - 1)]
+    const retry = () => {
+      attempts.current++
+      restartConvexAuth?.()
+    }
+    const timer = setTimeout(retry, delay)
+    const retryNow = () => {
+      if (document.visibilityState === 'visible') retry()
+    }
+    window.addEventListener('online', retryNow)
+    document.addEventListener('visibilitychange', retryNow)
+    return () => {
+      clearTimeout(timer)
+      window.removeEventListener('online', retryNow)
+      document.removeEventListener('visibilitychange', retryNow)
+    }
+  }, [lost])
 }
