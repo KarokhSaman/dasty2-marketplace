@@ -344,6 +344,7 @@
   "rejectReasonNotBaby": "ئەمە کاڵای منداڵان نییە",
   "rejectReasonDuplicate": "پێشتر بڵاوکراوەتەوە (دووبارەیە)",
   "rejectReasonDetails": "تکایە زانیاری زیاتر زیاد بکە",
+  "rejectReasonOwnPhoto": "وێنەی کاڵاکەی خۆت بگرە. هی ئینتەرنێت بەکارمەهێنە.",
   "feesWaGreeting": "سڵاو گیان، سوپاس بۆ هەڵبژاردنی ماڵپەری Mndallan.",
   "feesWaIntro": "کرێی خزمەتگوزاری بۆ فرۆشتنەکانت:",
   "feesWaTotal": "کۆی گشتی: {total} دینار",

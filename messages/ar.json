@@ -344,6 +344,7 @@
   "rejectReasonNotBaby": "ليس منتجًا للأطفال",
   "rejectReasonDuplicate": "منشور مسبقًا (مكرر)",
   "rejectReasonDetails": "يرجى إضافة تفاصيل أكثر",
+  "rejectReasonOwnPhoto": "صوّر منتجك بنفسك. لا تستخدم صوراً من الإنترنت.",
   "feesWaGreeting": "مرحبًا عزيزي، شكرًا لاختيارك موقع Mndallan.",
   "feesWaIntro": "رسوم الخدمة لمبيعاتك:",
   "feesWaTotal": "المجموع: {total} دينار",
