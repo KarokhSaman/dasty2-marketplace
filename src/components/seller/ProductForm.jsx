@@ -266,10 +266,12 @@ export default function ProductForm({ initial, seller, activeOffer, submitLabel,
             m.descHintDims(), m.descHintBirthTo5y(), m.descHintBirthTo9kg(), m.descHintUsedTwice(),
             m.descHintDamage(), m.descHintVibrates(), m.descHintNewShop(),
             m.descHintMusic(), m.descHintRock(), m.descHintHeight(), m.descHintFold(),
-          ].filter((h) => !description.includes(h.trim())).map((h) => (
+          ].map((h) => h.replace(/[:.]\s*$/, "").trim())
+            .filter((h) => !description.includes(h)).map((h) => (
+            // Each tapped hint goes on its own line, ending with a full stop.
             <button key={h} type="button" className={chip}
-              onClick={() => { setDescription((d) => (d.trim() ? `${d.trimEnd()}\n${h}` : h)); document.getElementById("pf-desc")?.focus(); }}>
-              + {h.replace(/:\s*$/, "")}
+              onClick={() => { setDescription((d) => (d.trim() ? `${d.trimEnd()}\n${h}.` : `${h}.`)); document.getElementById("pf-desc")?.focus(); }}>
+              + {h}
             </button>
           ))}
         </div>
