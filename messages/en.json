@@ -344,6 +344,7 @@
   "rejectReasonNotBaby": "Not a baby product",
   "rejectReasonDuplicate": "Already posted (duplicate)",
   "rejectReasonDetails": "Please add more details",
+  "rejectReasonOwnPhoto": "Take a photo of your own item. Don't use photos from the internet.",
   "feesWaGreeting": "Hi dear, thank you for choosing Mndallan.",
   "feesWaIntro": "Service fees for your sales:",
   "feesWaTotal": "Total: {total} IQD",

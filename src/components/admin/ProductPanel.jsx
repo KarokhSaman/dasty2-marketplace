@@ -31,6 +31,7 @@ const KU = { locale: "ckb" };
 export const REJECT_REASONS = [
   () => m.rejectReasonPhotos({}, KU), () => m.rejectReasonCategory({}, KU), () => m.rejectReasonPrice({}, KU),
   () => m.rejectReasonNotBaby({}, KU), () => m.rejectReasonDuplicate({}, KU), () => m.rejectReasonDetails({}, KU),
+  () => m.rejectReasonOwnPhoto({}, KU),
 ];
 
 const isSoldish = (p) => p.status === "sold" || p.status === "paid";
