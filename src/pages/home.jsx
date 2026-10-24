@@ -240,7 +240,7 @@ function EndDivider({ label }) {
 
 // ── Filters state ──────────────────────────────────────────
 const INITIAL_FILTERS = {
-  condition: "all", sort: "default", cities: [], storesOnly: false,
+  condition: "all", sort: "default", storesOnly: false,
 };
 
 export default function HomePage() {
@@ -250,16 +250,16 @@ export default function HomePage() {
   const [rotationTick, setRotationTick] = useState(0); // Trigger re-render every 15 seconds
   const [isRotating, setIsRotating] = useState(false); // Animation state
   const { condition, sort } = filters;
-  const cities = filters.cities ?? [];
 
   const updateFilter = (key) => (value) => setFilters((f) => ({ ...f, [key]: value }));
 
-  // Category and brand live in the URL (?category=Stroller&brand=Nuna) so they
-  // survive a refresh and can be shared; the other filters stay in page state.
+  // Category, brand and city live in the URL (?category=Stroller&brand=Nuna&city=Erbil,Duhok)
+  // so they survive a refresh and can be shared; the other filters stay in page state.
   const search = useSearch({ from: "/_public/" });
   const navigate = useNavigate();
   const category = search.category ?? "all";
   const brand = search.brand ?? "";
+  const cities = useMemo(() => (search.city ? search.city.split(",") : []), [search.city]);
   const setUrlFilters = (next) =>
     navigate({ to: ".", search: (prev) => ({ ...prev, ...next }), replace: true, resetScroll: false });
   const setCategory = (next) =>
@@ -269,6 +269,7 @@ export default function HomePage() {
       brand: brand && brandFitsCategory(brand, next) ? brand : undefined,
     });
   const setBrand = (next) => setUrlFilters({ brand: next || undefined });
+  const setCities = (next) => setUrlFilters({ city: next.length ? next.join(",") : undefined });
   const sentinelRef = useRef(null);
   // Shuffle seed — calculated after hydration to avoid server/client mismatch
   const shuffleSeedRef = useRef(0);
@@ -300,7 +301,10 @@ export default function HomePage() {
   // shown only while a store product is live (answer comes with the page).
   const { data: hasStoreProducts } = useReactQuery(convexQuery(api.products.hasStoreProducts, {}));
   const storesOnly = !!filters.storesOnly && hasStoreProducts !== false;
-  const setStoresOnly = (on) => setFilters((f) => ({ ...f, storesOnly: on, cities: [], condition: "all" }));
+  const setStoresOnly = (on) => {
+    setFilters((f) => ({ ...f, storesOnly: on, condition: "all" }));
+    setUrlFilters({ city: undefined });
+  };
   const storeArgs = storesOnly ? { stores: true } : {};
   // A list saved from earlier only counts while it matches the filter.
   const forFilter = (list) => (storesOnly ? list?.filter((p) => !!p.storeId) : list);
@@ -483,7 +487,7 @@ export default function HomePage() {
 
       <FiltersRow
         cities={cities}
-        setCities={updateFilter("cities")}
+        setCities={setCities}
         availableCities={availableCities}
         showStores={!!hasStoreProducts}
         storesOnly={storesOnly}
@@ -503,7 +507,7 @@ export default function HomePage() {
           hasActiveFilter={
             condition !== "all" || cities.length > 0 || storesOnly || sort !== "default" || category !== "all" || !!brand
           }
-          onReset={() => { setFilters(INITIAL_FILTERS); setUrlFilters({ category: undefined, brand: undefined }); }}
+          onReset={() => { setFilters(INITIAL_FILTERS); setUrlFilters({ category: undefined, brand: undefined, city: undefined }); }}
         />
       )}
 

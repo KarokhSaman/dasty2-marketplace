@@ -6,16 +6,20 @@ import { CATEGORY_CONFIG } from '@/lib/categories'
 
 const CATEGORY_KEYS = new Set(CATEGORY_CONFIG.map((c) => c.value).filter((v) => v !== 'all'))
 
-export type HomeSearch = { category?: string; brand?: string }
+export type HomeSearch = { category?: string; brand?: string; city?: string }
 
 export const Route = createFileRoute('/_public/')({
-  // ?category=Stroller&brand=Nuna — keeps the filters on refresh and in shared links.
+  // ?category=Stroller&brand=Nuna&city=Erbil,Duhok — keeps the filters on refresh
+  // and in shared links.
   validateSearch: (search: Record<string, unknown>): HomeSearch => ({
     category:
       typeof search.category === 'string' && CATEGORY_KEYS.has(search.category)
         ? search.category
         : undefined,
     brand: typeof search.brand === 'string' && search.brand.trim() ? search.brand.trim() : undefined,
+    city: typeof search.city === 'string'
+      ? [...new Set(search.city.split(',').map((c) => c.trim()).filter(Boolean))].join(',') || undefined
+      : undefined,
   }),
   loaderDeps: ({ search }) => ({ category: search.category }),
   // Prefetch the (non-paginated) featured products, and whether store products
