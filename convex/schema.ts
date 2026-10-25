@@ -171,6 +171,12 @@ export default defineSchema({
   })
     .index("by_sellerId", ["sellerId"])
     .index("by_productId", ["productId"]),
+
+  // One row per login code sent, for the per-number limit (otpLimits.ts).
+  // Rows older than the limit's window are removed as new ones come in.
+  otpSends: defineTable({
+    phone: v.string(),
+  }).index("by_phone", ["phone"]),
 }, {
   // Remove this after migrateToVerifySpeed has run on all deployments.
   schemaValidation: false,

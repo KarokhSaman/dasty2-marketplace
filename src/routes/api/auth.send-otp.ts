@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { fetchAction } from 'convex/nextjs'
+import { ConvexError } from 'convex/values'
 import { api } from '@/convex/_generated/api'
 import { convexServerOptions } from '@/lib/convex'
 
@@ -57,6 +58,11 @@ export const Route = createFileRoute('/api/auth/send-otp')({
             methodName: res.methodName,
           })
         } catch (err) {
+          // Too many codes for this number: tell the page how long to wait.
+          if (err instanceof ConvexError && (err.data as { code?: string })?.code === 'OTP_LIMIT') {
+            const { retryAfterMs } = err.data as { retryAfterMs: number }
+            return Response.json({ errorCode: 'OTP_LIMIT', retryAfterMs }, { status: 429 })
+          }
           console.error('VerifySpeed send failed', err)
           return Response.json(
             { error: 'send_failed' },

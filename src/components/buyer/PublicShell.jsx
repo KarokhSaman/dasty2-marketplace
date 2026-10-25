@@ -13,6 +13,12 @@ function isProductFormPath(pathname) {
   return pathname === "/seller/add" || /^\/seller\/products\/[^/]+\/edit\/?$/.test(pathname);
 }
 
+// Finishing sign-up: no Sell now, bell, seller links or bottom bar, since each
+// of them would only lead back to this page until the profile is saved.
+function isSignupPath(pathname) {
+  return /^\/seller\/complete-profile\/?$/.test(pathname);
+}
+
 import { useQuery, useConvexAuth } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useGlobalSellerSession } from "@/lib/SellerSessionContext";
@@ -72,7 +78,9 @@ export function useLogoAnimation() {
   return shouldAnimate;
 }
 
-function Wordmark({ isAuthPage }) {
+// Always a link home — on the login pages too, so someone who opened them by
+// mistake (e.g. tapped Sell now) has a way back besides the browser.
+function Wordmark() {
   const shouldAnimate = useLogoAnimation();
 
   const content = (
@@ -89,17 +97,6 @@ function Wordmark({ isAuthPage }) {
       </div>
     </>
   );
-
-  if (isAuthPage) {
-    return (
-      <>
-        <style>{logoAnimationStyles}</style>
-        <div dir="ltr" className="inline-flex items-center gap-1 shrink-0 select-none">
-          {content}
-        </div>
-      </>
-    );
-  }
 
   return (
     <>
@@ -130,9 +127,9 @@ function SellerDesktopNav() {
 
   return (
     <div className="flex items-center gap-2">
-      <Wordmark isAuthPage={isAuthPage} />
+      <Wordmark />
 
-      {!isAuthPage && (
+      {!isAuthPage && !isSignupPath(pathname) && (
         <div className="hidden xl:flex items-center gap-1 ms-2 ps-2 border-s border-[var(--color-hairline)]">
         <Link to="/" className={`${linkBase} ${isHome ? "bg-[var(--color-ember-50)] text-[var(--color-ember-600)]" : "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] hover:bg-white/60"}`}>
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -177,7 +174,7 @@ function HeaderActions() {
   );
   const unread = (notifications ?? []).filter(n => !n.read).length;
 
-  if (!ready) {
+  if (!ready || isSignupPath(pathname)) {
     return (
       <div className="flex items-center gap-2">
         <LocaleSwitcher />
@@ -230,7 +227,8 @@ function HeaderActions() {
         </>
       ) : (
         <a
-          href="/seller/login"
+          // After login (and profile) this seller is taken to the add form.
+          href="/seller/login?next=add"
           className="inline-flex items-center justify-center h-8 ps-2.5 pe-3 text-[11.5px] font-bold tracking-wide gap-1 rounded-full bg-[#ed0040] hover:bg-[#c80037] text-white transition-all active:scale-[0.98]"
         >
           <PlusIcon className="w-3 h-3" />
@@ -261,7 +259,7 @@ function SmartBottomNav() {
   if (!ready) return null;
 
   if (/\/(?:seller|admin)\/login\/?$/.test(pathname)) return null;
-  if (isProductFormPath(pathname)) return null;
+  if (isProductFormPath(pathname) || isSignupPath(pathname)) return null;
 
   // Product detail page renders its own sticky bottom CTA (WhatsApp).
   // Hide the global nav there so the two don't stack.

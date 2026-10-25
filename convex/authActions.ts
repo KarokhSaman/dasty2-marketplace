@@ -1,6 +1,6 @@
 "use node";
 
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 import { SignJWT, importPKCS8 } from "jose";
 import { action } from "./_generated/server";
 import { api, internal } from "./_generated/api";
@@ -47,6 +47,8 @@ async function mintSessionJwt(claims: {
 
 // Step 1 — send an OTP. VerifySpeed delivers the code over the chosen channel.
 // clientIpv4 is injected by the Worker route from the real client IP.
+// Each number gets a limited number of codes per hour (otpLimits.ts); past it
+// this throws ConvexError { code: "OTP_LIMIT", retryAfterMs } without sending.
 export const sendOtp = action({
   args: {
     methodName: methodValidator,
@@ -56,17 +58,28 @@ export const sendOtp = action({
   },
   returns: v.object({ verificationKey: v.string(), methodName: v.string() }),
   handler: async (
-    _ctx,
+    ctx,
     args,
   ): Promise<{ verificationKey: string; methodName: string }> => {
-    const created = await vsCreate(
-      {
-        methodName: args.methodName as VsMethod,
-        language: (args.language ?? "en") as VsLanguage,
-        phoneNumber: args.phoneNumber,
-      },
-      args.clientIpv4,
-    );
+    const slot = await ctx.runMutation(internal.otpLimits.takeSendSlot, { phone: args.phoneNumber });
+    if (!slot.ok) {
+      throw new ConvexError({ code: "OTP_LIMIT", retryAfterMs: slot.retryAfterMs });
+    }
+    let created;
+    try {
+      created = await vsCreate(
+        {
+          methodName: args.methodName as VsMethod,
+          language: (args.language ?? "en") as VsLanguage,
+          phoneNumber: args.phoneNumber,
+        },
+        args.clientIpv4,
+      );
+    } catch (err) {
+      // Nothing was sent, so it doesn't count against the seller.
+      await ctx.runMutation(internal.otpLimits.releaseSendSlot, { slotId: slot.slotId });
+      throw err;
+    }
     return { verificationKey: created.verificationKey, methodName: created.methodName };
   },
 });

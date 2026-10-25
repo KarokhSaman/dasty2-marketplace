@@ -67,16 +67,45 @@ function FeePreview() {
   );
 }
 
+// One sale worked through, so the seller sees what they keep. 75,000 falls in
+// the 50,000 – 99,000 tier (fee 5,000).
+const EXAMPLE = { price: "75,000", fee: "5,000", keep: "70,000" };
+
 function FeeTable() {
   return (
-    <div className="space-y-2 p-5">
-      <p className="text-sm text-[var(--color-ink-soft)] mb-4">{m.loginFeesNote()}</p>
-      {FEE_TIERS.map((tier) => (
-        <div key={tier.range} className="flex items-center justify-between rounded-xl bg-[var(--color-cream)] px-3.5 py-2.5 text-sm">
-          <span className="text-[var(--color-ink-soft)] font-mono text-xs">{tier.range}</span>
-          <span className="text-rose-600 font-bold">{tier.fee} IQD</span>
+    <div className="p-5 space-y-4">
+      <p className="text-[15px] font-bold text-[var(--color-ink)]">{m.loginFeesTitle()}</p>
+
+      <div className="rounded-2xl bg-[var(--color-sand)] p-3.5 space-y-2 text-sm">
+        <div className="flex items-center justify-between text-[var(--color-ink-soft)]">
+          <span>{m.acctFeesPriceCol()}</span>
+          <span dir="ltr" className="font-semibold text-[var(--color-ink)] tabular-nums">{EXAMPLE.price}</span>
         </div>
-      ))}
+        <div className="flex items-center justify-between text-[var(--color-ink-soft)]">
+          <span>{m.acctFeesFeeCol()}</span>
+          <span dir="ltr" className="font-semibold text-rose-600 tabular-nums">− {EXAMPLE.fee}</span>
+        </div>
+        <div className="flex items-center justify-between border-t border-dashed border-[var(--color-ink-fade)]/40 pt-2 font-bold text-[var(--color-ink)]">
+          <span>{m.youReceive()}</span>
+          <span dir="ltr" className="text-base text-green-700 tabular-nums">{EXAMPLE.keep} IQD</span>
+        </div>
+      </div>
+
+      {/* Same table as the seller account page. */}
+      <div className="rounded-xl overflow-hidden border border-[var(--color-hairline)]">
+        <div className="grid grid-cols-2 bg-[var(--color-cream-deep)] px-3 py-2">
+          <p className="text-xs font-semibold text-[var(--color-ink-soft)]">{m.acctFeesPriceCol()}</p>
+          <p className="text-xs font-semibold text-[var(--color-ink-soft)] text-end">{m.acctFeesFeeCol()}</p>
+        </div>
+        {FEE_TIERS.map((tier, i) => (
+          <div key={tier.range} className={`grid grid-cols-2 px-3 py-2 ${i % 2 === 0 ? "bg-white" : "bg-[var(--color-cream)]"}`}>
+            <p className="text-xs text-[var(--color-ink-soft)] font-mono"><span dir="ltr">{tier.range}</span></p>
+            <p className="text-xs font-bold text-rose-600 text-end"><span dir="ltr">{tier.fee} IQD</span></p>
+          </div>
+        ))}
+      </div>
+
+      <p className="text-xs leading-relaxed text-[var(--color-ink-fade)]">{m.loginFeesNote()}</p>
     </div>
   );
 }
@@ -166,13 +195,15 @@ export default function SellerLoginPage() {
   const [infoSheet, setInfoSheet] = useState(null);
 
   // Route by role after a verified OTP. Hard navigation so the new session
-  // cookie is picked up by the Convex provider + SSR guards. New sellers land on
-  // complete-profile, which bounces to /seller once their profile is filled.
+  // cookie is picked up by the Convex provider + SSR guards. Sellers go through
+  // complete-profile, which moves on once the profile is filled: to the add
+  // form if they came from Sell now (?next=add), otherwise the dashboard.
   async function handleVerified(role) {
     if (role === "admin" || role === "super_admin") {
       window.location.href = "/admin";
     } else {
-      window.location.href = "/seller/complete-profile";
+      const toAdd = new URLSearchParams(window.location.search).get("next") === "add";
+      window.location.href = `/seller/complete-profile${toAdd ? "?next=add" : ""}`;
     }
   }
 
