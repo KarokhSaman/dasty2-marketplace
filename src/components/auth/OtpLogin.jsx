@@ -81,11 +81,14 @@ function ErrorBox({ message }) {
 // Two-step phone → OTP login shared by seller and admin. Calls the /api/auth
 // routes, then hands the verified role back to the caller for navigation.
 // `phoneHint` shows the "buyers contact you on WhatsApp" note (sellers only).
-export default function OtpLogin({ onVerified, phoneHint = true }) {
+// `methods` limits how the code can be sent (ids from METHODS); with one, the
+// choice and the "try another way" row are not shown. Admin login: WhatsApp only.
+export default function OtpLogin({ onVerified, phoneHint = true, methods = null }) {
+  const allowed = methods ? METHODS.filter((mm) => methods.includes(mm.id)) : METHODS;
   const [step, setStep] = useState("phone"); // phone | otp
   const [dialCode, setDialCode] = useState(DEFAULT_DIAL_CODE);
   const [local, setLocal] = useState("");
-  const [method, setMethod] = useState("whatsapp-otp");
+  const [method, setMethod] = useState(allowed[0].id);
   const [verificationKey, setVerificationKey] = useState("");
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
@@ -277,10 +280,10 @@ export default function OtpLogin({ onVerified, phoneHint = true }) {
           )}
         </div>
 
-        <div className="pt-2 border-t border-[var(--color-hairline)]">
+        {allowed.length > 1 && <div className="pt-2 border-t border-[var(--color-hairline)]">
           <p className="text-[11px] text-[var(--color-ink-fade)] mb-2">{m.otpTryAnother()}</p>
           <div className="flex flex-wrap gap-2">
-            {METHODS.filter((mm) => mm.id !== method).map((mm) => (
+            {allowed.filter((mm) => mm.id !== method).map((mm) => (
               <button
                 key={mm.id}
                 type="button"
@@ -292,7 +295,7 @@ export default function OtpLogin({ onVerified, phoneHint = true }) {
               </button>
             ))}
           </div>
-        </div>
+        </div>}
       </form>
     );
   }
@@ -332,11 +335,11 @@ export default function OtpLogin({ onVerified, phoneHint = true }) {
         </div>}
       </div>
 
-      {/* How to send the code: all three choices in view, one tap each. */}
-      <div>
+      {/* How to send the code: all choices in view, one tap each. */}
+      {allowed.length > 1 && <div>
         <p className="text-sm font-medium text-[var(--color-ink)] mb-1.5">{m.otpChooseMethod()}</p>
-        <div role="radiogroup" aria-label={m.otpChooseMethod()} className="grid grid-cols-3 gap-2">
-          {METHODS.map((mm) => {
+        <div role="radiogroup" aria-label={m.otpChooseMethod()} className={`grid gap-2 ${allowed.length === 2 ? "grid-cols-2" : "grid-cols-3"}`}>
+          {allowed.map((mm) => {
             const on = method === mm.id;
             return (
               <button
@@ -346,7 +349,7 @@ export default function OtpLogin({ onVerified, phoneHint = true }) {
                 aria-checked={on}
                 onClick={() => setMethod(mm.id)}
                 style={on ? { backgroundColor: mm.bg, borderColor: mm.color, color: mm.text } : undefined}
-                className={`h-11 flex items-center justify-center gap-1.5 rounded-xl border text-[13px] font-bold transition-colors ${
+                className={`h-11 px-1 flex items-center justify-center gap-1 rounded-xl border text-[12.5px] font-bold whitespace-nowrap transition-colors ${
                   on ? "shadow-[0_1px_3px_rgba(11,12,15,0.08)]" : "bg-white border-[var(--color-hairline)] text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]"
                 }`}
               >
@@ -356,7 +359,7 @@ export default function OtpLogin({ onVerified, phoneHint = true }) {
             );
           })}
         </div>
-      </div>
+      </div>}
 
       <ErrorBox message={error} />
       <button
