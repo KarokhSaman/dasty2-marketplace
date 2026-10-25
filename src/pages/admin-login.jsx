@@ -26,7 +26,7 @@ export default function AdminLoginPage() {
           <h1 className="text-xl font-bold text-gray-900">{m.adminLoginTitle()}</h1>
         </div>
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-7">
-          <OtpLogin onVerified={handleVerified} phoneHint={false} />
+          <OtpLogin onVerified={handleVerified} phoneHint={false} methods={["whatsapp-otp"]} />
           <MockLoginButton role="admin" />
         </div>
       </div>

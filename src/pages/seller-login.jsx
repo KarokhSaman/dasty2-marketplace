@@ -147,27 +147,39 @@ function InfoPanel({ onOpenFees }) {
 function MobileInfoActions({ onOpenHow, onOpenFees }) {
   return (
     <div className="grid grid-cols-2 gap-2 lg:hidden">
-      <button
-        type="button"
+      <InfoCard
         onClick={onOpenHow}
-        className="flex h-10 items-center justify-center gap-2 rounded-xl border border-[var(--color-hairline)] bg-white text-xs font-semibold text-[var(--color-ink)]"
-      >
-        <svg className="w-4 h-4 text-[var(--color-ember-600)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        {m.loginHowLabel()}
-      </button>
-      <button
-        type="button"
+        label={m.loginHowLabel()}
+        tone="bg-blue-50 text-blue-500"
+        // three steps joined by a path
+        icon={<><circle cx="6" cy="6" r="2.25" /><circle cx="18" cy="12" r="2.25" /><circle cx="6" cy="18" r="2.25" /><path d="M8.2 6.9 15.8 11M15.8 13 8.2 17.1" /></>}
+      />
+      <InfoCard
         onClick={onOpenFees}
-        className="flex h-10 items-center justify-center gap-2 rounded-xl border border-[var(--color-hairline)] bg-white text-xs font-semibold text-[var(--color-ink)]"
-      >
-        <svg className="w-4 h-4 text-[var(--color-ember-600)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V7m0 9v1m9-5a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        {m.loginFeesSec()}
-      </button>
+        label={m.loginFeesSec()}
+        tone="bg-emerald-50 text-emerald-600"
+        // receipt
+        icon={<><path d="M6 3h12v18l-2.5-1.5L13 21l-2.5-1.5L8 21l-2-1.5V3Z" /><path d="M9 8h6M9 12h6M9 16h3" /></>}
+      />
     </div>
+  );
+}
+
+// A small card: icon in a soft coloured tile and the label on one line.
+function InfoCard({ onClick, label, tone, icon }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex items-center justify-center gap-2 rounded-2xl border border-[var(--color-hairline)] bg-white px-2 py-2 shadow-[0_1px_2px_rgba(11,12,15,0.04)] transition hover:border-[var(--color-ink-fade)]/40 hover:shadow-[0_4px_14px_-6px_rgba(11,12,15,0.18)] active:scale-[0.98]"
+    >
+      <span className={`w-8 h-8 rounded-[10px] grid place-items-center shrink-0 ${tone}`}>
+        <svg className="w-[17px] h-[17px]" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" aria-hidden>
+          {icon}
+        </svg>
+      </span>
+      <span className="text-[13px] font-bold text-[var(--color-ink)] whitespace-nowrap">{label}</span>
+    </button>
   );
 }
 
