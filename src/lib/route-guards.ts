@@ -11,7 +11,11 @@ export async function loadCurrentSeller(queryClient: QueryClient) {
 // Convex websocket may not have sent it yet, so a `null` seller there doesn't
 // mean "logged out" — SellerShell waits for auth instead. The server-side
 // check (authenticated SSR client) is authoritative.
-export async function requireSeller(queryClient: QueryClient, token?: string | null) {
+export async function requireSeller(
+  queryClient: QueryClient,
+  token?: string | null,
+  { toAddAfterProfile = false }: { toAddAfterProfile?: boolean } = {},
+) {
   const seller = await loadCurrentSeller(queryClient)
   if (!seller && token && typeof window !== 'undefined') {
     return { seller: null }
@@ -21,7 +25,10 @@ export async function requireSeller(queryClient: QueryClient, token?: string | n
   }
   // Enforce profile completion — if seller has no name, redirect to complete profile
   if (!seller.name || !seller.name.trim()) {
-    throw redirect({ to: '/seller/complete-profile' })
+    throw redirect({
+      to: '/seller/complete-profile',
+      search: (toAddAfterProfile ? { next: 'add' } : {}) as never,
+    })
   }
   return { seller }
 }
