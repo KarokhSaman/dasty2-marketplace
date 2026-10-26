@@ -548,12 +548,27 @@ export const getPublicPaginated = query({
     // true = only store products (the home page "Stores" filter); otherwise all.
     stores: v.optional(v.boolean()),
     brand: v.optional(v.string()),
+    // Price order for the whole list, not just the loaded part. Omitted:
+    // newest first.
+    sort: v.optional(v.union(v.literal("price_asc"), v.literal("price_desc"))),
   },
-  handler: async (ctx, { paginationOpts, category, stores, brand }) => {
+  handler: async (ctx, { paginationOpts, category, stores, brand, sort }) => {
     const inactiveIds = await getInactiveSellerIds(ctx);
     const hasCategory = !!category && category !== "all";
     const products = ctx.db.query("products");
-    const base =
+    const byPrice = () =>
+      hasCategory && brand
+        ? products.withIndex("by_status_and_category_and_brand_and_price", (q) =>
+            q.eq("status", "approved").eq("category", category!).eq("brand", brand),
+          )
+        : brand
+          ? products.withIndex("by_status_and_brand_and_price", (q) => q.eq("status", "approved").eq("brand", brand))
+          : hasCategory
+            ? products.withIndex("by_status_and_category_and_price", (q) =>
+                q.eq("status", "approved").eq("category", category!),
+              )
+            : products.withIndex("by_status_and_price", (q) => q.eq("status", "approved"));
+    const base = sort ? byPrice() :
       hasCategory && brand
         ? products.withIndex("by_status_category_brand", (q) =>
             q.eq("status", "approved").eq("category", category!).eq("brand", brand),
@@ -567,7 +582,7 @@ export const getPublicPaginated = query({
             : products.withIndex("by_status", (q) => q.eq("status", "approved"));
     const q = stores ? base.filter((f) => f.neq(f.field("storeId"), undefined)) : base;
 
-    const result = await q.order("desc").paginate(paginationOpts);
+    const result = await q.order(sort === "price_asc" ? "asc" : "desc").paginate(paginationOpts);
     return {
       ...result,
       page: await withStoreDiscounts(

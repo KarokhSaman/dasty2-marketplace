@@ -7,6 +7,7 @@ import { useImageUpload } from "@/lib/useImageUpload";
 import * as m from "@/paraglide/messages";
 import { errorMessage } from "@/lib/errors";
 import { photoProps } from "@/lib/images";
+import { lockScroll } from "@/lib/scrollLock";
 import { useProductActions } from "@/components/admin/useProductActions";
 import { RejectBox } from "@/components/admin/ProductPanel";
 import CustomSelect from "@/components/ui/CustomSelect";
@@ -47,11 +48,7 @@ export default function ReviewMode({ queue, onClose }) {
   const total = ids.length;
 
   useEffect(() => setMounted(true), []);
-  useEffect(() => {
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = prev; };
-  }, []);
+  useEffect(() => lockScroll(), []);
 
   // Each product opens on its main photo, with its details not being edited.
   useEffect(() => { setPhoto(byId[ids[index]]?.mainPhotoIndex ?? 0); setTurns(0); setConfirmDel(false); setEditing(false); setDraft(null); }, [index]);

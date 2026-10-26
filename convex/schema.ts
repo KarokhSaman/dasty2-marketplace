@@ -70,6 +70,11 @@ export default defineSchema({
     .index("by_status_city",     ["status", "city"])
     .index("by_status_brand",          ["status", "brand"])
     .index("by_status_category_brand", ["status", "category", "brand"])
+    // Home page "price low/high" sort, for each filter combination.
+    .index("by_status_and_price", ["status", "price"])
+    .index("by_status_and_category_and_price", ["status", "category", "price"])
+    .index("by_status_and_brand_and_price", ["status", "brand", "price"])
+    .index("by_status_and_category_and_brand_and_price", ["status", "category", "brand", "price"])
     .index("by_seller",          ["sellerId"])
     .index("by_store",           ["storeId"]),
 
