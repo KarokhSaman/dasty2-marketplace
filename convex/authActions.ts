@@ -5,6 +5,21 @@ import { SignJWT, importPKCS8 } from "jose";
 import { action } from "./_generated/server";
 import { api, internal } from "./_generated/api";
 import { vsCreate, vsValidateOtp, type VsMethod, type VsLanguage } from "./verifyspeed";
+import { pxlSendOtp, pxlVerifyOtp } from "./pixelence";
+
+// Pixelence verify returns a status string; map it to the error codes OtpLogin
+// already understands (errorFor in OtpLogin.jsx).
+function pxlErrorCode(status: string): string {
+  switch (status) {
+    case "expired":
+    case "canceled":
+      return "OTP_EXPIRED";
+    case "already_used":
+      return "OTP_ALREADY_VERIFIED";
+    default: // invalid | too_many_attempts | not_found
+      return "OTP_INVALID";
+  }
+}
 
 const methodValidator = v.union(
   v.literal("whatsapp-otp"),
@@ -65,6 +80,26 @@ export const sendOtp = action({
     if (!slot.ok) {
       throw new ConvexError({ code: "OTP_LIMIT", retryAfterMs: slot.retryAfterMs });
     }
+
+    // WhatsApp codes go through Pixelence; Telegram/SMS stay on VerifySpeed.
+    // The returned verificationKey is Pixelence's requestId; verifyOtp knows a
+    // key is Pixelence's when pixelenceOtp has a row for it.
+    if (args.methodName === "whatsapp-otp") {
+      let sent;
+      try {
+        sent = await pxlSendOtp({ phone: args.phoneNumber, channel: "whatsapp" });
+      } catch (err) {
+        await ctx.runMutation(internal.otpLimits.releaseSendSlot, { slotId: slot.slotId });
+        throw err;
+      }
+      await ctx.runMutation(internal.pixelenceOtp.recordRequest, {
+        requestId: sent.requestId,
+        phone: args.phoneNumber,
+        expiresAt: sent.expiresAt,
+      });
+      return { verificationKey: sent.requestId, methodName: args.methodName };
+    }
+
     let created;
     try {
       created = await vsCreate(
@@ -109,6 +144,28 @@ export const verifyOtp = action({
     errorCode?: string;
     errorMessage?: string;
   }> => {
+    // A Pixelence (WhatsApp) code is recognised by its stored requestId → phone
+    // mapping. The phone comes from that row, never from the client.
+    const pxl = await ctx.runQuery(internal.pixelenceOtp.lookupRequest, {
+      requestId: verificationKey,
+    });
+    if (pxl) {
+      const pxlResult = await pxlVerifyOtp({ requestId: verificationKey, code });
+      if (!pxlResult.verified) {
+        return { ok: false, errorCode: pxlErrorCode(pxlResult.status) };
+      }
+      await ctx.runMutation(internal.pixelenceOtp.clearRequest, { requestId: verificationKey });
+      const upserted = await ctx.runMutation(internal.users.upsertUserByPhone, {
+        phone: pxl.phone,
+      });
+      const pxlJwt = await mintSessionJwt({
+        userId: upserted.userId,
+        phone: pxl.phone,
+        role: upserted.role,
+      });
+      return { ok: true, userId: upserted.userId, role: upserted.role, jwt: pxlJwt };
+    }
+
     const result = await vsValidateOtp({ code, verificationKey });
 
     if (!result.succeed) {
@@ -159,7 +216,7 @@ export const verifyOtpForPhoneChange = action({
     errorMessage: v.optional(v.string()),
   }),
   handler: async (
-    _ctx,
+    ctx,
     { code, verificationKey },
   ): Promise<{
     ok: boolean;
@@ -167,6 +224,19 @@ export const verifyOtpForPhoneChange = action({
     errorCode?: string;
     errorMessage?: string;
   }> => {
+    // Pixelence (WhatsApp) path: the verified phone is the one we stored at send.
+    const pxl = await ctx.runQuery(internal.pixelenceOtp.lookupRequest, {
+      requestId: verificationKey,
+    });
+    if (pxl) {
+      const pxlResult = await pxlVerifyOtp({ requestId: verificationKey, code });
+      if (!pxlResult.verified) {
+        return { ok: false, errorCode: pxlErrorCode(pxlResult.status) };
+      }
+      await ctx.runMutation(internal.pixelenceOtp.clearRequest, { requestId: verificationKey });
+      return { ok: true, verifiedPhone: pxl.phone };
+    }
+
     const result = await vsValidateOtp({ code, verificationKey });
 
     if (!result.succeed) {
