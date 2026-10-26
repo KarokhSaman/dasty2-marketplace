@@ -222,9 +222,16 @@ export default function SellerDashboard() {
 
   const own = products.filter((p) => !p.postedByManager);
   const rejected = own.filter((p) => p.status === "rejected");
-  const owed = products.filter((p) => p.status === "sold");
+  // Products on the "Our stock" fee deal (on their store, or on the seller
+  // when there's no store) are the site's own sales: no fee for the seller to
+  // pay, so they stay out of "needs attention" and the fee figures.
+  const ownStockStores = new Set(
+    [...(stores ?? []), ...(linkedStore ? [linkedStore] : [])].filter((st) => st.feeMode === "own").map((st) => st._id),
+  );
+  const isOwnStock = (p) => (p.storeId ? ownStockStores.has(p.storeId) : seller.feeMode === "own");
+  const owed = products.filter((p) => p.status === "sold" && !isOwnStock(p));
   const feeOwed = owed.reduce((n, p) => n + (p.profit ?? 0), 0);
-  const feePaid = products.filter((p) => p.status === "paid").reduce((n, p) => n + (p.profit ?? 0), 0);
+  const feePaid = products.filter((p) => p.status === "paid" && !isOwnStock(p)).reduce((n, p) => n + (p.profit ?? 0), 0);
   const month = new Date().toISOString().slice(0, 7);
   const soldThisMonth = products.filter((p) => (p.status === "sold" || p.status === "paid") && (p.dateSold ?? "").startsWith(month)).length;
 

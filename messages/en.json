@@ -375,6 +375,7 @@
   "feeDealTable": "Normal price table",
   "feeDealFlat": "Fixed fee of {amount} IQD per sale",
   "feeDealPercent": "{percent}% of the sale price",
+  "feeDealOwn": "Fee set separately for each sale",
   "howToPayFees": "How to pay your fees",
   "yourStore": "Your store",
   "storeDiscountUntil": "{percent}% off until {date}",

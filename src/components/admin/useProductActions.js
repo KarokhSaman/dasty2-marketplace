@@ -65,26 +65,31 @@ export function useProductActions() {
     return approve(p);
   }
 
-  async function markSold(p, salePrice) {
+  // ownProfit: our profit, for products of our own stock (fee deal "own").
+  async function markSold(p, salePrice, ownProfit) {
     if (isStocked(p)) {
-      await markUnitSoldMutation({ id: p._id, status: "sold", salePrice });
+      await markUnitSoldMutation({ id: p._id, status: "sold", salePrice, ownProfit });
       await notify(p, m.adminSoldMsg({ title: p.title }));
       await log("marked_sold", p, `1 unit, ${p.stock - 1} left`);
       return;
     }
-    await updateStatus({ id: p._id, status: "sold", dateSold: new Date().toISOString(), salePrice });
+    await updateStatus({ id: p._id, status: "sold", dateSold: new Date().toISOString(), salePrice, ownProfit });
     await notify(p, m.adminSoldMsg({ title: p.title }));
-    await log("marked_sold", p, salePrice && salePrice !== p.price ? `Sale price ${salePrice.toLocaleString("en-US")} IQD` : undefined);
+    const notes = [
+      salePrice && salePrice !== p.price ? `Sale price ${salePrice.toLocaleString("en-US")} IQD` : null,
+      ownProfit !== undefined ? `Our profit ${ownProfit.toLocaleString("en-US")} IQD` : null,
+    ].filter(Boolean).join(" · ");
+    await log("marked_sold", p, notes || undefined);
   }
 
-  async function markPaid(p, salePrice) {
+  async function markPaid(p, salePrice, ownProfit) {
     if (isStocked(p)) {
-      await markUnitSoldMutation({ id: p._id, status: "paid", salePrice });
+      await markUnitSoldMutation({ id: p._id, status: "paid", salePrice, ownProfit });
       await notify(p, m.adminPaidMsg({ title: p.title }));
       await log("marked_paid", p, `1 unit, ${p.stock - 1} left`);
       return;
     }
-    await updateStatus({ id: p._id, status: "paid", salePrice });
+    await updateStatus({ id: p._id, status: "paid", salePrice, ownProfit });
     await notify(p, m.adminPaidMsg({ title: p.title }));
     await log("marked_paid", p);
   }

@@ -55,6 +55,7 @@ function feeDealText(source) {
   if (source?.feeMode === "flat") return m.feeDealFlat({ amount: num(source.feeValue) });
   if (source?.feeMode === "percentage") return m.feeDealPercent({ percent: num(source.feeValue) });
   if (source?.feeMode === "none") return m.adminOffersNoFeeLabel();
+  if (source?.feeMode === "own") return m.feeDealOwn();
   return m.feeDealTable();
 }
 

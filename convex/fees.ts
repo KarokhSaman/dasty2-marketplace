@@ -1,4 +1,4 @@
-export type FeeMode = "default" | "flat" | "percentage" | "none";
+export type FeeMode = "default" | "flat" | "percentage" | "none" | "own";
 
 export type FeeArrangement = {
   feeMode?: FeeMode;
@@ -40,6 +40,8 @@ export function resolveProfit(
 ): number {
   switch (seller?.feeMode) {
     case "none":
+    // Our own stock: no service fee. The profit is entered when it sells.
+    case "own":
       return 0;
     case "flat":
       return Math.max(0, Math.round(seller.feeValue ?? 0));

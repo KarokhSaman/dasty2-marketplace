@@ -15,12 +15,15 @@ const FEE_MODES = [
   { value: "flat", label: "Flat fee per product" },
   { value: "percentage", label: "Percentage of price" },
   { value: "none", label: "No service fee" },
+  // Our own stock: no fee when posting; we enter our profit at each sale.
+  { value: "own", label: "Our stock (profit set at each sale)" },
 ];
 
 export function feeLabel({ feeMode, feeValue }) {
   if (feeMode === "flat") return `Flat fee ${Number(feeValue).toLocaleString("en-US")} IQD`;
   if (feeMode === "percentage") return `${feeValue}% of price`;
   if (feeMode === "none") return "No service fee";
+  if (feeMode === "own") return "Our stock";
   return "Default pricing table";
 }
 

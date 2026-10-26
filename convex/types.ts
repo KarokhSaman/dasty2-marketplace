@@ -53,4 +53,6 @@ export const feeModeValidator = v.union(
   v.literal("flat"),
   v.literal("percentage"),
   v.literal("none"),
+  // Our own stock: no service fee; the admin enters our profit at each sale.
+  v.literal("own"),
 );
