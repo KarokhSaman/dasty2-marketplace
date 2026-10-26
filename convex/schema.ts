@@ -177,6 +177,14 @@ export default defineSchema({
   otpSends: defineTable({
     phone: v.string(),
   }).index("by_phone", ["phone"]),
+
+  // Maps a Pixelence WhatsApp OTP requestId to the phone it was sent to, since
+  // Pixelence's verify endpoint doesn't return the phone (convex/pixelenceOtp.ts).
+  pixelenceOtp: defineTable({
+    requestId: v.string(),
+    phone: v.string(),
+    expiresAt: v.number(),
+  }).index("by_request", ["requestId"]),
 }, {
   // Remove this after migrateToVerifySpeed has run on all deployments.
   schemaValidation: false,

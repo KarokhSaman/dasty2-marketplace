@@ -226,9 +226,9 @@ export default function ChangePhoneModal({ currentPhone, onClose, onSuccess }) {
               <input
                 type="text"
                 value={code}
-                onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 5))}
-                placeholder="00000"
-                maxLength="5"
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                placeholder="000000"
+                maxLength="6"
                 required
                 inputMode="numeric"
                 className="w-full rounded-xl border border-[var(--color-hairline)] bg-white px-4 py-2.5 text-[var(--color-ink)] placeholder:text-[var(--color-ink-fade)] focus:outline-none focus:border-[var(--color-ember-300)] focus:ring-4 focus:ring-[var(--color-ember-100)]/50 transition text-center text-lg tracking-widest font-mono"
@@ -244,7 +244,7 @@ export default function ChangePhoneModal({ currentPhone, onClose, onSuccess }) {
             <div className="flex gap-2 pt-1">
               <button
                 type="submit"
-                disabled={loading || code.length < 5}
+                disabled={loading || code.length < 6}
                 className="flex-1 bg-[var(--color-ember-500)] hover:bg-[var(--color-ember-600)] text-white text-sm font-semibold py-2.5 rounded-xl transition-colors disabled:opacity-50"
               >
                 {loading ? "..." : m.changePhoneVerify()}

@@ -22,6 +22,8 @@ import type * as migrate_image_urls from "../migrate_image_urls.js";
 import type * as notifications from "../notifications.js";
 import type * as offers from "../offers.js";
 import type * as otpLimits from "../otpLimits.js";
+import type * as pixelence from "../pixelence.js";
+import type * as pixelenceOtp from "../pixelenceOtp.js";
 import type * as products from "../products.js";
 import type * as r2 from "../r2.js";
 import type * as seed from "../seed.js";
@@ -52,6 +54,8 @@ declare const fullApi: ApiFromModules<{
   notifications: typeof notifications;
   offers: typeof offers;
   otpLimits: typeof otpLimits;
+  pixelence: typeof pixelence;
+  pixelenceOtp: typeof pixelenceOtp;
   products: typeof products;
   r2: typeof r2;
   seed: typeof seed;
