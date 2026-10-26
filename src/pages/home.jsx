@@ -31,7 +31,7 @@ const useIsoLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : use
 
 // Entrance animations (fade-up / stagger) should only play the first time the
 // home screen is shown in a session — NOT when returning via the back button,
-// where they would fight the shared-element morph and re-stagger the grid.
+// where they would re-stagger the grid the buyer was just looking at.
 let homeEntranceShown = false;
 
 // ── Reusable bits ──────────────────────────────────────────
@@ -384,8 +384,8 @@ export default function HomePage() {
     ? cachedResultsNow
     : liveResults;
 
-  // Restore scroll before paint so a back-navigation View Transition snapshots
-  // the page at the correct position (keeps the reverse photo-morph aligned).
+  // Restore scroll before paint, so coming back from a product shows the grid
+  // at the same place at once, with no jump.
   useIsoLayoutEffect(() => {
     const haveItems = results.length > 0 || featuredProducts.length > 0;
     restoreScroll(haveItems, status === "LoadingMore");

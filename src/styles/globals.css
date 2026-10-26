@@ -350,45 +350,6 @@ html[dir='rtl'] .font-display {
   );
 }
 
-/* ── Route transitions (View Transitions API) ─────────────
-   Enabled via the router's defaultViewTransition. Pure progressive
-   enhancement — a no-op on browsers without support and on the server.
-
-   Opening a product from the grid is a SHARED-ELEMENT morph: the tapped
-   photo (ProductCard) and the detail hero share `view-transition-name`
-   `vt-<productId>`, so the image smoothly expands into place. Everything
-   else does a quick, low-ghost cross-fade. */
-@media (prefers-reduced-motion: no-preference) {
-  /* The shared photo (and any matched element) — smooth, eased morph. */
-  ::view-transition-group(*) {
-    animation-duration: 320ms;
-    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
-  }
-  /* Page body: fade the old out fast, ease the new in — minimal overlap. */
-  ::view-transition-old(root) {
-    animation: vt-fade-out 150ms ease both;
-  }
-  ::view-transition-new(root) {
-    animation: vt-fade-in 230ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
-  }
-}
-
-@keyframes vt-fade-out {
-  to { opacity: 0; }
-}
-@keyframes vt-fade-in {
-  from { opacity: 0; }
-}
-
-/* Reduced-motion: snap instantly, no transition animations at all. */
-@media (prefers-reduced-motion: reduce) {
-  ::view-transition-group(*),
-  ::view-transition-old(*),
-  ::view-transition-new(*) {
-    animation: none !important;
-  }
-}
-
 /* ──────────────────────────────────────────────────────────
    ADMIN THEME — only on admin pages (AdminShell renders .admin-root).
    Colours are set on <html> so sheets portalled to <body> get them too.

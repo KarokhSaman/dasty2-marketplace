@@ -37,7 +37,6 @@ export function getRouter() {
   const router = createRouter({
     routeTree,
     defaultPreload: 'intent',
-    defaultViewTransition: true,
     context: { queryClient, convexClient: convex, convexQueryClient },
     scrollRestoration: true,
     // Localized roots are `/en/` and `/ar/`. Removing their trailing slash

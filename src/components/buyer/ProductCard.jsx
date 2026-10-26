@@ -9,10 +9,6 @@ import { photoProps } from "@/lib/images";
 import { priceInfo } from "@/convex/discount";
 import StoreIcon from "@/components/ui/StoreIcon";
 
-// The product currently being opened/returned-to. Only this card gets a
-// `view-transition-name`, so just ONE photo morphs into the detail hero — the
-// other cards move with the page instead of each animating on their own.
-let morphProductId = null;
 
 function ImagePlaceholder() {
   return (
@@ -50,13 +46,7 @@ export default function ProductCard({ product, onSave }) {
   const price = priceInfo(product);
   setProductCache(product);
 
-  // Tag only the tapped card for the shared-element morph, synchronously,
-  // just before navigating — so the photo expands into the detail hero while
-  // the rest of the grid stays part of the page transition.
-  const handleClick = (e) => {
-    morphProductId = product._id;
-    const img = e.currentTarget.querySelector("img");
-    if (img) img.style.viewTransitionName = `vt-${product._id}`;
+  const handleClick = () => {
     onSave?.();
   };
 
@@ -72,7 +62,6 @@ export default function ProductCard({ product, onSave }) {
               alt={product.title}
               loading="lazy"
               className="w-full h-full object-cover group-hover:scale-[1.05] transition-transform duration-[500ms] ease-out"
-              style={product._id === morphProductId ? { viewTransitionName: `vt-${product._id}` } : undefined}
             />
           ) : <ImagePlaceholder />}
 
