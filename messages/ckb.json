@@ -375,6 +375,7 @@
   "feeDealTable": "خشتەی نرخی ئاسایی",
   "feeDealFlat": "کرێی جێگیر {amount} دینار بۆ هەر فرۆشتنێک",
   "feeDealPercent": "{percent}٪ی نرخی فرۆشتن",
+  "feeDealOwn": "کرێی هەر فرۆشتنێک جیا دیاری دەکرێت",
   "howToPayFees": "چۆن کرێکەت بدەیت",
   "yourStore": "فرۆشگاکەت",
   "storeDiscountUntil": "داشکاندنی {percent}٪ تا {date}",

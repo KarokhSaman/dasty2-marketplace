@@ -375,6 +375,7 @@
   "feeDealTable": "جدول الأسعار العادي",
   "feeDealFlat": "رسوم ثابتة {amount} دينار لكل عملية بيع",
   "feeDealPercent": "{percent}% من سعر البيع",
+  "feeDealOwn": "تُحدد الرسوم لكل عملية بيع على حدة",
   "howToPayFees": "كيف تدفع رسومك",
   "yourStore": "متجرك",
   "storeDiscountUntil": "خصم {percent}% حتى {date}",

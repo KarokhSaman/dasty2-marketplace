@@ -204,6 +204,30 @@ async function saleTerms(
   return { salePrice, profit: resolveProfit(salePrice, store ?? seller, await postingOffer(ctx, product)) };
 }
 
+// A sale from our own stock (fee deal "own" on the product's store, or on the
+// seller when there's no store): the amount recorded is the profit the admin
+// enters at the sale. Like any sale it sits in fees owed while "sold" and
+// counts in total earned once "paid". Marking an already-sold item paid
+// without a new amount (e.g. from Fees to collect) keeps the profit entered.
+async function ownSaleTerms(
+  ctx: MutationCtx,
+  product: Doc<"products">,
+  ownProfit: number | undefined,
+): Promise<{ profit?: number }> {
+  const store = product.storeId ? await ctx.db.get(product.storeId) : null;
+  const sellerId = ctx.db.normalizeId("users", product.sellerId);
+  const seller = sellerId ? await ctx.db.get(sellerId) : null;
+  if ((store ?? seller)?.feeMode !== "own") return {};
+  if (ownProfit === undefined) {
+    if (product.status === "sold" || product.status === "paid") return { profit: product.profit };
+    throw new ConvexError("Enter our profit for this sale (whole IQD)");
+  }
+  if (!Number.isInteger(ownProfit) || ownProfit < 0) {
+    throw new ConvexError("Our profit must be a whole number of IQD");
+  }
+  return { profit: ownProfit };
+}
+
 // Undo saleTerms when a sale is reversed: back to the listed price and its fee.
 async function listingTerms(ctx: MutationCtx, product: Doc<"products">): Promise<{ salePrice: undefined; profit?: number }> {
   const store = product.storeId ? await ctx.db.get(product.storeId) : null;
@@ -715,8 +739,10 @@ export const updateStatus = mutation({
     dateSold: v.optional(v.string()),
     // Price the buyer actually paid, when it differs from the listed price.
     salePrice: v.optional(v.number()),
+    // Our profit on a sale from our own stock (seller feeMode "own").
+    ownProfit: v.optional(v.number()),
   },
-  handler: async (ctx, { id, salePrice, ...fields }) => {
+  handler: async (ctx, { id, salePrice, ownProfit, ...fields }) => {
     await requireAdmin(ctx);
     const product = await ctx.db.get(id);
     if (!product) throw new Error("Product not found");
@@ -725,6 +751,7 @@ export const updateStatus = mutation({
     );
     if (fields.status === "sold" || fields.status === "paid") {
       Object.assign(patch, await saleTerms(ctx, product, salePrice));
+      Object.assign(patch, await ownSaleTerms(ctx, product, ownProfit));
       patch.soldReportedAt = undefined;
     } else if (product.salePrice !== undefined) {
       // Sale reversed (back to approved/pending/...): restore price and fee.
@@ -744,9 +771,11 @@ export const markUnitSold = mutation({
     id: v.id("products"),
     status: v.union(v.literal("sold"), v.literal("paid")),
     salePrice: v.optional(v.number()),
+    // Our profit on a sale from our own stock (seller feeMode "own").
+    ownProfit: v.optional(v.number()),
   },
   returns: v.null(),
-  handler: async (ctx, { id, status, salePrice }) => {
+  handler: async (ctx, { id, status, salePrice, ownProfit }) => {
     await requireAdmin(ctx);
     const product = await ctx.db.get(id);
     if (!product) throw new Error("Product not found");
@@ -757,10 +786,12 @@ export const markUnitSold = mutation({
     const { _id, _creationTime, stock: _stock, featured: _featured, featuredUntil: _fu,
       featuredAt: _fa, featuredPosition: _fp, views: _views, ...snapshot } = product;
     const terms = await saleTerms(ctx, product, salePrice);
+    const own = await ownSaleTerms(ctx, product, ownProfit);
     await ctx.db.insert("products", {
       ...snapshot,
       ...terms,
       status,
+      ...own,
       dateSold: new Date().toISOString(),
       soldFromId: id,
     });

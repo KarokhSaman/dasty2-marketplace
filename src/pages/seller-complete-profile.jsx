@@ -4,8 +4,9 @@ import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import * as m from "@/paraglide/messages";
 import { getLocale } from "@/paraglide/runtime";
 import { getCityOptions } from "@/lib/cities";
-import CustomSelect from "@/components/ui/CustomSelect";
+import BottomSheet from "@/components/ui/BottomSheet";
 import { api } from "@/convex/_generated/api";
+import { guessCity } from "@/lib/geo";
 
 // Where to go once the profile is saved: the add form when the seller came
 // from Sell now (?next=add), otherwise the dashboard.
@@ -46,16 +47,105 @@ function VerifiedPhone({ phone }) {
   );
 }
 
+// First city of the "rest of Iraq" group in IRAQ_CITIES; Kurdistan's come before it.
+const FIRST_IRAQ_CITY = "Baghdad";
+
+// Kurdish (Sorani) alphabet order. The browser's built-in sorting doesn't know
+// letters like ڕ ڵ ۆ ێ ە, so Kurdish names are compared letter by letter here.
+const KU_ALPHABET = "ئابپتجچحخدرڕزژسشعغفڤقکگلڵمنوۆهھەیێ";
+const kuRank = (ch) => {
+  const i = KU_ALPHABET.indexOf(ch);
+  return i === -1 ? KU_ALPHABET.length + ch.charCodeAt(0) : i;
+};
+function compareKurdish(a, b) {
+  for (let i = 0; i < Math.min(a.length, b.length); i++) {
+    const d = kuRank(a[i]) - kuRank(b[i]);
+    if (d) return d;
+  }
+  return a.length - b.length;
+}
+function sortByLabel(list, locale) {
+  const cmp = locale === "ckb"
+    ? (x, y) => compareKurdish(x.label, y.label)
+    : locale === "ar"
+      // Arabic lists sort by the word itself, not the article "ال".
+      ? (x, y) => x.label.replace(/^ال/, "").localeCompare(y.label.replace(/^ال/, ""), "ar")
+      : (x, y) => x.label.localeCompare(y.label, "en");
+  return [...list].sort(cmp);
+}
+
+// City: a field that opens a bottom sheet of cities as chips, Kurdistan first,
+// each group in alphabetical order for the page's language.
+function CityPicker({ value, onChange, placeholder, title }) {
+  const locale = getLocale();
+  const [open, setOpen] = useState(false);
+  const options = getCityOptions(locale);
+  const split = options.findIndex((o) => o.value === FIRST_IRAQ_CITY);
+  const groups = (split > 0 ? [options.slice(0, split), options.slice(split)] : [options]).map((g) => sortByLabel(g, locale));
+  const selected = options.find((o) => o.value === value);
+  const pick = (v) => { onChange(v); setOpen(false); };
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        aria-haspopup="dialog"
+        className={`${inputCls} flex items-center justify-between text-start ${selected ? "" : "text-[var(--color-ink-fade)]"}`}
+      >
+        <span className="truncate">{selected ? selected.label : placeholder}</span>
+        <svg className="w-4 h-4 text-[var(--color-ink-soft)] shrink-0" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" aria-hidden>
+          <path d="m6 9 6 6 6-6" />
+        </svg>
+      </button>
+      <BottomSheet open={open} onClose={() => setOpen(false)} title={title}>
+        <div className="p-4 space-y-4">
+          {groups.map((group, gi) => (
+            <div key={gi} className={`flex flex-wrap gap-2 ${gi ? "pt-4 border-t border-[var(--color-hairline)]" : ""}`}>
+              {group.map((o) => {
+                const on = o.value === value;
+                return (
+                  <button
+                    key={o.value}
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => pick(o.value)}
+                    className={`h-10 px-4 rounded-full border text-sm font-semibold transition-colors ${
+                      on
+                        ? "bg-[var(--color-ember-500)] border-[var(--color-ember-500)] text-white"
+                        : "bg-white border-[var(--color-hairline)] text-[var(--color-ink)] hover:border-[var(--color-ember-300)]"
+                    }`}
+                  >
+                    {o.label}
+                  </button>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      </BottomSheet>
+    </>
+  );
+}
+
 const inputCls =
   "w-full rounded-xl border border-[var(--color-hairline)] bg-white px-4 py-2.5 text-[var(--color-ink)] placeholder:text-[var(--color-ink-fade)] focus:outline-none focus:border-[var(--color-ember-300)] focus:ring-4 focus:ring-[var(--color-ember-100)]/50 transition";
 
 // ── Profile completion form ───────────────────────────────
 function ProfileForm({ phone }) {
-  const locale = getLocale();
   const completeProfile = useMutation(api.users.completeSellerProfile);
   const [name,    setName]    = useState("");
-  // No city picked for them: the seller chooses it.
+  // Starts with Cloudflare's guess of where they are (if it's one of our
+  // cities); the seller can change it. Empty when there's no guess.
   const [city,    setCity]    = useState("");
+  useEffect(() => {
+    let active = true;
+    guessCity()
+      .then(({ city: guessed }) => {
+        if (active && guessed) setCity((current) => current || guessed);
+      })
+      .catch(() => {});
+    return () => { active = false; };
+  }, []);
   const [address, setAddress] = useState("");
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState("");
@@ -92,7 +182,7 @@ function ProfileForm({ phone }) {
         <label className="block text-sm font-medium text-[var(--color-ink)] mb-1.5">
           {m.registerCityLabel()} <span className="text-rose-500">*</span>
         </label>
-        <CustomSelect value={city} onChange={setCity} options={getCityOptions(locale)} placeholder={m.registerCityPlaceholder()} />
+        <CityPicker value={city} onChange={setCity} placeholder={m.registerCityPlaceholder()} title={m.registerCityLabel()} />
       </div>
       <div>
         <label htmlFor="profile-address" className="block text-sm font-medium text-[var(--color-ink)] mb-1.5">

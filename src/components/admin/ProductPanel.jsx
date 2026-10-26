@@ -209,7 +209,12 @@ export default function ProductPanel({ product, onClose }) {
   const logs = useQuery(api.adminLogs.getAll);
   const [nextStatus, setNextStatus] = useState(null);
   const [salePrice, setSalePrice] = useState(0);
+  const [ownProfit, setOwnProfit] = useState(0);
   const [busy, setBusy] = useState(false);
+  // Products of our own stock (fee deal "own" on the store, or on the seller
+  // when there's no store): we enter our profit at the sale.
+  const sellers = useQuery(api.users.getAll);
+  const stores = useQuery(api.stores.listAll);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   // Editable details
@@ -254,7 +259,7 @@ export default function ProductPanel({ product, onClose }) {
   function chooseStatus(s) {
     if (s === p.status) { setNextStatus(null); return; }
     setNextStatus(s);
-    if (s === "sold" || s === "paid") setSalePrice(p.salePrice ?? priceInfo(p).price);
+    if (s === "sold" || s === "paid") { setSalePrice(p.salePrice ?? priceInfo(p).price); setOwnProfit(isSoldish(p) ? p.profit ?? 0 : 0); }
   }
 
   async function saveDetails() {
@@ -263,6 +268,10 @@ export default function ProductPanel({ product, onClose }) {
   }
 
   const discount = priceInfo(p);
+  const dealSource = p.storeId
+    ? (stores ?? []).find((st) => st._id === p.storeId)
+    : (sellers ?? []).find((sl) => sl._id === p.sellerId);
+  const isOwnStock = dealSource?.feeMode === "own";
   const main = p.mainPhotoIndex ?? 0;
 
   return (
@@ -337,14 +346,24 @@ export default function ProductPanel({ product, onClose }) {
           <div className="mt-3 rounded-2xl bg-st-sold-bg p-3.5 space-y-2">
             <label htmlFor="sale-price" className="text-[12px] font-bold text-st-sold">Sale price, what the buyer paid (IQD)</label>
             <AmountInput id="sale-price" value={salePrice} onChange={setSalePrice} />
+            {isOwnStock && (
+              <>
+                <label htmlFor="own-profit" className="block pt-1 text-[12px] font-bold text-st-paid">Our profit on this sale (IQD)</label>
+                <AmountInput id="own-profit" value={ownProfit} onChange={setOwnProfit} />
+                <p className="text-[11.5px] text-adm-soft">Our own stock: this profit shows in fees owed while it's sold, and counts in total earned once you mark it paid.</p>
+              </>
+            )}
             <p className="text-[11.5px] text-adm-soft">
               {discount.original !== null ? `Discount running: ${discount.percent}% off ${fmtIQD(discount.original)}. ` : `Listed at ${fmtIQD(p.price)}. `}
-              The sale and the service fee are recorded on this price.
+              {isOwnStock ? "The sale is recorded on this price." : "The sale and the service fee are recorded on this price."}
               {actions.isStocked(p) ? ` Records one unit; stock goes from ${p.stock} to ${p.stock - 1} and the product stays live.` : ""}
             </p>
             <div className="flex gap-2">
-              <button type="button" disabled={!salePrice || busy} className={`${btn("dark")} flex-1`}
-                onClick={() => run(() => (nextStatus === "sold" ? actions.markSold(p, salePrice) : actions.markPaid(p, salePrice)), nextStatus === "sold" ? "Marked sold" : "Marked paid")}>
+              <button type="button" disabled={!salePrice || (isOwnStock && !ownProfit) || busy} className={`${btn("dark")} flex-1`}
+                onClick={() => {
+                  const own = isOwnStock ? ownProfit : undefined;
+                  run(() => (nextStatus === "sold" ? actions.markSold(p, salePrice, own) : actions.markPaid(p, salePrice, own)), nextStatus === "sold" ? "Marked sold" : "Marked paid");
+                }}>
                 {nextStatus === "sold" ? m.adminMarkSold() : m.adminMarkPaid()}
               </button>
               <button type="button" className={`${btn("outline")} flex-1`} onClick={() => setNextStatus(null)}>{m.adminCancel()}</button>
@@ -383,7 +402,7 @@ export default function ProductPanel({ product, onClose }) {
           <p className="text-[15px] font-bold tabular-nums" dir="ltr">{fmtIQD(shownPrice(p))}</p>
         </div>
         <div className="rounded-xl bg-adm-sunk px-3 py-2.5">
-          <p className="text-[11px] text-adm-fade font-semibold">{m.adminProfitLabel()}</p>
+          <p className="text-[11px] text-adm-fade font-semibold">{isOwnStock ? "Our profit" : m.adminProfitLabel()}</p>
           <p className="text-[15px] font-bold tabular-nums text-adm-accent" dir="ltr">{fmtIQD(p.profit)}</p>
         </div>
         <div className="rounded-xl bg-adm-sunk px-3 py-2.5">

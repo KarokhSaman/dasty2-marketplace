@@ -346,7 +346,6 @@ export default function ProductDetailPage() {
             alt={product.title}
             fit="contain"
             rounded="rounded-none sm:rounded-[1.5rem]"
-            heroTransitionName={`vt-${product._id}`}
           />
           <GalleryOverlay
             onBack={() => router.history.back()}

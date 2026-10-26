@@ -15,6 +15,7 @@ export function feeDeal(s) {
   if (s.feeMode === "flat") return `Flat ${fmtIQD(s.feeValue)} IQD`;
   if (s.feeMode === "percentage") return `${s.feeValue}% of price`;
   if (s.feeMode === "none") return "No service fee";
+  if (s.feeMode === "own") return "Our own stock";
   return "Normal price table";
 }
 
@@ -23,6 +24,8 @@ const MODES = [
   { value: "none", label: "No fee" },
   { value: "flat", label: "Flat" },
   { value: "percentage", label: "%" },
+  // Our own selling account: no fee; we enter our profit at each sale.
+  { value: "own", label: "Our stock" },
 ];
 
 // Everything about one seller: contact, what they owe, their fee deal, stores,
@@ -109,7 +112,9 @@ export default function SellerPanel({ seller: s, products, sellers, stores, onCl
           </div>
         )}
         <p className="text-[11.5px] text-adm-fade mt-1.5">
-          {mode === "default" ? "Uses the price table, and offers apply." : "Replaces the price table and offers for this seller."} Applies to products added or edited from now on.
+          {mode === "own"
+            ? "Our own products: no service fee is added when posting. When one sells you enter our profit; it shows in fees owed until you mark it paid, then counts in total earned."
+            : `${mode === "default" ? "Uses the price table, and offers apply." : "Replaces the price table and offers for this seller."} Applies to products added or edited from now on.`}
         </p>
         {feeChanged && (
           <div className="flex gap-2 mt-2">
