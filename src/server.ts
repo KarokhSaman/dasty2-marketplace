@@ -6,6 +6,7 @@ import { paraglideMiddleware } from '@/paraglide/server'
 import { hardenResponse } from '@/lib/security'
 import { ConvexClient } from 'convex/browser'
 import { api } from '@/convex/_generated/api'
+import { firstVisitLanguage } from '@/lib/cityMatch'
 
 const fetch = createStartHandler(defaultStreamHandler)
 
@@ -34,6 +35,27 @@ function requestWithExplicitUrlLocale(
   return new Request(request, { headers })
 }
 
+const LANG_COOKIE = 'dasty2-lang'
+const BOT = /bot|crawl|spider|slurp|facebookexternalhit|whatsapp|telegrambot|preview/i
+
+// First visit only (no language cookie, no /en or /ar in the address, a real
+// page load by a person): pick the language from Cloudflare's location (see
+// firstVisitLanguage). Once a language is saved in the cookie — including one
+// the visitor picks by hand — this never runs again for that browser.
+// Crawlers keep the default (Kurdish) so search results stay stable. Returns
+// undefined when the usual rules (cookie, address, default) should decide.
+function firstVisitLocale(request: Request): 'ckb' | 'en' | 'ar' | undefined {
+  if (request.method !== 'GET') return undefined
+  if (!(request.headers.get('accept') ?? '').includes('text/html')) return undefined
+  const { pathname } = new URL(request.url)
+  if (/^\/(en|ar|ckb)(\/|$)/.test(pathname) || pathname.startsWith('/api/') || pathname.startsWith('/_serverFn')) return undefined
+  if ((request.headers.get('cookie') ?? '').split(';').some((c) => c.trim().startsWith(`${LANG_COOKIE}=`))) return undefined
+  if (BOT.test(request.headers.get('user-agent') ?? '')) return undefined
+  const cf = (request as Request & { cf?: { country?: string; continent?: string; region?: string; regionCode?: string; city?: string } }).cf
+  if (!cf?.country) return undefined
+  return firstVisitLanguage(cf)
+}
+
 export default {
   async fetch(request: Request): Promise<Response> {
     // Pass the original URL to the handler — TanStack Router's `rewrite`
@@ -41,16 +63,22 @@ export default {
     // internal locale-cookie override used for explicit deep links.
     // (See paraglideMiddleware docs.)
     const urlLocale = explicitUrlLocale(request)
-    const localizedRequest = requestWithExplicitUrlLocale(request, urlLocale)
+    const geoLocale = urlLocale ? undefined : firstVisitLocale(request)
+    // English or Arabic for a first visit: hand the locale middleware that
+    // cookie so it redirects to the /en or /ar address as usual.
+    const localizedRequest = geoLocale && geoLocale !== 'ckb'
+      ? requestWithExplicitUrlLocale(request, geoLocale)
+      : requestWithExplicitUrlLocale(request, urlLocale)
     const response = await paraglideMiddleware(
       localizedRequest,
       () => fetch(localizedRequest),
     )
     const hardened = hardenResponse(request, response)
-    if (urlLocale) {
+    const remember = urlLocale ?? geoLocale
+    if (remember) {
       hardened.headers.append(
         'Set-Cookie',
-        `dasty2-lang=${urlLocale}; Path=/; Max-Age=34560000; SameSite=Lax`,
+        `dasty2-lang=${remember}; Path=/; Max-Age=34560000; SameSite=Lax`,
       )
     }
     return hardened
