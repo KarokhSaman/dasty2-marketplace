@@ -209,11 +209,13 @@ function drawHangTag(ctx, { hx, hy, w, h, rtl }) {
   ctx.fillStyle = grad;
   ctx.fill(tag);
   ctx.shadowColor = "transparent";
-  // stitched edge
-  ctx.setLineDash([12, 10]);
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.6)";
-  ctx.lineWidth = 3;
+  // white inside, with a red stitched edge
   roundedRect(ctx, left + 14, -half + 14, -left - 14 - 20, h - 28, 14);
+  ctx.fillStyle = "#ffffff";
+  ctx.fill();
+  ctx.setLineDash([12, 10]);
+  ctx.strokeStyle = "rgba(237, 0, 64, 0.55)";
+  ctx.lineWidth = 3;
   ctx.stroke();
   ctx.setLineDash([]);
   // hole with a white eyelet
@@ -430,7 +432,7 @@ function drawStory(ctx, { title, img, city, store, code, site, rtl, logo, brand,
   const tw = 540, th = 140;
   const hx = rtl ? cx + 70 : cx + cw - 70, hy = cy + 40;
   drawHangTag(ctx, { hx, hy, w: tw, h: th, rtl });
-  const lx = (rtl ? 1 : -1) * 90, ly = th / 2 + 4;
+  const lx = (rtl ? 1 : -1) * 100, ly = th / 2 + 34;
   const a = rtl ? -TAG_TILT : TAG_TILT;
   drawClickHint(ctx, {
     x: hx + lx * Math.cos(a) - ly * Math.sin(a),
