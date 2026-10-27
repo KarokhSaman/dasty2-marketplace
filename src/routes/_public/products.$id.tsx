@@ -7,18 +7,26 @@ import { priceInfo } from '@/convex/discount'
 import { getLocale } from '@/paraglide/runtime'
 import * as m from '@/paraglide/messages'
 import { getCityLabel } from '@/lib/cities'
+import { getProductCache } from '@/lib/productCache'
 
 export const Route = createFileRoute('/_public/products/$id')({
   // Prefetch the product into the React Query cache (and SSR it) before the
   // component renders, so a link/tab navigation lands on real content instead
   // of a skeleton — and `defaultPreload: 'intent'` warms it on hover/touch.
   loader: async ({ context, params }) => {
-    return await context.queryClient
-      .ensureQueryData(
-        convexQuery(api.products.getPublicById, {
-          id: params.id,
-        }),
-      )
+    const query = convexQuery(api.products.getPublicById, { id: params.id })
+    // Opened from a product card: the card already handed over the product,
+    // so show the page at once and fetch the fresh copy in the background
+    // (waiting here left the screen blank for a moment). Direct links and the
+    // server render still wait, so link previews get the real data.
+    if (typeof window !== 'undefined') {
+      const seed = getProductCache(params.id)
+      if (seed) {
+        void context.queryClient.prefetchQuery(query)
+        return seed
+      }
+    }
+    return await context.queryClient.ensureQueryData(query)
   },
   head: ({ loaderData }) => {
     // Drives the link-preview card in WhatsApp and similar apps.
