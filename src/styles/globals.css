@@ -353,8 +353,7 @@ html[dir='rtl'] .font-display {
 /* ──────────────────────────────────────────────────────────
    ADMIN THEME — only on admin pages (AdminShell renders .admin-root).
    Colours are set on <html> so sheets portalled to <body> get them too.
-   Follows the phone/computer setting: light by default, dark when the
-   device is in dark mode. No switch.
+   Always light, whatever the phone or computer is set to.
    ────────────────────────────────────────────────────────── */
 @theme inline {
   --color-adm-bg: var(--a-bg);
@@ -386,9 +385,9 @@ html[dir='rtl'] .font-display {
 html:has(.admin-root), html:has(.admin-root) body,
 html:has(.seller-root), html:has(.seller-root) body { overflow-x: clip; }
 
-/* Seller pages reuse the admin building blocks in their light colours only
-   (the dark block below stays admin-only). */
+/* Seller pages reuse the admin building blocks and colours. */
 html:has(.admin-root), html:has(.seller-root) {
+  color-scheme: light;
   --a-bg: #fefcf9;
   --a-surface: #ffffff;
   --a-sunk: #f3f4f6;
@@ -407,65 +406,6 @@ html:has(.admin-root), html:has(.seller-root) {
   --a-purple: #7a3a85; --a-purple-bg: #f4ecf6;
   --a-orange: #c2570c; --a-orange-bg: #fdf0e6;
   --a-shadow: 0 24px 60px -24px rgba(11, 12, 15, 0.35);
-}
-
-@media (prefers-color-scheme: dark) {
-  html:has(.admin-root) {
-    color-scheme: dark;
-    --a-bg: #0f1115;
-    --a-surface: #171a20;
-    --a-sunk: #1f232a;
-    --a-ink: #f1f2f4;
-    --a-soft: #a9adb6;
-    --a-fade: #7b818c;
-    --a-line: #2a2e36;
-    --a-accent: #ff3b6e;
-    --a-accent-soft: #3a0d1a;
-    --a-navy: #8fa8d8;
-    --a-wa: #2fbf73;
-    --a-amber: #e2b05a;  --a-amber-bg: #33270f;
-    --a-green: #4cc597;  --a-green-bg: #0f2a20;
-    --a-red: #f07a7a;    --a-red-bg: #361414;
-    --a-blue: #7aa7f0;   --a-blue-bg: #13213a;
-    --a-purple: #c98fd3; --a-purple-bg: #2c1830;
-    --a-orange: #f0a06a; --a-orange-bg: #36200f;
-    --a-shadow: 0 24px 60px -24px rgba(0, 0, 0, 0.7);
-
-    /* Shared parts reused on admin pages (sheets, selects, notifications)
-       read the site tokens, so those follow the dark colours too. */
-    --color-cream: var(--a-bg);
-    --color-paper: var(--a-surface);
-    --color-cream-deep: var(--a-sunk);
-    --color-sand: var(--a-sunk);
-    --color-ink: var(--a-ink);
-    --color-ink-soft: var(--a-soft);
-    --color-ink-fade: var(--a-fade);
-    --color-hairline: var(--a-line);
-    --color-brand-50: var(--a-accent-soft);
-    --color-gray-50: #1b1e24;
-    --color-gray-100: #22262d;
-    --color-gray-200: #2c3038;
-    --color-gray-300: #3a3f48;
-    --color-gray-600: #b4b8c0;
-    --color-gray-700: #c9ccd2;
-    --color-gray-800: #e2e4e8;
-    --color-green-50: var(--a-green-bg);
-    --color-green-100: var(--a-green-bg);
-    --color-red-50: var(--a-red-bg);
-    --color-red-100: var(--a-red-bg);
-    --color-amber-50: var(--a-amber-bg);
-    --color-amber-100: var(--a-amber-bg);
-    --color-blue-50: var(--a-blue-bg);
-    --color-blue-100: var(--a-blue-bg);
-    --color-orange-50: var(--a-orange-bg);
-    --color-orange-100: var(--a-orange-bg);
-    --color-honey-50: var(--a-amber-bg);
-    --color-jade-50: var(--a-green-bg);
-  }
-  /* `white` is the site's off-white, also used for text on red buttons, so
-     only white backgrounds are switched, not the colour itself. */
-  html:has(.admin-root) .bg-white,
-  html:has(.admin-root) .hover\:bg-white:hover { background-color: var(--a-surface); }
 }
 
 /* Side panel (laptop) / bottom sheet (phone) used across the admin. */
@@ -490,6 +430,4 @@ html:has(.admin-root), html:has(.seller-root) {
   [dir="rtl"] .adm-scope :where(p, h1, h2, h3, h4, label, li, span):not(:where(.text-center, .text-end, [dir="ltr"]) *) { text-align: right; }
   [dir="rtl"] .adm-scope :where(.text-end) :where(p, h1, h2, h3, h4, label, li) { text-align: left; }
 }
-@media (prefers-color-scheme: dark) {
-  .adm-logo { filter: invert(1) hue-rotate(180deg); }
-}
+

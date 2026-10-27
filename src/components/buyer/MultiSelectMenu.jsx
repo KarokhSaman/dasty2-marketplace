@@ -24,9 +24,9 @@ export default function MultiSelectMenu({ label, allLabel, options, selected, on
 
   const count = selected.length;
   const isActive = count > 0;
-  const pillLabel = single
-    ? (count > 0 ? (options.find((o) => o.value === selected[0])?.label ?? selected[0]) : label)
-    : (count > 0 ? `${label} (${count})` : label);
+  // The pill names the choice: "Erbil", or "Erbil +1" when more are picked.
+  const pillLabel = count > 0 ? (options.find((o) => o.value === selected[0])?.label ?? selected[0]) : label;
+  const more = single ? 0 : count - 1;
 
   const toggle = (value) => {
     if (single) {
@@ -49,7 +49,8 @@ export default function MultiSelectMenu({ label, allLabel, options, selected, on
         }`}
       >
         {leadingIcon && <span className="shrink-0">{leadingIcon}</span>}
-        {pillLabel}
+        <span className="max-w-[104px] truncate">{pillLabel}</span>
+        {more > 0 && <span dir="ltr">+{more}</span>}
         <svg className={`w-3 h-3 shrink-0 transition-transform duration-200 ${open ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
         </svg>

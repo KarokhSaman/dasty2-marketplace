@@ -9,14 +9,16 @@ const CATEGORY_KEYS = new Set(CATEGORY_CONFIG.map((c) => c.value).filter((v) => 
 export type HomeSearch = { category?: string; brand?: string; city?: string }
 
 export const Route = createFileRoute('/_public/')({
-  // ?category=Stroller&brand=Nuna&city=Erbil,Duhok — keeps the filters on refresh
+  // ?category=Stroller&brand=Nuna,Joie&city=Erbil,Duhok — keeps the filters on refresh
   // and in shared links.
   validateSearch: (search: Record<string, unknown>): HomeSearch => ({
     category:
       typeof search.category === 'string' && CATEGORY_KEYS.has(search.category)
         ? search.category
         : undefined,
-    brand: typeof search.brand === 'string' && search.brand.trim() ? search.brand.trim() : undefined,
+    brand: typeof search.brand === 'string'
+      ? [...new Set(search.brand.split(',').map((b) => b.trim()).filter(Boolean))].join(',') || undefined
+      : undefined,
     city: typeof search.city === 'string'
       ? [...new Set(search.city.split(',').map((c) => c.trim()).filter(Boolean))].join(',') || undefined
       : undefined,
