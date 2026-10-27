@@ -329,7 +329,9 @@ export default function HomePage() {
     if (!el) return;
     const observer = new IntersectionObserver(
       ([entry]) => { if (entry.isIntersecting && status === "CanLoadMore") loadMore(DEFAULT_PAGE_SIZE); },
-      { threshold: 0.1 }
+      // Start loading the next products about two screens before the end, so
+      // scrolling doesn't stop at the bottom to wait for them.
+      { rootMargin: "0px 0px 1600px 0px" }
     );
     observer.observe(el);
     return () => observer.disconnect();
@@ -370,8 +372,9 @@ export default function HomePage() {
     return matchCond && matchCity && matchCat && matchBrand;
   };
 
-  // Newest first
-  const applySort = (list) => [...list].sort((a, b) => new Date(b.dateAdded) - new Date(a.dateAdded));
+  // Newest approved first, the same order the server sends
+  const listedAt = (p) => p.approvedAt ?? p.dateAdded;
+  const applySort = (list) => [...list].sort((a, b) => (listedAt(b) > listedAt(a) ? 1 : listedAt(b) < listedAt(a) ? -1 : 0));
 
   // Featured products for carousel — preserve position-based order from getFeatured query
   const featuredFiltered = useMemo(() => featuredProducts.filter((p) => matchesFilters(p, { skipCategory: category === "all" })),

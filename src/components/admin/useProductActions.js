@@ -36,7 +36,7 @@ export function useProductActions() {
   const isStocked = (p) => p.status === "approved" && p.stock > 1;
 
   async function approve(p) {
-    await updateStatus({ id: p._id, status: "approved", approvedBy: adminEmail, approvedAt: new Date().toISOString() });
+    await updateStatus({ id: p._id, status: "approved", approvedBy: adminEmail });
     await notify(p, m.adminApproveMsg({ title: p.title }), `/products/${p._id}`);
     await log("approved", p);
   }
