@@ -4,9 +4,10 @@
 // through the OS share sheet — `navigator.share({ files })` puts "Instagram →
 // Stories" in the list. So the story path is: draw a card → share the PNG.
 //
-// Layout: cream page, Mndallan header and brand logo on top, the whole photo
-// framed over a blurred copy of itself, and a red card (category drawings in
-// the background) with a cream price sticker on its corner.
+// Layout: the photo blurred and darkened as the background, a white Mndallan
+// header and the brand logo on top, the whole photo framed over a blurred copy
+// of itself, and a red card (category drawings in the background) with a cream
+// price sticker on its corner.
 
 import { brandLogo, brandLogoIsName } from "@/lib/brands";
 import { CATEGORY_CONFIG } from "@/lib/categories";
@@ -15,7 +16,6 @@ const W = 1080;
 const H = 1920;
 
 const INK = "#0b0c0f";
-const INK_SOFT = "#61656e";
 const PAPER = "#fefcf9";
 const BRAND = "#ed0040";
 const BRAND_LIGHT = "#ff1f58";
@@ -75,6 +75,19 @@ function drawBlurred(ctx, img, x, y, w, h) {
   ctx.fillStyle = "rgba(254, 252, 249, 0.12)";
   ctx.fillRect(x, y, w, h);
   ctx.restore();
+}
+
+// An image recoloured to one colour, keeping its shape (white logo, white drawings).
+function tinted(img, size, color) {
+  const c = document.createElement("canvas");
+  c.width = c.height = size;
+  const t = c.getContext("2d");
+  if (!t) return img;
+  drawContain(t, img, 0, 0, size, size);
+  t.globalCompositeOperation = "source-in";
+  t.fillStyle = color;
+  t.fillRect(0, 0, size, size);
+  return c;
 }
 
 // Title on up to two lines, shrinking until it fits; the last line gets "…".
@@ -191,30 +204,34 @@ function drawSticker(ctx, { cx, cy, angle, amount, currency, family }) {
 function drawStory(ctx, { title, price, img, city, store, code, site, rtl, logo, brand, brandImg, drawings, family }) {
   const edge = rtl ? W - 72 : 72;
 
-  // Background: the site's cream at the top, deepening to a warm dark at the
-  // bottom so the red card stands out.
-  const bg = ctx.createLinearGradient(0, 0, 0, H);
-  bg.addColorStop(0, PAPER);
-  bg.addColorStop(0.42, "#f1e6dc");
-  bg.addColorStop(0.72, "#8c7470");
-  bg.addColorStop(1, "#2a1f21");
-  ctx.fillStyle = bg;
-  ctx.fillRect(0, 0, W, H);
+  // Background: the photo itself, blurred and darkened (a warm dark gradient
+  // when there is no photo), so the white header and the red card stand out.
+  if (img) {
+    drawBlurred(ctx, img, 0, 0, W, H);
+    ctx.fillStyle = "rgba(20, 12, 12, 0.42)";
+    ctx.fillRect(0, 0, W, H);
+  } else {
+    const bg = ctx.createLinearGradient(0, 0, 0, H);
+    bg.addColorStop(0, "#5a4a46");
+    bg.addColorStop(1, "#1f1718");
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, H);
+  }
 
-  // Header: Mndallan on the reading side, the brand's logo on the other.
+  // Header, the same in every language: Mndallan on the left, the brand's logo on the right.
   if (logo) {
     const size = 104;
-    const x = rtl ? W - 72 - size : 72;
-    ctx.drawImage(logo, x, 64, size, size);
+    const x = 72;
+    ctx.drawImage(tinted(logo, size, "#ffffff"), x, 64, size, size);
     ctx.save();
     ctx.direction = "ltr";
-    ctx.textAlign = rtl ? "right" : "left";
+    ctx.textAlign = "left";
     ctx.textBaseline = "alphabetic";
-    const tx = rtl ? x - 22 : x + size + 22;
-    ctx.fillStyle = BRAND;
+    const tx = x + size + 22;
+    ctx.fillStyle = "#ffffff";
     ctx.font = `800 52px ${family}`;
     ctx.fillText("Mndallan", tx, 118);
-    ctx.fillStyle = INK_SOFT;
+    ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
     ctx.font = `500 28px ${family}`;
     ctx.fillText("Baby Marketplace", tx, 156);
     ctx.restore();
@@ -228,7 +245,7 @@ function drawStory(ctx, { title, price, img, city, store, code, site, rtl, logo,
     const nameW = withName ? ctx.measureText(brand).width + 16 : 0;
     const pw = lw + nameW + 60;
     const ph = lh + 28;
-    const px = rtl ? 72 : W - 72 - pw;
+    const px = W - 72 - pw;
     const py = 116 - ph / 2;
     ctx.save();
     ctx.shadowColor = "rgba(11, 12, 15, 0.18)";
@@ -294,14 +311,7 @@ function drawStory(ctx, { title, price, img, city, store, code, site, rtl, logo,
   const spots = [[cx + 700, cy - 30, -0.2], [cx - 50, cy + 170, 0.24], [cx + 540, cy + 330, 0.14], [cx + 250, cy + 400, -0.3]];
   drawings.forEach((d, i) => {
     const [x, y, a] = spots[i % spots.length];
-    const tmp = document.createElement("canvas");
-    tmp.width = tmp.height = 220;
-    const t = tmp.getContext("2d");
-    if (!t) return;
-    drawContain(t, d, 0, 0, 220, 220);
-    t.globalCompositeOperation = "source-in";
-    t.fillStyle = "#ffffff";
-    t.fillRect(0, 0, 220, 220);
+    const tmp = tinted(d, 220, "#ffffff");
     ctx.save();
     ctx.globalAlpha = 0.12;
     ctx.translate(x + 110, y + 110);
