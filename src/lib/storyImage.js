@@ -4,10 +4,10 @@
 // through the OS share sheet — `navigator.share({ files })` puts "Instagram →
 // Stories" in the list. So the story path is: draw a card → share the PNG.
 //
-// Layout: the photo blurred and darkened as the background, a white Mndallan
-// header and the brand logo on top, the whole photo framed over a blurred copy
-// of itself, and a red card (category drawings in the background) with a cream
-// price sticker on its corner.
+// Layout: cream page, Mndallan header and the brand logo on top, the whole
+// photo framed over a blurred copy of itself, an empty red hang tag (where the
+// seller puts Instagram's link sticker; no price on purpose), and a red card
+// with the category drawings, city/store, title, web address and code.
 
 import { brandLogo, brandLogoIsName } from "@/lib/brands";
 import { CATEGORY_CONFIG } from "@/lib/categories";
@@ -17,6 +17,7 @@ const H = 1920;
 
 const INK = "#0b0c0f";
 const PAPER = "#fefcf9";
+const INK_SOFT = "#61656e";
 const BRAND = "#ed0040";
 const BRAND_LIGHT = "#ff1f58";
 const BRAND_DARK = "#c80037";
@@ -162,78 +163,98 @@ function drawChips(ctx, { city, store, family, rtl, edge, top }) {
   ctx.restore();
 }
 
-// Round cream sticker with a scalloped edge and the price in red.
-function drawSticker(ctx, { cx, cy, angle, amount, currency, family }) {
-  const r = 160;
+// An empty red hang tag on a string: the spot for Instagram's link sticker
+// (the price is left off on purpose). The hole and point face the photo's
+// middle, so it mirrors in Kurdish/Arabic.
+function drawHangTag(ctx, { x, y, w, h, rtl, anchorX, anchorY }) {
+  const point = 56;
+  const holeX = rtl ? x + w - point + 4 : x + point - 4;
+  const holeY = y + h / 2;
+  // string from the photo's frame down to the hole
   ctx.save();
-  ctx.translate(cx, cy);
-  ctx.rotate(angle);
-  ctx.shadowColor = "rgba(60, 0, 15, 0.45)";
-  ctx.shadowBlur = 40;
-  ctx.shadowOffsetY = 18;
+  ctx.strokeStyle = "rgba(11, 12, 15, 0.55)";
+  ctx.lineWidth = 4;
+  ctx.lineCap = "round";
   ctx.beginPath();
-  const n = 22;
-  for (let i = 0; i < n * 2; i++) {
-    const rr = i % 2 ? r * 0.92 : r;
-    const a = (Math.PI * i) / n;
-    ctx.lineTo(rr * Math.cos(a), rr * Math.sin(a));
-  }
-  ctx.closePath();
-  ctx.fillStyle = PAPER;
-  ctx.fill();
-  ctx.shadowColor = "transparent";
-  ctx.setLineDash([6, 7]);
-  ctx.strokeStyle = BRAND;
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  ctx.arc(0, 0, r * 0.8, 0, Math.PI * 2);
+  ctx.moveTo(anchorX, anchorY);
+  ctx.quadraticCurveTo((anchorX + holeX) / 2 + (rtl ? 30 : -30), (anchorY + holeY) / 2 + 40, holeX, holeY);
   ctx.stroke();
-  ctx.setLineDash([]);
-  ctx.direction = "ltr";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "alphabetic";
-  ctx.fillStyle = BRAND;
-  let size = 84;
-  do { ctx.font = `900 ${size}px ${family}`; size -= 4; } while (ctx.measureText(amount).width > r * 1.6 && size > 40);
-  ctx.fillText(amount, 0, 18);
-  ctx.font = `800 36px ${family}`;
-  ctx.fillText(currency, 0, 66);
+  ctx.restore();
+
+  ctx.save();
+  ctx.translate(x + w / 2, y + h / 2);
+  ctx.rotate(rtl ? 0.06 : -0.06);
+  ctx.translate(-(x + w / 2), -(y + h / 2));
+  const tag = new Path2D();
+  if (rtl) {
+    tag.moveTo(x + 24, y);
+    tag.lineTo(x + w - point, y);
+    tag.lineTo(x + w, y + h / 2);
+    tag.lineTo(x + w - point, y + h);
+    tag.lineTo(x + 24, y + h);
+    tag.arcTo(x, y + h, x, y + h - 24, 24);
+    tag.lineTo(x, y + 24);
+    tag.arcTo(x, y, x + 24, y, 24);
+  } else {
+    tag.moveTo(x + point, y);
+    tag.lineTo(x + w - 24, y);
+    tag.arcTo(x + w, y, x + w, y + 24, 24);
+    tag.lineTo(x + w, y + h - 24);
+    tag.arcTo(x + w, y + h, x + w - 24, y + h, 24);
+    tag.lineTo(x + point, y + h);
+    tag.lineTo(x, y + h / 2);
+  }
+  tag.closePath();
+  ctx.shadowColor = "rgba(200, 0, 55, 0.45)";
+  ctx.shadowBlur = 36;
+  ctx.shadowOffsetY = 16;
+  const grad = ctx.createLinearGradient(x, y, x + w, y + h);
+  grad.addColorStop(0, BRAND_LIGHT);
+  grad.addColorStop(1, BRAND_DARK);
+  ctx.fillStyle = grad;
+  ctx.fill(tag);
+  ctx.shadowColor = "transparent";
+  // stitched edge
+  ctx.save();
+  ctx.clip(tag);
+  ctx.setLineDash([12, 10]);
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.55)";
+  ctx.lineWidth = 3;
+  roundedRect(ctx, rtl ? x + 16 : x + point + 4, y + 14, w - point - 20, h - 28, 14);
+  ctx.stroke();
+  ctx.restore();
+  // hole
+  ctx.fillStyle = PAPER;
+  ctx.beginPath();
+  ctx.arc(holeX, holeY, 14, 0, Math.PI * 2);
+  ctx.fill();
   ctx.restore();
 }
 
-function drawStory(ctx, { title, price, img, city, store, code, site, rtl, logo, brand, brandImg, drawings, family }) {
+function drawStory(ctx, { title, img, city, store, code, site, rtl, logo, brand, brandImg, drawings, family }) {
   const edge = rtl ? W - 72 : 72;
 
-  // Background: the photo itself, blurred and darkened (a warm dark gradient
-  // when there is no photo), so the white header and the red card stand out.
-  if (img) {
-    drawBlurred(ctx, img, 0, 0, W, H);
-    ctx.fillStyle = "rgba(20, 12, 12, 0.42)";
-    ctx.fillRect(0, 0, W, H);
-  } else {
-    const bg = ctx.createLinearGradient(0, 0, 0, H);
-    bg.addColorStop(0, "#5a4a46");
-    bg.addColorStop(1, "#1f1718");
-    ctx.fillStyle = bg;
-    ctx.fillRect(0, 0, W, H);
-  }
+  // Background: the site's cream.
+  ctx.fillStyle = PAPER;
+  ctx.fillRect(0, 0, W, H);
 
-  // Header, the same in every language: Mndallan on the left, the brand's logo on the right.
+  // Header, the same in every language: Mndallan on the left (the site's
+  // logo, red name, grey tagline), the brand's logo on the right.
   if (logo) {
-    const size = 104;
-    const x = 72;
-    ctx.drawImage(tinted(logo, size, "#ffffff"), x, 64, size, size);
+    const size = 100;
+    const x = 64;
+    ctx.drawImage(logo, x, 66, size, size);
     ctx.save();
     ctx.direction = "ltr";
     ctx.textAlign = "left";
     ctx.textBaseline = "alphabetic";
-    const tx = x + size + 22;
-    ctx.fillStyle = "#ffffff";
-    ctx.font = `800 52px ${family}`;
-    ctx.fillText("Mndallan", tx, 118);
-    ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
+    const tx = x + size + 20;
+    ctx.fillStyle = BRAND;
+    ctx.font = `bold 48px ${family}`;
+    ctx.fillText("Mndallan", tx, 116);
+    ctx.fillStyle = INK_SOFT;
     ctx.font = `500 28px ${family}`;
-    ctx.fillText("Baby Marketplace", tx, 156);
+    ctx.fillText("Baby Marketplace", tx, 152);
     ctx.restore();
   }
   if (brandImg) {
@@ -354,15 +375,12 @@ function drawStory(ctx, { title, price, img, city, store, code, site, rtl, logo,
   if (code) ctx.fillText(code, rtl ? cx + 60 : cx + cw - 60, footY);
   ctx.restore();
 
-  // Price sticker on the card's top corner (the end of the reading line).
-  const [amount, ...rest] = String(price).split(" ");
-  drawSticker(ctx, {
-    cx: rtl ? cx + 190 : cx + cw - 190,
-    cy: cy - 10,
-    angle: rtl ? -0.17 : 0.17,
-    amount,
-    currency: rest.join(" ") || "IQD",
-    family,
+  // Empty hang tag between the photo and the card, on the end side.
+  const tw = 540, th = 140;
+  const tx = rtl ? 72 : W - 72 - tw;
+  drawHangTag(ctx, {
+    x: tx, y: (py + ph + cy) / 2 - th / 2, w: tw, h: th, rtl,
+    anchorX: rtl ? tx + tw - 90 : tx + 90, anchorY: py + ph - 4,
   });
 }
 
@@ -371,7 +389,6 @@ function drawStory(ctx, { title, price, img, city, store, code, site, rtl, logo,
  *
  * @param {object} p
  * @param {string} p.title      product title
- * @param {string} p.price      pre-formatted price, e.g. "320,000 IQD"
  * @param {string} [p.photo]    absolute image URL (R2)
  * @param {string} [p.city]     localized city
  * @param {string} [p.store]    localized "Store" label, for store products
@@ -380,7 +397,7 @@ function drawStory(ctx, { title, price, img, city, store, code, site, rtl, logo,
  * @param {boolean} [p.rtl]     right-to-left layout for ckb/ar
  * @param {string} [p.brand]    brand name; its logo goes in the header
  */
-export async function buildStoryImage({ title, price, photo, city, store, code, site, rtl = false, brand }) {
+export async function buildStoryImage({ title, photo, city, store, code, site, rtl = false, brand }) {
   // Webfonts must be resolved before fillText or the card renders in a
   // fallback face (and Kurdish/Arabic glyphs may not render at all).
   if (typeof document !== "undefined" && document.fonts?.ready) {
@@ -402,7 +419,7 @@ export async function buildStoryImage({ title, price, photo, city, store, code, 
     canvas.height = H;
     const ctx = canvas.getContext("2d");
     if (!ctx) return null;
-    drawStory(ctx, { title, price, img: withPhoto ? img : null, city, store, code, site, rtl, logo, brand, brandImg, drawings: withPhoto ? drawings.filter(Boolean) : [], family });
+    drawStory(ctx, { title, img: withPhoto ? img : null, city, store, code, site, rtl, logo, brand, brandImg, drawings: withPhoto ? drawings.filter(Boolean) : [], family });
     return canvas;
   };
 
