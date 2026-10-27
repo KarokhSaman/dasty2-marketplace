@@ -4,7 +4,7 @@
 // through the OS share sheet — `navigator.share({ files })` puts "Instagram →
 // Stories" in the list. So the story path is: draw a card → share the PNG.
 //
-// Layout: cream page, Mndallan header and the brand logo on top, the whole
+// Layout: cream page with faint product drawings, Mndallan header and the brand logo on top, the whole
 // photo framed over a blurred copy of itself, an empty red hang tag (where the
 // seller puts Instagram's link sticker; no price on purpose), and a red card
 // with the category drawings, city/store, title, web address and code.
@@ -163,70 +163,66 @@ function drawChips(ctx, { city, store, family, rtl, edge, top }) {
   ctx.restore();
 }
 
-// An empty red hang tag on a string: the spot for Instagram's link sticker
-// (the price is left off on purpose). The hole and point face the photo's
-// middle, so it mirrors in Kurdish/Arabic.
-function drawHangTag(ctx, { x, y, w, h, rtl, anchorX, anchorY }) {
-  const point = 56;
-  const holeX = rtl ? x + w - point + 4 : x + point - 4;
-  const holeY = y + h / 2;
-  // string from the photo's frame down to the hole
+// An empty red hang tag: the spot for Instagram's link sticker (the price is
+// left off on purpose). It hangs from the red card's top corner on the end
+// side, tied there by a short string, and tilts about 15° up toward the photo.
+// Mirrored in Kurdish/Arabic.
+function drawHangTag(ctx, { hx, hy, w, h, rtl }) {
+  const tilt = (15 * Math.PI) / 180;
+  const half = h / 2;
+  const point = 58;
+
+  // the short string, from the hole over the card's corner
   ctx.save();
-  ctx.strokeStyle = "rgba(11, 12, 15, 0.55)";
-  ctx.lineWidth = 4;
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.85)";
+  ctx.lineWidth = 5;
   ctx.lineCap = "round";
   ctx.beginPath();
-  ctx.moveTo(anchorX, anchorY);
-  ctx.quadraticCurveTo((anchorX + holeX) / 2 + (rtl ? 30 : -30), (anchorY + holeY) / 2 + 40, holeX, holeY);
+  ctx.moveTo(hx, hy);
+  ctx.bezierCurveTo(hx + (rtl ? -36 : 36), hy + 4, hx + (rtl ? -40 : 40), hy + 44, hx + (rtl ? -14 : 14), hy + 60);
   ctx.stroke();
   ctx.restore();
 
+  // the tag, drawn with its hole at (0, 0) and its body reaching back (−x)
   ctx.save();
-  ctx.translate(x + w / 2, y + h / 2);
-  ctx.rotate(rtl ? 0.06 : -0.06);
-  ctx.translate(-(x + w / 2), -(y + h / 2));
+  ctx.translate(hx, hy);
+  ctx.rotate(rtl ? -tilt : tilt);
+  if (rtl) ctx.scale(-1, 1);
+  const left = -(w - point), r = 24;
   const tag = new Path2D();
-  if (rtl) {
-    tag.moveTo(x + 24, y);
-    tag.lineTo(x + w - point, y);
-    tag.lineTo(x + w, y + h / 2);
-    tag.lineTo(x + w - point, y + h);
-    tag.lineTo(x + 24, y + h);
-    tag.arcTo(x, y + h, x, y + h - 24, 24);
-    tag.lineTo(x, y + 24);
-    tag.arcTo(x, y, x + 24, y, 24);
-  } else {
-    tag.moveTo(x + point, y);
-    tag.lineTo(x + w - 24, y);
-    tag.arcTo(x + w, y, x + w, y + 24, 24);
-    tag.lineTo(x + w, y + h - 24);
-    tag.arcTo(x + w, y + h, x + w - 24, y + h, 24);
-    tag.lineTo(x + point, y + h);
-    tag.lineTo(x, y + h / 2);
-  }
+  tag.moveTo(left + r, -half);
+  tag.lineTo(0, -half);
+  tag.lineTo(point, 0);
+  tag.lineTo(0, half);
+  tag.lineTo(left + r, half);
+  tag.arcTo(left, half, left, half - r, r);
+  tag.lineTo(left, -half + r);
+  tag.arcTo(left, -half, left + r, -half, r);
   tag.closePath();
-  ctx.shadowColor = "rgba(200, 0, 55, 0.45)";
-  ctx.shadowBlur = 36;
-  ctx.shadowOffsetY = 16;
-  const grad = ctx.createLinearGradient(x, y, x + w, y + h);
+  ctx.shadowColor = "rgba(60, 0, 15, 0.45)";
+  ctx.shadowBlur = 40;
+  ctx.shadowOffsetY = 18;
+  const grad = ctx.createLinearGradient(left, -half, point, half);
   grad.addColorStop(0, BRAND_LIGHT);
   grad.addColorStop(1, BRAND_DARK);
   ctx.fillStyle = grad;
   ctx.fill(tag);
   ctx.shadowColor = "transparent";
   // stitched edge
-  ctx.save();
-  ctx.clip(tag);
   ctx.setLineDash([12, 10]);
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.55)";
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.6)";
   ctx.lineWidth = 3;
-  roundedRect(ctx, rtl ? x + 16 : x + point + 4, y + 14, w - point - 20, h - 28, 14);
+  roundedRect(ctx, left + 14, -half + 14, -left - 14 - 20, h - 28, 14);
   ctx.stroke();
-  ctx.restore();
-  // hole
-  ctx.fillStyle = PAPER;
+  ctx.setLineDash([]);
+  // hole with a white eyelet
   ctx.beginPath();
-  ctx.arc(holeX, holeY, 14, 0, Math.PI * 2);
+  ctx.arc(14, 0, 18, 0, Math.PI * 2);
+  ctx.fillStyle = "#ffffff";
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(14, 0, 10, 0, Math.PI * 2);
+  ctx.fillStyle = BRAND_DARK;
   ctx.fill();
   ctx.restore();
 }
@@ -234,9 +230,26 @@ function drawHangTag(ctx, { x, y, w, h, rtl, anchorX, anchorY }) {
 function drawStory(ctx, { title, img, city, store, code, site, rtl, logo, brand, brandImg, drawings, family }) {
   const edge = rtl ? W - 72 : 72;
 
-  // Background: the site's cream.
+  // Background: the site's cream, scattered with small faint baby-product
+  // drawings (the site's category drawings).
   ctx.fillStyle = PAPER;
   ctx.fillRect(0, 0, W, H);
+  if (drawings.length) {
+    const size = 86, step = 150;
+    const inks = drawings.map((d) => tinted(d, size, INK));
+    let n = 0;
+    for (let row = 0, y = -30; y < H; row++, y += step * 0.86) {
+      for (let x = row % 2 ? -10 : -85; x < W; x += step, n++) {
+        const turn = (((n * 37) % 11) - 5) * 0.06;
+        ctx.save();
+        ctx.globalAlpha = 0.07;
+        ctx.translate(x + size / 2, y + size / 2);
+        ctx.rotate(turn);
+        ctx.drawImage(inks[(n * 5 + row) % inks.length], -size / 2, -size / 2);
+        ctx.restore();
+      }
+    }
+  }
 
   // Header, the same in every language: Mndallan on the left (the site's
   // logo, red name, grey tagline), the brand's logo on the right.
@@ -330,7 +343,7 @@ function drawStory(ctx, { title, img, city, store, code, site, rtl, logo, brand,
   roundedRect(ctx, cx, cy, cw, ch, cr);
   ctx.clip();
   const spots = [[cx + 700, cy - 30, -0.2], [cx - 50, cy + 170, 0.24], [cx + 540, cy + 330, 0.14], [cx + 250, cy + 400, -0.3]];
-  drawings.forEach((d, i) => {
+  drawings.slice(0, spots.length).forEach((d, i) => {
     const [x, y, a] = spots[i % spots.length];
     const tmp = tinted(d, 220, "#ffffff");
     ctx.save();
@@ -375,13 +388,8 @@ function drawStory(ctx, { title, img, city, store, code, site, rtl, logo, brand,
   if (code) ctx.fillText(code, rtl ? cx + 60 : cx + cw - 60, footY);
   ctx.restore();
 
-  // Empty hang tag between the photo and the card, on the end side.
-  const tw = 540, th = 140;
-  const tx = rtl ? 72 : W - 72 - tw;
-  drawHangTag(ctx, {
-    x: tx, y: (py + ph + cy) / 2 - th / 2, w: tw, h: th, rtl,
-    anchorX: rtl ? tx + tw - 90 : tx + 90, anchorY: py + ph - 4,
-  });
+  // Empty hang tag, tied at the card's top corner on the end side.
+  drawHangTag(ctx, { hx: rtl ? cx + 70 : cx + cw - 70, hy: cy + 40, w: 540, h: 140, rtl });
 }
 
 /**
@@ -404,7 +412,7 @@ export async function buildStoryImage({ title, photo, city, store, code, site, r
     try { await document.fonts.ready; } catch { /* non-blocking */ }
   }
 
-  const drawingUrls = CATEGORY_CONFIG.filter((c) => c.value !== "all").slice(0, 4).map((c) => c.img);
+  const drawingUrls = CATEGORY_CONFIG.filter((c) => c.value !== "all").map((c) => c.img);
   const [img, logo, brandImg, ...drawings] = await Promise.all([
     loadImage(photo, { cors: true }),
     loadImage("/logo-mndallan.svg"),
