@@ -18,6 +18,7 @@ export const ACTIONS = {
   marked_paid: ["Marked paid", "purple"],
   deleted: ["Deleted", "grey"],
   photo_removed: ["Photo removed", "orange"],
+  photo_added: ["Photo added", "green"],
   photo_rotated: ["Photo rotated", "grey"],
   main_photo_set: ["Main photo set", "grey"],
   seller_deleted: ["Seller deleted", "red"],

@@ -148,6 +148,11 @@ export function useProductActions() {
     await log("photo_removed", p, `Photo ${i + 1} removed`);
   }
 
+  async function addPhotos(p, urls) {
+    await updatePhotos({ id: p._id, photos: [...(p.photos ?? []), ...urls] });
+    await log("photo_added", p, urls.length === 1 ? "1 photo added" : `${urls.length} photos added`);
+  }
+
   async function swapPhoto(p, i, oldUrl, newUrl, turns) {
     await replacePhoto({ id: p._id, index: i, oldUrl, newUrl });
     await log("photo_rotated", p, `Photo ${i + 1} rotated ${turns * 90}°`);
@@ -155,6 +160,6 @@ export function useProductActions() {
 
   return {
     approve, reject, setPending, makeLive, returnUnit, markSold, markPaid, resolveDelete, remove,
-    sponsor, unsponsor, saveDetails, setMainPhoto, removePhoto, swapPhoto, isStocked, log,
+    sponsor, unsponsor, saveDetails, setMainPhoto, removePhoto, addPhotos, swapPhoto, isStocked, log,
   };
 }
