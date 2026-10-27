@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
@@ -70,6 +70,57 @@ export function RejectBox({ onReject, onCancel, busy }) {
       </div>
       <p className="text-[11.5px] text-adm-soft">The seller is notified with this reason and can fix and resubmit.</p>
     </div>
+  );
+}
+
+// Admin adds photos to a seller's product (e.g. better shots of a branded
+// item), up to the 5-photo limit. Uploads finish first, then one save.
+const MAX_PHOTOS = 5;
+function AddPhotoTile({ product, actions, toast }) {
+  const upload = useImageUpload();
+  const inputRef = useRef(null);
+  const [uploading, setUploading] = useState(0);
+  const room = MAX_PHOTOS - (product.photos?.length ?? 0);
+
+  async function addFiles(e) {
+    const files = Array.from(e.target.files ?? []).slice(0, room);
+    e.target.value = "";
+    if (!files.length) return;
+    setUploading(files.length);
+    const results = await Promise.allSettled(files.map((file) => upload(file)));
+    const urls = results.filter((r) => r.status === "fulfilled").map((r) => r.value);
+    const failed = results.length - urls.length;
+    try {
+      if (urls.length) {
+        await actions.addPhotos(product, urls);
+        toast(urls.length === 1 ? "Photo added" : `${urls.length} photos added`);
+      }
+      if (failed) toast(`${failed} could not be uploaded: JPEG, PNG or WEBP, 8 MB max`, "error");
+    } catch (err) {
+      toast(errorMessage(err, "Could not add the photos"), "error");
+    } finally {
+      setUploading(0);
+    }
+  }
+
+  return (
+    <>
+      {Array.from({ length: uploading }).map((_, i) => (
+        <div key={`up${i}`} className="aspect-square rounded-xl bg-adm-sunk grid place-items-center">
+          <span className="w-6 h-6 border-2 border-adm-line border-t-adm-accent rounded-full animate-spin" />
+        </div>
+      ))}
+      {room > 0 && !uploading && (
+        <button type="button" onClick={() => inputRef.current?.click()}
+          className="aspect-square rounded-xl border-[1.5px] border-dashed border-adm-fade bg-adm-surface flex flex-col items-center justify-center gap-1 text-[12px] font-bold text-adm-soft hover:border-adm-accent hover:text-adm-accent">
+          <svg className="w-6 h-6 text-adm-accent" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z" /><circle cx="12" cy="13.5" r="3.5" />
+          </svg>
+          Add photo
+        </button>
+      )}
+      <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" multiple hidden onChange={addFiles} />
+    </>
   );
 }
 
@@ -386,13 +437,14 @@ export default function ProductPanel({ product, onClose }) {
 
       {/* Photos */}
       <section>
-        <SectionTitle>Photos · {p.photos?.length ?? 0}</SectionTitle>
+        <SectionTitle>Photos · {p.photos?.length ?? 0}/{MAX_PHOTOS}</SectionTitle>
         <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
           {(p.photos ?? []).map((url, i) => (
             <PhotoTile key={url + i} product={p} url={url} index={i} isMain={i === main} onlyOne={p.photos.length === 1} actions={actions} toast={toast} />
           ))}
+          <AddPhotoTile product={p} actions={actions} toast={toast} />
         </div>
-        <p className="text-[11.5px] text-adm-fade mt-1.5">Rotate turns the preview first; ✓ saves it once. The star makes a photo the main one.</p>
+        <p className="text-[11.5px] text-adm-fade mt-1.5">Rotate turns the preview first; ✓ saves it once. The star makes a photo the main one. Add photo uploads your own shots, up to {MAX_PHOTOS}.</p>
       </section>
 
       {/* Money */}
