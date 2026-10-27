@@ -1,7 +1,9 @@
 import { paginationOptsValidator } from "convex/server";
+import { internal } from "./_generated/api";
 import { ConvexError, v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 import {
+  internalMutation,
   mutation,
   query,
   type MutationCtx,
@@ -549,7 +551,7 @@ export const getPublicPaginated = query({
     stores: v.optional(v.boolean()),
     brand: v.optional(v.string()),
     // Price order for the whole list, not just the loaded part. Omitted:
-    // newest first.
+    // newest approved first.
     sort: v.optional(v.union(v.literal("price_asc"), v.literal("price_desc"))),
   },
   handler: async (ctx, { paginationOpts, category, stores, brand, sort }) => {
@@ -570,16 +572,16 @@ export const getPublicPaginated = query({
             : products.withIndex("by_status_and_price", (q) => q.eq("status", "approved"));
     const base = sort ? byPrice() :
       hasCategory && brand
-        ? products.withIndex("by_status_category_brand", (q) =>
+        ? products.withIndex("by_status_and_category_and_brand_and_approvedAt", (q) =>
             q.eq("status", "approved").eq("category", category!).eq("brand", brand),
           )
         : brand
-          ? products.withIndex("by_status_brand", (q) => q.eq("status", "approved").eq("brand", brand))
+          ? products.withIndex("by_status_and_brand_and_approvedAt", (q) => q.eq("status", "approved").eq("brand", brand))
           : hasCategory
-            ? products.withIndex("by_status_category", (q) =>
+            ? products.withIndex("by_status_and_category_and_approvedAt", (q) =>
                 q.eq("status", "approved").eq("category", category!),
               )
-            : products.withIndex("by_status", (q) => q.eq("status", "approved"));
+            : products.withIndex("by_status_and_approvedAt", (q) => q.eq("status", "approved"));
     const q = stores ? base.filter((f) => f.neq(f.field("storeId"), undefined)) : base;
 
     const result = await q.order(sort === "price_asc" ? "asc" : "desc").paginate(paginationOpts);
@@ -764,6 +766,12 @@ export const updateStatus = mutation({
     const patch: Record<string, unknown> = Object.fromEntries(
       Object.entries(fields).filter(([, value]) => value !== undefined),
     );
+    // The first approval puts a product at the top of the home feed. Approving
+    // it again (after a seller edit, or a reversed sale) keeps that time, so
+    // editing a listing doesn't bump it back to the top.
+    if (fields.status === "approved") {
+      patch.approvedAt = product.approvedAt ?? new Date().toISOString();
+    }
     if (fields.status === "sold" || fields.status === "paid") {
       Object.assign(patch, await saleTerms(ctx, product, salePrice));
       Object.assign(patch, await ownSaleTerms(ctx, product, ownProfit));
@@ -773,6 +781,26 @@ export const updateStatus = mutation({
       Object.assign(patch, await listingTerms(ctx, product));
     }
     await ctx.db.patch(id, patch);
+  },
+});
+
+// One-off: products approved before approvedAt was recorded get their posting
+// time, so they keep their place in the home feed. Safe to run again.
+//   npx convex run products:backfillApprovedAt
+export const backfillApprovedAt = internalMutation({
+  args: { cursor: v.optional(v.union(v.string(), v.null())), updated: v.optional(v.number()) },
+  returns: v.null(),
+  handler: async (ctx, { cursor, updated = 0 }) => {
+    const page = await ctx.db.query("products").paginate({ cursor: cursor ?? null, numItems: 200 });
+    let n = updated;
+    for (const p of page.page) {
+      if (p.approvedAt || p.status === "pending" || p.status === "rejected") continue;
+      await ctx.db.patch(p._id, { approvedAt: p.dateAdded });
+      n++;
+    }
+    if (page.isDone) console.log(`backfillApprovedAt: ${n} products updated`);
+    else await ctx.scheduler.runAfter(0, internal.products.backfillApprovedAt, { cursor: page.continueCursor, updated: n });
+    return null;
   },
 });
 

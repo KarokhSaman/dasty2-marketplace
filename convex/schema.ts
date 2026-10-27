@@ -44,6 +44,7 @@ export default defineSchema({
     soldReportedAt: v.optional(v.string()),
     notes: v.optional(v.string()),
     approvedBy: v.optional(v.string()),
+    // ISO time of the first approval; the home feed is newest-approved first.
     approvedAt: v.optional(v.string()),
     dateAdded: v.string(),
     dateSold: v.optional(v.string()),
@@ -70,6 +71,11 @@ export default defineSchema({
     .index("by_status_city",     ["status", "city"])
     .index("by_status_brand",          ["status", "brand"])
     .index("by_status_category_brand", ["status", "category", "brand"])
+    // Home feed, newest approved first, for each filter combination.
+    .index("by_status_and_approvedAt", ["status", "approvedAt"])
+    .index("by_status_and_category_and_approvedAt", ["status", "category", "approvedAt"])
+    .index("by_status_and_brand_and_approvedAt", ["status", "brand", "approvedAt"])
+    .index("by_status_and_category_and_brand_and_approvedAt", ["status", "category", "brand", "approvedAt"])
     // Home page "price low/high" sort, for each filter combination.
     .index("by_status_and_price", ["status", "price"])
     .index("by_status_and_category_and_price", ["status", "category", "price"])
