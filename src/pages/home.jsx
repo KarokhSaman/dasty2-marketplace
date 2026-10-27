@@ -34,6 +34,15 @@ const useIsoLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : use
 let homeEntranceShown = false;
 
 // ── Reusable bits ──────────────────────────────────────────
+function TagIcon() {
+  return (
+    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12V4h8l9 9-8 8-9-9Z" />
+      <circle cx="7.5" cy="7.5" r="1.3" strokeWidth={2} />
+    </svg>
+  );
+}
+
 function PinIcon() {
   return (
     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -44,7 +53,7 @@ function PinIcon() {
 }
 
 /** Row with the "Stores" filter (left) and City + Brand filters (right) */
-function FiltersRow({ cities, setCities, availableCities, showStores, storesOnly, setStoresOnly, brand, setBrand, brandOptions }) {
+function FiltersRow({ cities, setCities, availableCities, showStores, storesOnly, setStoresOnly, brands, setBrands, brandOptions }) {
   const locale = getLocale();
   return (
     <div className={`flex items-center justify-between gap-2 mb-2.5 px-0.5`}>
@@ -77,12 +86,12 @@ function FiltersRow({ cities, setCities, availableCities, showStores, storesOnly
           align="end"
         />
         <MultiSelectMenu
-          single
           label={m.brandLabel()}
           allLabel={m.allBrands()}
+          leadingIcon={<TagIcon />}
           options={brandOptions.map((b) => ({ value: b, label: b }))}
-          selected={brand ? [brand] : []}
-          onChange={(list) => setBrand(list[0] ?? "")}
+          selected={brands}
+          onChange={setBrands}
           align="end"
         />
       </div>
@@ -177,17 +186,17 @@ export default function HomePage() {
   const search = useSearch({ from: "/_public/" });
   const navigate = useNavigate();
   const category = search.category ?? "all";
-  const brand = search.brand ?? "";
+  const brands = useMemo(() => (search.brand ? search.brand.split(",") : []), [search.brand]);
   const cities = useMemo(() => (search.city ? search.city.split(",") : []), [search.city]);
   const setUrlFilters = (next) =>
     navigate({ to: ".", search: (prev) => ({ ...prev, ...next }), replace: true, resetScroll: false });
   const setCategory = (next) =>
     setUrlFilters({
       category: next === "all" ? undefined : next,
-      // keep the brand only if it still fits the new category
-      brand: brand && brandFitsCategory(brand, next) ? brand : undefined,
+      // keep only the brands that still fit the new category
+      brand: brands.filter((b) => brandFitsCategory(b, next)).join(",") || undefined,
     });
-  const setBrand = (next) => setUrlFilters({ brand: next || undefined });
+  const setBrands = (next) => setUrlFilters({ brand: next.length ? next.join(",") : undefined });
   const setCities = (next) => setUrlFilters({ city: next.length ? next.join(",") : undefined });
   const sentinelRef = useRef(null);
   // Shuffle seed — calculated after hydration to avoid server/client mismatch
@@ -282,19 +291,23 @@ export default function HomePage() {
     // "Other" goes last
     return [...list.filter((b) => b !== OTHER_BRAND), ...(list.includes(OTHER_BRAND) ? [OTHER_BRAND] : [])];
   }, [liveBrands, category]);
-  // A chosen brand with no products in this category (e.g. after switching
-  // category, or from an old link) falls back to "All brands".
+  // Chosen brands with no products in this category (e.g. after switching
+  // category, or from an old link) are dropped; none left means "All brands".
   useEffect(() => {
-    if (brand && liveBrands && !liveBrands.some((b) => b.brand === brand)) setBrand("");
+    if (!brands.length || !liveBrands) return;
+    const kept = brands.filter((b) => liveBrands.some((l) => l.brand === b));
+    if (kept.length !== brands.length) setBrands(kept);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [brand, liveBrands]);
+  }, [brands, liveBrands]);
 
   const { results: liveResults, status, loadMore } = usePaginatedQuery(
     api.products.getPublicPaginated,
     {
       category: category === "all" ? undefined : category,
       stores: storesOnly || undefined,
-      brand: brand || undefined,
+      // One brand is filtered by the server; several are filtered on this
+      // phone, like cities, over what's loaded.
+      brand: brands.length === 1 ? brands[0] : undefined,
     },
     { initialNumItems: initialItems },
   );
@@ -343,7 +356,7 @@ export default function HomePage() {
   // return. Only when the feed isn't narrowed by category, brand or Stores,
   // since a plain "Home" link always comes back to the full list.
   const latest = useRef({});
-  latest.current = { results, featuredProducts, plain: category === "all" && !brand && !storesOnly };
+  latest.current = { results, featuredProducts, plain: category === "all" && !brands.length && !storesOnly };
   useEffect(() => () => {
     const { results: r, featuredProducts: f, plain } = latest.current;
     if (plain) saveResultsOnly({ results: r, featuredProducts: f });
@@ -368,7 +381,7 @@ export default function HomePage() {
     const matchCond   = condition === "all" || p.condition === condition;
     const matchCity   = cities.length === 0 || cities.includes(p.city);
     const matchCat    = skipCategory ? true : (category === "all" || p.category === category);
-    const matchBrand  = !brand || p.brand === brand;
+    const matchBrand  = brands.length === 0 || brands.includes(p.brand);
     return matchCond && matchCity && matchCat && matchBrand;
   };
 
@@ -378,7 +391,7 @@ export default function HomePage() {
 
   // Featured products for carousel — preserve position-based order from getFeatured query
   const featuredFiltered = useMemo(() => featuredProducts.filter((p) => matchesFilters(p, { skipCategory: category === "all" })),
-    [featuredProducts, condition, cities, brand, category]);
+    [featuredProducts, condition, cities, brands, category]);
 
   // VIP Carousel products — all featured products (no filter awareness)
   const vipCarouselProducts = useMemo(() => {
@@ -397,7 +410,7 @@ export default function HomePage() {
     const sortedFeatured = featured; // Already sorted by position in getFeatured query
     const combined = [...sortedFeatured, ...applySort(regular)];
     return combined;
-  }, [featuredProducts, results, condition, cities, category, brand]);
+  }, [featuredProducts, results, condition, cities, category, brands]);
   const totalCount = allProducts.length;
 
 
@@ -419,8 +432,8 @@ export default function HomePage() {
         showStores={!!hasStoreProducts}
         storesOnly={storesOnly}
         setStoresOnly={setStoresOnly}
-        brand={brand}
-        setBrand={setBrand}
+        brands={brands}
+        setBrands={setBrands}
         brandOptions={brandOptions}
       />
 
@@ -430,7 +443,7 @@ export default function HomePage() {
           setCondition={updateFilter("condition")}
           hideConditions={storesOnly}
           hasActiveFilter={
-            condition !== "all" || cities.length > 0 || storesOnly || category !== "all" || !!brand
+            condition !== "all" || cities.length > 0 || storesOnly || category !== "all" || brands.length > 0
           }
           onReset={() => { setFilters(INITIAL_FILTERS); setUrlFilters({ category: undefined, brand: undefined, city: undefined }); }}
         />
