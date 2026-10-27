@@ -310,6 +310,8 @@ export default function ProductDetailPage() {
   // render use the production domain (so hydration matches), then the effect
   // swaps in the real origin after mount (e.g. localhost in dev).
   const productUrl = `${origin}${localizeHref(`/products/${id}`, { locale })}`;
+  // The story shows the address people type: www. on the live site.
+  const storySite = new URL(productUrl).host === "mndallan.com" ? "www.mndallan.com" : new URL(productUrl).host;
 
   const priceNow = priceInfo(product);
 
@@ -356,10 +358,10 @@ export default function ProductDetailPage() {
               title: product.title,
               price: `${formatAmount(priceNow.price)} IQD`,
               photo: photos[0],
-              meta: [cityLabel, categoryLabel].filter(Boolean).join(" · "),
-              condition: isNew ? m.badgeNew() : product.condition === "likenew" ? m.conditionLikeNew() : m.badgeUsed(),
+              city: cityLabel,
+              store: product.storeId ? m.storeFlag() : undefined,
               code: product.seq ? `#${product.seq}` : undefined,
-              site: new URL(productUrl).host,
+              site: storySite,
               rtl: locale !== "en",
               brand: product.brand,
             }}
