@@ -7,7 +7,7 @@
 // Layout: cream page with faint product drawings, Mndallan header and the brand logo on top, the whole
 // photo framed over a blurred copy of itself, an empty red hang tag (where the
 // seller puts Instagram's link sticker; no price on purpose), and a red card
-// with the category drawings, city/store, title, web address and code.
+// with the category drawings, city/store and title; web address and code below it.
 
 import { brandLogo, brandLogoIsName } from "@/lib/brands";
 import { CATEGORY_CONFIG } from "@/lib/categories";
@@ -164,11 +164,12 @@ function drawChips(ctx, { city, store, family, rtl, edge, top }) {
 }
 
 // An empty red hang tag: the spot for Instagram's link sticker (the price is
-// left off on purpose). It hangs from the red card's top corner on the end
-// side, tied there by a short string, and tilts about 15° up toward the photo.
+// left off on purpose). Its hole sits on the red card's top corner on the end
+// side, tied by a short white string, and it tilts 15° up toward the photo.
 // Mirrored in Kurdish/Arabic.
+const TAG_TILT = (15 * Math.PI) / 180;
 function drawHangTag(ctx, { hx, hy, w, h, rtl }) {
-  const tilt = (15 * Math.PI) / 180;
+  const tilt = TAG_TILT;
   const half = h / 2;
   const point = 58;
 
@@ -224,6 +225,41 @@ function drawHangTag(ctx, { hx, hy, w, h, rtl }) {
   ctx.arc(14, 0, 10, 0, Math.PI * 2);
   ctx.fillStyle = BRAND_DARK;
   ctx.fill();
+  ctx.restore();
+}
+
+// "Click here" hand on the tag (sellers write "to know the price, click
+// here" on it): a tapping hand with click rays ("click here" icon by Cuputo,
+// Noun Project), its fingertip touching the tag's free end. The drawing points
+// up-left; `dir` -1 mirrors it to point up-right.
+const HAND_RAYS = [
+  "M47.815,25.184c-0.224,0.017-0.438,0.084-0.63,0.193l-4.167,2.391c-0.699,0.375-0.943,1.25-0.553,1.933c0.391,0.688,1.272,0.917,1.948,0.505l4.178-2.386C49.918,27.096,49.32,25.074,47.815,25.184z",
+  "M25.935,37.71c-0.219,0.017-0.432,0.083-0.62,0.197l-4.178,2.386c-0.692,0.376-0.943,1.25-0.546,1.938c0.391,0.682,1.27,0.911,1.948,0.504l4.172-2.386C28.039,39.623,27.445,37.601,25.935,37.71z",
+  "M27.278,19.71c-1.073,0.037-1.713,1.219-1.156,2.135l2.41,4.141c0.392,0.673,1.251,0.902,1.923,0.511c0.676-0.391,0.9-1.256,0.509-1.928l-2.406-4.135C28.298,19.971,27.804,19.695,27.278,19.71z",
+  "M38.706,18.195c-0.615,0.032-1.14,0.458-1.292,1.052l-1.25,4.636c-0.229,0.755,0.219,1.558,0.984,1.76c0.765,0.208,1.546-0.26,1.734-1.03l1.246-4.626C40.393,19.06,39.669,18.153,38.706,18.195z",
+  "M20.284,28.793c-1.636,0.052-1.885,2.376-0.297,2.772l4.645,1.233c0.767,0.24,1.579-0.202,1.787-0.979c0.209-0.776-0.281-1.567-1.063-1.739l-4.656-1.23C20.565,28.81,20.424,28.793,20.284,28.793z",
+];
+const HAND_INSIDE = "M34.101,32.637c1.005-0.552,2.104-0.354,2.552,0.459l9.208,16.697c0.771,1.578,3.115,0.287,2.193-1.203l-1.682-3.047c-1.151-2.088,2.469-3.854,3.521-1.942l1.323,2.396c0.771,1.577,3.115,0.286,2.193-1.204L52.7,43.512c-0.255-0.463-0.238-1.078,0.161-1.671c0.402-0.595,1.136-1,1.855-1.026c0.713-0.021,1.246,0.297,1.495,0.745l0.917,1.667c0.807,1.463,3.004,0.249,2.197-1.215l-0.35-0.624c-0.203-0.371-0.317-0.735-0.15-1.142c0.234-0.547,0.917-0.927,1.51-0.953c0.594-0.02,0.907,0.095,1.224,0.646c1.495,2.583,4.323,7.834,4.323,7.834c2.355,4.307,3.162,8.134,2.479,11.322c-0.681,3.188-2.822,5.901-6.437,7.885c-3.609,1.979-6.14,2.511-8.463,2.246c-2.319-0.268-4.5-1.35-6.762-3.104L33.591,55.946c-0.678-0.532-0.916-1.104,0.109-1.746c1.073-0.683,2.485,0,3.506,0.495c0.032,0.021,5.854,3.079,5.854,3.079c1.094,0.546,2.25-0.643,1.662-1.714L33.132,35.039C32.528,33.951,33.206,33.131,34.101,32.637z";
+const HAND_OUTSIDE = "M32.888,30.44c-0.662,0.364-1.234,0.88-1.667,1.525c-0.869,1.287-1.021,2.938-0.281,4.281l9.62,17.432l-1.5-0.765c-0.912-0.521-3.027-1.416-4.308-1.433c-1.327,0.006-2.5,0.49-3.312,1.225c-1.298,1.172-1.479,2.385-0.703,3.786c0.578,1.047,1.572,1.673,2.338,2.266l12.099,9.35c2.479,1.916,5.088,3.276,8,3.609c2.905,0.333,6.036-0.392,9.448-2.333c4.552-2.428,7.333-5.793,8.181-9.761c0.855-3.979-0.192-8.412-2.733-13.058l-4.319-7.833c-0.681-1.234-2.063-1.964-3.473-1.849c-2.068,0.166-3.084,1.005-3.693,2.479c-1.014-1.006-2.27-1.068-3.593-0.626c-1.24,0.423-1.854,1.193-2.459,2.131c-0.661-0.364-1.432-0.547-2.218-0.525c-1.484,0.047-2.854,0.776-3.73,1.963l-5.744-10.416c-0.74-1.345-2.219-2.095-3.771-2.047C34.294,29.861,33.549,30.075,32.888,30.44z";
+function drawClickHint(ctx, { x, y, dir }) {
+  const s = 3;
+  ctx.save();
+  // (x, y) is the fingertip, at (32.6, 31) in the drawing
+  ctx.translate(x, y);
+  ctx.scale(dir * s, s);
+  ctx.translate(-32.6, -31);
+  ctx.fillStyle = INK;
+  for (const d of HAND_RAYS) ctx.fill(new Path2D(d));
+  ctx.shadowColor = "rgba(11, 12, 15, 0.3)";
+  ctx.shadowBlur = 10;
+  ctx.shadowOffsetY = 3;
+  ctx.fillStyle = "#ffffff";
+  ctx.fill(new Path2D(HAND_OUTSIDE));
+  ctx.shadowColor = "transparent";
+  const outline = new Path2D(HAND_OUTSIDE);
+  outline.addPath(new Path2D(HAND_INSIDE));
+  ctx.fillStyle = INK;
+  ctx.fill(outline, "evenodd");
   ctx.restore();
 }
 
@@ -301,6 +337,7 @@ function drawStory(ctx, { title, img, city, store, code, site, rtl, logo, brand,
     }
   }
 
+
   // Photo: the whole photo, over a blur of itself, in a white frame.
   const px = 72, py = 220, pw = W - 144, ph = 990, pr = 56;
   ctx.save();
@@ -323,8 +360,14 @@ function drawStory(ctx, { title, img, city, store, code, site, rtl, logo, brand,
   }
   ctx.restore();
 
-  // Red card
-  const cx = 48, cw = W - 96, ch = 470, cy = H - 56 - ch, cr = 64;
+  // Red card: just tall enough for the chips and the title; the web address
+  // and product code sit below it on the cream.
+  const cx = 48, cw = W - 96, cr = 64;
+  const inner = cw - 120;
+  const t = wrapTitle(ctx, title ?? "", inner - 170, family); // room for the hand
+  const titleTop = 158;
+  const ch = Math.round(titleTop + t.size * 0.85 + (t.lines.length - 1) * t.size * 1.1 + t.size * 0.25 + 56);
+  const cy = H - 140 - ch;
   ctx.save();
   ctx.shadowColor = "rgba(120, 0, 30, 0.45)";
   ctx.shadowBlur = 60;
@@ -355,41 +398,45 @@ function drawStory(ctx, { title, img, city, store, code, site, rtl, logo, brand,
   });
   ctx.restore();
 
-  // Card content: chips, title, then the website and product code.
-  const inner = cw - 120;
+  // Card content: chips, then the title.
   drawChips(ctx, { city, store, family, rtl, edge: rtl ? cx + cw - 60 : cx + 60, top: cy + 58 });
   ctx.save();
   ctx.direction = rtl ? "rtl" : "ltr";
   ctx.textAlign = rtl ? "right" : "left";
   ctx.textBaseline = "alphabetic";
   ctx.fillStyle = "#ffffff";
-  const t = wrapTitle(ctx, title ?? "", inner, family);
   ctx.font = `800 ${t.size}px ${family}`;
-  t.lines.forEach((line, i) => ctx.fillText(line, rtl ? cx + cw - 60 : cx + 60, cy + 158 + t.size * 0.85 + i * t.size * 1.1));
+  t.lines.forEach((line, i) => ctx.fillText(line, rtl ? cx + cw - 60 : cx + 60, cy + titleTop + t.size * 0.85 + i * t.size * 1.1));
   ctx.restore();
 
-  const footY = cy + ch - 50;
+  // Below the card, on the cream: web address and product code.
+  const footY = H - 66;
   ctx.save();
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.24)";
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  ctx.moveTo(cx + 60, footY - 66);
-  ctx.lineTo(cx + cw - 60, footY - 66);
-  ctx.stroke();
   ctx.direction = "ltr";
   ctx.textBaseline = "alphabetic";
-  ctx.fillStyle = "#ffffff";
-  ctx.font = `600 46px ${family}`;
+  ctx.fillStyle = INK;
+  ctx.font = `600 44px ${family}`;
   ctx.textAlign = rtl ? "right" : "left";
-  if (site) ctx.fillText(site, rtl ? cx + cw - 60 : cx + 60, footY);
-  ctx.globalAlpha = 0.8;
-  ctx.font = `700 34px ui-monospace, Menlo, monospace`;
+  if (site) ctx.fillText(site, rtl ? cx + cw - 24 : cx + 24, footY);
+  ctx.fillStyle = INK_SOFT;
+  ctx.font = `700 32px ui-monospace, Menlo, monospace`;
   ctx.textAlign = rtl ? "left" : "right";
-  if (code) ctx.fillText(code, rtl ? cx + 60 : cx + cw - 60, footY);
+  if (code) ctx.fillText(code, rtl ? cx + 24 : cx + cw - 24, footY);
   ctx.restore();
 
-  // Empty hang tag, tied at the card's top corner on the end side.
-  drawHangTag(ctx, { hx: rtl ? cx + 70 : cx + cw - 70, hy: cy + 40, w: 540, h: 140, rtl });
+  // Empty hang tag with its hole on the card's top corner (end side), tilted
+  // 15° up toward the photo. The "click here" hand sits by the hole end, on
+  // the card, its fingertip on the tag's lower edge.
+  const tw = 540, th = 140;
+  const hx = rtl ? cx + 70 : cx + cw - 70, hy = cy + 40;
+  drawHangTag(ctx, { hx, hy, w: tw, h: th, rtl });
+  const lx = (rtl ? 1 : -1) * 90, ly = th / 2 + 4;
+  const a = rtl ? -TAG_TILT : TAG_TILT;
+  drawClickHint(ctx, {
+    x: hx + lx * Math.cos(a) - ly * Math.sin(a),
+    y: hy + lx * Math.sin(a) + ly * Math.cos(a),
+    dir: rtl ? -1 : 1,
+  });
 }
 
 /**
