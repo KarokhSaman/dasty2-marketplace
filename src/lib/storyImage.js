@@ -91,23 +91,31 @@ function tinted(img, size, color) {
   return c;
 }
 
-// Title on up to two lines, shrinking until it fits; the last line gets "…".
+// Title on up to two lines, shrinking until it fits; past that, the second
+// line ends with "…".
+function wrapLines(ctx, text, maxWidth) {
+  const lines = [];
+  for (const word of text.split(/\s+/).filter(Boolean)) {
+    const last = lines[lines.length - 1];
+    if (last !== undefined && ctx.measureText(`${last} ${word}`).width <= maxWidth) lines[lines.length - 1] = `${last} ${word}`;
+    else lines.push(word);
+  }
+  return lines;
+}
 function wrapTitle(ctx, text, maxWidth, family) {
-  for (let size = 72; size >= 48; size -= 4) {
+  for (let size = 72; size >= 52; size -= 4) {
     ctx.font = `800 ${size}px ${family}`;
-    const words = text.split(/\s+/);
-    const lines = [""];
-    for (const word of words) {
-      const next = lines[lines.length - 1] ? `${lines[lines.length - 1]} ${word}` : word;
-      if (ctx.measureText(next).width <= maxWidth || !lines[lines.length - 1]) lines[lines.length - 1] = next;
-      else lines.push(word);
-    }
+    const lines = wrapLines(ctx, text, maxWidth);
     if (lines.length <= 2 && lines.every((l) => ctx.measureText(l).width <= maxWidth)) return { size, lines };
   }
-  ctx.font = `800 48px ${family}`;
-  let line = text;
-  while (line.length > 1 && ctx.measureText(`${line}…`).width > maxWidth * 2) line = line.slice(0, -1);
-  return { size: 48, lines: [line.length < text.length ? `${line}…` : line] };
+  const size = 52;
+  ctx.font = `800 ${size}px ${family}`;
+  const lines = wrapLines(ctx, text, maxWidth).slice(0, 2);
+  let second = lines[1] ?? "";
+  const fits = (l) => ctx.measureText(`${l}…`).width <= maxWidth;
+  while (second && !fits(second)) second = second.slice(0, -1).trimEnd();
+  if (lines.length === 2) lines[1] = `${second}…`;
+  return { size, lines };
 }
 
 const PIN_PATH = "M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0zM15 11a3 3 0 11-6 0 3 3 0 016 0z";
@@ -209,15 +217,10 @@ function drawHangTag(ctx, { hx, hy, w, h, rtl }) {
   ctx.fillStyle = grad;
   ctx.fill(tag);
   ctx.shadowColor = "transparent";
-  // white inside, with a red stitched edge
+  // white inside; the tag's red edge frames it
   roundedRect(ctx, left + 14, -half + 14, -left - 14 - 20, h - 28, 14);
   ctx.fillStyle = "#ffffff";
   ctx.fill();
-  ctx.setLineDash([12, 10]);
-  ctx.strokeStyle = "rgba(237, 0, 64, 0.55)";
-  ctx.lineWidth = 3;
-  ctx.stroke();
-  ctx.setLineDash([]);
   // hole with a white eyelet
   ctx.beginPath();
   ctx.arc(14, 0, 18, 0, Math.PI * 2);
@@ -341,7 +344,17 @@ function drawStory(ctx, { title, img, city, store, code, site, rtl, logo, brand,
 
 
   // Photo: the whole photo, over a blur of itself, in a white frame.
-  const px = 72, py = 220, pw = W - 144, ph = 990, pr = 56;
+  // Red card: just tall enough for the chips and the title; the web address
+  // and product code sit below it on the cream.
+  const cx = 48, cw = W - 96, cr = 64;
+  const inner = cw - 120;
+  const t = wrapTitle(ctx, title ?? "", inner - 170, family); // room for the hand
+  const titleTop = 158;
+  const ch = Math.round(titleTop + t.size * 0.85 + (t.lines.length - 1) * t.size * 1.1 + t.size * 0.25 + 56);
+  const cy = H - 140 - ch;
+
+  // Photo fills the space down to just above the card.
+  const px = 72, py = 220, pw = W - 144, ph = cy - 36 - py, pr = 56;
   ctx.save();
   ctx.shadowColor = "rgba(11, 12, 15, 0.28)";
   ctx.shadowBlur = 60;
@@ -362,14 +375,6 @@ function drawStory(ctx, { title, img, city, store, code, site, rtl, logo, brand,
   }
   ctx.restore();
 
-  // Red card: just tall enough for the chips and the title; the web address
-  // and product code sit below it on the cream.
-  const cx = 48, cw = W - 96, cr = 64;
-  const inner = cw - 120;
-  const t = wrapTitle(ctx, title ?? "", inner - 170, family); // room for the hand
-  const titleTop = 158;
-  const ch = Math.round(titleTop + t.size * 0.85 + (t.lines.length - 1) * t.size * 1.1 + t.size * 0.25 + 56);
-  const cy = H - 140 - ch;
   ctx.save();
   ctx.shadowColor = "rgba(120, 0, 30, 0.45)";
   ctx.shadowBlur = 60;
