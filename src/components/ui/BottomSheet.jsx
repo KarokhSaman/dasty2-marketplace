@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useIsDesktop } from "./useMediaQuery";
+import { lockScroll } from "@/lib/scrollLock";
 
 /**
  * Responsive overlay primitive.
@@ -30,20 +31,20 @@ export default function BottomSheet({
 
   useEffect(() => setMounted(true), []);
 
-  // Esc to close + body scroll-lock while open.
+  // Esc to close.
   useEffect(() => {
     if (!open) return;
     const onKey = (e) => {
       if (e.key === "Escape") onClose?.();
     };
     document.addEventListener("keydown", onKey);
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
     return () => {
       document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prevOverflow;
     };
   }, [open, onClose]);
+
+  // Hold the page still while open; closing returns to the same scroll spot.
+  useEffect(() => (open ? lockScroll() : undefined), [open]);
 
   // Focus the panel on open; reset any leftover drag offset.
   useEffect(() => {

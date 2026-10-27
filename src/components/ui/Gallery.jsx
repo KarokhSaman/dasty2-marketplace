@@ -82,7 +82,11 @@ export default function Gallery({
             key={i}
             data-idx={i}
             ref={(el) => (slideRefs.current[i] = el)}
-            className={`shrink-0 w-full snap-center ${aspectClassName}`}
+            className={`shrink-0 w-full snap-center bg-center bg-no-repeat ${fit === "contain" ? "bg-contain" : "bg-cover"} ${aspectClassName}`}
+            // The first photo is the one the product card showed: put that
+            // smaller copy (already downloaded) behind the sharp one, so the
+            // photo is there at once instead of a blank until it loads.
+            style={i === 0 ? { backgroundImage: `url("${photoProps(src, 600).src}")` } : undefined}
           >
             <img
               {...photoProps(src, 1200)}

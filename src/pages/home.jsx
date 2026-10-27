@@ -376,12 +376,24 @@ export default function HomePage() {
       category: category === "all" ? undefined : category,
       stores: storesOnly || undefined,
       brand: brand || undefined,
+      // Price sorts come from the server in order, so the first products shown
+      // are really the cheapest (or dearest), not just the loaded ones re-sorted.
+      sort: sort === "price_asc" || sort === "price_desc" ? sort : undefined,
     },
     { initialNumItems: initialItems },
   );
 
-  const results = (status === "LoadingFirstPage" && cachedResultsNow && cachedResultsNow.length > 0)
-    ? cachedResultsNow
+  // Changing category, brand or sort starts a new list from the server. Until
+  // it answers, keep showing the last products (they're filtered on this
+  // phone too, so only the ones that fit stay), instead of an empty page.
+  const feedLoading = status === "LoadingFirstPage";
+  // City and condition are filtered on this phone, over what's loaded so far,
+  // so "nothing matches yet" isn't "no products" until the whole list is in.
+  const feedDone = status === "Exhausted";
+  const lastResults = useRef(liveResults);
+  if (!feedLoading) lastResults.current = liveResults;
+  const results = feedLoading
+    ? (cachedResultsNow && cachedResultsNow.length > 0 ? cachedResultsNow : lastResults.current)
     : liveResults;
 
   // Restore scroll before paint, so coming back from a product shows the grid
@@ -467,6 +479,10 @@ export default function HomePage() {
     const featuredIds = new Set(featured.map(p => p._id));
     const regular = results.filter((p) => matchesFilters(p, { skipCategory: skipCat }) && !featuredIds.has(p._id));
     // Featured products on top (rotation only when category is "all"), then regular products
+    // A price sort the buyer picked wins over sponsored placement: sponsored
+    // items join the list at their price (still marked Sponsored). Otherwise
+    // they stay on top in their sponsored order.
+    if (sort === "price_asc" || sort === "price_desc") return applySort([...featured, ...regular]);
     const sortedFeatured = featured; // Already sorted by position in getFeatured query
     const combined = [...sortedFeatured, ...applySort(regular)];
     return combined;
@@ -519,13 +535,15 @@ export default function HomePage() {
         />
       )}
 
-      {isLoading && (
+      {(isLoading || (!feedDone && allProducts.length === 0 && featuredFiltered.length === 0)) && (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
           {Array.from({ length: 8 }).map((_, i) => <Skeleton.ProductCard key={i} />)}
         </div>
       )}
 
-      {!isLoading && allProducts.length === 0 && featuredFiltered.length === 0 && <EmptyState storesOnly={storesOnly} />}
+      {/* Only once the whole list is loaded: never "no products" while more
+          products that might match are still coming. */}
+      {!isLoading && feedDone && allProducts.length === 0 && featuredFiltered.length === 0 && <EmptyState storesOnly={storesOnly} />}
 
       {allProducts.length > 0 && (
         <div suppressHydrationWarning className={`grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 mt-1 transition-all duration-300 ${animateEntrance ? "stagger" : ""}`}>

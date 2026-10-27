@@ -8,7 +8,7 @@ import { photoProps } from "@/lib/images";
 import { offerAppliesTo, resolveProfit } from "@/convex/fees";
 import { calculateProfit, normalizeDigits, formatNumberLocale } from "@/lib/utils";
 import { CATEGORY_CONFIG, getCategoryLabel } from "@/lib/categories";
-import { brandFitsCategory, getBrandChoices, OTHER_BRAND } from "@/lib/brands";
+import { brandFitsCategory, brandLogo, getBrandChoices, OTHER_BRAND } from "@/lib/brands";
 import StoreStockFields from "@/components/seller/StoreStockFields";
 import CustomSelect from "@/components/ui/CustomSelect";
 import { useToast, IconTrash, IconCheck, IconX } from "@/components/admin/ui";
@@ -21,6 +21,24 @@ const field = "w-full h-12 rounded-[13px] border-[1.5px] border-adm-line bg-adm-
 const chip = "h-9 px-3 rounded-full border border-adm-line bg-adm-surface text-[13px] font-semibold text-adm-soft whitespace-nowrap hover:border-adm-fade";
 // Small category picture for the dropdown: the same icons as the home page
 // category bar, on the same sand tile. Falls back to a plain tile.
+// Brand logo for the dropdown, on a white tile the size of the category icons.
+// Brands without a logo file yet get the same tile with a plain tag mark, so
+// the names stay lined up.
+function BrandIcon({ brand }) {
+  const src = brandLogo(brand);
+  return (
+    <span className="w-8 h-8 rounded-[10px] bg-white border border-[var(--color-hairline)] grid place-items-center overflow-hidden">
+      {src ? (
+        <img src={src} alt="" className="w-[84%] h-[84%] object-contain" loading="lazy" />
+      ) : (
+        <svg className="w-4 h-4 text-[var(--color-ink-fade)]" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" aria-hidden>
+          <path d="M3 12V4h8l9 9-8 8-9-9Z" /><circle cx="7.5" cy="7.5" r="1.3" />
+        </svg>
+      )}
+    </span>
+  );
+}
+
 function CategoryIcon({ src }) {
   const [broken, setBroken] = useState(false);
   return (
@@ -199,7 +217,7 @@ export default function ProductForm({ initial, seller, activeOffer, submitLabel,
             options={brandChoices.map((b) => ({
               value: b,
               label: b === OTHER_BRAND ? m.otherBrand() : b,
-              hint: brandCounts[b] ? m.storeProductsCount({ count: brandCounts[b] }) : undefined,
+              icon: <BrandIcon brand={b === OTHER_BRAND ? null : b} />,
             }))}
           />
           {brand && <ClearX onClick={() => setBrand("")} label={m.filterReset()} />}

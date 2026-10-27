@@ -8,6 +8,7 @@ import * as m from "@/paraglide/messages";
 import { getLocale, localizeHref } from "@/paraglide/runtime";
 import { getCategoryLabel } from "@/lib/categories";
 import { getCityLabel } from "@/lib/cities";
+import { brandLogo, brandLogoIsName } from "@/lib/brands";
 import { formatDate } from "@/lib/formatDate";
 import { getProductCache, setProductCache } from "@/lib/productCache";
 import {
@@ -360,16 +361,12 @@ export default function ProductDetailPage() {
               code: product.seq ? `#${product.seq}` : undefined,
               site: new URL(productUrl).host,
               rtl: locale !== "en",
+              brand: product.brand,
             }}
           />
         </div>
 
         <div className="md:pt-1">
-          {/* Category eyebrow */}
-          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--color-ink-fade)] mb-2">
-            {categoryLabel}
-          </p>
-
           {/* Title */}
           <h1 className="font-display text-[26px] sm:text-[32px] text-[var(--color-ink)] mb-3 leading-[1.12]">
             {product.title}
@@ -386,11 +383,16 @@ export default function ProductDetailPage() {
                 {m.storeFlag()}
               </span>
             )}
-            {product.brand && (
+            {product.brand && (brandLogo(product.brand) ? (
+              <span className="chip-base gap-1.5 py-[2px] px-2 bg-white border border-[var(--color-hairline)] text-[var(--color-ink)]" title={product.brand}>
+                <img src={brandLogo(product.brand)} alt={brandLogoIsName(product.brand) ? product.brand : ""} className="h-4 w-auto max-w-[84px] object-contain" />
+                {!brandLogoIsName(product.brand) && product.brand}
+              </span>
+            ) : (
               <Chip tone="neutral">
                 {product.brand}
               </Chip>
-            )}
+            ))}
             {product.stock >= 1 && (
               <Chip tone="neutral">
                 {m.stockLeft({ count: product.stock })}

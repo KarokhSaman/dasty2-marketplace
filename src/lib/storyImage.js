@@ -4,6 +4,8 @@
 // through the OS share sheet — `navigator.share({ files })` puts "Instagram →
 // Stories" in the list. So the story path is: draw a card → share the PNG.
 
+import { brandLogo, brandLogoIsName } from "@/lib/brands";
+
 const W = 1080;
 const H = 1920;
 
@@ -59,6 +61,46 @@ function loadLogo() {
     };
     img.src = "/logo-mndallan.svg";
   });
+}
+
+// The brand's logo ships with the site (same origin), so it never taints the canvas.
+function loadBrandLogo(brand) {
+  const src = brandLogo(brand);
+  if (!src) return Promise.resolve(null);
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = src;
+  });
+}
+
+// Brand logo above the domain, on the same edge. Symbol-only logos get the
+// brand name beside them, as on the product page.
+function drawBrand(ctx, { logo, brand, family, rtl }) {
+  if (!logo) return;
+  const withName = !brandLogoIsName(brand);
+  const maxH = withName ? 80 : 96;
+  const scale = Math.min(maxH / logo.height, (withName ? 120 : 320) / logo.width);
+  const lw = logo.width * scale;
+  const lh = logo.height * scale;
+  const bottom = H - 175;
+  const end = rtl ? 90 : W - 90; // the domain's edge
+  ctx.save();
+  ctx.direction = "ltr";
+  ctx.textBaseline = "middle";
+  ctx.font = `700 42px ${family}`;
+  const gap = 20;
+  const nameW = withName ? ctx.measureText(brand).width : 0;
+  const total = lw + (withName ? gap + nameW : 0);
+  const x = rtl ? end : end - total;
+  ctx.drawImage(logo, x, bottom - lh, lw, lh);
+  if (withName) {
+    ctx.fillStyle = INK;
+    ctx.textAlign = "left";
+    ctx.fillText(brand, x + lw + gap, bottom - lh / 2);
+  }
+  ctx.restore();
 }
 
 function roundedRect(ctx, x, y, w, h, r) {
@@ -127,8 +169,9 @@ function drawDetails(ctx, { title, price, meta, condition, family, edge, panelBo
  * @param {string} [p.code]     product code, e.g. "26-0009"
  * @param {string} [p.site]     domain shown in the footer
  * @param {boolean} [p.rtl]     right-to-left layout for ckb/ar
+ * @param {string} [p.brand]    brand name; its logo is drawn above the domain
  */
-export async function buildStoryImage({ title, price, photo, meta, condition, code, site, rtl = false }) {
+export async function buildStoryImage({ title, price, photo, meta, condition, code, site, rtl = false, brand }) {
   // Webfonts must be resolved before fillText or the card renders in a
   // fallback face (and Kurdish/Arabic glyphs may not render at all).
   if (typeof document !== "undefined" && document.fonts?.ready) {
@@ -137,6 +180,7 @@ export async function buildStoryImage({ title, price, photo, meta, condition, co
 
   const img = await loadImage(photo);
   const logo = await loadLogo();
+  const brandImg = await loadBrandLogo(brand);
 
   const canvas = document.createElement("canvas");
   canvas.width = W;
@@ -200,6 +244,7 @@ export async function buildStoryImage({ title, price, photo, meta, condition, co
     ctx.textAlign = rtl ? "left" : "right";
     ctx.fillText(site, rtl ? 90 : W - 90, H - 110);
   }
+  drawBrand(ctx, { logo: brandImg, brand, family, rtl });
 
   return new Promise((resolve) => {
     try {
@@ -254,6 +299,7 @@ export async function buildStoryImage({ title, price, photo, meta, condition, co
         ctx.textAlign = rtl ? "left" : "right";
         ctx.fillText(site, rtl ? 90 : W - 90, H - 110);
       }
+      drawBrand(ctx, { logo: brandImg, brand, family, rtl });
 
       fallbackCanvas.toBlob(resolve, "image/png", 0.92);
     }

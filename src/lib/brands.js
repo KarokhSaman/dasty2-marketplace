@@ -16,7 +16,6 @@ export const BRAND_CATEGORIES = {
   "Fisher-Price": ["Bouncer", "Cradle", "Toy", "High Chair", "Baby Walker"],
   "Kidilo": ["Stroller", "Car Seat", "Crib", "High Chair", "Baby Walker", "Bassinet", "Cradle", "Bouncer"],
   "Mastela": ["Cradle", "Bassinet", "Bouncer", "High Chair"],
-  "Juniors": ["Stroller", "Car Seat", "High Chair", "Baby Walker"],
   "4baby": ["Stroller", "Car Seat", "Carry Cot", "Crib", "High Chair", "Baby Walker", "Bouncer"],
   "CAM": ["Stroller", "Car Seat", "Carry Cot", "Cradle", "Bassinet", "High Chair", "Baby Walker", "Bouncer"],
   "Momcozy": ["Breast Pump", "Electronic", "Other"],
@@ -43,7 +42,6 @@ export const BRAND_CATEGORIES = {
   "Kinderkraft": ["Stroller", "Car Seat", "High Chair", "Baby Walker", "Bouncer"],
   "Hauck": ["Stroller", "High Chair", "Crib", "Baby Walker"],
   "Mamas & Papas": ["Stroller", "Car Seat", "Crib", "High Chair", "Bouncer"],
-  "Burbay": ["Stroller", "Baby Walker"],
   "VTech": ["Toy", "Electronic", "Baby Walker"],
   "Baby Brezza": ["Electronic"],
   "4moms": ["Bouncer", "Bassinet", "Crib", "High Chair"],
@@ -58,6 +56,33 @@ export const BRAND_CATEGORIES = {
 };
 
 export const OTHER_BRAND = "Other";
+
+// Brand logos: put a PNG (transparent, about 256 px) in src/assets/brands/,
+// named after the brand in lower case with dashes, e.g. "Fisher-Price" →
+// fisher-price.png, "Dr. Brown's" → dr-brown-s.png, "Britax Römer" →
+// britax-romer.png. It shows up in the brand dropdown with the next deploy.
+// Files are cropped to the logo's edges so wide logos can fill a short tag.
+const LOGO_FILES = import.meta.glob("../assets/brands/*.png", { eager: true, import: "default" });
+export function brandSlug(brand) {
+  return brand.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+/** URL of the brand's logo, or null when there's no logo file for it yet. */
+export function brandLogo(brand) {
+  if (!brand) return null;
+  return LOGO_FILES[`../assets/brands/${brandSlug(brand)}.png`] ?? null;
+}
+
+// Logos that spell out the brand name clearly; the rest are symbols, so a tag
+// shows the brand name beside them.
+const WORDMARK_LOGOS = new Set([
+  "4baby", "baby-brezza", "babyzen", "chicco", "dr-brown-s", "dsland", "elvie", "fisher-price",
+  "graco", "halo", "happiest-baby", "hauck", "ikea", "inglesina", "joie", "kidilo", "lansinoh",
+  "mamas-papas", "owlet", "uppababy", "vtech",
+]);
+/** Whether the brand's logo reads as its name, so the name needn't be written next to it. */
+export function brandLogoIsName(brand) {
+  return Boolean(brand) && WORDMARK_LOGOS.has(brandSlug(brand));
+}
 
 const RANK = new Map(Object.keys(BRAND_CATEGORIES).map((brand, i) => [brand, i]));
 

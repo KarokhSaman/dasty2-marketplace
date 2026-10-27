@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import { createPortal } from "react-dom";
 import * as m from "@/paraglide/messages";
 import { photoProps } from "@/lib/images";
+import { lockScroll } from "@/lib/scrollLock";
 
 // Shared pieces for the admin pages. Colours come from the admin theme
 // (adm-* / st-* in globals.css), which follows the device's light/dark mode.
@@ -283,11 +284,12 @@ export function Panel({ open, onClose, title, subtitle, leading, children, foote
     if (!open) return;
     const onKey = (e) => { if (e.key === "Escape") onClose?.(); };
     document.addEventListener("keydown", onKey);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
     setDrag(0);
-    return () => { document.removeEventListener("keydown", onKey); document.body.style.overflow = prev; };
+    return () => { document.removeEventListener("keydown", onKey); };
   }, [open, onClose]);
+
+  // Hold the page still while open; closing returns to the same scroll spot.
+  useEffect(() => (open ? lockScroll() : undefined), [open]);
 
   if (!mounted || !open) return null;
 
