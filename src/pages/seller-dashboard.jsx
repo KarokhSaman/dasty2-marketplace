@@ -10,6 +10,7 @@ import { photoProps } from "@/lib/images";
 import { errorMessage } from "@/lib/errors";
 import OfferTicker from "@/components/seller/OfferTicker";
 import { Panel, ConfirmBox, btn, useToast, useCopy, IconCopy, IconCheck, IconWhatsApp, IconTrash, IconChevron } from "@/components/admin/ui";
+import StoreIcon from "@/components/ui/StoreIcon";
 
 // Where sellers send their service fees.
 export const FEE_PAYMENT_NUMBER = "07724944244";
@@ -24,14 +25,6 @@ const STATUS = {
   deletion_requested: [() => m.statusDeletionRequested(), "text-st-delete bg-st-delete-bg"],
 };
 const FILTERS = ["all", "approved", "pending", "rejected", "sold", "paid"];
-
-function IconStore({ className = "w-4 h-4" }) {
-  return (
-    <svg className={className} fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24" aria-hidden="true">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M4 9l1.5-4.5h13L20 9M4 9h16M4 9v1.5a2.5 2.5 0 005 0M9 9v1.5a2.5 2.5 0 005 0M14 9v1.5a2.5 2.5 0 005 0V9M5 12.5V20h14v-7.5M10 20v-4h4v4" />
-    </svg>
-  );
-}
 
 // Which store's products to list — for sellers who run more than one store.
 // A pill that opens a sheet: every store as a full-width row with its count.
@@ -48,8 +41,8 @@ function StorePicker({ value, onChange, stores, countFor, n }) {
     <>
       <button type="button" onClick={() => setOpen(true)} aria-haspopup="dialog"
         className={`inline-flex items-center gap-1.5 h-8 ps-2.5 pe-2 max-w-[60%] rounded-full border text-[12.5px] font-semibold ${
-          value === "all" ? "bg-adm-surface text-adm-ink border-adm-line" : "bg-adm-ink text-adm-surface border-adm-ink"}`}>
-        <IconStore className="w-4 h-4 shrink-0" />
+          value === "all" ? "bg-adm-surface text-adm-ink border-adm-line" : "bg-adm-accent-soft text-adm-accent border-adm-accent"}`}>
+        <StoreIcon className="w-4 h-4 shrink-0" />
         <span className="truncate">{current.label}</span>
         <IconChevron className="w-3.5 h-3.5 shrink-0 rotate-90" />
       </button>
@@ -62,7 +55,7 @@ function StorePicker({ value, onChange, stores, countFor, n }) {
                 <button key={o.value} type="button" onClick={() => pick(o.value)} aria-pressed={on}
                   className={`w-full flex items-center gap-3 px-3.5 py-3 text-start ${on ? "bg-[var(--color-ember-50)]" : "active:bg-adm-sunk"}`}>
                   <span className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${on ? "bg-[var(--color-ember-500)] text-white" : "bg-adm-sunk text-adm-soft"}`}>
-                    <IconStore />
+                    <StoreIcon className="w-4 h-4" />
                   </span>
                   <span className="flex-1 min-w-0">
                     <span dir="auto" className={`block text-[14.5px] truncate ${on ? "font-bold text-[var(--color-ember-600)]" : "font-semibold text-adm-ink"}`}>{o.label}</span>
@@ -266,7 +259,7 @@ export default function SellerDashboard() {
                 <p className="text-[13.5px] font-bold truncate">{m.rejectedNotice({ title: p.title })}</p>
                 {p.notes && <p className="text-[12.5px] font-semibold text-st-rejected line-clamp-2">{p.notes}</p>}
               </div>
-              <Link to={`/seller/products/${p._id}/edit`} search={{ from: "rejection" }} className={`${btn("dark", "sm")} shrink-0`}>{m.fixBtn()}</Link>
+              <Link to={`/seller/products/${p._id}/edit`} search={{ from: "rejection" }} className={`${btn("primary", "sm")} shrink-0`}>{m.fixBtn()}</Link>
             </div>
           ))}
           {feeOwed > 0 && (
@@ -321,7 +314,7 @@ export default function SellerDashboard() {
           {FILTERS.filter((f) => f === "all" || counts[f]).map((f) => (
             <button key={f} type="button" aria-pressed={filter === f} onClick={() => setFilter(f)}
               className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-full border text-[12.5px] font-semibold whitespace-nowrap shrink-0 ${
-                filter === f ? "bg-adm-ink text-adm-surface border-adm-ink" : "bg-adm-surface text-adm-soft border-adm-line"}`}>
+                filter === f ? "bg-adm-accent-soft text-adm-accent border-adm-accent" : "bg-adm-surface text-adm-soft border-adm-line"}`}>
               {f === "all" ? m.categoryAll() : STATUS[f][0]()}<span className="text-[11px] opacity-70 tabular-nums">{n(counts[f] ?? 0)}</span>
             </button>
           ))}

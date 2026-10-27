@@ -127,7 +127,7 @@ export default function SellerAccountPage() {
             <h1 className="text-[17px] font-bold truncate">{seller.name}</h1>
             <p className="text-[13px] text-adm-soft tabular-nums" dir="ltr" style={{ textAlign: locale === "en" ? "left" : "right" }}>{seller.phone}</p>
           </div>
-          <button type="button" onClick={startEdit} className={btn("dark", "sm")}>{m.editProfileBtn()}</button>
+          <button type="button" onClick={startEdit} className={btn("outline", "sm")}>{m.editProfileBtn()}</button>
         </div>
         <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 mt-3 pt-3 border-t border-adm-line text-[13px]">
           <span className="text-adm-fade">{m.registerCityLabel()}</span><span className="font-semibold">{getCityLabel(seller.city, locale)}</span>
@@ -202,9 +202,7 @@ export default function SellerAccountPage() {
                     <Icon d={<path d="M3 9l1-5h16l1 5M3 9v11h18V9M3 9h18M9 20v-6h6v6" />} />
                   </span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[14.5px] font-bold flex items-center gap-1.5">{st.name}
-                      <span className="h-[18px] px-1.5 rounded-[5px] text-[10px] font-bold bg-adm-navy text-white inline-flex items-center">{m.storeFlag()}</span>
-                    </p>
+                    <p className="text-[14.5px] font-bold truncate">{st.name}</p>
                     <p className="text-[12.5px] text-adm-soft">{[discount, m.storeProductsCount({ count: num(count) })].filter(Boolean).join(" · ")}</p>
                   </div>
                 </div>
