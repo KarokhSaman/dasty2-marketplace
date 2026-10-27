@@ -361,6 +361,7 @@ export default function ProductDetailPage() {
               code: product.seq ? `#${product.seq}` : undefined,
               site: new URL(productUrl).host,
               rtl: locale !== "en",
+              brand: product.brand,
             }}
           />
         </div>
