@@ -356,7 +356,7 @@ export default function ProductDetailPage() {
             shareUrl={productUrl}
             story={{
               title: product.title,
-              price: formatAmount(priceNow.price),
+              price: `${formatAmount(priceNow.price)} IQD`,
               photo: photos[0],
               city: cityLabel,
               store: product.storeId ? m.storeFlag() : undefined,
