@@ -3,13 +3,13 @@ import { useMutation, useQuery } from "convex/react";
 import { Link, useRouter } from "@tanstack/react-router";
 import { api } from "@/convex/_generated/api";
 import * as m from "@/paraglide/messages";
-import { getLocale, localizeHref } from "@/paraglide/runtime";
+import { getLocale } from "@/paraglide/runtime";
 import { useSellerSession } from "@/lib/useSellerSession";
 import { formatNumberLocale } from "@/lib/utils";
 import { photoProps } from "@/lib/images";
 import { errorMessage } from "@/lib/errors";
 import OfferTicker from "@/components/seller/OfferTicker";
-import { Panel, ConfirmBox, btn, useToast, useCopy, IconCopy, IconCheck, IconWhatsApp, IconTrash, IconChevron } from "@/components/admin/ui";
+import { Panel, btn, useToast, useCopy, IconCopy, IconCheck, IconTrash, IconChevron } from "@/components/admin/ui";
 import StoreIcon from "@/components/ui/StoreIcon";
 
 // Where sellers send their service fees.
@@ -86,18 +86,13 @@ function Status({ status }) {
 function ProductSheet({ product: p, onClose }) {
   const router = useRouter();
   const toast = useToast();
-  const locale = getLocale();
-  const reportSold = useMutation(api.products.reportSold);
   const requestDelete = useMutation(api.products.requestDelete);
-  const [view, setView] = useState("menu"); // menu | sold | delete
+  const [view, setView] = useState("menu"); // menu | delete
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
 
   const canEdit = !p.postedByManager && EDITABLE.includes(p.status);
-  const canShare = p.status === "approved";
-  const canSold = !p.postedByManager && p.status === "approved" && !p.soldReportedAt;
   const canDelete = !p.postedByManager && EDITABLE.includes(p.status);
-  const link = `${typeof window !== "undefined" ? window.location.origin : ""}${localizeHref(`/products/${p._id}`, { locale })}`;
 
   async function run(fn, done) {
     setBusy(true);
@@ -113,10 +108,7 @@ function ProductSheet({ product: p, onClose }) {
       leading={<div className="w-12 h-12 rounded-xl overflow-hidden bg-adm-sunk shrink-0">{p.photos?.[0] && <img {...photoProps(p.photos[0], 120)} alt="" className="w-full h-full object-cover" />}</div>}
       title={p.title}
       subtitle={<div className="flex items-center gap-2 text-[12px] text-adm-fade"><span className="tabular-nums">{formatNumberLocale(p.salePrice ?? p.price, "en")} IQD</span><Status status={p.status} /></div>}>
-      {view === "sold" ? (
-        <ConfirmBox tone="neutral" busy={busy} title={m.confirmSoldTitle()} text={m.iSoldItSub()} confirmLabel={m.yesSold()}
-          onCancel={() => setView("menu")} onConfirm={() => run(() => reportSold({ id: p._id }), m.soldReportedToast())} />
-      ) : view === "delete" ? (
+      {view === "delete" ? (
         <div className="rounded-2xl bg-st-rejected-bg p-3.5 space-y-2.5">
           <p className="text-[14px] font-bold">{m.requestDeleteTitle()}</p>
           <textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={3} maxLength={300} dir="auto"
@@ -132,29 +124,12 @@ function ProductSheet({ product: p, onClose }) {
         <>
           {p.postedByManager && <p className="rounded-2xl bg-adm-sunk px-4 py-3 text-[13px] text-adm-soft">{m.postedForYou()}</p>}
           {p.soldReportedAt && <p className="rounded-2xl bg-st-sold-bg text-st-sold px-4 py-3 text-[13px] font-bold">✓ {m.soldReported()}</p>}
-          {(canEdit || canShare || canSold || canDelete) && (
+          {(canEdit || canDelete) && (
             <div className="rounded-2xl border border-adm-line bg-adm-surface overflow-hidden">
               {canEdit && (
                 <button type="button" className={row} onClick={() => router.navigate({ to: `/seller/products/${p._id}/edit` })}>
                   <span className={ic}><svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M4 20h4L18.5 9.5a2.1 2.1 0 0 0-3-3L5 17v3Z" /></svg></span>
                   <span className="flex-1 text-[14.5px] font-semibold">{m.editBtn()}</span>
-                  <IconChevron className="w-4 h-4 text-adm-fade rtl:rotate-180" />
-                </button>
-              )}
-              {canShare && (
-                <a className={row} target="_blank" rel="noopener noreferrer" href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`${p.title}\n${link}`)}`}>
-                  <span className={`${ic} text-adm-wa`}><IconWhatsApp /></span>
-                  <span className="flex-1 text-[14.5px] font-semibold">{m.shareWhatsApp()}</span>
-                  <IconChevron className="w-4 h-4 text-adm-fade rtl:rotate-180" />
-                </a>
-              )}
-              {canSold && (
-                <button type="button" className={row} onClick={() => setView("sold")}>
-                  <span className={`${ic} text-st-sold`}><IconCheck /></span>
-                  <span className="flex-1 min-w-0">
-                    <span className="block text-[14.5px] font-semibold">{m.iSoldIt()}</span>
-                    <span className="block text-[12px] text-adm-fade truncate">{m.iSoldItSub()}</span>
-                  </span>
                   <IconChevron className="w-4 h-4 text-adm-fade rtl:rotate-180" />
                 </button>
               )}

@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import * as m from "@/paraglide/messages";
+import { getLocale } from "@/paraglide/runtime";
+import { feeReminderMessage } from "@/components/admin/feeReminderMessage";
 import { errorMessage } from "@/lib/errors";
 import ProductPanel from "@/components/admin/ProductPanel";
 import { useProductActions } from "@/components/admin/useProductActions";
@@ -10,26 +11,21 @@ import {
   IconWhatsApp, IconCopy, IconCheck,
 } from "@/components/admin/ui";
 
-// Where sellers send their service fees (Super Qi, FIB or FastPay).
-const FEE_PAYMENT_NUMBER = "07724944244";
-
-// Invisible left-to-right marks keep codes, English titles and numbers in
-// order when the message is read in Kurdish or Arabic.
-const LRM = "\u200E";
-
-// The reminder is always in Kurdish, whatever language the admin page is in,
-// since that is what sellers read.
-const REMINDER_LOCALE = { locale: "ckb" };
-
-function reminder(group) {
-  return [
-    m.feesWaGreeting({}, REMINDER_LOCALE),
-    "",
-    m.feesWaIntro({}, REMINDER_LOCALE),
-    m.feesWaTotal({ total: fmtIQD(group.total) }, REMINDER_LOCALE),
-    "",
-    m.feesWaPay({ number: `${LRM}${FEE_PAYMENT_NUMBER}` }, REMINDER_LOCALE),
-  ].join("\n");
+// What a WhatsApp message looks like in the page: *bold* in bold, and the
+// "> " quote lines in a quote box.
+function WaText({ text }) {
+  const bold = (line) => line.split(/(\*[^*\n]+\*)/g).map((part, i) =>
+    part.startsWith("*") && part.endsWith("*") && part.length > 2 ? <b key={i}>{part.slice(1, -1)}</b> : part);
+  const blocks = [];
+  for (const line of text.split("\n")) {
+    const quote = line.startsWith("> ");
+    const last = blocks[blocks.length - 1];
+    if (quote && last?.quote) last.lines.push(line.slice(2));
+    else blocks.push({ quote, lines: [quote ? line.slice(2) : line] });
+  }
+  return blocks.map((b, i) => b.quote
+    ? <div key={i} className="border-s-4 border-adm-line bg-adm-surface/60 rounded-md px-2.5 py-1.5 my-1">{b.lines.map((l, j) => <div key={j}>{bold(l)}</div>)}</div>
+    : <div key={i} className="min-h-[1em]">{bold(b.lines[0])}</div>);
 }
 
 function SellerFees({ group, onOpen }) {
@@ -39,7 +35,7 @@ function SellerFees({ group, onOpen }) {
   const [confirm, setConfirm] = useState(false);
   const [busy, setBusy] = useState(false);
   const [showMsg, setShowMsg] = useState(false);
-  const text = reminder(group);
+  const text = feeReminderMessage(fmtIQD(group.total), group.items.map((p) => ({ code: p.seq, fee: fmtIQD(p.profit) })));
 
   async function payAll() {
     setBusy(true);
@@ -81,7 +77,7 @@ function SellerFees({ group, onOpen }) {
       </div>
 
       {showMsg && (
-        <div className="rounded-2xl rounded-es-md bg-st-approved-bg px-3.5 py-3 text-[13px] leading-relaxed whitespace-pre-line">{text}</div>
+        <div dir={getLocale() === "en" ? "rtl" : undefined} className="rounded-2xl rounded-es-md bg-st-approved-bg px-3.5 py-3 text-[13px] leading-relaxed"><WaText text={text} /></div>
       )}
 
       {confirm ? (

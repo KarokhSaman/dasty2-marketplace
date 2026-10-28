@@ -13,6 +13,7 @@ import { errorMessage } from "@/lib/errors";
 import { photoProps } from "@/lib/images";
 import { useProductActions } from "@/components/admin/useProductActions";
 import { actionLabel } from "@/components/admin/logActions";
+import { approvalMessage } from "@/components/admin/approvalMessage";
 import {
   Panel, StatusChip, StoreTag, Code, SectionTitle, Segmented, Switch, ConfirmBox, AmountInput, Avatar, Thumb,
   btn, fmtIQD, inputCls, labelCls, useToast, useCopy, waLink, ltrPhone,
@@ -520,6 +521,11 @@ export default function ProductPanel({ product, onClose }) {
             <div className="grid grid-cols-2 gap-2">
               <a href={waLink(p.sellerPhone)} target="_blank" rel="noopener noreferrer" className={btn("wa")}><IconWhatsApp className="w-4 h-4" /> WhatsApp</a>
               <button type="button" onClick={() => copy(`${m.adminContact()} ${ltrPhone(p.sellerPhone)}`, "Number copied")} className={btn("outline")}><IconCopy className="w-4 h-4" /> {m.copyNumber()}</button>
+              {p.status === "approved" && (
+                <a href={waLink(p.sellerPhone, approvalMessage(p))} target="_blank" rel="noopener noreferrer" className={`${btn("wa")} col-span-2`}>
+                  <IconWhatsApp className="w-4 h-4" /> Send approval message
+                </a>
+              )}
             </div>
           )}
           <Link to="/admin/products" search={{ tab: "all", sellerId: p.sellerId }} onClick={onClose} className="block text-[12.5px] font-semibold text-adm-accent">

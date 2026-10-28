@@ -99,12 +99,14 @@ function validateListingInput({
 // Resolves the optional store/stock on a listing. A seller may list under any
 // store they manage, under the store they own (the account linked to it), or —
 // unless they only own a store and manage none, which locks them to it — under
-// no store at all.
+// no store at all. An edit may also keep the store the product already has
+// (`currentStoreId`), e.g. after the admin unlinked the seller from that store.
 async function resolveStoreListing(
   ctx: QueryCtx,
   seller: Doc<"users">,
   storeId: Id<"stores"> | undefined,
   stock: number | undefined,
+  currentStoreId?: Id<"stores">,
 ): Promise<{ store: Doc<"stores"> | null; storeId: Id<"stores"> | undefined }> {
   const linked = await ctx.db
     .query("stores")
@@ -117,7 +119,10 @@ async function resolveStoreListing(
       .first()) !== null;
 
   let store: Doc<"stores"> | null = null;
-  if (linked && !managesStores) {
+  if (storeId && storeId === currentStoreId) {
+    store = await ctx.db.get(storeId);
+    if (!store) throw new ConvexError("Store not found");
+  } else if (linked && !managesStores) {
     store = linked;
   } else if (storeId) {
     store = await ctx.db.get(storeId);
@@ -973,12 +978,12 @@ export const sellerUpdate = mutation({
   handler: async (ctx, { id, ...fields }) => {
     const seller = await requireCurrentSeller(ctx);
     validateListingInput(fields);
-    const { store, storeId } = await resolveStoreListing(ctx, seller, fields.storeId, fields.stock);
     const product = await ctx.db.get(id);
     if (!product) throw new Error("Product not found");
     if (product.sellerId !== seller._id.toString()) {
       throw new Error("Not authorized");
     }
+    const { store, storeId } = await resolveStoreListing(ctx, seller, fields.storeId, fields.stock, product.storeId);
     if (product.status === "sold" || product.status === "paid") {
       throw new Error("Cannot edit a sold or paid product");
     }

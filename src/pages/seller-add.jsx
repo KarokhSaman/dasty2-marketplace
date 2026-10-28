@@ -25,7 +25,7 @@ export function SubmittedState({ onBack }) {
     <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4 gap-3">
       <div className="w-16 h-16 rounded-full bg-st-approved-bg text-st-approved grid place-items-center"><IconCheck className="w-8 h-8" /></div>
       <p className="font-semibold max-w-sm">{m.productSubmitted()}</p>
-      <button type="button" onClick={onBack} className="mt-2 h-11 px-5 rounded-[13px] bg-adm-ink text-adm-surface text-[14px] font-bold">{m.sellerDashboard()}</button>
+      <button type="button" onClick={onBack} className="mt-2 h-11 px-5 rounded-[13px] bg-[var(--color-ember-500)] text-white text-[14px] font-bold shadow-[0_10px_22px_-12px_rgba(237,0,64,0.7)] hover:opacity-90">{m.sellerDashboard()}</button>
     </div>
   );
 }
