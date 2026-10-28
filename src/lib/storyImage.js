@@ -5,8 +5,8 @@
 // Stories" in the list. So the story path is: draw a card → share the PNG.
 //
 // Layout: cream page with faint product drawings, Mndallan header and the brand logo on top, the whole
-// photo framed over a blurred copy of itself, an empty red hang tag (where the
-// seller puts Instagram's link sticker; no price on purpose), and a red card
+// photo framed over a blurred copy of itself, a red hang tag with the price on
+// its white label, and a red card
 // with the category drawings, city/store and title; web address and code below it.
 
 import { brandLogo, brandLogoIsName } from "@/lib/brands";
@@ -171,12 +171,12 @@ function drawChips(ctx, { city, store, family, rtl, edge, top }) {
   ctx.restore();
 }
 
-// An empty red hang tag: the spot for Instagram's link sticker (the price is
-// left off on purpose). Its hole sits on the red card's top corner on the end
+// A red hang tag with the price on its white label. Its hole sits on the red
+// card's top corner on the end
 // side, tied by a short white string, and it tilts 15° up toward the photo.
 // Mirrored in Kurdish/Arabic.
 const TAG_TILT = (15 * Math.PI) / 180;
-function drawHangTag(ctx, { hx, hy, w, h, rtl }) {
+function drawHangTag(ctx, { hx, hy, w, h, rtl, price, family }) {
   const tilt = TAG_TILT;
   const half = h / 2;
   const point = 58;
@@ -221,6 +221,21 @@ function drawHangTag(ctx, { hx, hy, w, h, rtl }) {
   roundedRect(ctx, left + 14, -half + 14, -left - 14 - 20, h - 28, 14);
   ctx.fillStyle = "#ffffff";
   ctx.fill();
+  // the price on the white label, unmirrored so it reads normally in RTL
+  if (price) {
+    const boxW = -left - 34 - 40;
+    ctx.save();
+    ctx.translate((left + 14 + -20) / 2, 0);
+    if (rtl) ctx.scale(-1, 1);
+    ctx.direction = "ltr";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = BRAND;
+    let size = 64;
+    do { ctx.font = `800 ${size}px ${family}`; size -= 2; } while (ctx.measureText(price).width > boxW && size > 30);
+    ctx.fillText(price, 0, 3);
+    ctx.restore();
+  }
   // hole with a white eyelet
   ctx.beginPath();
   ctx.arc(14, 0, 18, 0, Math.PI * 2);
@@ -233,7 +248,7 @@ function drawHangTag(ctx, { hx, hy, w, h, rtl }) {
   ctx.restore();
 }
 
-function drawStory(ctx, { title, img, city, store, code, site, rtl, logo, brand, brandImg, drawings, family }) {
+function drawStory(ctx, { title, price, img, city, store, code, site, rtl, logo, brand, brandImg, drawings, family }) {
   const edge = rtl ? W - 72 : 72;
 
   // Background: the site's cream, scattered with small faint baby-product
@@ -400,7 +415,7 @@ function drawStory(ctx, { title, img, city, store, code, site, rtl, logo, brand,
   // 15° up toward the photo.
   const tw = 540, th = 140;
   const hx = rtl ? cx + 70 : cx + cw - 70, hy = cy + 40;
-  drawHangTag(ctx, { hx, hy, w: tw, h: th, rtl });
+  drawHangTag(ctx, { hx, hy, w: tw, h: th, rtl, price, family });
 }
 
 /**
@@ -408,6 +423,7 @@ function drawStory(ctx, { title, img, city, store, code, site, rtl, logo, brand,
  *
  * @param {object} p
  * @param {string} p.title      product title
+ * @param {string} [p.price]    formatted price, e.g. "50,000 IQD", shown on the tag
  * @param {string} [p.photo]    absolute image URL (R2)
  * @param {string} [p.city]     localized city
  * @param {string} [p.store]    localized "Store" label, for store products
@@ -416,7 +432,7 @@ function drawStory(ctx, { title, img, city, store, code, site, rtl, logo, brand,
  * @param {boolean} [p.rtl]     right-to-left layout for ckb/ar
  * @param {string} [p.brand]    brand name; its logo goes in the header
  */
-export async function buildStoryImage({ title, photo, city, store, code, site, rtl = false, brand }) {
+export async function buildStoryImage({ title, price, photo, city, store, code, site, rtl = false, brand }) {
   // Webfonts must be resolved before fillText or the card renders in a
   // fallback face (and Kurdish/Arabic glyphs may not render at all).
   if (typeof document !== "undefined" && document.fonts?.ready) {
@@ -438,7 +454,7 @@ export async function buildStoryImage({ title, photo, city, store, code, site, r
     canvas.height = H;
     const ctx = canvas.getContext("2d");
     if (!ctx) return null;
-    drawStory(ctx, { title, img: withPhoto ? img : null, city, store, code, site, rtl, logo, brand, brandImg, drawings: withPhoto ? drawings.filter(Boolean) : [], family });
+    drawStory(ctx, { title, price, img: withPhoto ? img : null, city, store, code, site, rtl, logo, brand, brandImg, drawings: withPhoto ? drawings.filter(Boolean) : [], family });
     return canvas;
   };
 
