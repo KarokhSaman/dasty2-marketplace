@@ -5,7 +5,7 @@
 // Stories" in the list. So the story path is: draw a card → share the PNG.
 //
 // Layout: cream page with faint product drawings, Mndallan header and the brand logo on top, the whole
-// photo framed over a blurred copy of itself, a red hang tag with the price on
+// photo framed over a blurred copy of itself, a sunset-coloured hang tag with the price on
 // its white label, and a red card
 // with the category drawings, city/store and title; web address and code below it.
 
@@ -171,11 +171,14 @@ function drawChips(ctx, { city, store, family, rtl, edge, top }) {
   ctx.restore();
 }
 
-// A red hang tag with the price on its white label. Its hole sits on the red
+// A sunset-coloured hang tag with the price on its white label. Its hole sits on the red
 // card's top corner on the end
 // side, tied by a short white string, and it tilts 15° up toward the photo.
 // Mirrored in Kurdish/Arabic.
 const TAG_TILT = (15 * Math.PI) / 180;
+// Sunset blend along the tag (orange, pink, purple), price in deep pink.
+const TAG_COLORS = ["#ff8a3d", "#f2365f", "#a21caf"];
+const TAG_PRICE = "#c2185b";
 function drawHangTag(ctx, { hx, hy, w, h, rtl, price, family }) {
   const tilt = TAG_TILT;
   const half = h / 2;
@@ -208,12 +211,11 @@ function drawHangTag(ctx, { hx, hy, w, h, rtl, price, family }) {
   tag.lineTo(left, -half + r);
   tag.arcTo(left, -half, left + r, -half, r);
   tag.closePath();
-  ctx.shadowColor = "rgba(60, 0, 15, 0.45)";
+  ctx.shadowColor = "rgba(80, 10, 40, 0.45)";
   ctx.shadowBlur = 40;
   ctx.shadowOffsetY = 18;
   const grad = ctx.createLinearGradient(left, -half, point, half);
-  grad.addColorStop(0, BRAND_LIGHT);
-  grad.addColorStop(1, BRAND_DARK);
+  TAG_COLORS.forEach((c, i) => grad.addColorStop(i / (TAG_COLORS.length - 1), c));
   ctx.fillStyle = grad;
   ctx.fill(tag);
   ctx.shadowColor = "transparent";
@@ -230,7 +232,7 @@ function drawHangTag(ctx, { hx, hy, w, h, rtl, price, family }) {
     ctx.direction = "ltr";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillStyle = BRAND;
+    ctx.fillStyle = TAG_PRICE;
     let size = 64;
     do { ctx.font = `800 ${size}px ${family}`; size -= 2; } while (ctx.measureText(price).width > boxW && size > 30);
     ctx.fillText(price, 0, 3);
@@ -243,7 +245,7 @@ function drawHangTag(ctx, { hx, hy, w, h, rtl, price, family }) {
   ctx.fill();
   ctx.beginPath();
   ctx.arc(14, 0, 10, 0, Math.PI * 2);
-  ctx.fillStyle = BRAND_DARK;
+  ctx.fillStyle = TAG_COLORS[TAG_COLORS.length - 1];
   ctx.fill();
   ctx.restore();
 }
