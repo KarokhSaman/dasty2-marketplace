@@ -425,7 +425,7 @@ function drawStory(ctx, { title, price, img, city, store, code, site, rtl, logo,
  *
  * @param {object} p
  * @param {string} p.title      product title
- * @param {string} [p.price]    formatted price, e.g. "50,000", shown on the tag
+ * @param {string} [p.price]    formatted price, e.g. "50,000 IQD", shown on the tag
  * @param {string} [p.photo]    absolute image URL (R2)
  * @param {string} [p.city]     localized city
  * @param {string} [p.store]    localized "Store" label, for store products
