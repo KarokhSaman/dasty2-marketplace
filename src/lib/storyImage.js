@@ -5,7 +5,7 @@
 // Stories" in the list. So the story path is: draw a card → share the PNG.
 //
 // Layout: cream page with faint product drawings, Mndallan header and the brand logo on top, the whole
-// photo framed over a blurred copy of itself, a sunset-coloured hang tag with the price on
+// photo framed over a blurred copy of itself, a wine-to-charcoal hang tag with the price on
 // its white label, and a red card
 // with the category drawings, city/store and title; web address and code below it.
 
@@ -171,14 +171,14 @@ function drawChips(ctx, { city, store, family, rtl, edge, top }) {
   ctx.restore();
 }
 
-// A sunset-coloured hang tag with the price on its white label. Its hole sits on the red
+// A wine-to-charcoal hang tag with the price on its white label. Its hole sits on the red
 // card's top corner on the end
 // side, tied by a short white string, and it tilts 15° up toward the photo.
 // Mirrored in Kurdish/Arabic.
 const TAG_TILT = (15 * Math.PI) / 180;
-// Sunset blend along the tag (orange, pink, purple), price in deep pink.
-const TAG_COLORS = ["#ff8a3d", "#f2365f", "#a21caf"];
-const TAG_PRICE = "#c2185b";
+// Wine fading into charcoal along the tag, price in deep wine.
+const TAG_COLORS = ["#8f1d2c", "#4e0a14", "#1d1f24"];
+const TAG_PRICE = "#5c0f1c";
 function drawHangTag(ctx, { hx, hy, w, h, rtl, price, family }) {
   const tilt = TAG_TILT;
   const half = h / 2;
@@ -211,7 +211,7 @@ function drawHangTag(ctx, { hx, hy, w, h, rtl, price, family }) {
   tag.lineTo(left, -half + r);
   tag.arcTo(left, -half, left + r, -half, r);
   tag.closePath();
-  ctx.shadowColor = "rgba(80, 10, 40, 0.45)";
+  ctx.shadowColor = "rgba(30, 4, 8, 0.5)";
   ctx.shadowBlur = 40;
   ctx.shadowOffsetY = 18;
   const grad = ctx.createLinearGradient(left, -half, point, half);
@@ -425,7 +425,7 @@ function drawStory(ctx, { title, price, img, city, store, code, site, rtl, logo,
  *
  * @param {object} p
  * @param {string} p.title      product title
- * @param {string} [p.price]    formatted price, e.g. "50,000 IQD", shown on the tag
+ * @param {string} [p.price]    formatted price, e.g. "50,000", shown on the tag
  * @param {string} [p.photo]    absolute image URL (R2)
  * @param {string} [p.city]     localized city
  * @param {string} [p.store]    localized "Store" label, for store products
