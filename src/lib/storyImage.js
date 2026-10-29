@@ -143,48 +143,83 @@ function drawContain(ctx, img, x, y, w, h) {
 
 // The part of the photo to show in a frame of `aspect` (width / height).
 // A photo wider or taller than the frame loses at most `maxCut` of that side;
-// the frame then takes the shape of what is left. The kept window slides to
-// where the photo has the most detail (edges), so the item stays in and plain
-// wall or floor is cut, with a slight pull towards the middle.
+// the frame then takes the shape of what is left.
+//
+// Where to cut: each pixel of a small copy is scored by how much it looks
+// like the item rather than the background. The background is taken as the
+// colour around the photo's border; a pixel scores for differing from it,
+// for colour and for edges, with extra weight towards the middle, where
+// sellers put the item. The window is centred on where that score lies, and
+// if the item is wider than the window, less is cut so it is never sliced.
 function smartCrop(img, aspect, maxCut = 0.3) {
   const ratio = img.width / img.height;
   const wide = ratio > aspect;
-  const keep = Math.max(1 - maxCut, wide ? aspect / ratio : ratio / aspect);
-  if (keep >= 0.999) return { sx: 0, sy: 0, sw: img.width, sh: img.height };
+  const ideal = Math.max(1 - maxCut, wide ? aspect / ratio : ratio / aspect);
+  if (ideal >= 0.999) return { sx: 0, sy: 0, sw: img.width, sh: img.height };
 
-  // Detail per column (wide photo) or row (tall photo), on a small copy.
-  const n = 64;
-  const c = document.createElement("canvas");
-  c.width = wide ? n : Math.max(8, Math.round(n * ratio));
-  c.height = wide ? Math.max(8, Math.round(n / ratio)) : n;
-  const cctx = c.getContext("2d", { willReadFrequently: true });
-  let start = (1 - keep) / 2;
-  try {
-    cctx.drawImage(img, 0, 0, c.width, c.height);
-    const d = cctx.getImageData(0, 0, c.width, c.height).data;
-    const lum = (x, y) => { const i = (y * c.width + x) * 4; return d[i] * 0.3 + d[i + 1] * 0.59 + d[i + 2] * 0.11; };
-    const energy = new Array(n).fill(0);
-    for (let y = 1; y < c.height; y++) {
-      for (let x = 1; x < c.width; x++) {
-        const e = Math.abs(lum(x, y) - lum(x - 1, y)) + Math.abs(lum(x, y) - lum(x, y - 1));
-        energy[wide ? x : y] += e;
-      }
-    }
-    const win = Math.round(n * keep);
-    let best = -1;
-    for (let s = 0; s + win <= n; s++) {
-      let sum = 0;
-      for (let k = s; k < s + win; k++) sum += energy[k];
-      const off = Math.abs(s - (n - win) / 2) / Math.max(1, (n - win) / 2);
-      const score = sum * (1 - 0.15 * off);
-      if (score > best) { best = score; start = s / n; }
-    }
-  } catch {
-    // unreadable pixels: keep the centre
-  }
-  return wide
+  const crop = (keep, start) => wide
     ? { sx: img.width * start, sy: 0, sw: img.width * keep, sh: img.height }
     : { sx: 0, sy: img.height * start, sw: img.width, sh: img.height * keep };
+  const centred = (keep) => crop(keep, (1 - keep) / 2);
+
+  const long = 96;
+  const c = document.createElement("canvas");
+  c.width = wide ? long : Math.max(8, Math.round(long * ratio));
+  c.height = wide ? Math.max(8, Math.round(long / ratio)) : long;
+  const cctx = c.getContext("2d", { willReadFrequently: true });
+  let d;
+  try {
+    cctx.drawImage(img, 0, 0, c.width, c.height);
+    d = cctx.getImageData(0, 0, c.width, c.height).data;
+  } catch {
+    return centred(ideal);
+  }
+  const cw = c.width, ch = c.height;
+  const at = (x, y) => (y * cw + x) * 4;
+
+  // background: the median colour of a 2-pixel ring around the border
+  const ring = [[], [], []];
+  for (let y = 0; y < ch; y++) {
+    for (let x = 0; x < cw; x++) {
+      if (x > 1 && y > 1 && x < cw - 2 && y < ch - 2) continue;
+      const i = at(x, y);
+      for (let k = 0; k < 3; k++) ring[k].push(d[i + k]);
+    }
+  }
+  const bg = ring.map((v) => v.sort((p, q) => p - q)[v.length >> 1]);
+
+  // score per column (wide photo) or row (tall photo)
+  const n = wide ? cw : ch;
+  const profile = new Float32Array(n);
+  const lum = (i) => d[i] * 0.3 + d[i + 1] * 0.59 + d[i + 2] * 0.11;
+  for (let y = 1; y < ch; y++) {
+    for (let x = 1; x < cw; x++) {
+      const i = at(x, y);
+      const dist = Math.hypot(d[i] - bg[0], d[i + 1] - bg[1], d[i + 2] - bg[2]) / 441;
+      const sat = (Math.max(d[i], d[i + 1], d[i + 2]) - Math.min(d[i], d[i + 1], d[i + 2])) / 255;
+      const edge = Math.min(1, (Math.abs(lum(i) - lum(at(x - 1, y))) + Math.abs(lum(i) - lum(at(x, y - 1)))) / 60);
+      const u = x / cw - 0.5, v = y / ch - 0.5;
+      const middle = Math.exp(-(u * u + v * v) / (2 * 0.28 * 0.28));
+      profile[wide ? x : y] += (0.5 * dist + 0.2 * sat + 0.3 * edge) * (0.35 + 0.65 * middle);
+    }
+  }
+  // drop the even level that busy floors and walls add everywhere
+  const base = [...profile].sort((p, q) => p - q)[Math.floor(n * 0.2)];
+  let total = 0;
+  for (let k = 0; k < n; k++) total += (profile[k] = Math.max(0, profile[k] - base));
+  if (total <= 0) return centred(ideal);
+
+  // where the item starts and ends: 6% and 94% of its score
+  let acc = 0, from = 0, to = n;
+  for (let k = 0; k < n; k++) {
+    const next = acc + profile[k];
+    if (acc < total * 0.06 && next >= total * 0.06) from = k / n;
+    if (acc < total * 0.94 && next >= total * 0.94) to = (k + 1) / n;
+    acc = next;
+  }
+  const keep = Math.min(1, Math.max(ideal, to - from + 0.06));
+  const start = Math.min(1 - keep, Math.max(0, (from + to) / 2 - keep / 2));
+  return crop(keep, start);
 }
 
 // An image recoloured to one colour, keeping its shape (white logo, white drawings).
