@@ -5,7 +5,7 @@
 // Stories" in the list. So the story path is: draw a card → share the PNG.
 //
 // Layout: cream page with faint product drawings, Mndallan header and the brand logo on top, the whole
-// photo framed over a blurred copy of itself, a wine-to-charcoal hang tag with the price on
+// photo trimmed towards the frame's shape in a frame that hugs it, a wine-to-charcoal hang tag with the price on
 // its white label, and a red card
 // with the category drawings, city/store and title; web address and code below it.
 
@@ -37,6 +37,75 @@ function loadImage(src, { cors = false } = {}) {
   });
 }
 
+// The cropped photo at story size with a gentle touch-up, for the story only
+// (the stored photo is untouched): levels stretched so dull phone shots get
+// real blacks and whites, a little more colour, and a light sharpen. Done on
+// the pixels because Safari has no canvas `filter`.
+function enhancedPhoto(img, crop, w, h) {
+  const c = document.createElement("canvas");
+  c.width = Math.round(w);
+  c.height = Math.round(h);
+  const cctx = c.getContext("2d", { willReadFrequently: true });
+  cctx.imageSmoothingQuality = "high";
+  cctx.drawImage(img, crop.sx, crop.sy, crop.sw, crop.sh, 0, 0, c.width, c.height);
+  let data;
+  try {
+    data = cctx.getImageData(0, 0, c.width, c.height);
+  } catch {
+    return c;
+  }
+  const d = data.data;
+  const n = d.length / 4;
+
+  // Levels: the darkest and brightest 0.5% become black and white, but the
+  // stretch is capped so a photo that is meant to be pale stays pale.
+  const hist = new Uint32Array(256);
+  for (let i = 0; i < d.length; i += 4) hist[(d[i] * 77 + d[i + 1] * 150 + d[i + 2] * 29) >> 8]++;
+  let lo = 0, hi = 255;
+  for (let acc = 0; lo < 255 && (acc += hist[lo]) < n * 0.005; lo++);
+  for (let acc = 0; hi > 0 && (acc += hist[hi]) < n * 0.005; hi--);
+  lo = Math.min(lo, 40);
+  hi = Math.max(hi, 215);
+  const scale = 255 / Math.max(1, hi - lo);
+  // A gamma brings the average brightness back to where it was, so a bright
+  // room isn't darkened by the stretch, only given depth.
+  let before = 0, after = 0;
+  for (let v = 0; v < 256; v++) {
+    before += hist[v] * v;
+    after += hist[v] * Math.min(255, Math.max(0, (v - lo) * scale));
+  }
+  const gamma = Math.min(1.25, Math.max(0.8, Math.log(Math.max(1, before / n) / 255) / Math.log(Math.max(1, after / n) / 255) || 1));
+  const lut = new Float32Array(256);
+  for (let v = 0; v < 256; v++) lut[v] = 255 * Math.pow(Math.min(1, Math.max(0, ((v - lo) * scale) / 255)), gamma);
+  // More colour only where there already is colour: reds and blues get
+  // livelier, white walls and grey floors don't turn yellow.
+  for (let i = 0; i < d.length; i += 4) {
+    const r = lut[d[i]], g = lut[d[i + 1]], b = lut[d[i + 2]];
+    const l = r * 0.3 + g * 0.59 + b * 0.11;
+    const sat = 1 + 0.18 * Math.min(1, ((Math.max(r, g, b) - Math.min(r, g, b)) / 255) * 2.5);
+    d[i] = l + (r - l) * sat;
+    d[i + 1] = l + (g - l) * sat;
+    d[i + 2] = l + (b - l) * sat;
+  }
+
+  // Light sharpen (unsharp mask against the 4 neighbours).
+  const src = new Uint8ClampedArray(d);
+  const row = c.width * 4;
+  const AMT = 0.35;
+  for (let y = 1; y < c.height - 1; y++) {
+    for (let x = 1; x < c.width - 1; x++) {
+      const i = y * row + x * 4;
+      for (let k = 0; k < 3; k++) {
+        const v = src[i + k];
+        const blur = (src[i + k - 4] + src[i + k + 4] + src[i + k - row] + src[i + k + row]) / 4;
+        d[i + k] = v + (v - blur) * AMT;
+      }
+    }
+  }
+  cctx.putImageData(data, 0, 0);
+  return c;
+}
+
 function roundedRect(ctx, x, y, w, h, r) {
   ctx.beginPath();
   ctx.moveTo(x + r, y);
@@ -47,35 +116,56 @@ function roundedRect(ctx, x, y, w, h, r) {
   ctx.closePath();
 }
 
-// Cover-fit: fill the box, cropping the overflow like `object-fit: cover`.
-function drawCover(ctx, img, x, y, w, h) {
-  const scale = Math.max(w / img.width, h / img.height);
-  ctx.drawImage(img, x + (w - img.width * scale) / 2, y + (h - img.height * scale) / 2, img.width * scale, img.height * scale);
-}
-
 // Contain-fit: the whole image, centred, like `object-fit: contain`.
 function drawContain(ctx, img, x, y, w, h) {
   const scale = Math.min(w / img.width, h / img.height);
   ctx.drawImage(img, x + (w - img.width * scale) / 2, y + (h - img.height * scale) / 2, img.width * scale, img.height * scale);
 }
 
-// A soft blur of the photo for the empty space around a landscape or portrait
-// photo. Drawn small and scaled up, which blurs on every browser (Safari has
-// no canvas `filter`).
-function drawBlurred(ctx, img, x, y, w, h) {
-  const small = document.createElement("canvas");
-  small.width = 24;
-  small.height = Math.max(1, Math.round((24 * h) / w));
-  const sctx = small.getContext("2d");
-  if (!sctx) return;
-  drawCover(sctx, img, 0, 0, small.width, small.height);
-  ctx.save();
-  ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = "high";
-  ctx.drawImage(small, x - 40, y - 40, w + 80, h + 80);
-  ctx.fillStyle = "rgba(254, 252, 249, 0.12)";
-  ctx.fillRect(x, y, w, h);
-  ctx.restore();
+// The part of the photo to show in a frame of `aspect` (width / height).
+// A photo wider or taller than the frame loses at most `maxCut` of that side;
+// the frame then takes the shape of what is left. The kept window slides to
+// where the photo has the most detail (edges), so the item stays in and plain
+// wall or floor is cut, with a slight pull towards the middle.
+function smartCrop(img, aspect, maxCut = 0.3) {
+  const ratio = img.width / img.height;
+  const wide = ratio > aspect;
+  const keep = Math.max(1 - maxCut, wide ? aspect / ratio : ratio / aspect);
+  if (keep >= 0.999) return { sx: 0, sy: 0, sw: img.width, sh: img.height };
+
+  // Detail per column (wide photo) or row (tall photo), on a small copy.
+  const n = 64;
+  const c = document.createElement("canvas");
+  c.width = wide ? n : Math.max(8, Math.round(n * ratio));
+  c.height = wide ? Math.max(8, Math.round(n / ratio)) : n;
+  const cctx = c.getContext("2d", { willReadFrequently: true });
+  let start = (1 - keep) / 2;
+  try {
+    cctx.drawImage(img, 0, 0, c.width, c.height);
+    const d = cctx.getImageData(0, 0, c.width, c.height).data;
+    const lum = (x, y) => { const i = (y * c.width + x) * 4; return d[i] * 0.3 + d[i + 1] * 0.59 + d[i + 2] * 0.11; };
+    const energy = new Array(n).fill(0);
+    for (let y = 1; y < c.height; y++) {
+      for (let x = 1; x < c.width; x++) {
+        const e = Math.abs(lum(x, y) - lum(x - 1, y)) + Math.abs(lum(x, y) - lum(x, y - 1));
+        energy[wide ? x : y] += e;
+      }
+    }
+    const win = Math.round(n * keep);
+    let best = -1;
+    for (let s = 0; s + win <= n; s++) {
+      let sum = 0;
+      for (let k = s; k < s + win; k++) sum += energy[k];
+      const off = Math.abs(s - (n - win) / 2) / Math.max(1, (n - win) / 2);
+      const score = sum * (1 - 0.15 * off);
+      if (score > best) { best = score; start = s / n; }
+    }
+  } catch {
+    // unreadable pixels: keep the centre
+  }
+  return wide
+    ? { sx: img.width * start, sy: 0, sw: img.width * keep, sh: img.height }
+    : { sx: 0, sy: img.height * start, sw: img.width, sh: img.height * keep };
 }
 
 // An image recoloured to one colour, keeping its shape (white logo, white drawings).
@@ -325,7 +415,7 @@ function drawStory(ctx, { title, price, img, city, store, code, site, rtl, logo,
   }
 
 
-  // Photo: the whole photo, over a blur of itself, in a white frame.
+  // Photo: in a white frame that takes the (trimmed) photo's shape.
   // Red card: just tall enough for the chips and the title; the web address
   // and product code sit below it on the cream.
   const cx = 48, cw = W - 96, cr = 64;
@@ -335,8 +425,17 @@ function drawStory(ctx, { title, price, img, city, store, code, site, rtl, logo,
   const ch = Math.round(titleTop + t.size * 0.85 + (t.lines.length - 1) * t.size * 1.1 + t.size * 0.25 + 56);
   const cy = H - 140 - ch;
 
-  // Photo fills the space down to just above the card.
-  const px = 72, py = 220, pw = W - 144, ph = cy - 36 - py, pr = 56;
+  // Photo fills the space down to just above the card. A landscape or
+  // portrait photo is trimmed towards the frame's shape, then the frame
+  // shrinks around it, centred in that space.
+  let px = 72, py = 220, pw = W - 144, ph = cy - 36 - py;
+  const pr = 56;
+  const crop = img && smartCrop(img, (pw - 20) / (ph - 20));
+  if (crop) {
+    const s = Math.min((pw - 20) / crop.sw, (ph - 20) / crop.sh);
+    const fw = crop.sw * s + 20, fh = crop.sh * s + 20;
+    px += (pw - fw) / 2; py += (ph - fh) / 2; pw = fw; ph = fh;
+  }
   ctx.save();
   ctx.shadowColor = "rgba(11, 12, 15, 0.28)";
   ctx.shadowBlur = 60;
@@ -348,9 +447,8 @@ function drawStory(ctx, { title, price, img, city, store, code, site, rtl, logo,
   ctx.save();
   roundedRect(ctx, px + 10, py + 10, pw - 20, ph - 20, pr - 10);
   ctx.clip();
-  if (img) {
-    drawBlurred(ctx, img, px + 10, py + 10, pw - 20, ph - 20);
-    drawContain(ctx, img, px + 10, py + 10, pw - 20, ph - 20);
+  if (crop) {
+    ctx.drawImage(enhancedPhoto(img, crop, pw - 20, ph - 20), px + 10, py + 10, pw - 20, ph - 20);
   } else {
     ctx.fillStyle = "#f6eee5";
     ctx.fillRect(px, py, pw, ph);
