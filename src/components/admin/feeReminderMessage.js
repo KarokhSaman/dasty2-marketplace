@@ -10,6 +10,8 @@ export const FEE_PAYMENT_NUMBER = "07724944244";
 // Invisible left-to-right marks keep the number and amount in order inside a
 // right-to-left line.
 const LRM = "\u200E";
+// A leading right-to-left mark keeps a line that holds only digits (the
+// payment number) right-to-left, like the rest of the message.
 const RLM = "\u200F";
 
 const MESSAGES = {
@@ -17,7 +19,7 @@ const MESSAGES = {
 سوپاس بۆ هەڵبژاردنی *«منداڵان»* 🤍
 
 🧾 *کرێی خزمەتگوزاری بۆ فرۆشتنەکانت*
-${items("دینار")}💰 کۆی گشتی: *${total} دینار*
+${items("کاڵای", "کرێ", "دینار")}💰 کۆی گشتی: *${total} دینار*
 
 > 💳 دەتوانیت لە ڕێگەی *Super Qi* یان *FIB* یان *FastPay* پارەکە بنێریت بۆ ئەم ژمارەیە:
 > *${number}*
@@ -28,7 +30,7 @@ ${items("دینار")}💰 کۆی گشتی: *${total} دینار*
 شكراً لاختيارك *Mndallan* 🤍
 
 🧾 *رسوم الخدمة لمبيعاتك*
-${items("دينار")}💰 المجموع: *${total} دينار*
+${items("المنتج", "الرسوم", "دينار")}💰 المجموع: *${total} دينار*
 
 > 💳 يمكنك الدفع عبر *Super Qi* أو *FIB* أو *FastPay* على هذا الرقم:
 > *${number}*
@@ -43,10 +45,11 @@ ${items("دينار")}💰 المجموع: *${total} دينار*
  */
 export function feeReminderMessage(total, items = []) {
   const build = getLocale() === "ar" ? MESSAGES.ar : MESSAGES.ckb;
-  const lines = (currency) => items
-    // RLM after the code ends its left-to-right part, so the fee and currency
-    // read in the line's own order (fee, then دینار).
-    .map((it) => `🏷️ ${it.code ? `*${LRM}#${it.code}${LRM}*` : "—"}${RLM} · ${it.fee} ${currency}\n`)
+  // Each line opens with a word, not the code: WhatsApp picks a line's
+  // direction from its first letter, and a leading code turned the line
+  // left-to-right and scrambled the fee.
+  const lines = (item, fee, currency) => items
+    .map((it) => `🏷️ ${item} ${it.code ? `*${LRM}#${it.code}${LRM}*` : "—"} · ${fee}: *${it.fee} ${currency}*\n`)
     .join("");
-  return build(`${LRM}${total}${LRM}`, `${LRM}${FEE_PAYMENT_NUMBER}${LRM}`, lines);
+  return build(`${LRM}${total}${LRM}`, `${RLM}${FEE_PAYMENT_NUMBER}`, lines);
 }
