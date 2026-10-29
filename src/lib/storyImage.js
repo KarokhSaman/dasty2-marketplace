@@ -5,12 +5,14 @@
 // Stories" in the list. So the story path is: draw a card → share the PNG.
 //
 // Layout: cream page with faint product drawings, Mndallan header and the brand logo on top, the whole
-// photo trimmed towards the frame's shape in a frame that hugs it, a wine-to-charcoal hang tag with the price on
-// its white label, and a red card
+// photo trimmed towards the frame's shape in a frame that hugs it, a white price bar with a red
+// arrow button, and a red card
 // with the category drawings, city/store and title; web address and code below it.
 
 import { brandLogo, brandLogoIsName } from "@/lib/brands";
 import { CATEGORY_CONFIG } from "@/lib/categories";
+import interLatin from "@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url";
+import vazirmatnArabic from "@fontsource-variable/vazirmatn/files/vazirmatn-arabic-wght-normal.woff2?url";
 
 const W = 1080;
 const H = 1920;
@@ -21,6 +23,23 @@ const INK_SOFT = "#61656e";
 const BRAND = "#ed0040";
 const BRAND_LIGHT = "#ff1f58";
 const BRAND_DARK = "#c80037";
+
+// The story has its own font, shipped with the site, so it looks the same on
+// iPhone and Android (the site itself uses each phone's system font): Inter
+// for Latin letters and digits, Vazirmatn for Kurdish and Arabic.
+const STORY_FONT = "MndallanStory";
+let storyFonts;
+function loadStoryFonts() {
+  if (storyFonts) return storyFonts;
+  const faces = [
+    new FontFace(STORY_FONT, `url(${interLatin}) format("woff2")`, { weight: "100 900", unicodeRange: "U+0000-00FF, U+2000-206F, U+20AC, U+2212" }),
+    new FontFace(STORY_FONT, `url(${vazirmatnArabic}) format("woff2")`, { weight: "100 900", unicodeRange: "U+0600-06FF, U+0750-077F, U+200C-200F, U+FB50-FDFF, U+FE70-FEFC" }),
+  ];
+  storyFonts = Promise.all(faces.map((f) => f.load().then((ff) => document.fonts.add(ff))))
+    .then(() => true)
+    .catch(() => (storyFonts = undefined, false));
+  return storyFonts;
+}
 
 // Photos and category drawings live on R2, which sends CORS headers for the
 // site, so they load with `crossOrigin` and the canvas stays exportable. The
@@ -261,82 +280,57 @@ function drawChips(ctx, { city, store, family, rtl, edge, top }) {
   ctx.restore();
 }
 
-// A wine-to-charcoal hang tag with the price on its white label. Its hole sits on the red
-// card's top corner on the end
-// side, tied by a short white string, and it tilts 15° up toward the photo.
-// Mirrored in Kurdish/Arabic.
-const TAG_TILT = (15 * Math.PI) / 180;
-// Wine fading into charcoal along the tag, price in deep wine.
-const TAG_COLORS = ["#8f1d2c", "#4e0a14", "#1d1f24"];
-const TAG_PRICE = "#5c0f1c";
-function drawHangTag(ctx, { hx, hy, w, h, rtl, price, family }) {
-  const tilt = TAG_TILT;
-  const half = h / 2;
-  const point = 58;
-
-  // the short string, from the hole over the card's corner
+// Price bar: a white pill with a red outline holding the price, and a red
+// arrow button at its end. Centred on (x, y); the same way round in every
+// language (only its place on the story follows the reading side).
+function drawPriceBar(ctx, { x, y, w, price, family }) {
+  const ph = 124, L = -w / 2, R = w / 2;
   ctx.save();
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.85)";
-  ctx.lineWidth = 5;
-  ctx.lineCap = "round";
-  ctx.beginPath();
-  ctx.moveTo(hx, hy);
-  ctx.bezierCurveTo(hx + (rtl ? -36 : 36), hy + 4, hx + (rtl ? -40 : 40), hy + 44, hx + (rtl ? -14 : 14), hy + 60);
-  ctx.stroke();
-  ctx.restore();
+  ctx.translate(x, y);
 
-  // the tag, drawn with its hole at (0, 0) and its body reaching back (−x)
   ctx.save();
-  ctx.translate(hx, hy);
-  ctx.rotate(rtl ? -tilt : tilt);
-  if (rtl) ctx.scale(-1, 1);
-  const left = -(w - point), r = 24;
-  const tag = new Path2D();
-  tag.moveTo(left + r, -half);
-  tag.lineTo(0, -half);
-  tag.lineTo(point, 0);
-  tag.lineTo(0, half);
-  tag.lineTo(left + r, half);
-  tag.arcTo(left, half, left, half - r, r);
-  tag.lineTo(left, -half + r);
-  tag.arcTo(left, -half, left + r, -half, r);
-  tag.closePath();
-  ctx.shadowColor = "rgba(30, 4, 8, 0.5)";
-  ctx.shadowBlur = 40;
+  ctx.shadowColor = "rgba(120, 0, 30, 0.3)";
+  ctx.shadowBlur = 44;
   ctx.shadowOffsetY = 18;
-  const grad = ctx.createLinearGradient(left, -half, point, half);
-  TAG_COLORS.forEach((c, i) => grad.addColorStop(i / (TAG_COLORS.length - 1), c));
-  ctx.fillStyle = grad;
-  ctx.fill(tag);
-  ctx.shadowColor = "transparent";
-  // white inside; the tag's red edge frames it
-  roundedRect(ctx, left + 14, -half + 14, -left - 14 - 20, h - 28, 14);
+  roundedRect(ctx, L, -ph / 2, w, ph, ph / 2);
   ctx.fillStyle = "#ffffff";
   ctx.fill();
-  // the price on the white label, unmirrored so it reads normally in RTL
+  ctx.restore();
+  roundedRect(ctx, L, -ph / 2, w, ph, ph / 2);
+  ctx.lineWidth = 6;
+  ctx.strokeStyle = BRAND;
+  ctx.stroke();
+
+  // arrow button
+  const ar = 42, ax = R - 16 - ar;
+  ctx.beginPath();
+  ctx.arc(ax, 0, ar, 0, Math.PI * 2);
+  const ag = ctx.createLinearGradient(ax, -ar, ax, ar);
+  ag.addColorStop(0, BRAND_LIGHT);
+  ag.addColorStop(1, BRAND_DARK);
+  ctx.fillStyle = ag;
+  ctx.fill();
+  ctx.strokeStyle = "#ffffff";
+  ctx.lineWidth = 9;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  ctx.beginPath();
+  ctx.moveTo(ax - 8, -16);
+  ctx.lineTo(ax + 9, 0);
+  ctx.lineTo(ax - 8, 16);
+  ctx.stroke();
+
+  // the price, centred in the space before the button
   if (price) {
-    const boxW = -left - 34 - 40;
-    ctx.save();
-    ctx.translate((left + 14 + -20) / 2, 0);
-    if (rtl) ctx.scale(-1, 1);
+    const from = L + 44, to = ax - ar - 24;
     ctx.direction = "ltr";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillStyle = TAG_PRICE;
-    let size = 64;
-    do { ctx.font = `800 ${size}px ${family}`; size -= 2; } while (ctx.measureText(price).width > boxW && size > 30);
-    ctx.fillText(price, 0, 3);
-    ctx.restore();
+    ctx.fillStyle = INK;
+    let size = 66;
+    do { ctx.font = `800 ${size}px ${family}`; size -= 2; } while (ctx.measureText(price).width > to - from && size > 30);
+    ctx.fillText(price, (from + to) / 2, 3);
   }
-  // hole with a white eyelet
-  ctx.beginPath();
-  ctx.arc(14, 0, 18, 0, Math.PI * 2);
-  ctx.fillStyle = "#ffffff";
-  ctx.fill();
-  ctx.beginPath();
-  ctx.arc(14, 0, 10, 0, Math.PI * 2);
-  ctx.fillStyle = TAG_COLORS[TAG_COLORS.length - 1];
-  ctx.fill();
   ctx.restore();
 }
 
@@ -506,16 +500,15 @@ function drawStory(ctx, { title, price, img, city, store, code, site, rtl, logo,
   ctx.textAlign = rtl ? "right" : "left";
   if (site) ctx.fillText(site, rtl ? cx + cw - 24 : cx + 24, footY);
   ctx.fillStyle = INK_SOFT;
-  ctx.font = `700 32px ui-monospace, Menlo, monospace`;
+  ctx.font = `700 32px ${family}`;
   ctx.textAlign = rtl ? "left" : "right";
   if (code) ctx.fillText(code, rtl ? cx + 24 : cx + cw - 24, footY);
   ctx.restore();
 
-  // Empty hang tag with its hole on the card's top corner (end side), tilted
-  // 15° up toward the photo.
-  const tw = 540, th = 140;
-  const hx = rtl ? cx + 70 : cx + cw - 70, hy = cy + 40;
-  drawHangTag(ctx, { hx, hy, w: tw, h: th, rtl, price, family });
+  // Price bar on the photo's bottom edge, just above the card, on the
+  // reading side (left in Kurdish/Arabic, right in English).
+  const bw = 600;
+  drawPriceBar(ctx, { x: rtl ? cx + 24 + bw / 2 : cx + cw - 24 - bw / 2, y: cy - 52, w: bw, price, family });
 }
 
 /**
@@ -547,7 +540,9 @@ export async function buildStoryImage({ title, price, photo, city, store, code, 
     ...drawingUrls.map((u) => loadImage(u, { cors: true })),
   ]);
 
-  const family = getComputedStyle(document.body).fontFamily || "sans-serif";
+  // the story font, with the page's own font behind it if it failed to load
+  const pageFont = getComputedStyle(document.body).fontFamily || "sans-serif";
+  const family = (await loadStoryFonts()) ? `"${STORY_FONT}", ${pageFont}` : pageFont;
   const render = (withPhoto) => {
     const canvas = document.createElement("canvas");
     canvas.width = W;
