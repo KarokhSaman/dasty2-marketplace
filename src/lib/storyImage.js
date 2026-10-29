@@ -508,7 +508,7 @@ function drawStory(ctx, { title, price, img, city, store, code, site, rtl, logo,
   // Price bar on the photo's bottom edge, just above the card, on the
   // reading side (left in Kurdish/Arabic, right in English).
   const bw = 600;
-  drawPriceBar(ctx, { x: rtl ? cx + 24 + bw / 2 : cx + cw - 24 - bw / 2, y: cy - 52, w: bw, price, family });
+  drawPriceBar(ctx, { x: rtl ? cx + 24 + bw / 2 : cx + cw - 24 - bw / 2, y: cy - 28, w: bw, price, family });
 }
 
 /**
