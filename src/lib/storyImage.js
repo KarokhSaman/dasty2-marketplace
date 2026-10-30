@@ -4,10 +4,10 @@
 // through the OS share sheet — `navigator.share({ files })` puts "Instagram →
 // Stories" in the list. So the story path is: draw a card → share the PNG.
 //
-// Layout: cream page with faint product drawings, Mndallan header and the brand logo on top, the whole
-// photo trimmed towards the frame's shape in a frame that hugs it, a white price bar with a red
-// arrow button, and a red card
-// with the category drawings, city/store and title; web address and code below it.
+// Layout: cream page with faint product drawings, Mndallan header and the brand logo on top, the
+// photo trimmed towards the frame's shape in a frame that hugs it, and below it the designer's red
+// card with its price tag tied on (public/story-card.png) holding the price, city/store and title;
+// web address and code below it. If that art can't load, the card and a swing tag are drawn instead.
 
 import { brandLogo, brandLogoIsName } from "@/lib/brands";
 import { CATEGORY_CONFIG } from "@/lib/categories";
@@ -315,29 +315,113 @@ function drawChips(ctx, { city, store, family, rtl, edge, top }) {
   ctx.restore();
 }
 
-// Price bar: a white pill with a red outline holding the price, and a red
-// arrow button at its end. Centred on (x, y); the same way round in every
-// language (only its place on the story follows the reading side).
-function drawPriceBar(ctx, { x, y, w, price, family }) {
-  const ph = 124, L = -w / 2, R = w / 2;
+// Price tag: a white swing tag with a red outline, tilted a little, hung
+// from the red card by a red cord through a metal eyelet near the card's
+// corner. It hangs from the card's outer corner on its side, so in English
+// (right side) it is drawn mirrored: eyelet on the right, button on the left,
+// left end up; the price and the arrow still read normally. It always has the same width,
+// sized for a six-digit price ("999,999 IQD"), so an Instagram link sticker
+// fits over it every time; a longer price gets a smaller font instead. A
+// trailing currency ("IQD") is drawn smaller and lighter than the number.
+// `edge` is the x of the side it hangs from: its left end, or its right end
+// when `fromRight`; `y` is its middle.
+const TAG_TILT = (-6 * Math.PI) / 180;
+const TAG_PRICE = "#5a0a1e";
+function drawPriceBar(ctx, { edge, fromRight, y, price, family }) {
+  const ph = 120, ar = 40, eyeX = 46, padStart = 88, gapToButton = 24, padEnd = 18;
+  const split = (text) => /^(.*?)(?:\s+([A-Za-z]{2,4}))?$/.exec(text ?? "") ?? [];
+  const [, amount = price ?? "", unit = ""] = split(price);
+  let size = 62;
+  const measure = (num, cur) => {
+    ctx.font = `800 ${size}px ${family}`;
+    const aw = ctx.measureText(num).width;
+    ctx.font = `700 ${Math.round(size * 0.62)}px ${family}`;
+    const uw = cur ? ctx.measureText(cur).width + size * 0.22 : 0;
+    return { aw, uw, total: aw + uw };
+  };
+  // the room a six-digit price needs at full size sets the width for all
+  const room = measure("999,999", unit || "IQD").total;
+  const w = padStart + room + gapToButton + 2 * ar + padEnd;
+  let m = measure(amount, unit);
+  while (m.total > room && size > 30) { size -= 2; m = measure(amount, unit); }
+  // Everything below is drawn in the tag's own frame: origin at the eyelet,
+  // tilted with the tag, and flipped when it hangs from the right.
+  const flip = fromRight ? -1 : 1;
   ctx.save();
-  ctx.translate(x, y);
+  ctx.translate(edge + flip * eyeX, y);
+  ctx.scale(flip, 1);
+  ctx.rotate(TAG_TILT);
+  const x0 = -eyeX, x1 = w - eyeX, top = -ph / 2;
 
+  // tag body: square-ish at the eyelet end, round at the button end
+  const body = new Path2D();
+  const rl = 34, rr = ph / 2;
+  body.moveTo(x0 + rl, top);
+  body.lineTo(x1 - rr, top);
+  body.arcTo(x1, top, x1, 0, rr);
+  body.arcTo(x1, ph / 2, x1 - rr, ph / 2, rr);
+  body.lineTo(x0 + rl, ph / 2);
+  body.arcTo(x0, ph / 2, x0, ph / 2 - rl, rl);
+  body.lineTo(x0, top + rl);
+  body.arcTo(x0, top, x0 + rl, top, rl);
+  body.closePath();
   ctx.save();
-  ctx.shadowColor = "rgba(120, 0, 30, 0.3)";
-  ctx.shadowBlur = 44;
+  ctx.shadowColor = "rgba(90, 0, 25, 0.38)";
+  ctx.shadowBlur = 40;
   ctx.shadowOffsetY = 18;
-  roundedRect(ctx, L, -ph / 2, w, ph, ph / 2);
   ctx.fillStyle = "#ffffff";
-  ctx.fill();
+  ctx.fill(body);
   ctx.restore();
-  roundedRect(ctx, L, -ph / 2, w, ph, ph / 2);
-  ctx.lineWidth = 6;
+  // a faint card-like shading, lighter at the top
+  ctx.save();
+  ctx.clip(body);
+  const sheen = ctx.createLinearGradient(0, top, 0, ph / 2);
+  sheen.addColorStop(0, "rgba(255, 255, 255, 0)");
+  sheen.addColorStop(1, "rgba(120, 0, 30, 0.06)");
+  ctx.fillStyle = sheen;
+  ctx.fillRect(x0, top, w, ph);
+  ctx.restore();
+  ctx.lineWidth = 7;
   ctx.strokeStyle = BRAND;
-  ctx.stroke();
+  ctx.stroke(body);
+
+  // eyelet: a metal ring with the hole showing through
+  ctx.beginPath();
+  ctx.arc(0, 0, 19, 0, Math.PI * 2);
+  const ring = ctx.createLinearGradient(-19, -19, 19, 19);
+  ring.addColorStop(0, "#f3f3f5");
+  ring.addColorStop(0.5, "#b9bcc4");
+  ring.addColorStop(1, "#8d9099");
+  ctx.fillStyle = ring;
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(0, 0, 10, 0, Math.PI * 2);
+  ctx.fillStyle = "#3a0612";
+  ctx.fill();
+
+  // The cord loops out of the eyelet and anchors just inside the red card.
+  // Keep its lowest point above the city/store chips (drawChips starts at
+  // cy + 58; this tag is centred at cy - 28, so the cord ends around cy + 26).
+  // The two close strands create the small, realistic clothing-tag loop seen
+  // in the reference without making the tag look like a floating button.
+  const cord = (draw) => {
+    ctx.beginPath();
+    ctx.moveTo(-2, -4);
+    ctx.bezierCurveTo(-38, -8, -58, 18, -40, 46);
+    draw();
+    ctx.beginPath();
+    ctx.moveTo(4, 6);
+    ctx.bezierCurveTo(-12, 18, -18, 34, -8, 54);
+    draw();
+  };
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  cord(() => { ctx.lineWidth = 11; ctx.strokeStyle = "rgba(60, 0, 15, 0.35)"; ctx.stroke(); });
+  cord(() => { ctx.lineWidth = 8; ctx.strokeStyle = "#ff5a7e"; ctx.stroke(); });
+  cord(() => { ctx.lineWidth = 2.5; ctx.strokeStyle = "rgba(255, 255, 255, 0.55)"; ctx.stroke(); });
 
   // arrow button
-  const ar = 42, ax = R - 16 - ar;
+  const ax = x1 - padEnd - ar;
   ctx.beginPath();
   ctx.arc(ax, 0, ar, 0, Math.PI * 2);
   const ag = ctx.createLinearGradient(ax, -ar, ax, ar);
@@ -346,30 +430,147 @@ function drawPriceBar(ctx, { x, y, w, price, family }) {
   ctx.fillStyle = ag;
   ctx.fill();
   ctx.strokeStyle = "#ffffff";
-  ctx.lineWidth = 9;
-  ctx.lineCap = "round";
+  ctx.lineWidth = 8;
   ctx.lineJoin = "round";
   ctx.beginPath();
-  ctx.moveTo(ax - 8, -16);
-  ctx.lineTo(ax + 9, 0);
-  ctx.lineTo(ax - 8, 16);
+  ctx.moveTo(ax - 7 * flip, -15);
+  ctx.lineTo(ax + 8 * flip, 0);
+  ctx.lineTo(ax - 7 * flip, 15);
   ctx.stroke();
 
-  // the price, centred in the space before the button
-  if (price) {
-    const from = L + 44, to = ax - ar - 24;
+  // the price, centred in the space between the eyelet and the button
+  if (amount) {
+    let start = (x0 + padStart + ax - ar - gapToButton) / 2 - m.total / 2;
+    const base = size * 0.36;
+    // flipped tag: undo the flip for the text so it reads left to right
+    if (flip < 0) {
+      ctx.scale(-1, 1);
+      start = -(start + m.total);
+    }
     ctx.direction = "ltr";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillStyle = INK;
-    let size = 66;
-    do { ctx.font = `800 ${size}px ${family}`; size -= 2; } while (ctx.measureText(price).width > to - from && size > 30);
-    ctx.fillText(price, (from + to) / 2, 3);
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
+    ctx.fillStyle = TAG_PRICE;
+    ctx.font = `800 ${size}px ${family}`;
+    ctx.fillText(amount, start, base);
+    if (unit) {
+      ctx.fillStyle = INK_SOFT;
+      ctx.font = `700 ${Math.round(size * 0.62)}px ${family}`;
+      ctx.fillText(unit, start + m.aw + size * 0.22, base);
+    }
   }
   ctx.restore();
 }
 
-function drawStory(ctx, { title, price, img, city, store, code, site, rtl, logo, brand, brandImg, drawings, family }) {
+// The red card with its price tag tied on, from the designer's art
+// (public/story-card.png, 1200 × 478, transparent). Where things sit in the
+// art, in its pixels: the card body (x, y, w, h), the centre of the tag's
+// price area (x, y), the tag's tilt in degrees and the room for the price,
+// and the arrow button (x, y, r). The art's own glow had a checkerboard baked
+// in, so it was cut out and the soft shadow is drawn here instead.
+const CARD_ART = {
+  src: "/story-card.png",
+  card: [18, 158, 1161, 266],
+  price: [360, 119, -4.6, 314],
+  button: [583, 103, 42],
+};
+
+// The card art is drawn as is in Kurdish/Arabic (eyelet on the left) and
+// flipped in English (eyelet on the right); the price, chips and title are
+// written on it.
+function drawCardArt(ctx, { art, CS, cx, cy, cw, ch, rtl, price, title, city, store, family }) {
+  const A = CARD_ART;
+  const ox = A.card[0] * CS, oy = A.card[1] * CS, iw = art.width * CS, ih = art.height * CS;
+  ctx.save();
+  ctx.shadowColor = "rgba(120, 0, 30, 0.38)";
+  ctx.shadowBlur = 44;
+  ctx.shadowOffsetY = 18;
+  if (rtl) ctx.drawImage(art, cx - ox, cy - oy, iw, ih);
+  else {
+    ctx.translate(cx + cw + ox, cy - oy);
+    ctx.scale(-1, 1);
+    ctx.drawImage(art, 0, 0, iw, ih);
+  }
+  ctx.restore();
+  // flipped art has its arrow pointing left: paint the button's face again
+  // with the arrow pointing right
+  if (!rtl) {
+    const bx = cx + cw + ox - A.button[0] * CS, by = cy - oy + A.button[1] * CS, br = A.button[2] * CS;
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(bx, by, br, 0, Math.PI * 2);
+    const bg = ctx.createLinearGradient(bx, by - br, bx, by + br);
+    bg.addColorStop(0, "#f2164d");
+    bg.addColorStop(1, "#d6003a");
+    ctx.fillStyle = bg;
+    ctx.fill();
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = br * 0.29;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.beginPath();
+    ctx.moveTo(bx - br * 0.19, by - br * 0.46);
+    ctx.lineTo(bx + br * 0.26, by);
+    ctx.lineTo(bx - br * 0.19, by + br * 0.46);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // price on the tag, centred between the eyelet and the button
+  const ang = (A.price[2] * Math.PI) / 180;
+  const tcx = rtl ? cx - ox + A.price[0] * CS : cx + cw + ox - A.price[0] * CS;
+  const tcy = cy - oy + A.price[1] * CS;
+  const roomW = A.price[3] * CS;
+  const [, amount = price ?? "", unit = ""] = /^(.*?)(?:\s+([A-Za-z]{2,4}))?$/.exec(price ?? "") ?? [];
+  let size = 60, aw, uw;
+  const measure = () => {
+    ctx.font = `800 ${size}px ${family}`; aw = ctx.measureText(amount).width;
+    ctx.font = `700 ${Math.round(size * 0.62)}px ${family}`; uw = unit ? ctx.measureText(unit).width + size * 0.22 : 0;
+    return aw + uw;
+  };
+  while (measure() > roomW && size > 30) size -= 2;
+  ctx.save();
+  ctx.translate(tcx, tcy);
+  ctx.rotate(rtl ? ang : -ang);
+  const start = -(aw + uw) / 2, base = size * 0.36;
+  ctx.direction = "ltr"; ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+  ctx.fillStyle = "#5a0a1e"; ctx.font = `800 ${size}px ${family}`; ctx.fillText(amount, start, base);
+  if (unit) { ctx.fillStyle = INK_SOFT; ctx.font = `700 ${Math.round(size * 0.62)}px ${family}`; ctx.fillText(unit, start + aw + size * 0.22, base); }
+  ctx.restore();
+
+  // chips and title inside the shorter card
+  const pad = 56;
+  const chipTop = cy + 34;
+  drawChipsSized(ctx, { city, store, family, rtl, edge: rtl ? cx + cw - pad : cx + pad, top: chipTop });
+  const inner = cw - 2 * pad - 40;
+  let tsize = 58, lines;
+  for (; tsize >= 40; tsize -= 2) {
+    ctx.font = `800 ${tsize}px ${family}`;
+    lines = wrapLines(ctx, title ?? "", inner);
+    const tall = tsize * 0.85 + (lines.length - 1) * tsize * 1.08;
+    if (lines.length <= 2 && lines.every((l) => ctx.measureText(l).width <= inner) && chipTop + 58 + 22 + tall + 18 <= cy + ch) break;
+  }
+  lines = (lines ?? []).slice(0, 2);
+  ctx.save();
+  ctx.direction = rtl ? "rtl" : "ltr"; ctx.textAlign = rtl ? "right" : "left"; ctx.textBaseline = "alphabetic";
+  ctx.fillStyle = "#ffffff"; ctx.font = `800 ${tsize}px ${family}`;
+  const top = chipTop + 58 + 20;
+  lines.forEach((line, i) => ctx.fillText(line, rtl ? cx + cw - pad : cx + pad, top + tsize * 0.85 + i * tsize * 1.08));
+  ctx.restore();
+}
+
+// drawChips at a smaller size, for the shorter card
+function drawChipsSized(ctx, opts) {
+  ctx.save();
+  const { top } = opts;
+  ctx.translate(opts.rtl ? opts.edge : opts.edge, top);
+  ctx.scale(0.83, 0.83);
+  ctx.translate(-opts.edge, -top);
+  drawChips(ctx, opts);
+  ctx.restore();
+}
+
+function drawStory(ctx, { title, price, img, city, store, code, site, rtl, logo, brand, brandImg, drawings, art, family }) {
   const edge = rtl ? W - 72 : 72;
 
   // Background: the site's cream, scattered with small faint baby-product
@@ -447,11 +648,14 @@ function drawStory(ctx, { title, price, img, city, store, code, site, rtl, logo,
   // Photo: in a white frame that takes the (trimmed) photo's shape.
   // Red card: just tall enough for the chips and the title; the web address
   // and product code sit below it on the cream.
-  const cx = 48, cw = W - 96, cr = 64;
+  // With the card art, the card lines up with the photo frame's edges and
+  // takes the art's shape.
+  const cx = art ? 72 : 48, cw = art ? W - 144 : W - 96, cr = 64;
   const inner = cw - 120;
   const t = wrapTitle(ctx, title ?? "", inner, family);
   const titleTop = 158;
-  const ch = Math.round(titleTop + t.size * 0.85 + (t.lines.length - 1) * t.size * 1.1 + t.size * 0.25 + 56);
+  const CS = art ? cw / CARD_ART.card[2] : 1;
+  const ch = art ? Math.round(CARD_ART.card[3] * CS) : Math.round(titleTop + t.size * 0.85 + (t.lines.length - 1) * t.size * 1.1 + t.size * 0.25 + 56);
   const cy = H - 140 - ch;
 
   // Photo fills the space down to just above the card. A landscape or
@@ -484,6 +688,9 @@ function drawStory(ctx, { title, price, img, city, store, code, site, rtl, logo,
   }
   ctx.restore();
 
+  if (art) {
+    drawCardArt(ctx, { art, CS, cx, cy, cw, ch, rtl, price, title, city, store, family });
+  } else {
   ctx.save();
   ctx.shadowColor = "rgba(120, 0, 30, 0.45)";
   ctx.shadowBlur = 60;
@@ -524,6 +731,7 @@ function drawStory(ctx, { title, price, img, city, store, code, site, rtl, logo,
   ctx.font = `800 ${t.size}px ${family}`;
   t.lines.forEach((line, i) => ctx.fillText(line, rtl ? cx + cw - 60 : cx + 60, cy + titleTop + t.size * 0.85 + i * t.size * 1.1));
   ctx.restore();
+  }
 
   // Below the card, on the cream: web address and product code.
   const footY = H - 66;
@@ -542,8 +750,7 @@ function drawStory(ctx, { title, price, img, city, store, code, site, rtl, logo,
 
   // Price bar on the photo's bottom edge, just above the card, on the
   // reading side (left in Kurdish/Arabic, right in English).
-  const bw = 600;
-  drawPriceBar(ctx, { x: rtl ? cx + 24 + bw / 2 : cx + cw - 24 - bw / 2, y: cy - 28, w: bw, price, family });
+  if (!art) drawPriceBar(ctx, { edge: rtl ? cx + 24 : cx + cw - 24, fromRight: !rtl, y: cy - 2, price, family });
 }
 
 /**
@@ -568,9 +775,10 @@ export async function buildStoryImage({ title, price, photo, city, store, code, 
   }
 
   const drawingUrls = CATEGORY_CONFIG.filter((c) => c.value !== "all").map((c) => c.img);
-  const [img, logo, brandImg, ...drawings] = await Promise.all([
+  const [img, logo, art, brandImg, ...drawings] = await Promise.all([
     loadImage(photo, { cors: true }),
     loadImage("/logo-mndallan.svg"),
+    loadImage(CARD_ART.src),
     loadImage(brandLogo(brand)),
     ...drawingUrls.map((u) => loadImage(u, { cors: true })),
   ]);
@@ -584,7 +792,7 @@ export async function buildStoryImage({ title, price, photo, city, store, code, 
     canvas.height = H;
     const ctx = canvas.getContext("2d");
     if (!ctx) return null;
-    drawStory(ctx, { title, price, img: withPhoto ? img : null, city, store, code, site, rtl, logo, brand, brandImg, drawings: withPhoto ? drawings.filter(Boolean) : [], family });
+    drawStory(ctx, { title, price, img: withPhoto ? img : null, city, store, code, site, rtl, logo, brand, brandImg, drawings: withPhoto ? drawings.filter(Boolean) : [], art, family });
     return canvas;
   };
 
