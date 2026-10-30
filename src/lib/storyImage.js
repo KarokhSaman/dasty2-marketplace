@@ -4,13 +4,15 @@
 // through the OS share sheet — `navigator.share({ files })` puts "Instagram →
 // Stories" in the list. So the story path is: draw a card → share the PNG.
 //
-// Layout: cream page with faint product drawings, Mndallan header and the brand logo on top, the whole
-// photo framed over a blurred copy of itself, a wine-to-charcoal hang tag with the price on
-// its white label, and a red card
-// with the category drawings, city/store and title; web address and code below it.
+// Layout: cream page with faint product drawings, Mndallan header and the brand logo on top, the
+// photo trimmed towards the frame's shape in a frame that hugs it, and below it the designer's red
+// card with its price tag tied on (public/story-card.png) holding the price, city/store and title;
+// web address and code below it. If that art can't load, the card and a swing tag are drawn instead.
 
 import { brandLogo, brandLogoIsName } from "@/lib/brands";
 import { CATEGORY_CONFIG } from "@/lib/categories";
+import interLatin from "@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url";
+import vazirmatnArabic from "@fontsource-variable/vazirmatn/files/vazirmatn-arabic-wght-normal.woff2?url";
 
 const W = 1080;
 const H = 1920;
@@ -21,6 +23,23 @@ const INK_SOFT = "#61656e";
 const BRAND = "#ed0040";
 const BRAND_LIGHT = "#ff1f58";
 const BRAND_DARK = "#c80037";
+
+// The story has its own font, shipped with the site, so it looks the same on
+// iPhone and Android (the site itself uses each phone's system font): Inter
+// for Latin letters and digits, Vazirmatn for Kurdish and Arabic.
+const STORY_FONT = "MndallanStory";
+let storyFonts;
+function loadStoryFonts() {
+  if (storyFonts) return storyFonts;
+  const faces = [
+    new FontFace(STORY_FONT, `url(${interLatin}) format("woff2")`, { weight: "100 900", unicodeRange: "U+0000-00FF, U+2000-206F, U+20AC, U+2212" }),
+    new FontFace(STORY_FONT, `url(${vazirmatnArabic}) format("woff2")`, { weight: "100 900", unicodeRange: "U+0600-06FF, U+0750-077F, U+200C-200F, U+FB50-FDFF, U+FE70-FEFC" }),
+  ];
+  storyFonts = Promise.all(faces.map((f) => f.load().then((ff) => document.fonts.add(ff))))
+    .then(() => true)
+    .catch(() => (storyFonts = undefined, false));
+  return storyFonts;
+}
 
 // Photos and category drawings live on R2, which sends CORS headers for the
 // site, so they load with `crossOrigin` and the canvas stays exportable. The
@@ -37,6 +56,75 @@ function loadImage(src, { cors = false } = {}) {
   });
 }
 
+// The cropped photo at story size with a gentle touch-up, for the story only
+// (the stored photo is untouched): levels stretched so dull phone shots get
+// real blacks and whites, a little more colour, and a light sharpen. Done on
+// the pixels because Safari has no canvas `filter`.
+function enhancedPhoto(img, crop, w, h) {
+  const c = document.createElement("canvas");
+  c.width = Math.round(w);
+  c.height = Math.round(h);
+  const cctx = c.getContext("2d", { willReadFrequently: true });
+  cctx.imageSmoothingQuality = "high";
+  cctx.drawImage(img, crop.sx, crop.sy, crop.sw, crop.sh, 0, 0, c.width, c.height);
+  let data;
+  try {
+    data = cctx.getImageData(0, 0, c.width, c.height);
+  } catch {
+    return c;
+  }
+  const d = data.data;
+  const n = d.length / 4;
+
+  // Levels: the darkest and brightest 0.5% become black and white, but the
+  // stretch is capped so a photo that is meant to be pale stays pale.
+  const hist = new Uint32Array(256);
+  for (let i = 0; i < d.length; i += 4) hist[(d[i] * 77 + d[i + 1] * 150 + d[i + 2] * 29) >> 8]++;
+  let lo = 0, hi = 255;
+  for (let acc = 0; lo < 255 && (acc += hist[lo]) < n * 0.005; lo++);
+  for (let acc = 0; hi > 0 && (acc += hist[hi]) < n * 0.005; hi--);
+  lo = Math.min(lo, 40);
+  hi = Math.max(hi, 215);
+  const scale = 255 / Math.max(1, hi - lo);
+  // A gamma brings the average brightness back to where it was, so a bright
+  // room isn't darkened by the stretch, only given depth.
+  let before = 0, after = 0;
+  for (let v = 0; v < 256; v++) {
+    before += hist[v] * v;
+    after += hist[v] * Math.min(255, Math.max(0, (v - lo) * scale));
+  }
+  const gamma = Math.min(1.25, Math.max(0.8, Math.log(Math.max(1, before / n) / 255) / Math.log(Math.max(1, after / n) / 255) || 1));
+  const lut = new Float32Array(256);
+  for (let v = 0; v < 256; v++) lut[v] = 255 * Math.pow(Math.min(1, Math.max(0, ((v - lo) * scale) / 255)), gamma);
+  // More colour only where there already is colour: reds and blues get
+  // livelier, white walls and grey floors don't turn yellow.
+  for (let i = 0; i < d.length; i += 4) {
+    const r = lut[d[i]], g = lut[d[i + 1]], b = lut[d[i + 2]];
+    const l = r * 0.3 + g * 0.59 + b * 0.11;
+    const sat = 1 + 0.18 * Math.min(1, ((Math.max(r, g, b) - Math.min(r, g, b)) / 255) * 2.5);
+    d[i] = l + (r - l) * sat;
+    d[i + 1] = l + (g - l) * sat;
+    d[i + 2] = l + (b - l) * sat;
+  }
+
+  // Light sharpen (unsharp mask against the 4 neighbours).
+  const src = new Uint8ClampedArray(d);
+  const row = c.width * 4;
+  const AMT = 0.35;
+  for (let y = 1; y < c.height - 1; y++) {
+    for (let x = 1; x < c.width - 1; x++) {
+      const i = y * row + x * 4;
+      for (let k = 0; k < 3; k++) {
+        const v = src[i + k];
+        const blur = (src[i + k - 4] + src[i + k + 4] + src[i + k - row] + src[i + k + row]) / 4;
+        d[i + k] = v + (v - blur) * AMT;
+      }
+    }
+  }
+  cctx.putImageData(data, 0, 0);
+  return c;
+}
+
 function roundedRect(ctx, x, y, w, h, r) {
   ctx.beginPath();
   ctx.moveTo(x + r, y);
@@ -47,35 +135,91 @@ function roundedRect(ctx, x, y, w, h, r) {
   ctx.closePath();
 }
 
-// Cover-fit: fill the box, cropping the overflow like `object-fit: cover`.
-function drawCover(ctx, img, x, y, w, h) {
-  const scale = Math.max(w / img.width, h / img.height);
-  ctx.drawImage(img, x + (w - img.width * scale) / 2, y + (h - img.height * scale) / 2, img.width * scale, img.height * scale);
-}
-
 // Contain-fit: the whole image, centred, like `object-fit: contain`.
 function drawContain(ctx, img, x, y, w, h) {
   const scale = Math.min(w / img.width, h / img.height);
   ctx.drawImage(img, x + (w - img.width * scale) / 2, y + (h - img.height * scale) / 2, img.width * scale, img.height * scale);
 }
 
-// A soft blur of the photo for the empty space around a landscape or portrait
-// photo. Drawn small and scaled up, which blurs on every browser (Safari has
-// no canvas `filter`).
-function drawBlurred(ctx, img, x, y, w, h) {
-  const small = document.createElement("canvas");
-  small.width = 24;
-  small.height = Math.max(1, Math.round((24 * h) / w));
-  const sctx = small.getContext("2d");
-  if (!sctx) return;
-  drawCover(sctx, img, 0, 0, small.width, small.height);
-  ctx.save();
-  ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = "high";
-  ctx.drawImage(small, x - 40, y - 40, w + 80, h + 80);
-  ctx.fillStyle = "rgba(254, 252, 249, 0.12)";
-  ctx.fillRect(x, y, w, h);
-  ctx.restore();
+// The part of the photo to show in a frame of `aspect` (width / height).
+// A photo wider or taller than the frame loses at most `maxCut` of that side;
+// the frame then takes the shape of what is left.
+//
+// Where to cut: each pixel of a small copy is scored by how much it looks
+// like the item rather than the background. The background is taken as the
+// colour around the photo's border; a pixel scores for differing from it,
+// for colour and for edges, with extra weight towards the middle, where
+// sellers put the item. The window is centred on where that score lies, and
+// if the item is wider than the window, less is cut so it is never sliced.
+function smartCrop(img, aspect, maxCut = 0.3) {
+  const ratio = img.width / img.height;
+  const wide = ratio > aspect;
+  const ideal = Math.max(1 - maxCut, wide ? aspect / ratio : ratio / aspect);
+  if (ideal >= 0.999) return { sx: 0, sy: 0, sw: img.width, sh: img.height };
+
+  const crop = (keep, start) => wide
+    ? { sx: img.width * start, sy: 0, sw: img.width * keep, sh: img.height }
+    : { sx: 0, sy: img.height * start, sw: img.width, sh: img.height * keep };
+  const centred = (keep) => crop(keep, (1 - keep) / 2);
+
+  const long = 96;
+  const c = document.createElement("canvas");
+  c.width = wide ? long : Math.max(8, Math.round(long * ratio));
+  c.height = wide ? Math.max(8, Math.round(long / ratio)) : long;
+  const cctx = c.getContext("2d", { willReadFrequently: true });
+  let d;
+  try {
+    cctx.drawImage(img, 0, 0, c.width, c.height);
+    d = cctx.getImageData(0, 0, c.width, c.height).data;
+  } catch {
+    return centred(ideal);
+  }
+  const cw = c.width, ch = c.height;
+  const at = (x, y) => (y * cw + x) * 4;
+
+  // background: the median colour of a 2-pixel ring around the border
+  const ring = [[], [], []];
+  for (let y = 0; y < ch; y++) {
+    for (let x = 0; x < cw; x++) {
+      if (x > 1 && y > 1 && x < cw - 2 && y < ch - 2) continue;
+      const i = at(x, y);
+      for (let k = 0; k < 3; k++) ring[k].push(d[i + k]);
+    }
+  }
+  const bg = ring.map((v) => v.sort((p, q) => p - q)[v.length >> 1]);
+
+  // score per column (wide photo) or row (tall photo)
+  const n = wide ? cw : ch;
+  const profile = new Float32Array(n);
+  const lum = (i) => d[i] * 0.3 + d[i + 1] * 0.59 + d[i + 2] * 0.11;
+  for (let y = 1; y < ch; y++) {
+    for (let x = 1; x < cw; x++) {
+      const i = at(x, y);
+      const dist = Math.hypot(d[i] - bg[0], d[i + 1] - bg[1], d[i + 2] - bg[2]) / 441;
+      const sat = (Math.max(d[i], d[i + 1], d[i + 2]) - Math.min(d[i], d[i + 1], d[i + 2])) / 255;
+      const edge = Math.min(1, (Math.abs(lum(i) - lum(at(x - 1, y))) + Math.abs(lum(i) - lum(at(x, y - 1)))) / 60);
+      const u = x / cw - 0.5, v = y / ch - 0.5;
+      const middle = Math.exp(-(u * u + v * v) / (2 * 0.28 * 0.28));
+      profile[wide ? x : y] += (0.5 * dist + 0.2 * sat + 0.3 * edge) * (0.35 + 0.65 * middle);
+    }
+  }
+  // drop the even level that busy floors and walls add everywhere
+  const base = [...profile].sort((p, q) => p - q)[Math.floor(n * 0.2)];
+  let total = 0;
+  for (let k = 0; k < n; k++) total += (profile[k] = Math.max(0, profile[k] - base));
+  if (total <= 0) return centred(ideal);
+
+  // where the item starts and ends: 6% and 94% of its score
+  let acc = 0, from = 0, to = n;
+  for (let k = 0; k < n; k++) {
+    const next = acc + profile[k];
+    if (acc < total * 0.06 && next >= total * 0.06) from = k / n;
+    if (acc < total * 0.94 && next >= total * 0.94) to = (k + 1) / n;
+    acc = next;
+  }
+  const keep = Math.min(1, Math.max(ideal, to - from + 0.06));
+  const start = Math.min(1 - keep, Math.max(0, (from + to) / 2 - keep / 2));
+  return crop(keep, start);
 }
 
 // An image recoloured to one colour, keeping its shape (white logo, white drawings).
@@ -171,86 +315,232 @@ function drawChips(ctx, { city, store, family, rtl, edge, top }) {
   ctx.restore();
 }
 
-// A wine-to-charcoal hang tag with the price on its white label. Its hole sits on the red
-// card's top corner on the end
-// side, tied by a short white string, and it tilts 15° up toward the photo.
-// Mirrored in Kurdish/Arabic.
-const TAG_TILT = (15 * Math.PI) / 180;
-// Wine fading into charcoal along the tag, price in deep wine.
-const TAG_COLORS = ["#8f1d2c", "#4e0a14", "#1d1f24"];
-const TAG_PRICE = "#5c0f1c";
-function drawHangTag(ctx, { hx, hy, w, h, rtl, price, family }) {
-  const tilt = TAG_TILT;
-  const half = h / 2;
-  const point = 58;
-
-  // the short string, from the hole over the card's corner
+// Price tag: a white swing tag with a red outline, tilted a little, hung
+// from the red card by a red cord through a metal eyelet near the card's
+// corner. It hangs from the card's outer corner on its side, so in English
+// (right side) it is drawn mirrored: eyelet on the right, button on the left,
+// left end up; the price and the arrow still read normally. It always has the same width,
+// sized for a six-digit price ("999,999 IQD"), so an Instagram link sticker
+// fits over it every time; a longer price gets a smaller font instead. A
+// trailing currency ("IQD") is drawn smaller and lighter than the number.
+// `edge` is the x of the side it hangs from: its left end, or its right end
+// when `fromRight`; `y` is its middle.
+const TAG_TILT = (-6 * Math.PI) / 180;
+const TAG_PRICE = "#5a0a1e";
+function drawPriceBar(ctx, { edge, fromRight, y, price, family }) {
+  const ph = 120, ar = 40, eyeX = 46, padStart = 88, gapToButton = 24, padEnd = 18;
+  const split = (text) => /^(.*?)(?:\s+([A-Za-z]{2,4}))?$/.exec(text ?? "") ?? [];
+  const [, amount = price ?? "", unit = ""] = split(price);
+  let size = 62;
+  const measure = (num, cur) => {
+    ctx.font = `800 ${size}px ${family}`;
+    const aw = ctx.measureText(num).width;
+    ctx.font = `700 ${Math.round(size * 0.62)}px ${family}`;
+    const uw = cur ? ctx.measureText(cur).width + size * 0.22 : 0;
+    return { aw, uw, total: aw + uw };
+  };
+  // the room a six-digit price needs at full size sets the width for all
+  const room = measure("999,999", unit || "IQD").total;
+  const w = padStart + room + gapToButton + 2 * ar + padEnd;
+  let m = measure(amount, unit);
+  while (m.total > room && size > 30) { size -= 2; m = measure(amount, unit); }
+  // Everything below is drawn in the tag's own frame: origin at the eyelet,
+  // tilted with the tag, and flipped when it hangs from the right.
+  const flip = fromRight ? -1 : 1;
   ctx.save();
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.85)";
-  ctx.lineWidth = 5;
-  ctx.lineCap = "round";
-  ctx.beginPath();
-  ctx.moveTo(hx, hy);
-  ctx.bezierCurveTo(hx + (rtl ? -36 : 36), hy + 4, hx + (rtl ? -40 : 40), hy + 44, hx + (rtl ? -14 : 14), hy + 60);
-  ctx.stroke();
-  ctx.restore();
+  ctx.translate(edge + flip * eyeX, y);
+  ctx.scale(flip, 1);
+  ctx.rotate(TAG_TILT);
+  const x0 = -eyeX, x1 = w - eyeX, top = -ph / 2;
 
-  // the tag, drawn with its hole at (0, 0) and its body reaching back (−x)
+  // tag body: square-ish at the eyelet end, round at the button end
+  const body = new Path2D();
+  const rl = 34, rr = ph / 2;
+  body.moveTo(x0 + rl, top);
+  body.lineTo(x1 - rr, top);
+  body.arcTo(x1, top, x1, 0, rr);
+  body.arcTo(x1, ph / 2, x1 - rr, ph / 2, rr);
+  body.lineTo(x0 + rl, ph / 2);
+  body.arcTo(x0, ph / 2, x0, ph / 2 - rl, rl);
+  body.lineTo(x0, top + rl);
+  body.arcTo(x0, top, x0 + rl, top, rl);
+  body.closePath();
   ctx.save();
-  ctx.translate(hx, hy);
-  ctx.rotate(rtl ? -tilt : tilt);
-  if (rtl) ctx.scale(-1, 1);
-  const left = -(w - point), r = 24;
-  const tag = new Path2D();
-  tag.moveTo(left + r, -half);
-  tag.lineTo(0, -half);
-  tag.lineTo(point, 0);
-  tag.lineTo(0, half);
-  tag.lineTo(left + r, half);
-  tag.arcTo(left, half, left, half - r, r);
-  tag.lineTo(left, -half + r);
-  tag.arcTo(left, -half, left + r, -half, r);
-  tag.closePath();
-  ctx.shadowColor = "rgba(30, 4, 8, 0.5)";
+  ctx.shadowColor = "rgba(90, 0, 25, 0.38)";
   ctx.shadowBlur = 40;
   ctx.shadowOffsetY = 18;
-  const grad = ctx.createLinearGradient(left, -half, point, half);
-  TAG_COLORS.forEach((c, i) => grad.addColorStop(i / (TAG_COLORS.length - 1), c));
-  ctx.fillStyle = grad;
-  ctx.fill(tag);
-  ctx.shadowColor = "transparent";
-  // white inside; the tag's red edge frames it
-  roundedRect(ctx, left + 14, -half + 14, -left - 14 - 20, h - 28, 14);
   ctx.fillStyle = "#ffffff";
+  ctx.fill(body);
+  ctx.restore();
+  // a faint card-like shading, lighter at the top
+  ctx.save();
+  ctx.clip(body);
+  const sheen = ctx.createLinearGradient(0, top, 0, ph / 2);
+  sheen.addColorStop(0, "rgba(255, 255, 255, 0)");
+  sheen.addColorStop(1, "rgba(120, 0, 30, 0.06)");
+  ctx.fillStyle = sheen;
+  ctx.fillRect(x0, top, w, ph);
+  ctx.restore();
+  ctx.lineWidth = 7;
+  ctx.strokeStyle = BRAND;
+  ctx.stroke(body);
+
+  // eyelet: a metal ring with the hole showing through
+  ctx.beginPath();
+  ctx.arc(0, 0, 19, 0, Math.PI * 2);
+  const ring = ctx.createLinearGradient(-19, -19, 19, 19);
+  ring.addColorStop(0, "#f3f3f5");
+  ring.addColorStop(0.5, "#b9bcc4");
+  ring.addColorStop(1, "#8d9099");
+  ctx.fillStyle = ring;
   ctx.fill();
-  // the price on the white label, unmirrored so it reads normally in RTL
-  if (price) {
-    const boxW = -left - 34 - 40;
-    ctx.save();
-    ctx.translate((left + 14 + -20) / 2, 0);
-    if (rtl) ctx.scale(-1, 1);
+  ctx.beginPath();
+  ctx.arc(0, 0, 10, 0, Math.PI * 2);
+  ctx.fillStyle = "#3a0612";
+  ctx.fill();
+
+  // The cord loops out of the eyelet and anchors just inside the red card.
+  // Keep its lowest point above the city/store chips (drawChips starts at
+  // cy + 58; this tag is centred at cy - 28, so the cord ends around cy + 26).
+  // The two close strands create the small, realistic clothing-tag loop seen
+  // in the reference without making the tag look like a floating button.
+  const cord = (draw) => {
+    ctx.beginPath();
+    ctx.moveTo(-2, -4);
+    ctx.bezierCurveTo(-38, -8, -58, 18, -40, 46);
+    draw();
+    ctx.beginPath();
+    ctx.moveTo(4, 6);
+    ctx.bezierCurveTo(-12, 18, -18, 34, -8, 54);
+    draw();
+  };
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  cord(() => { ctx.lineWidth = 11; ctx.strokeStyle = "rgba(60, 0, 15, 0.35)"; ctx.stroke(); });
+  cord(() => { ctx.lineWidth = 8; ctx.strokeStyle = "#ff5a7e"; ctx.stroke(); });
+  cord(() => { ctx.lineWidth = 2.5; ctx.strokeStyle = "rgba(255, 255, 255, 0.55)"; ctx.stroke(); });
+
+  // arrow button
+  const ax = x1 - padEnd - ar;
+  ctx.beginPath();
+  ctx.arc(ax, 0, ar, 0, Math.PI * 2);
+  const ag = ctx.createLinearGradient(ax, -ar, ax, ar);
+  ag.addColorStop(0, BRAND_LIGHT);
+  ag.addColorStop(1, BRAND_DARK);
+  ctx.fillStyle = ag;
+  ctx.fill();
+  ctx.strokeStyle = "#ffffff";
+  ctx.lineWidth = 8;
+  ctx.lineJoin = "round";
+  ctx.beginPath();
+  ctx.moveTo(ax - 7 * flip, -15);
+  ctx.lineTo(ax + 8 * flip, 0);
+  ctx.lineTo(ax - 7 * flip, 15);
+  ctx.stroke();
+
+  // the price, centred in the space between the eyelet and the button
+  if (amount) {
+    let start = (x0 + padStart + ax - ar - gapToButton) / 2 - m.total / 2;
+    const base = size * 0.36;
+    // flipped tag: undo the flip for the text so it reads left to right
+    if (flip < 0) {
+      ctx.scale(-1, 1);
+      start = -(start + m.total);
+    }
     ctx.direction = "ltr";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
     ctx.fillStyle = TAG_PRICE;
-    let size = 64;
-    do { ctx.font = `800 ${size}px ${family}`; size -= 2; } while (ctx.measureText(price).width > boxW && size > 30);
-    ctx.fillText(price, 0, 3);
-    ctx.restore();
+    ctx.font = `800 ${size}px ${family}`;
+    ctx.fillText(amount, start, base);
+    if (unit) {
+      ctx.fillStyle = INK_SOFT;
+      ctx.font = `700 ${Math.round(size * 0.62)}px ${family}`;
+      ctx.fillText(unit, start + m.aw + size * 0.22, base);
+    }
   }
-  // hole with a white eyelet
-  ctx.beginPath();
-  ctx.arc(14, 0, 18, 0, Math.PI * 2);
-  ctx.fillStyle = "#ffffff";
-  ctx.fill();
-  ctx.beginPath();
-  ctx.arc(14, 0, 10, 0, Math.PI * 2);
-  ctx.fillStyle = TAG_COLORS[TAG_COLORS.length - 1];
-  ctx.fill();
   ctx.restore();
 }
 
-function drawStory(ctx, { title, price, img, city, store, code, site, rtl, logo, brand, brandImg, drawings, family }) {
+// The red card with its price tag tied on, from the designer's art
+// (public/story-card.png, 1200 × 480, transparent, with its own glow). Where things sit in the
+// art, in its pixels: the card body (x, y, w, h), the centre of the tag's
+// price area (x, y), and the tag's tilt in degrees and the room for the price.
+const CARD_ART = {
+  src: "/story-card.png",
+  card: [21, 162, 1161, 253],
+  price: [540, 125, -5.0, 520],
+};
+
+// The card art is drawn as is in Kurdish/Arabic (eyelet on the left, arrow
+// pointing left) and flipped in English (eyelet on the right, arrow pointing
+// right); the price, chips and title are written on it.
+function drawCardArt(ctx, { art, CS, cx, cy, cw, ch, rtl, price, title, city, store, family }) {
+  const A = CARD_ART;
+  const ox = A.card[0] * CS, oy = A.card[1] * CS, iw = art.width * CS, ih = art.height * CS;
+  ctx.save();
+  if (rtl) ctx.drawImage(art, cx - ox, cy - oy, iw, ih);
+  else {
+    ctx.translate(cx + cw + ox, cy - oy);
+    ctx.scale(-1, 1);
+    ctx.drawImage(art, 0, 0, iw, ih);
+  }
+  ctx.restore();
+  // price on the tag, centred between the eyelet and the button
+  const ang = (A.price[2] * Math.PI) / 180;
+  const tcx = rtl ? cx - ox + A.price[0] * CS : cx + cw + ox - A.price[0] * CS;
+  const tcy = cy - oy + A.price[1] * CS;
+  const roomW = A.price[3] * CS;
+  const [, amount = price ?? "", unit = ""] = /^(.*?)(?:\s+([A-Za-z]{2,4}))?$/.exec(price ?? "") ?? [];
+  let size = 60, aw, uw;
+  const measure = () => {
+    ctx.font = `800 ${size}px ${family}`; aw = ctx.measureText(amount).width;
+    ctx.font = `700 ${Math.round(size * 0.62)}px ${family}`; uw = unit ? ctx.measureText(unit).width + size * 0.22 : 0;
+    return aw + uw;
+  };
+  while (measure() > roomW && size > 30) size -= 2;
+  ctx.save();
+  ctx.translate(tcx, tcy);
+  ctx.rotate(rtl ? ang : -ang);
+  const start = -(aw + uw) / 2, base = size * 0.36;
+  ctx.direction = "ltr"; ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+  ctx.fillStyle = "#5a0a1e"; ctx.font = `800 ${size}px ${family}`; ctx.fillText(amount, start, base);
+  if (unit) { ctx.fillStyle = INK_SOFT; ctx.font = `700 ${Math.round(size * 0.62)}px ${family}`; ctx.fillText(unit, start + aw + size * 0.22, base); }
+  ctx.restore();
+
+  // chips and title inside the shorter card
+  const pad = 56;
+  const chipTop = cy + 34;
+  drawChipsSized(ctx, { city, store, family, rtl, edge: rtl ? cx + cw - pad : cx + pad, top: chipTop });
+  const inner = cw - 2 * pad - 40;
+  let tsize = 58, lines;
+  for (; tsize >= 40; tsize -= 2) {
+    ctx.font = `800 ${tsize}px ${family}`;
+    lines = wrapLines(ctx, title ?? "", inner);
+    const tall = tsize * 0.85 + (lines.length - 1) * tsize * 1.08;
+    if (lines.length <= 2 && lines.every((l) => ctx.measureText(l).width <= inner) && chipTop + 58 + 22 + tall + 18 <= cy + ch) break;
+  }
+  lines = (lines ?? []).slice(0, 2);
+  ctx.save();
+  ctx.direction = rtl ? "rtl" : "ltr"; ctx.textAlign = rtl ? "right" : "left"; ctx.textBaseline = "alphabetic";
+  ctx.fillStyle = "#ffffff"; ctx.font = `800 ${tsize}px ${family}`;
+  const top = chipTop + 58 + 20;
+  lines.forEach((line, i) => ctx.fillText(line, rtl ? cx + cw - pad : cx + pad, top + tsize * 0.85 + i * tsize * 1.08));
+  ctx.restore();
+}
+
+// drawChips at a smaller size, for the shorter card
+function drawChipsSized(ctx, opts) {
+  ctx.save();
+  const { top } = opts;
+  ctx.translate(opts.rtl ? opts.edge : opts.edge, top);
+  ctx.scale(0.83, 0.83);
+  ctx.translate(-opts.edge, -top);
+  drawChips(ctx, opts);
+  ctx.restore();
+}
+
+function drawStory(ctx, { title, price, img, city, store, code, site, rtl, logo, brand, brandImg, drawings, art, family }) {
   const edge = rtl ? W - 72 : 72;
 
   // Background: the site's cream, scattered with small faint baby-product
@@ -325,18 +615,30 @@ function drawStory(ctx, { title, price, img, city, store, code, site, rtl, logo,
   }
 
 
-  // Photo: the whole photo, over a blur of itself, in a white frame.
+  // Photo: in a white frame that takes the (trimmed) photo's shape.
   // Red card: just tall enough for the chips and the title; the web address
   // and product code sit below it on the cream.
-  const cx = 48, cw = W - 96, cr = 64;
+  // With the card art, the card lines up with the photo frame's edges and
+  // takes the art's shape.
+  const cx = art ? 72 : 48, cw = art ? W - 144 : W - 96, cr = 64;
   const inner = cw - 120;
   const t = wrapTitle(ctx, title ?? "", inner, family);
   const titleTop = 158;
-  const ch = Math.round(titleTop + t.size * 0.85 + (t.lines.length - 1) * t.size * 1.1 + t.size * 0.25 + 56);
+  const CS = art ? cw / CARD_ART.card[2] : 1;
+  const ch = art ? Math.round(CARD_ART.card[3] * CS) : Math.round(titleTop + t.size * 0.85 + (t.lines.length - 1) * t.size * 1.1 + t.size * 0.25 + 56);
   const cy = H - 140 - ch;
 
-  // Photo fills the space down to just above the card.
-  const px = 72, py = 220, pw = W - 144, ph = cy - 36 - py, pr = 56;
+  // Photo fills the space down to just above the card. A landscape or
+  // portrait photo is trimmed towards the frame's shape, then the frame
+  // shrinks around it, centred in that space.
+  let px = 72, py = 220, pw = W - 144, ph = cy - 36 - py;
+  const pr = 56;
+  const crop = img && smartCrop(img, (pw - 20) / (ph - 20));
+  if (crop) {
+    const s = Math.min((pw - 20) / crop.sw, (ph - 20) / crop.sh);
+    const fw = crop.sw * s + 20, fh = crop.sh * s + 20;
+    px += (pw - fw) / 2; py += (ph - fh) / 2; pw = fw; ph = fh;
+  }
   ctx.save();
   ctx.shadowColor = "rgba(11, 12, 15, 0.28)";
   ctx.shadowBlur = 60;
@@ -348,15 +650,17 @@ function drawStory(ctx, { title, price, img, city, store, code, site, rtl, logo,
   ctx.save();
   roundedRect(ctx, px + 10, py + 10, pw - 20, ph - 20, pr - 10);
   ctx.clip();
-  if (img) {
-    drawBlurred(ctx, img, px + 10, py + 10, pw - 20, ph - 20);
-    drawContain(ctx, img, px + 10, py + 10, pw - 20, ph - 20);
+  if (crop) {
+    ctx.drawImage(enhancedPhoto(img, crop, pw - 20, ph - 20), px + 10, py + 10, pw - 20, ph - 20);
   } else {
     ctx.fillStyle = "#f6eee5";
     ctx.fillRect(px, py, pw, ph);
   }
   ctx.restore();
 
+  if (art) {
+    drawCardArt(ctx, { art, CS, cx, cy, cw, ch, rtl, price, title, city, store, family });
+  } else {
   ctx.save();
   ctx.shadowColor = "rgba(120, 0, 30, 0.45)";
   ctx.shadowBlur = 60;
@@ -397,6 +701,7 @@ function drawStory(ctx, { title, price, img, city, store, code, site, rtl, logo,
   ctx.font = `800 ${t.size}px ${family}`;
   t.lines.forEach((line, i) => ctx.fillText(line, rtl ? cx + cw - 60 : cx + 60, cy + titleTop + t.size * 0.85 + i * t.size * 1.1));
   ctx.restore();
+  }
 
   // Below the card, on the cream: web address and product code.
   const footY = H - 66;
@@ -408,16 +713,14 @@ function drawStory(ctx, { title, price, img, city, store, code, site, rtl, logo,
   ctx.textAlign = rtl ? "right" : "left";
   if (site) ctx.fillText(site, rtl ? cx + cw - 24 : cx + 24, footY);
   ctx.fillStyle = INK_SOFT;
-  ctx.font = `700 32px ui-monospace, Menlo, monospace`;
+  ctx.font = `700 32px ${family}`;
   ctx.textAlign = rtl ? "left" : "right";
   if (code) ctx.fillText(code, rtl ? cx + 24 : cx + cw - 24, footY);
   ctx.restore();
 
-  // Empty hang tag with its hole on the card's top corner (end side), tilted
-  // 15° up toward the photo.
-  const tw = 540, th = 140;
-  const hx = rtl ? cx + 70 : cx + cw - 70, hy = cy + 40;
-  drawHangTag(ctx, { hx, hy, w: tw, h: th, rtl, price, family });
+  // Price bar on the photo's bottom edge, just above the card, on the
+  // reading side (left in Kurdish/Arabic, right in English).
+  if (!art) drawPriceBar(ctx, { edge: rtl ? cx + 24 : cx + cw - 24, fromRight: !rtl, y: cy - 2, price, family });
 }
 
 /**
@@ -442,21 +745,24 @@ export async function buildStoryImage({ title, price, photo, city, store, code, 
   }
 
   const drawingUrls = CATEGORY_CONFIG.filter((c) => c.value !== "all").map((c) => c.img);
-  const [img, logo, brandImg, ...drawings] = await Promise.all([
+  const [img, logo, art, brandImg, ...drawings] = await Promise.all([
     loadImage(photo, { cors: true }),
     loadImage("/logo-mndallan.svg"),
+    loadImage(CARD_ART.src),
     loadImage(brandLogo(brand)),
     ...drawingUrls.map((u) => loadImage(u, { cors: true })),
   ]);
 
-  const family = getComputedStyle(document.body).fontFamily || "sans-serif";
+  // the story font, with the page's own font behind it if it failed to load
+  const pageFont = getComputedStyle(document.body).fontFamily || "sans-serif";
+  const family = (await loadStoryFonts()) ? `"${STORY_FONT}", ${pageFont}` : pageFont;
   const render = (withPhoto) => {
     const canvas = document.createElement("canvas");
     canvas.width = W;
     canvas.height = H;
     const ctx = canvas.getContext("2d");
     if (!ctx) return null;
-    drawStory(ctx, { title, price, img: withPhoto ? img : null, city, store, code, site, rtl, logo, brand, brandImg, drawings: withPhoto ? drawings.filter(Boolean) : [], family });
+    drawStory(ctx, { title, price, img: withPhoto ? img : null, city, store, code, site, rtl, logo, brand, brandImg, drawings: withPhoto ? drawings.filter(Boolean) : [], art, family });
     return canvas;
   };
 

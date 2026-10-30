@@ -52,7 +52,7 @@ jobs:
           VITE_WHATSAPP_NUMBER: ${{ secrets.VITE_WHATSAPP_NUMBER }}
 
       - name: Verify deployed bundle targets the dev backend
-        run: node scripts/verify-deploy.mjs dev https://dev.dasty2mndalan.com
+        run: node scripts/verify-deploy.mjs dev https://dev.mndallan.com
 
   deploy-prod:
     name: Deploy to Production
@@ -81,4 +81,4 @@ jobs:
           VITE_WHATSAPP_NUMBER: ${{ secrets.VITE_WHATSAPP_NUMBER }}
 
       - name: Verify deployed bundle targets the production backend
-        run: node scripts/verify-deploy.mjs production https://dasty2mndalan.com
+        run: node scripts/verify-deploy.mjs production https://mndallan.com
