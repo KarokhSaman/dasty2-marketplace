@@ -208,8 +208,10 @@ function PhotoTile({ product, url, index, isMain, onlyOne, actions, toast }) {
 
 // Admin frames the main photo for the Instagram story: drag to move, pinch,
 // wheel or the slider to zoom, inside a frame the exact shape of the story's
-// photo frame. Saved as fractions of the photo; "Automatic" clears it so the
-// story's own crop is used again.
+// photo frame. Zooming out below "fill" fits more of the photo (a whole
+// landscape photo, say); the part that shows is saved, as fractions of the
+// photo, and the story's frame then takes that part's shape. "Automatic"
+// clears it so the story's own crop is used again.
 function StoryCropSheet({ url, saved, onClose, onSave }) {
   const frameRef = useRef(null);
   const [nat, setNat] = useState(null); // natural photo size
@@ -237,31 +239,32 @@ function StoryCropSheet({ url, saved, onClose, onSave }) {
     return () => document.removeEventListener("keydown", onKey);
   }, [onClose]);
 
+  // zoom 1 fills the frame; minZ fits the whole photo inside it
   const base = nat ? Math.max(box.w / nat.w, box.h / nat.h) : 1;
+  const minZ = nat ? Math.min(box.w / nat.w, box.h / nat.h) / base : 1;
+  // a side smaller than the frame stays centred; a bigger one can't leave a gap
+  const along = (pos, size, room) => (size <= room ? (room - size) / 2 : Math.min(0, Math.max(room - size, pos)));
   const clamp = (v) => {
     const s = base * v.z;
-    return {
-      z: v.z,
-      x: Math.min(0, Math.max(box.w - nat.w * s, v.x)),
-      y: Math.min(0, Math.max(box.h - nat.h * s, v.y)),
-    };
+    return { z: v.z, x: along(v.x, nat.w * s, box.w), y: along(v.y, nat.h * s, box.h) };
   };
-  const centred = () => ({ z: 1, x: (box.w - nat.w * base) / 2, y: (box.h - nat.h * base) / 2 });
+  const whole = () => clamp({ z: minZ, x: 0, y: 0 });
 
-  // start from the saved crop, or centred
+  // start from the saved crop, or with the whole photo showing
   useEffect(() => {
     if (!nat) return;
     if (saved) {
-      const s = box.w / (saved.w * nat.w);
-      setView(clamp({ z: s / base, x: -saved.x * nat.w * s, y: -saved.y * nat.h * s }));
+      const cw = saved.w * nat.w, ch = saved.h * nat.h;
+      const s = Math.min(box.w / cw, box.h / ch);
+      setView(clamp({ z: s / base, x: (box.w - cw * s) / 2 - saved.x * nat.w * s, y: (box.h - ch * s) / 2 - saved.y * nat.h * s }));
     } else {
-      setView(centred());
+      setView(whole());
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nat, box.w, box.h]);
 
   const zoomTo = (z, cx = box.w / 2, cy = box.h / 2) => setView((v) => {
-    const nz = Math.min(4, Math.max(1, z));
+    const nz = Math.min(4, Math.max(minZ, z));
     const k = nz / v.z;
     return clamp({ z: nz, x: cx - (cx - v.x) * k, y: cy - (cy - v.y) * k });
   });
@@ -292,14 +295,24 @@ function StoryCropSheet({ url, saved, onClose, onSave }) {
   };
   const onUp = (e) => { pointers.current.delete(e.pointerId); gesture.current = null; };
 
-  // mini story preview: the photo frame sits at the same spot as in the story
-  const mini = 70;
-  const k = (mini * 0.866) / box.w;
+  // the part of the photo that shows in the frame, as fractions
   const s = base * (view?.z ?? 1);
+  const part = view && nat ? (() => {
+    const x0 = Math.max(0, -view.x / s), y0 = Math.max(0, -view.y / s);
+    const x1 = Math.min(nat.w, (box.w - view.x) / s), y1 = Math.min(nat.h, (box.h - view.y) / s);
+    return { x: x0 / nat.w, y: y0 / nat.h, w: (x1 - x0) / nat.w, h: (y1 - y0) / nat.h };
+  })() : null;
+
+  // mini story preview: the story's photo area, with the frame taking the
+  // shape of that part, centred in it as in the story
+  const mini = 70;
+  const areaW = mini * 0.866, areaH = areaW / STORY_PHOTO_ASPECT;
+  const pk = part ? Math.min(areaW / (part.w * nat.w), areaH / (part.h * nat.h)) : 1;
+  const fw = part ? part.w * nat.w * pk : areaW, fh = part ? part.h * nat.h * pk : areaH;
 
   async function save() {
     setBusy(true);
-    await onSave({ url, x: -view.x / (nat.w * s), y: -view.y / (nat.h * s), w: box.w / (nat.w * s), h: box.h / (nat.h * s) });
+    await onSave({ url, ...part });
     setBusy(false);
   }
   async function automatic() {
@@ -329,19 +342,20 @@ function StoryCropSheet({ url, saved, onClose, onSave }) {
           <div className="absolute inset-0 pointer-events-none opacity-40"
             style={{ backgroundImage: "linear-gradient(90deg, transparent calc(33.33% - 0.5px), #fff calc(33.33% - 0.5px), #fff calc(33.33% + 0.5px), transparent calc(33.33% + 0.5px), transparent calc(66.66% - 0.5px), #fff calc(66.66% - 0.5px), #fff calc(66.66% + 0.5px), transparent calc(66.66% + 0.5px)), linear-gradient(transparent calc(33.33% - 0.5px), #fff calc(33.33% - 0.5px), #fff calc(33.33% + 0.5px), transparent calc(33.33% + 0.5px), transparent calc(66.66% - 0.5px), #fff calc(66.66% - 0.5px), #fff calc(66.66% + 0.5px), transparent calc(66.66% + 0.5px))" }} />
         </div>
-        <p className="text-[12px] text-white/60 mt-2.5">Drag to move · pinch or use the slider to zoom</p>
+        <p className="text-[12px] text-white/60 mt-2.5 px-6 text-center">Drag to move · pinch or use the slider to zoom · zoom out to fit the whole photo</p>
         <div className="flex items-center gap-3 w-full max-w-[360px] px-6 mt-2">
           <span className="text-white/60">−</span>
-          <input type="range" min="1" max="4" step="0.01" value={view?.z ?? 1} aria-label="Zoom"
+          <input type="range" min={minZ} max="4" step="any" value={view?.z ?? 1} aria-label="Zoom"
             onChange={(e) => view && zoomTo(+e.target.value)} className="flex-1 accent-[#ff1f58]" />
           <span className="text-white/60">+</span>
         </div>
         <div className="flex items-center gap-3 mt-3 mx-4 p-2.5 rounded-2xl bg-[#1b1c20] w-[calc(100%-32px)] max-w-[360px]">
           <div className="relative shrink-0 rounded-md bg-[#fefcf9] overflow-hidden" style={{ width: mini, height: mini * 16 / 9 }}>
-            <div className="absolute overflow-hidden rounded-[3px] bg-white p-[1.5px]" style={{ left: mini * 0.067, top: mini * 16 / 9 * 0.115, width: mini * 0.866, height: mini * 0.866 / STORY_PHOTO_ASPECT }}>
+            <div className="absolute overflow-hidden rounded-[3px] bg-white p-[1.5px]"
+              style={{ left: mini * 0.067 + (areaW - fw) / 2, top: mini * 16 / 9 * 0.115 + (areaH - fh) / 2, width: fw, height: fh }}>
               <div className="relative w-full h-full overflow-hidden rounded-[2px]">
-                {view && <img src={url} alt="" className="absolute left-0 top-0 max-w-none origin-top-left"
-                  style={{ width: nat.w * s * k, transform: `translate(${view.x * k}px, ${view.y * k}px)` }} />}
+                {part && <img src={url} alt="" className="absolute left-0 top-0 max-w-none origin-top-left"
+                  style={{ width: nat.w * pk, transform: `translate(${-part.x * nat.w * pk}px, ${-part.y * nat.h * pk}px)` }} />}
               </div>
             </div>
             <img src="/story-card.png" alt="" className="absolute" style={{ left: mini * 0.04, width: mini * 0.92, bottom: mini * 16 / 9 * 0.06 }} />
