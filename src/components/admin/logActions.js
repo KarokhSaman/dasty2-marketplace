@@ -21,6 +21,8 @@ export const ACTIONS = {
   photo_added: ["Photo added", "green"],
   photo_rotated: ["Photo rotated", "grey"],
   main_photo_set: ["Main photo set", "grey"],
+  story_crop_set: ["Story crop set", "grey"],
+  story_crop_cleared: ["Story crop cleared", "grey"],
   seller_deleted: ["Seller deleted", "red"],
   seller_deactivated: ["Seller deactivated", "orange"],
   seller_activated: ["Seller activated", "green"],

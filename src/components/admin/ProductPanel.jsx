@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
@@ -8,6 +9,7 @@ import { CATEGORY_CONFIG } from "@/lib/categories";
 import { brandFitsCategory, getBrandChoices } from "@/lib/brands";
 import { priceInfo } from "@/convex/discount";
 import { rotatePhoto } from "@/lib/rotateImage";
+import { STORY_PHOTO_ASPECT } from "@/lib/storyImage";
 import { useImageUpload } from "@/lib/useImageUpload";
 import { errorMessage } from "@/lib/errors";
 import { photoProps } from "@/lib/images";
@@ -17,7 +19,7 @@ import { approvalMessage } from "@/components/admin/approvalMessage";
 import {
   Panel, StatusChip, StoreTag, Code, SectionTitle, Segmented, Switch, ConfirmBox, AmountInput, Avatar, Thumb,
   btn, fmtIQD, inputCls, labelCls, useToast, useCopy, waLink, ltrPhone,
-  IconRotate, IconStar, IconTrash, IconCheck, IconX, IconCopy, IconWhatsApp, IconExternal,
+  IconRotate, IconStar, IconTrash, IconCheck, IconX, IconCopy, IconWhatsApp, IconExternal, IconCrop,
 } from "@/components/admin/ui";
 
 const CONDITIONS = [
@@ -128,6 +130,7 @@ function AddPhotoTile({ product, actions, toast }) {
 function PhotoTile({ product, url, index, isMain, onlyOne, actions, toast }) {
   const upload = useImageUpload();
   const [turns, setTurns] = useState(0);
+  const [cropping, setCropping] = useState(false);
   const [saving, setSaving] = useState(false);
   const [confirmDel, setConfirmDel] = useState(false);
 
@@ -170,7 +173,12 @@ function PhotoTile({ product, url, index, isMain, onlyOne, actions, toast }) {
       ) : (
         <div className="absolute inset-x-1 bottom-1 flex justify-between">
           <button type="button" aria-label="Rotate photo" className={round} onClick={() => setTurns(1)}><IconRotate className="w-4 h-4" /></button>
-          {!isMain && (
+          {isMain ? (
+            <button type="button" aria-label="Story crop" title="Story crop" className="w-8 h-8 rounded-full grid place-items-center shadow bg-[#c80037] text-white"
+              onClick={() => setCropping(true)}>
+              <IconCrop className="w-4 h-4" />
+            </button>
+          ) : (
             <button type="button" aria-label="Make main photo" className={round}
               onClick={async () => { await actions.setMainPhoto(product, index); toast("Main photo changed"); }}>
               <IconStar className="w-4 h-4" />
@@ -181,7 +189,172 @@ function PhotoTile({ product, url, index, isMain, onlyOne, actions, toast }) {
           )}
         </div>
       )}
+      {cropping && (
+        <StoryCropSheet url={url} saved={product.storyCrop?.url === url ? product.storyCrop : null}
+          onClose={() => setCropping(false)}
+          onSave={async (crop) => {
+            try {
+              await actions.setStoryCrop(product, crop);
+              toast(crop ? "Story crop saved" : "Story crop back to automatic");
+              setCropping(false);
+            } catch (err) {
+              toast(errorMessage(err, "Could not save the crop"), "error");
+            }
+          }} />
+      )}
     </div>
+  );
+}
+
+// Admin frames the main photo for the Instagram story: drag to move, pinch,
+// wheel or the slider to zoom, inside a frame the exact shape of the story's
+// photo frame. Saved as fractions of the photo; "Automatic" clears it so the
+// story's own crop is used again.
+function StoryCropSheet({ url, saved, onClose, onSave }) {
+  const frameRef = useRef(null);
+  const [nat, setNat] = useState(null); // natural photo size
+  const [box, setBox] = useState({ w: 300, h: 300 / STORY_PHOTO_ASPECT });
+  const [view, setView] = useState(null); // { z, x, y }: zoom over cover-fit, offset in px
+  const [busy, setBusy] = useState(false);
+  const pointers = useRef(new Map());
+  const gesture = useRef(null);
+
+  // the frame: as wide as fits, but short enough to leave room for the controls
+  useEffect(() => {
+    const fit = () => {
+      const maxW = Math.min(360, window.innerWidth - 48);
+      const maxH = Math.max(240, window.innerHeight - 330);
+      const w = Math.min(maxW, maxH * STORY_PHOTO_ASPECT);
+      setBox({ w, h: w / STORY_PHOTO_ASPECT });
+    };
+    fit();
+    window.addEventListener("resize", fit);
+    return () => window.removeEventListener("resize", fit);
+  }, []);
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  const base = nat ? Math.max(box.w / nat.w, box.h / nat.h) : 1;
+  const clamp = (v) => {
+    const s = base * v.z;
+    return {
+      z: v.z,
+      x: Math.min(0, Math.max(box.w - nat.w * s, v.x)),
+      y: Math.min(0, Math.max(box.h - nat.h * s, v.y)),
+    };
+  };
+  const centred = () => ({ z: 1, x: (box.w - nat.w * base) / 2, y: (box.h - nat.h * base) / 2 });
+
+  // start from the saved crop, or centred
+  useEffect(() => {
+    if (!nat) return;
+    if (saved) {
+      const s = box.w / (saved.w * nat.w);
+      setView(clamp({ z: s / base, x: -saved.x * nat.w * s, y: -saved.y * nat.h * s }));
+    } else {
+      setView(centred());
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nat, box.w, box.h]);
+
+  const zoomTo = (z, cx = box.w / 2, cy = box.h / 2) => setView((v) => {
+    const nz = Math.min(4, Math.max(1, z));
+    const k = nz / v.z;
+    return clamp({ z: nz, x: cx - (cx - v.x) * k, y: cy - (cy - v.y) * k });
+  });
+
+  const local = (e) => {
+    const r = frameRef.current.getBoundingClientRect();
+    return { x: e.clientX - r.left, y: e.clientY - r.top };
+  };
+  const onDown = (e) => {
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+    pointers.current.set(e.pointerId, local(e));
+    gesture.current = null;
+  };
+  const onMove = (e) => {
+    if (!view || !pointers.current.has(e.pointerId)) return;
+    const prev = pointers.current.get(e.pointerId);
+    const now = local(e);
+    pointers.current.set(e.pointerId, now);
+    const pts = [...pointers.current.values()];
+    if (pts.length === 2) {
+      const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+      const mid = { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 };
+      if (gesture.current) zoomTo(view.z * (dist / gesture.current), mid.x, mid.y);
+      gesture.current = dist;
+    } else {
+      setView((v) => clamp({ ...v, x: v.x + now.x - prev.x, y: v.y + now.y - prev.y }));
+    }
+  };
+  const onUp = (e) => { pointers.current.delete(e.pointerId); gesture.current = null; };
+
+  // mini story preview: the photo frame sits at the same spot as in the story
+  const mini = 70;
+  const k = (mini * 0.866) / box.w;
+  const s = base * (view?.z ?? 1);
+
+  async function save() {
+    setBusy(true);
+    await onSave({ url, x: -view.x / (nat.w * s), y: -view.y / (nat.h * s), w: box.w / (nat.w * s), h: box.h / (nat.h * s) });
+    setBusy(false);
+  }
+  async function automatic() {
+    if (!saved) { onClose(); return; }
+    setBusy(true);
+    await onSave(null);
+    setBusy(false);
+  }
+
+  return createPortal(
+    <div className="adm-scope fixed inset-0 z-[90] bg-[#0b0c0f] text-white flex flex-col" role="dialog" aria-modal="true" aria-label="Story crop">
+      <div className="flex items-center justify-between px-4 pt-[max(14px,env(safe-area-inset-top))] pb-3">
+        <button type="button" onClick={onClose} className="text-[15px] text-white/90">Cancel</button>
+        <span className="text-[16px] font-bold">Story crop</span>
+        <span className="w-12" />
+      </div>
+      <div className="flex-1 flex flex-col items-center overflow-hidden">
+        <div ref={frameRef} className="relative overflow-hidden rounded-[18px] bg-[#222] touch-none cursor-grab select-none"
+          style={{ width: box.w, height: box.h }}
+          onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}
+          onWheel={(e) => { if (view) zoomTo(view.z * (1 - e.deltaY * 0.002), local(e).x, local(e).y); }}>
+          <img src={url} alt="" draggable={false}
+            onLoad={(e) => setNat({ w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })}
+            className="absolute left-0 top-0 max-w-none pointer-events-none origin-top-left"
+            style={view ? { width: nat.w * s, transform: `translate(${view.x}px, ${view.y}px)` } : { opacity: 0 }} />
+          <div className="absolute inset-0 rounded-[18px] border-2 border-white pointer-events-none" />
+          <div className="absolute inset-0 pointer-events-none opacity-40"
+            style={{ backgroundImage: "linear-gradient(90deg, transparent calc(33.33% - 0.5px), #fff calc(33.33% - 0.5px), #fff calc(33.33% + 0.5px), transparent calc(33.33% + 0.5px), transparent calc(66.66% - 0.5px), #fff calc(66.66% - 0.5px), #fff calc(66.66% + 0.5px), transparent calc(66.66% + 0.5px)), linear-gradient(transparent calc(33.33% - 0.5px), #fff calc(33.33% - 0.5px), #fff calc(33.33% + 0.5px), transparent calc(33.33% + 0.5px), transparent calc(66.66% - 0.5px), #fff calc(66.66% - 0.5px), #fff calc(66.66% + 0.5px), transparent calc(66.66% + 0.5px))" }} />
+        </div>
+        <p className="text-[12px] text-white/60 mt-2.5">Drag to move · pinch or use the slider to zoom</p>
+        <div className="flex items-center gap-3 w-full max-w-[360px] px-6 mt-2">
+          <span className="text-white/60">−</span>
+          <input type="range" min="1" max="4" step="0.01" value={view?.z ?? 1} aria-label="Zoom"
+            onChange={(e) => view && zoomTo(+e.target.value)} className="flex-1 accent-[#ff1f58]" />
+          <span className="text-white/60">+</span>
+        </div>
+        <div className="flex items-center gap-3 mt-3 mx-4 p-2.5 rounded-2xl bg-[#1b1c20] w-[calc(100%-32px)] max-w-[360px]">
+          <div className="relative shrink-0 rounded-md bg-[#fefcf9] overflow-hidden" style={{ width: mini, height: mini * 16 / 9 }}>
+            <div className="absolute overflow-hidden rounded-[3px] bg-white p-[1.5px]" style={{ left: mini * 0.067, top: mini * 16 / 9 * 0.115, width: mini * 0.866, height: mini * 0.866 / STORY_PHOTO_ASPECT }}>
+              <div className="relative w-full h-full overflow-hidden rounded-[2px]">
+                {view && <img src={url} alt="" className="absolute left-0 top-0 max-w-none origin-top-left"
+                  style={{ width: nat.w * s * k, transform: `translate(${view.x * k}px, ${view.y * k}px)` }} />}
+              </div>
+            </div>
+            <img src="/story-card.png" alt="" className="absolute" style={{ left: mini * 0.04, width: mini * 0.92, bottom: mini * 16 / 9 * 0.06 }} />
+          </div>
+          <p className="text-[12.5px] text-white/75 leading-snug">How it shows in the story. Anything outside the frame is left out.</p>
+        </div>
+      </div>
+      <div className="flex gap-2.5 px-4 pt-3" style={{ paddingBottom: "max(16px, env(safe-area-inset-bottom))" }}>
+        <button type="button" disabled={busy} onClick={automatic} className="flex-1 h-12 rounded-2xl bg-[#24262b] font-bold">Automatic</button>
+        <button type="button" disabled={busy || !view} onClick={save} className="flex-1 h-12 rounded-2xl bg-[#c80037] font-bold">Save</button>
+      </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -438,14 +611,19 @@ export default function ProductPanel({ product, onClose }) {
 
       {/* Photos */}
       <section>
-        <SectionTitle>Photos · {p.photos?.length ?? 0}/{MAX_PHOTOS}</SectionTitle>
+        <SectionTitle>
+          Photos · {p.photos?.length ?? 0}/{MAX_PHOTOS}
+          {p.storyCrop?.url === p.photos?.[main] && (
+            <span className="ms-2 align-[1px] text-[10.5px] font-bold normal-case tracking-normal text-adm-accent bg-adm-accent-soft rounded-full px-2 py-0.5">Story crop set</span>
+          )}
+        </SectionTitle>
         <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
           {(p.photos ?? []).map((url, i) => (
             <PhotoTile key={url + i} product={p} url={url} index={i} isMain={i === main} onlyOne={p.photos.length === 1} actions={actions} toast={toast} />
           ))}
           <AddPhotoTile product={p} actions={actions} toast={toast} />
         </div>
-        <p className="text-[11.5px] text-adm-fade mt-1.5">Rotate turns the preview first; ✓ saves it once. The star makes a photo the main one. Add photo uploads your own shots, up to {MAX_PHOTOS}.</p>
+        <p className="text-[11.5px] text-adm-fade mt-1.5">Rotate turns the preview first; ✓ saves it once. The star makes a photo the main one; the red crop button on the main photo sets how it sits in the Instagram story. Add photo uploads your own shots, up to {MAX_PHOTOS}.</p>
       </section>
 
       {/* Money */}

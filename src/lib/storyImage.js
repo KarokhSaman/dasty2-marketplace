@@ -472,6 +472,16 @@ const CARD_ART = {
   price: [540, 125, -5.0, 520],
 };
 
+// The shape (width / height) of the photo inside its frame when the card art
+// is used, as laid out in drawStory. The admin's story-crop tool uses it so a
+// saved crop fills the frame exactly.
+export const STORY_PHOTO_ASPECT = (() => {
+  const cw = W - 144;
+  const ch = Math.round(CARD_ART.card[3] * (cw / CARD_ART.card[2]));
+  const ph = H - 140 - ch - 36 - 220;
+  return (cw - 20) / (ph - 20);
+})();
+
 // The card art is drawn as is in Kurdish/Arabic (eyelet on the left, arrow
 // pointing left) and flipped in English (eyelet on the right, arrow pointing
 // right); the price, chips and title are written on it.
@@ -540,7 +550,7 @@ function drawChipsSized(ctx, opts) {
   ctx.restore();
 }
 
-function drawStory(ctx, { title, price, img, city, store, code, site, rtl, logo, brand, brandImg, drawings, art, family }) {
+function drawStory(ctx, { title, price, img, storyCrop, city, store, code, site, rtl, logo, brand, brandImg, drawings, art, family }) {
   const edge = rtl ? W - 72 : 72;
 
   // Background: the site's cream, scattered with small faint baby-product
@@ -629,11 +639,13 @@ function drawStory(ctx, { title, price, img, city, store, code, site, rtl, logo,
   const cy = H - 140 - ch;
 
   // Photo fills the space down to just above the card. A landscape or
-  // portrait photo is trimmed towards the frame's shape, then the frame
-  // shrinks around it, centred in that space.
+  // portrait photo is trimmed towards the frame's shape (or as the admin
+  // framed it), then the frame shrinks around it, centred in that space.
   let px = 72, py = 220, pw = W - 144, ph = cy - 36 - py;
   const pr = 56;
-  const crop = img && smartCrop(img, (pw - 20) / (ph - 20));
+  const crop = img && (storyCrop
+    ? { sx: storyCrop.x * img.width, sy: storyCrop.y * img.height, sw: storyCrop.w * img.width, sh: storyCrop.h * img.height }
+    : smartCrop(img, (pw - 20) / (ph - 20)));
   if (crop) {
     const s = Math.min((pw - 20) / crop.sw, (ph - 20) / crop.sh);
     const fw = crop.sw * s + 20, fh = crop.sh * s + 20;
@@ -736,8 +748,11 @@ function drawStory(ctx, { title, price, img, city, store, code, site, rtl, logo,
  * @param {string} [p.site]     web address shown on the card, e.g. "www.mndallan.com"
  * @param {boolean} [p.rtl]     right-to-left layout for ckb/ar
  * @param {string} [p.brand]    brand name; its logo goes in the header
+ * @param {object} [p.storyCrop] admin-set framing of the photo ({ url, x, y, w, h }
+ *                              as fractions); used only while `url` is this photo
  */
-export async function buildStoryImage({ title, price, photo, city, store, code, site, rtl = false, brand }) {
+export async function buildStoryImage({ title, price, photo, storyCrop, city, store, code, site, rtl = false, brand }) {
+  const crop = storyCrop && storyCrop.url === photo ? storyCrop : null;
   // Webfonts must be resolved before fillText or the card renders in a
   // fallback face (and Kurdish/Arabic glyphs may not render at all).
   if (typeof document !== "undefined" && document.fonts?.ready) {
@@ -762,7 +777,7 @@ export async function buildStoryImage({ title, price, photo, city, store, code, 
     canvas.height = H;
     const ctx = canvas.getContext("2d");
     if (!ctx) return null;
-    drawStory(ctx, { title, price, img: withPhoto ? img : null, city, store, code, site, rtl, logo, brand, brandImg, drawings: withPhoto ? drawings.filter(Boolean) : [], art, family });
+    drawStory(ctx, { title, price, img: withPhoto ? img : null, storyCrop: crop, city, store, code, site, rtl, logo, brand, brandImg, drawings: withPhoto ? drawings.filter(Boolean) : [], art, family });
     return canvas;
   };
 
