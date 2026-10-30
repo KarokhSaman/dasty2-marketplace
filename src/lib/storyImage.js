@@ -468,7 +468,7 @@ function drawPriceBar(ctx, { edge, fromRight, y, price, family }) {
 // price area (x, y), and the tag's tilt in degrees and the room for the price.
 const CARD_ART = {
   src: "/story-card.png",
-  card: [24, 166, 1155, 248],
+  card: [21, 163, 1159, 251],
   price: [489, 130, -4.67, 440],
 };
 
