@@ -358,6 +358,7 @@ export default function ProductDetailPage() {
               title: product.title,
               price: `${formatAmount(priceNow.price)} IQD`,
               photo: photos[0],
+              storyCrop: product.storyCrop,
               city: cityLabel,
               store: product.storeId ? m.storeFlag() : undefined,
               code: product.seq ? `#${product.seq}` : undefined,

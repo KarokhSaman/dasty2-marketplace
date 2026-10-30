@@ -15,6 +15,7 @@ export function useProductActions() {
   const updateDetails = useMutation(api.products.adminUpdateDetails);
   const updatePhotos = useMutation(api.products.adminUpdatePhotos);
   const replacePhoto = useMutation(api.products.adminReplacePhoto);
+  const setStoryCropMutation = useMutation(api.products.adminSetStoryCrop);
   const createNotif = useMutation(api.notifications.create);
   const createLog = useMutation(api.adminLogs.create);
   const me = useQuery(api.users.getCurrent);
@@ -158,8 +159,13 @@ export function useProductActions() {
     await log("photo_rotated", p, `Photo ${i + 1} rotated ${turns * 90}°`);
   }
 
+  async function setStoryCrop(p, crop) {
+    await setStoryCropMutation({ id: p._id, crop });
+    await log(crop ? "story_crop_set" : "story_crop_cleared", p);
+  }
+
   return {
     approve, reject, setPending, makeLive, returnUnit, markSold, markPaid, resolveDelete, remove,
-    sponsor, unsponsor, saveDetails, setMainPhoto, removePhoto, addPhotos, swapPhoto, isStocked, log,
+    sponsor, unsponsor, saveDetails, setMainPhoto, removePhoto, addPhotos, swapPhoto, setStoryCrop, isStocked, log,
   };
 }

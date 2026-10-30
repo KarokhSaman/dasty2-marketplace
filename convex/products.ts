@@ -39,6 +39,7 @@ const publicProductValidator = v.object({
   price: v.number(),
   photos: v.array(v.string()),
   mainPhotoIndex: v.optional(v.number()),
+  storyCrop: v.optional(v.object({ url: v.string(), x: v.number(), y: v.number(), w: v.number(), h: v.number() })),
   status: productStatusValidator,
   city: v.string(),
   sellerName: v.string(),
@@ -1173,6 +1174,35 @@ export const adminUpdatePhotos = mutation({
       patch.mainPhotoIndex = mainPhotoIndex;
     }
     await ctx.db.patch(id, patch);
+    return null;
+  },
+});
+
+// Admin set (or cleared, with null) how the main photo is framed in the
+// Instagram story. Fractions of the photo, so the same crop fits any size.
+export const adminSetStoryCrop = mutation({
+  args: {
+    id: v.id("products"),
+    crop: v.union(
+      v.null(),
+      v.object({ url: v.string(), x: v.number(), y: v.number(), w: v.number(), h: v.number() }),
+    ),
+  },
+  returns: v.null(),
+  handler: async (ctx, { id, crop }) => {
+    await requireAdmin(ctx);
+    const product = await ctx.db.get(id);
+    if (!product) throw new ConvexError("Product not found");
+    if (crop) {
+      const { x, y, w, h } = crop;
+      const ok = [x, y, w, h].every((n) => Number.isFinite(n)) &&
+        x >= 0 && y >= 0 && w > 0 && h > 0 && x + w <= 1.0001 && y + h <= 1.0001;
+      if (!ok) throw new ConvexError("Invalid crop");
+      if (!product.photos.includes(crop.url)) {
+        throw new ConvexError("The photos changed meanwhile. Refresh and try again.");
+      }
+    }
+    await ctx.db.patch(id, { storyCrop: crop ?? undefined });
     return null;
   },
 });

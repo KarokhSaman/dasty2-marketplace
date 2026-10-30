@@ -27,6 +27,10 @@ export default defineSchema({
     profit: v.number(),
     photos: v.array(v.string()),
     mainPhotoIndex: v.optional(v.number()),
+    // Admin-set framing of the main photo in the Instagram story: the part of
+    // the photo to show, as fractions of its width/height. Tied to the photo's
+    // URL, so it is ignored once that photo is replaced.
+    storyCrop: v.optional(v.object({ url: v.string(), x: v.number(), y: v.number(), w: v.number(), h: v.number() })),
     status: productStatusValidator,
     city: v.string(),
     sellerId: v.string(),
