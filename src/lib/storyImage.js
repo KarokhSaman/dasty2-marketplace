@@ -463,16 +463,15 @@ function drawPriceBar(ctx, { edge, fromRight, y, price, family }) {
 }
 
 // The red card with its price tag tied on, from the designer's art
-// (public/story-card.png, 1200 × 478, transparent). Where things sit in the
+// (public/story-card.png, 1200 × 480, transparent, with its own glow). Where things sit in the
 // art, in its pixels: the card body (x, y, w, h), the centre of the tag's
 // price area (x, y), the tag's tilt in degrees and the room for the price,
-// and the arrow button (x, y, r). The art's own glow had a checkerboard baked
-// in, so it was cut out and the soft shadow is drawn here instead.
+// and the arrow button (x, y, r).
 const CARD_ART = {
   src: "/story-card.png",
-  card: [18, 158, 1161, 266],
-  price: [360, 119, -4.6, 314],
-  button: [583, 103, 42],
+  card: [32, 157, 1141, 267],
+  price: [455, 119, -4.1, 410],
+  button: [733, 99, 44],
 };
 
 // The card art is drawn as is in Kurdish/Arabic (eyelet on the left) and
@@ -482,9 +481,6 @@ function drawCardArt(ctx, { art, CS, cx, cy, cw, ch, rtl, price, title, city, st
   const A = CARD_ART;
   const ox = A.card[0] * CS, oy = A.card[1] * CS, iw = art.width * CS, ih = art.height * CS;
   ctx.save();
-  ctx.shadowColor = "rgba(120, 0, 30, 0.38)";
-  ctx.shadowBlur = 44;
-  ctx.shadowOffsetY = 18;
   if (rtl) ctx.drawImage(art, cx - ox, cy - oy, iw, ih);
   else {
     ctx.translate(cx + cw + ox, cy - oy);
