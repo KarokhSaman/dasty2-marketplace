@@ -465,18 +465,16 @@ function drawPriceBar(ctx, { edge, fromRight, y, price, family }) {
 // The red card with its price tag tied on, from the designer's art
 // (public/story-card.png, 1200 × 480, transparent, with its own glow). Where things sit in the
 // art, in its pixels: the card body (x, y, w, h), the centre of the tag's
-// price area (x, y), the tag's tilt in degrees and the room for the price,
-// and the arrow button (x, y, r).
+// price area (x, y), and the tag's tilt in degrees and the room for the price.
 const CARD_ART = {
   src: "/story-card.png",
-  card: [32, 157, 1141, 267],
-  price: [455, 119, -4.1, 410],
-  button: [733, 99, 44],
+  card: [24, 166, 1155, 248],
+  price: [489, 130, -4.67, 440],
 };
 
-// The card art is drawn as is in Kurdish/Arabic (eyelet on the left) and
-// flipped in English (eyelet on the right); the price, chips and title are
-// written on it.
+// The card art is drawn as is in Kurdish/Arabic (eyelet on the left, arrow
+// pointing left) and flipped in English (eyelet on the right, arrow pointing
+// right); the price, chips and title are written on it.
 function drawCardArt(ctx, { art, CS, cx, cy, cw, ch, rtl, price, title, city, store, family }) {
   const A = CARD_ART;
   const ox = A.card[0] * CS, oy = A.card[1] * CS, iw = art.width * CS, ih = art.height * CS;
@@ -488,30 +486,6 @@ function drawCardArt(ctx, { art, CS, cx, cy, cw, ch, rtl, price, title, city, st
     ctx.drawImage(art, 0, 0, iw, ih);
   }
   ctx.restore();
-  // flipped art has its arrow pointing left: paint the button's face again
-  // with the arrow pointing right
-  if (!rtl) {
-    const bx = cx + cw + ox - A.button[0] * CS, by = cy - oy + A.button[1] * CS, br = A.button[2] * CS;
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(bx, by, br, 0, Math.PI * 2);
-    const bg = ctx.createLinearGradient(bx, by - br, bx, by + br);
-    bg.addColorStop(0, "#f2164d");
-    bg.addColorStop(1, "#d6003a");
-    ctx.fillStyle = bg;
-    ctx.fill();
-    ctx.strokeStyle = "#ffffff";
-    ctx.lineWidth = br * 0.29;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.beginPath();
-    ctx.moveTo(bx - br * 0.19, by - br * 0.46);
-    ctx.lineTo(bx + br * 0.26, by);
-    ctx.lineTo(bx - br * 0.19, by + br * 0.46);
-    ctx.stroke();
-    ctx.restore();
-  }
-
   // price on the tag, centred between the eyelet and the button
   const ang = (A.price[2] * Math.PI) / 180;
   const tcx = rtl ? cx - ox + A.price[0] * CS : cx + cw + ox - A.price[0] * CS;
