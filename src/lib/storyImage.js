@@ -468,8 +468,8 @@ function drawPriceBar(ctx, { edge, fromRight, y, price, family }) {
 // price area (x, y), and the tag's tilt in degrees and the room for the price.
 const CARD_ART = {
   src: "/story-card.png",
-  card: [21, 163, 1159, 251],
-  price: [489, 130, -4.67, 440],
+  card: [21, 162, 1161, 253],
+  price: [540, 125, -5.0, 520],
 };
 
 // The card art is drawn as is in Kurdish/Arabic (eyelet on the left, arrow
