@@ -4,7 +4,7 @@
 // through the OS share sheet — `navigator.share({ files })` puts "Instagram →
 // Stories" in the list. So the story path is: draw a card → share the PNG.
 //
-// Layout: cream page with faint product drawings, Mndallan header and the brand logo on top, the
+// Layout: white page with very faint product drawings, Mndallan header and the brand logo on top, the
 // photo trimmed towards the frame's shape in a frame that hugs it, and below it the designer's red
 // card with its price tag tied on (public/story-card.png) holding the price, city/store and title;
 // web address and code below it. If that art can't load, the card and a swing tag are drawn instead.
@@ -18,7 +18,6 @@ const W = 1080;
 const H = 1920;
 
 const INK = "#0b0c0f";
-const PAPER = "#fefcf9";
 const INK_SOFT = "#61656e";
 const BRAND = "#ed0040";
 const BRAND_LIGHT = "#ff1f58";
@@ -481,12 +480,45 @@ function drawChipsSized(ctx, opts) {
   ctx.restore();
 }
 
-function drawStory(ctx, { title, price, img, storyCrop, city, store, code, site, rtl, logo, brand, brandImg, drawings, art, family }) {
+// "SOLD · فرۆشرا" stamp, tilted, centred on (x, y): a red-outlined white
+// badge with the English word large and the Kurdish under it. It sits on the
+// photo's top-right corner.
+function drawSoldStamp(ctx, { x, y, w, family }) {
+  const h = w * 0.42, r = 28;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate((10 * Math.PI) / 180);
+  ctx.shadowColor = "rgba(90, 0, 25, 0.35)";
+  ctx.shadowBlur = 40;
+  ctx.shadowOffsetY = 16;
+  roundedRect(ctx, -w / 2, -h / 2, w, h, r);
+  ctx.fillStyle = "rgba(255, 255, 255, 0.94)";
+  ctx.fill();
+  ctx.shadowColor = "transparent";
+  ctx.lineWidth = 12;
+  ctx.strokeStyle = BRAND;
+  ctx.stroke();
+  roundedRect(ctx, -w / 2 + 18, -h / 2 + 18, w - 36, h - 36, r - 10);
+  ctx.lineWidth = 3;
+  ctx.stroke();
+  ctx.textAlign = "center";
+  ctx.textBaseline = "alphabetic";
+  ctx.fillStyle = BRAND;
+  ctx.direction = "ltr";
+  ctx.font = `900 ${Math.round(h * 0.42)}px ${family}`;
+  ctx.fillText("SOLD", 0, h * 0.06);
+  ctx.direction = "rtl";
+  ctx.font = `800 ${Math.round(h * 0.25)}px ${family}`;
+  ctx.fillText("فرۆشرا", 0, h * 0.34);
+  ctx.restore();
+}
+
+function drawStory(ctx, { title, price, img, storyCrop, sold, city, store, code, site, rtl, logo, brand, brandImg, drawings, art, family }) {
   const edge = rtl ? W - 72 : 72;
 
-  // Background: the site's cream, scattered with small faint baby-product
+  // Background: white, scattered with small, very faint baby-product
   // drawings (the site's category drawings).
-  ctx.fillStyle = PAPER;
+  ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, W, H);
   if (drawings.length) {
     const size = 86, step = 150;
@@ -496,7 +528,7 @@ function drawStory(ctx, { title, price, img, storyCrop, city, store, code, site,
       for (let x = row % 2 ? -10 : -85; x < W; x += step, n++) {
         const turn = (((n * 37) % 11) - 5) * 0.06;
         ctx.save();
-        ctx.globalAlpha = 0.07;
+        ctx.globalAlpha = 0.035;
         ctx.translate(x + size / 2, y + size / 2);
         ctx.rotate(turn);
         ctx.drawImage(inks[(n * 5 + row) % inks.length], -size / 2, -size / 2);
@@ -600,10 +632,24 @@ function drawStory(ctx, { title, price, img, storyCrop, city, store, code, site,
     ctx.fillStyle = "#f6eee5";
     ctx.fillRect(px, py, pw, ph);
   }
+  if (sold) {
+    // soften the photo a little so the stamp reads
+    ctx.fillStyle = "rgba(255, 255, 255, 0.28)";
+    ctx.fillRect(px, py, pw, ph);
+  }
   ctx.restore();
+  // the stamp sits on the photo's top-right corner, inside the story's edge
+  if (sold) {
+    const sw = 440;
+    drawSoldStamp(ctx, { x: px + pw - sw * 0.5, y: py + sw * 0.16, w: sw, family });
+  }
 
   if (art) {
+    // on a sold story the card and price tag fade back so the stamp leads
+    ctx.save();
+    if (sold) ctx.globalAlpha = 0.4;
     drawCardArt(ctx, { art, CS, cx, cy, cw, ch, rtl, price, title, city, store, family });
+    ctx.restore();
   } else {
   ctx.save();
   ctx.shadowColor = "rgba(120, 0, 30, 0.45)";
@@ -683,7 +729,7 @@ function drawStory(ctx, { title, price, img, storyCrop, city, store, code, site,
  * @param {object} [p.storyCrop] admin-set framing of the photo ({ url, x, y, w, h }
  *                              as fractions); used only while `url` is this photo
  */
-export async function buildStoryImage({ title, price, photo, storyCrop, city, store, code, site, rtl = false, brand }) {
+export async function buildStoryImage({ title, price, photo, storyCrop, sold, city, store, code, site, rtl = false, brand }) {
   const crop = storyCrop && storyCrop.url === photo ? storyCrop : null;
   // Webfonts must be resolved before fillText or the card renders in a
   // fallback face (and Kurdish/Arabic glyphs may not render at all).
@@ -709,7 +755,7 @@ export async function buildStoryImage({ title, price, photo, storyCrop, city, st
     canvas.height = H;
     const ctx = canvas.getContext("2d");
     if (!ctx) return null;
-    drawStory(ctx, { title, price, img: withPhoto ? img : null, storyCrop: crop, city, store, code, site, rtl, logo, brand, brandImg, drawings: withPhoto ? drawings.filter(Boolean) : [], art, family });
+    drawStory(ctx, { title, price, img: withPhoto ? img : null, storyCrop: crop, sold, city, store, code, site, rtl, logo, brand, brandImg, drawings: withPhoto ? drawings.filter(Boolean) : [], art, family });
     return canvas;
   };
 

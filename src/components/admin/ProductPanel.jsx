@@ -9,7 +9,9 @@ import { CATEGORY_CONFIG } from "@/lib/categories";
 import { brandFitsCategory, getBrandChoices } from "@/lib/brands";
 import { priceInfo } from "@/convex/discount";
 import { rotatePhoto } from "@/lib/rotateImage";
-import { STORY_PHOTO_ASPECT } from "@/lib/storyImage";
+import { STORY_PHOTO_ASPECT, shareStoryImage } from "@/lib/storyImage";
+import { getCityLabel } from "@/lib/cities";
+import { formatAmount } from "@/components/ui";
 import { useImageUpload } from "@/lib/useImageUpload";
 import { errorMessage } from "@/lib/errors";
 import { photoProps } from "@/lib/images";
@@ -372,6 +374,43 @@ function StoryCropSheet({ url, saved, onClose, onSave }) {
   );
 }
 
+// Shares the "sold" Instagram story for a sold product: the same story design
+// with a SOLD · فرۆشرا stamp on the photo and the card faded back. Always the
+// Kurdish layout, whatever language the admin page is in. Uses the product's
+// story crop, if one is saved.
+function SoldStoryButton({ product: p, toast }) {
+  const [busy, setBusy] = useState(false);
+  async function share() {
+    setBusy(true);
+    try {
+      const photo = p.photos?.[p.mainPhotoIndex ?? 0] ?? p.photos?.[0];
+      const result = await shareStoryImage({
+        title: p.title,
+        price: `${formatAmount(shownPrice(p))} IQD`,
+        photo,
+        storyCrop: p.storyCrop,
+        sold: true,
+        city: p.city ? getCityLabel(p.city, "ckb") : undefined,
+        store: p.storeId ? m.storeFlag({}, KU) : undefined,
+        code: p.seq ? `#${p.seq}` : undefined,
+        site: "www.mndallan.com",
+        rtl: true,
+        brand: p.brand,
+      });
+      if (result === "downloaded") toast("Sold story downloaded");
+      else if (result === "failed") toast("Could not make the sold story", "error");
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <button type="button" disabled={busy} onClick={share} className={`${btn("primary")} w-full mt-2.5`}>
+      {busy ? <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> : null}
+      Share sold story · فرۆشرا
+    </button>
+  );
+}
+
 const SPONSOR_FOR = [
   { label: "7 days", days: 7 }, { label: "14 days", days: 14 }, { label: "30 days", days: 30 }, { label: "No end date", days: null },
 ];
@@ -637,6 +676,7 @@ export default function ProductPanel({ product, onClose }) {
           ))}
           <AddPhotoTile product={p} actions={actions} toast={toast} />
         </div>
+        {p.status === "sold" && <SoldStoryButton product={p} toast={toast} />}
         <p className="text-[11.5px] text-adm-fade mt-1.5">Rotate turns the preview first; ✓ saves it once. The star makes a photo the main one; the red crop button on the main photo sets how it sits in the Instagram story. Add photo uploads your own shots, up to {MAX_PHOTOS}.</p>
       </section>
 
