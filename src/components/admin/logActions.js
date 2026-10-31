@@ -23,6 +23,7 @@ export const ACTIONS = {
   main_photo_set: ["Main photo set", "grey"],
   story_crop_set: ["Story crop set", "grey"],
   buyer_connected: ["Buyer connected", "blue"],
+  sold_elsewhere: ["Sold elsewhere", "grey"],
   story_crop_cleared: ["Story crop cleared", "grey"],
   seller_deleted: ["Seller deleted", "red"],
   seller_deactivated: ["Seller deactivated", "orange"],

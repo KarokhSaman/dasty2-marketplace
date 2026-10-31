@@ -21,6 +21,7 @@ const TABS = [
   ["paid", () => m.statusPaid()],
   ["deletion_requested", () => m.adminDeleteRequests()],
   ["rejected", () => m.statusRejected()],
+  ["sold_elsewhere", () => m.statusSoldElsewhere()],
   ["sponsored", () => "Sponsored"],
 ];
 

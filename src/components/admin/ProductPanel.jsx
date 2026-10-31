@@ -488,6 +488,7 @@ export default function ProductPanel({ product, onClose }) {
   const logs = useQuery(api.adminLogs.getAll);
   const [nextStatus, setNextStatus] = useState(null);
   const [connecting, setConnecting] = useState(false);
+  const [soldElsewhere, setSoldElsewhere] = useState(false);
   const [salePrice, setSalePrice] = useState(0);
   const [ownProfit, setOwnProfit] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -618,6 +619,23 @@ export default function ProductPanel({ product, onClose }) {
           options={["pending", "approved", "rejected", "sold", "paid"].map((s) => ({
             value: s, label: s === "approved" ? m.statusApproved() : s === "pending" ? m.statusPending() : s === "rejected" ? m.statusRejected() : s === "sold" ? m.statusSold() : m.statusPaid(),
           }))} />
+        {(p.status === "approved" || p.status === "deletion_requested") && !nextStatus && (
+          soldElsewhere ? (
+            <div className="mt-3">
+              <ConfirmBox tone="neutral" busy={busy} title="Sold elsewhere?"
+                text="The seller sold it outside Mndallan. It is hidden from the site with no fee, kept here for the record, and the seller is told why. It stays in the seller's list for 30 days."
+                confirmLabel="Mark sold elsewhere" onCancel={() => setSoldElsewhere(false)}
+                onConfirm={() => run(() => actions.markSoldElsewhere(p), "Marked sold elsewhere, seller notified")} />
+            </div>
+          ) : (
+            <button type="button" onClick={() => setSoldElsewhere(true)} className={`${btn("outline", "sm")} mt-2`}>Sold elsewhere (no fee)</button>
+          )
+        )}
+        {p.status === "sold_elsewhere" && !nextStatus && (
+          <p className="mt-2 text-[12.5px] text-adm-soft bg-adm-sunk rounded-xl px-3 py-2">
+            Sold elsewhere{p.soldElsewhereAt ? ` on ${new Date(p.soldElsewhereAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}` : ""}: hidden from the site, no fee. Choose {m.statusApproved()} above to put it back live.
+          </p>
+        )}
         {p.status === "rejected" && !nextStatus && p.notes && (
           <p className="mt-2 text-[12.5px] text-st-rejected bg-st-rejected-bg rounded-xl px-3 py-2">{p.notes}</p>
         )}

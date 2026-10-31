@@ -38,6 +38,8 @@ export default defineSchema({
     followUpAt: v.optional(v.string()),
     // When an admin last confirmed with the seller that it is still for sale.
     availabilityCheckedAt: v.optional(v.string()),
+    // When an admin marked it sold elsewhere (outside Mndallan).
+    soldElsewhereAt: v.optional(v.string()),
     status: productStatusValidator,
     city: v.string(),
     sellerId: v.string(),

@@ -49,6 +49,7 @@
   "statusRejected": "ڕەتکراوە",
   "statusSold": "فرۆشراو",
   "statusPaid": "پارە دراوە",
+  "statusSoldElsewhere": "لە شوێنێکی تر فرۆشرا",
   "noSellerProducts": "تا ئێستا هیچ کاڵایەکت نەناردووە",
   "addFirstProduct": "یەکەم کاڵات زیاد بکە",
 
@@ -168,6 +169,7 @@
   "adminProductCount": "کاڵا",
   "adminApproveMsg": "کاڵاکەت \"{title}\" پەسەندکرا و ئێستا بڵاوکراوەتەوە!",
   "adminRejectMsg": "کاڵاکەت \"{title}\" ڕەتکرایەوە. هۆکار: {reason}",
+  "adminSoldElsewhereMsg": "کاڵاکەت \"{title}\" لە ماڵپەڕەکە لابرا، چونکە لە شوێنێکی تر فرۆشرا.",
   "adminSoldMsg": "کاڵاکەت \"{title}\" فرۆشرا!",
   "adminPaidMsg": "پارەی کاڵاکەت \"{title}\" درا!",
 

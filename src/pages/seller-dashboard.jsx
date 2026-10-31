@@ -23,6 +23,7 @@ const STATUS = {
   sold: [() => m.statusSold(), "text-st-sold bg-st-sold-bg"],
   paid: [() => m.statusPaid(), "text-st-paid bg-st-paid-bg"],
   deletion_requested: [() => m.statusDeletionRequested(), "text-st-delete bg-st-delete-bg"],
+  sold_elsewhere: [() => m.statusSoldElsewhere(), "text-adm-soft bg-adm-sunk"],
 };
 const FILTERS = ["all", "approved", "pending", "rejected", "sold", "paid"];
 

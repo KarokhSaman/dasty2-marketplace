@@ -85,3 +85,31 @@ export const listForProduct = query({
     return leads.map(({ _id, buyerPhone, adminName, createdAt }) => ({ _id, buyerPhone, adminName, createdAt }));
   },
 });
+
+// The seller sold it outside Mndallan: hide it from buyers, charge no fee,
+// keep the record (with its buyer connections). Back to live with "Approve".
+export const markSoldElsewhere = mutation({
+  args: { id: v.id("products") },
+  returns: v.null(),
+  handler: async (ctx, { id }) => {
+    const { user } = await requireAdmin(ctx);
+    const product = await ctx.db.get(id);
+    if (!product) throw new ConvexError("Product not found");
+    if (product.status !== "approved" && product.status !== "deletion_requested") {
+      throw new ConvexError("Only a live product can be marked sold elsewhere");
+    }
+    const now = new Date().toISOString();
+    await ctx.db.patch(id, { status: "sold_elsewhere", soldElsewhereAt: now, followUpAt: undefined });
+    await ctx.db.insert("adminLogs", {
+      action: "sold_elsewhere",
+      productId: id.toString(),
+      productTitle: product.title,
+      productCode: product.seq,
+      sellerName: product.sellerName,
+      price: product.price,
+      adminName: user!.name,
+      createdAt: now,
+    });
+    return null;
+  },
+});

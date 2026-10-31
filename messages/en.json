@@ -49,6 +49,7 @@
   "statusRejected": "Rejected",
   "statusSold": "Sold",
   "statusPaid": "Paid",
+  "statusSoldElsewhere": "Sold elsewhere",
   "noSellerProducts": "You haven't added any products yet",
   "addFirstProduct": "Add your first product",
 
@@ -168,6 +169,7 @@
   "adminProductCount": "products",
   "adminApproveMsg": "Your product \"{title}\" has been approved and is now live!",
   "adminRejectMsg": "Your product \"{title}\" was rejected. Reason: {reason}",
+  "adminSoldElsewhereMsg": "Your product \"{title}\" was removed from the site because it was sold elsewhere.",
   "adminSoldMsg": "Your product \"{title}\" has been marked as sold!",
   "adminPaidMsg": "Your payment for \"{title}\" has been processed!",
 
