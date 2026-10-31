@@ -16,6 +16,7 @@ import type * as discount from "../discount.js";
 import type * as fees from "../fees.js";
 import type * as fixSeq from "../fixSeq.js";
 import type * as http from "../http.js";
+import type * as leads from "../leads.js";
 import type * as migrate from "../migrate.js";
 import type * as migrateImages from "../migrateImages.js";
 import type * as migrate_image_urls from "../migrate_image_urls.js";
@@ -48,6 +49,7 @@ declare const fullApi: ApiFromModules<{
   fees: typeof fees;
   fixSeq: typeof fixSeq;
   http: typeof http;
+  leads: typeof leads;
   migrate: typeof migrate;
   migrateImages: typeof migrateImages;
   migrate_image_urls: typeof migrate_image_urls;

@@ -10,8 +10,9 @@ export const FEE_PAYMENT_NUMBER = "07724944244";
 // Invisible left-to-right marks keep the number and amount in order inside a
 // right-to-left line.
 const LRM = "\u200E";
-// A leading right-to-left mark keeps a line that holds only digits (the
-// payment number) right-to-left, like the rest of the message.
+// The payment number sits alone on its own plain line (not bold, not in the
+// quote), so WhatsApp makes it tappable and it can be copied by itself. A
+// leading right-to-left mark keeps that line right-aligned like the rest.
 const RLM = "\u200F";
 
 const MESSAGES = {
@@ -22,7 +23,7 @@ const MESSAGES = {
 ${items("کاڵای", "کرێ", "دینار")}💰 کۆی گشتی: *${total} دینار*
 
 > 💳 دەتوانیت لە ڕێگەی *Super Qi* یان *FIB* یان *FastPay* پارەکە بنێریت بۆ ئەم ژمارەیە:
-> *${number}*
+${number}
 
 لەگەڵ ڕێزماندا،
 تیمی ماڵپەڕی منداڵان 🧸`,
@@ -33,7 +34,7 @@ ${items("کاڵای", "کرێ", "دینار")}💰 کۆی گشتی: *${total} د
 ${items("المنتج", "الرسوم", "دينار")}💰 المجموع: *${total} دينار*
 
 > 💳 يمكنك الدفع عبر *Super Qi* أو *FIB* أو *FastPay* على هذا الرقم:
-> *${number}*
+${number}
 
 مع خالص التحيات،
 فريق موقع Mndallan 🧸`,

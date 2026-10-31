@@ -18,6 +18,7 @@ import { photoProps } from "@/lib/images";
 import { useProductActions } from "@/components/admin/useProductActions";
 import { actionLabel } from "@/components/admin/logActions";
 import { approvalMessage } from "@/components/admin/approvalMessage";
+import ConnectBuyer, { BuyerLeads } from "@/components/admin/ConnectBuyer";
 import {
   Panel, StatusChip, StoreTag, Code, SectionTitle, Segmented, Switch, ConfirmBox, AmountInput, Avatar, Thumb,
   btn, fmtIQD, inputCls, labelCls, useToast, useCopy, waLink, ltrPhone,
@@ -486,6 +487,7 @@ export default function ProductPanel({ product, onClose }) {
   const copy = useCopy();
   const logs = useQuery(api.adminLogs.getAll);
   const [nextStatus, setNextStatus] = useState(null);
+  const [connecting, setConnecting] = useState(false);
   const [salePrice, setSalePrice] = useState(0);
   const [ownProfit, setOwnProfit] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -758,6 +760,17 @@ export default function ProductPanel({ product, onClose }) {
                   <IconWhatsApp className="w-4 h-4" /> Send approval message
                 </a>
               )}
+              {p.status === "approved" && (
+                <button type="button" onClick={() => setConnecting(true)} className={`${btn("primary")} col-span-2`}>
+                  <IconWhatsApp className="w-4 h-4" /> Connect a buyer{p.leadCount ? ` · ${p.leadCount} so far` : ""}
+                </button>
+              )}
+              {p.leadCount ? (
+                <div className="col-span-2 rounded-xl bg-adm-sunk px-3 py-2">
+                  <p className="text-[12px] font-semibold text-adm-soft">Buyers connected · {p.leadCount}</p>
+                  <BuyerLeads productId={p._id} total={p.leadCount} />
+                </div>
+              ) : null}
             </div>
           )}
           <Link to="/admin/products" search={{ tab: "all", sellerId: p.sellerId }} onClick={onClose} className="block text-[12.5px] font-semibold text-adm-accent">
@@ -767,6 +780,7 @@ export default function ProductPanel({ product, onClose }) {
       </section>
 
       <SponsorBox product={p} actions={actions} toast={toast} />
+      {connecting && <ConnectBuyer initial={p} onClose={() => setConnecting(false)} />}
 
       {/* History */}
       <section>

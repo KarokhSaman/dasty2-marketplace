@@ -1,12 +1,36 @@
 import { useMemo, useState } from "react";
-import { useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { Link } from "@tanstack/react-router";
 import { api } from "@/convex/_generated/api";
 import * as m from "@/paraglide/messages";
 import ProductRow, { RowList } from "@/components/admin/ProductRow";
 import ProductPanel from "@/components/admin/ProductPanel";
 import ReviewMode from "@/components/admin/ReviewMode";
-import { PageHeader, Empty, Skeleton, btn, fmtIQD, IconCheck } from "@/components/admin/ui";
+import ConnectBuyer from "@/components/admin/ConnectBuyer";
+import { soldFollowUpMessage, stillForSaleMessage } from "@/components/admin/buyerMessages";
+import { PageHeader, Empty, Skeleton, Code, Thumb, btn, fmtIQD, useToast, waLink, IconCheck, IconWhatsApp } from "@/components/admin/ui";
+
+// A live post nobody has approved or confirmed with the seller for this long
+// is checked with the seller.
+const STALE_DAYS = 28;
+const DAY = 86400000;
+const ago = (iso) => Math.floor((Date.now() - new Date(iso).getTime()) / DAY);
+
+// A follow-up row: the product, why it is here, and its quick actions.
+function FollowRow({ product: p, note, onOpen, children }) {
+  return (
+    <div className="flex gap-3 items-start rounded-2xl border border-adm-line bg-adm-surface p-2.5 mb-2">
+      <button type="button" onClick={() => onOpen(p)} className="shrink-0"><Thumb src={p.photos?.[p.mainPhotoIndex ?? 0]} size={52} /></button>
+      <div className="flex-1 min-w-0">
+        <button type="button" onClick={() => onOpen(p)} className="block text-start w-full">
+          <span className="block text-[13.5px] font-semibold truncate" dir="auto">{p.title}</span>
+          <span className="flex items-center gap-1.5 text-[11.5px] text-adm-soft"><Code>{p.seq}</Code> {note}</span>
+        </button>
+        <div className="flex flex-wrap gap-1.5 mt-1.5">{children}</div>
+      </div>
+    </div>
+  );
+}
 
 function Group({ id, title, count, action, children }) {
   return (
@@ -22,12 +46,17 @@ function Group({ id, title, count, action, children }) {
 }
 
 // Admin start page: only what needs someone today. New products to review,
-// delete requests, and sold items whose fee hasn't been collected.
+// buyer follow-ups, posts to check are still for sale, delete requests, and
+// sold items whose fee hasn't been collected.
 export default function AdminTodoPage() {
   const products = useQuery(api.products.getAll);
   const sellers = useQuery(api.users.getAll);
   const [openId, setOpenId] = useState(null);
   const [reviewing, setReviewing] = useState(false);
+  const [connecting, setConnecting] = useState(false);
+  const snooze = useMutation(api.leads.snoozeFollowUp);
+  const confirmAvailable = useMutation(api.leads.confirmAvailable);
+  const toast = useToast();
 
   const data = useMemo(() => {
     const all = products ?? [];
@@ -43,12 +72,22 @@ export default function AdminTodoPage() {
       owing: new Set(sold.map((p) => p.sellerId)).size,
       earned: by("paid").reduce((s, p) => s + (p.profit ?? 0), 0),
       live: by("approved").length,
+      // Buyer connected a few days ago and it is still live: did it sell?
+      followUps: all.filter((p) => p.status === "approved" && p.followUpAt && p.followUpAt <= new Date().toISOString())
+        .sort((a, b) => a.followUpAt.localeCompare(b.followUpAt)),
+      // Live for weeks with nobody confirming it is still for sale.
+      stale: all.filter((p) => {
+        if (p.status !== "approved") return false;
+        const last = [p.approvedAt ?? p.dateAdded, p.availabilityCheckedAt].filter(Boolean).sort().pop();
+        return last && ago(last) >= STALE_DAYS;
+      }).sort((a, b) => (a.availabilityCheckedAt ?? a.approvedAt ?? a.dateAdded).localeCompare(b.availabilityCheckedAt ?? b.approvedAt ?? b.dateAdded)),
     };
   }, [products]);
 
   if (!products) return <Skeleton rows={6} />;
   const open = products.find((p) => p._id === openId) ?? null;
-  const nothing = !data.pending.length && !data.deletes.length && !data.sold.length && !data.reported.length;
+  const nothing = !data.pending.length && !data.deletes.length && !data.sold.length && !data.reported.length && !data.followUps.length && !data.stale.length;
+  const run = async (fn, done) => { try { await fn(); toast(done); } catch { toast("Could not save", "error"); } };
   const today = new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
 
   const tile = "rounded-2xl border border-adm-line bg-adm-surface px-3.5 py-3 text-start flex flex-col items-start gap-0.5 hover:border-adm-fade transition-colors min-w-0";
@@ -58,6 +97,10 @@ export default function AdminTodoPage() {
         actions={data.pending.length > 0 && (
           <button type="button" onClick={() => setReviewing(true)} className={`${btn("primary")} max-lg:hidden`}>Review {data.pending.length} new</button>
         )} />
+
+      <button type="button" onClick={() => setConnecting(true)} className={`${btn("primary")} w-full mb-3`}>
+        <IconWhatsApp className="w-4 h-4" /> Connect buyer
+      </button>
 
       <div className="grid grid-cols-3 gap-2 mb-2">
         <button type="button" onClick={() => data.pending.length && setReviewing(true)} className={tile}>
@@ -104,6 +147,35 @@ export default function AdminTodoPage() {
         </Group>
       )}
 
+      {data.followUps.length > 0 && (
+        <Group title="Ask seller: sold?" count={data.followUps.length}>
+          <p className="text-[12.5px] text-adm-fade -mt-1 mb-2">A buyer was connected 3+ days ago and it is still live. Sold opens it to set the sale price (one unit at a time for stocked items); Not yet asks again in 3 days.</p>
+          {data.followUps.map((p) => (
+            <FollowRow key={p._id} product={p} onOpen={(x) => setOpenId(x._id)}
+              note={`· ${p.leadCount ?? 1} buyer${(p.leadCount ?? 1) === 1 ? "" : "s"} · last ${ago(p.lastLeadAt ?? p.followUpAt)}d ago`}>
+              <a href={waLink(p.sellerPhone, soldFollowUpMessage(p))} target="_blank" rel="noopener noreferrer" className={btn("wa", "sm")}><IconWhatsApp className="w-3.5 h-3.5" /> Ask seller</a>
+              <button type="button" onClick={() => setOpenId(p._id)} className={btn("primary", "sm")}>Sold</button>
+              <button type="button" onClick={() => run(() => snooze({ id: p._id }), "Asking again in 3 days")} className={btn("outline", "sm")}>Not yet</button>
+            </FollowRow>
+          ))}
+        </Group>
+      )}
+
+      {data.stale.length > 0 && (
+        <Group title="Still for sale?" count={data.stale.length}>
+          <p className="text-[12.5px] text-adm-fade -mt-1 mb-2">Live {STALE_DAYS}+ days without a check. Still for sale clears it for another {STALE_DAYS / 7} weeks.</p>
+          {data.stale.slice(0, 12).map((p) => (
+            <FollowRow key={p._id} product={p} onOpen={(x) => setOpenId(x._id)}
+              note={`· live ${ago(p.approvedAt ?? p.dateAdded)} days${p.availabilityCheckedAt ? `, checked ${ago(p.availabilityCheckedAt)}d ago` : ", not checked"}`}>
+              <a href={waLink(p.sellerPhone, stillForSaleMessage(p))} target="_blank" rel="noopener noreferrer" className={btn("wa", "sm")}><IconWhatsApp className="w-3.5 h-3.5" /> Ask seller</a>
+              <button type="button" onClick={() => run(() => confirmAvailable({ id: p._id }), "Still for sale, checked")} className={btn("outline", "sm")}>Still for sale</button>
+              <button type="button" onClick={() => setOpenId(p._id)} className={btn("primary", "sm")}>Sold</button>
+            </FollowRow>
+          ))}
+          {data.stale.length > 12 && <p className="text-center text-[12px] text-adm-fade">{data.stale.length - 12} more after these</p>}
+        </Group>
+      )}
+
       {data.deletes.length > 0 && (
         <Group id="deletes" title={m.adminDeleteRequests()} count={data.deletes.length}>
           <RowList>{data.deletes.map((p) => <ProductRow key={p._id} product={p} onOpen={(x) => setOpenId(x._id)} />)}</RowList>
@@ -131,6 +203,7 @@ export default function AdminTodoPage() {
 
       {open && <ProductPanel product={open} onClose={() => setOpenId(null)} />}
       {reviewing && <ReviewMode queue={data.pending} onClose={() => setReviewing(false)} />}
+      {connecting && <ConnectBuyer products={products} onClose={() => setConnecting(false)} onOpenProduct={(x) => { setConnecting(false); setOpenId(x._id); }} />}
     </div>
   );
 }
