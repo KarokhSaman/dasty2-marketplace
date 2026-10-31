@@ -25,6 +25,9 @@ export const productStatusValidator = v.union(
   v.literal("paid"),
   // A seller asked to delete a live product; hidden from buyers until an admin decides.
   v.literal("deletion_requested"),
+  // The seller sold it outside Mndallan: hidden from buyers, no fee charged,
+  // kept for the record.
+  v.literal("sold_elsewhere"),
 );
 export type ProductStatus = typeof productStatusValidator.type;
 

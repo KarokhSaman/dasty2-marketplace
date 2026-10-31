@@ -16,6 +16,7 @@ export function useProductActions() {
   const updatePhotos = useMutation(api.products.adminUpdatePhotos);
   const replacePhoto = useMutation(api.products.adminReplacePhoto);
   const setStoryCropMutation = useMutation(api.products.adminSetStoryCrop);
+  const soldElsewhereMutation = useMutation(api.leads.markSoldElsewhere);
   const createNotif = useMutation(api.notifications.create);
   const createLog = useMutation(api.adminLogs.create);
   const me = useQuery(api.users.getCurrent);
@@ -159,6 +160,13 @@ export function useProductActions() {
     await log("photo_rotated", p, `Photo ${i + 1} rotated ${turns * 90}°`);
   }
 
+  // Sold outside Mndallan: hidden, no fee; the seller is told why (in
+  // Kurdish, like rejections). The server logs it.
+  async function markSoldElsewhere(p) {
+    await soldElsewhereMutation({ id: p._id });
+    await notify(p, m.adminSoldElsewhereMsg({ title: p.title }, { locale: "ckb" }));
+  }
+
   async function setStoryCrop(p, crop) {
     await setStoryCropMutation({ id: p._id, crop });
     await log(crop ? "story_crop_set" : "story_crop_cleared", p);
@@ -166,6 +174,6 @@ export function useProductActions() {
 
   return {
     approve, reject, setPending, makeLive, returnUnit, markSold, markPaid, resolveDelete, remove,
-    sponsor, unsponsor, saveDetails, setMainPhoto, removePhoto, addPhotos, swapPhoto, setStoryCrop, isStocked, log,
+    sponsor, unsponsor, saveDetails, setMainPhoto, removePhoto, addPhotos, swapPhoto, setStoryCrop, markSoldElsewhere, isStocked, log,
   };
 }

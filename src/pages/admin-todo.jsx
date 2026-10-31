@@ -8,6 +8,7 @@ import ProductPanel from "@/components/admin/ProductPanel";
 import ReviewMode from "@/components/admin/ReviewMode";
 import ConnectBuyer from "@/components/admin/ConnectBuyer";
 import { soldFollowUpMessage, stillForSaleMessage } from "@/components/admin/buyerMessages";
+import { useProductActions } from "@/components/admin/useProductActions";
 import { PageHeader, Empty, Skeleton, Code, Thumb, btn, fmtIQD, useToast, waLink, IconCheck, IconWhatsApp } from "@/components/admin/ui";
 
 // A live post nobody has approved or confirmed with the seller for this long
@@ -45,9 +46,9 @@ function Group({ id, title, count, action, children }) {
   );
 }
 
-// Admin start page: only what needs someone today. New products to review,
-// buyer follow-ups, posts to check are still for sale, delete requests, and
-// sold items whose fee hasn't been collected.
+// Admin start page: only what needs someone today, most urgent first: new
+// products to review, delete requests, buyer follow-ups, sold items whose fee
+// hasn't been collected, and live posts to check are still for sale.
 export default function AdminTodoPage() {
   const products = useQuery(api.products.getAll);
   const sellers = useQuery(api.users.getAll);
@@ -56,6 +57,7 @@ export default function AdminTodoPage() {
   const [connecting, setConnecting] = useState(false);
   const snooze = useMutation(api.leads.snoozeFollowUp);
   const confirmAvailable = useMutation(api.leads.confirmAvailable);
+  const actions = useProductActions();
   const toast = useToast();
 
   const data = useMemo(() => {
@@ -65,8 +67,6 @@ export default function AdminTodoPage() {
     return {
       pending: by("pending").sort((a, b) => a.dateAdded.localeCompare(b.dateAdded)),
       deletes: by("deletion_requested"),
-      // The seller tapped "I sold it": confirm the sale price and mark it sold.
-      reported: all.filter((p) => p.status === "approved" && p.soldReportedAt).sort((a, b) => a.soldReportedAt.localeCompare(b.soldReportedAt)),
       sold,
       owed: sold.reduce((s, p) => s + (p.profit ?? 0), 0),
       owing: new Set(sold.map((p) => p.sellerId)).size,
@@ -86,7 +86,7 @@ export default function AdminTodoPage() {
 
   if (!products) return <Skeleton rows={6} />;
   const open = products.find((p) => p._id === openId) ?? null;
-  const nothing = !data.pending.length && !data.deletes.length && !data.sold.length && !data.reported.length && !data.followUps.length && !data.stale.length;
+  const nothing = !data.pending.length && !data.deletes.length && !data.sold.length && !data.followUps.length && !data.stale.length;
   const run = async (fn, done) => { try { await fn(); toast(done); } catch { toast("Could not save", "error"); } };
   const today = new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
 
@@ -140,12 +140,12 @@ export default function AdminTodoPage() {
         </Group>
       )}
 
-      {data.reported.length > 0 && (
-        <Group title="Seller says sold" count={data.reported.length}>
-          <p className="text-[12.5px] text-adm-fade -mt-1 mb-2">Open each one, set Sold and confirm the price the buyer paid.</p>
-          <RowList>{data.reported.map((p) => <ProductRow key={p._id} product={p} onOpen={(x) => setOpenId(x._id)} />)}</RowList>
+      {data.deletes.length > 0 && (
+        <Group id="deletes" title={m.adminDeleteRequests()} count={data.deletes.length}>
+          <RowList>{data.deletes.map((p) => <ProductRow key={p._id} product={p} onOpen={(x) => setOpenId(x._id)} />)}</RowList>
         </Group>
       )}
+      {!data.deletes.length && <span id="deletes" />}
 
       {data.followUps.length > 0 && (
         <Group title="Ask seller: sold?" count={data.followUps.length}>
@@ -156,8 +156,19 @@ export default function AdminTodoPage() {
               <a href={waLink(p.sellerPhone, soldFollowUpMessage(p))} target="_blank" rel="noopener noreferrer" className={btn("wa", "sm")}><IconWhatsApp className="w-3.5 h-3.5" /> Ask seller</a>
               <button type="button" onClick={() => setOpenId(p._id)} className={btn("primary", "sm")}>Sold</button>
               <button type="button" onClick={() => run(() => snooze({ id: p._id }), "Asking again in 3 days")} className={btn("outline", "sm")}>Not yet</button>
+              <button type="button" onClick={() => run(() => actions.markSoldElsewhere(p), "Sold elsewhere, seller notified")} className={btn("outline", "sm")}>Sold elsewhere</button>
             </FollowRow>
           ))}
+        </Group>
+      )}
+
+      {data.sold.length > 0 && (
+        <Group title="Sold, fee not collected" count={data.sold.length}
+          action={<Link to="/admin/fees" className={btn("outline", "sm")}>Collect by seller</Link>}>
+          <RowList>{data.sold.slice(0, 8).map((p) => <ProductRow key={p._id} product={p} onOpen={(x) => setOpenId(x._id)} />)}</RowList>
+          {data.sold.length > 8 && (
+            <Link to="/admin/products" search={{ tab: "sold" }} className="block text-center text-[12.5px] font-semibold text-adm-accent mt-2">See all {data.sold.length}</Link>
+          )}
         </Group>
       )}
 
@@ -170,28 +181,17 @@ export default function AdminTodoPage() {
               <a href={waLink(p.sellerPhone, stillForSaleMessage(p))} target="_blank" rel="noopener noreferrer" className={btn("wa", "sm")}><IconWhatsApp className="w-3.5 h-3.5" /> Ask seller</a>
               <button type="button" onClick={() => run(() => confirmAvailable({ id: p._id }), "Still for sale, checked")} className={btn("outline", "sm")}>Still for sale</button>
               <button type="button" onClick={() => setOpenId(p._id)} className={btn("primary", "sm")}>Sold</button>
+              <button type="button" onClick={() => run(() => actions.markSoldElsewhere(p), "Sold elsewhere, seller notified")} className={btn("outline", "sm")}>Sold elsewhere</button>
             </FollowRow>
           ))}
           {data.stale.length > 12 && <p className="text-center text-[12px] text-adm-fade">{data.stale.length - 12} more after these</p>}
         </Group>
       )}
 
-      {data.deletes.length > 0 && (
-        <Group id="deletes" title={m.adminDeleteRequests()} count={data.deletes.length}>
-          <RowList>{data.deletes.map((p) => <ProductRow key={p._id} product={p} onOpen={(x) => setOpenId(x._id)} />)}</RowList>
-        </Group>
-      )}
-      {!data.deletes.length && <span id="deletes" />}
 
-      {data.sold.length > 0 && (
-        <Group title="Sold, fee not collected" count={data.sold.length}
-          action={<Link to="/admin/fees" className={btn("outline", "sm")}>Collect by seller</Link>}>
-          <RowList>{data.sold.slice(0, 8).map((p) => <ProductRow key={p._id} product={p} onOpen={(x) => setOpenId(x._id)} />)}</RowList>
-          {data.sold.length > 8 && (
-            <Link to="/admin/products" search={{ tab: "sold" }} className="block text-center text-[12.5px] font-semibold text-adm-accent mt-2">See all {data.sold.length}</Link>
-          )}
-        </Group>
-      )}
+
+
+
 
       {data.pending.length > 0 && (
         <div className="lg:hidden sticky z-20" style={{ bottom: "calc(72px + env(safe-area-inset-bottom, 0px))" }}>

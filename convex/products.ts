@@ -25,7 +25,7 @@ import { r2 } from "./r2";
 import { issueSeq } from "./seq";
 import { priceInfo, todayBaghdad, type StoreDiscount } from "./discount";
 
-type PublicProduct = Omit<Doc<"products">, "sellerId" | "sellerPhone" | "profit" | "soldFromId" | "deleteRequestedAt" | "deleteRequestReason" | "deleteRequestFrom" | "offerId" | "soldReportedAt" | "leadCount" | "lastLeadAt" | "followUpAt" | "availabilityCheckedAt">;
+type PublicProduct = Omit<Doc<"products">, "sellerId" | "sellerPhone" | "profit" | "soldFromId" | "deleteRequestedAt" | "deleteRequestReason" | "deleteRequestFrom" | "offerId" | "soldReportedAt" | "leadCount" | "lastLeadAt" | "followUpAt" | "availabilityCheckedAt" | "soldElsewhereAt">;
 
 const publicProductValidator = v.object({
   _id: v.id("products"),
@@ -76,6 +76,7 @@ const toPublic = ({
   lastLeadAt: _lastLeadAt,
   followUpAt: _followUpAt,
   availabilityCheckedAt: _availabilityCheckedAt,
+  soldElsewhereAt: _soldElsewhereAt,
   ...rest
 }: Doc<"products">): PublicProduct => rest;
 
@@ -608,49 +609,19 @@ export const getPublicPaginated = query({
 // A seller's dashboard list: their own products, plus — for a store-owner
 // account — every product of the linked store posted by the managing seller
 // (read-only, with the manager's identity and phone stripped).
-// "I sold it": the seller tells us an item sold. It shows on the admin To do
-// page, where an admin confirms the sale price and marks it sold.
-export const reportSold = mutation({
-  args: { id: v.id("products") },
-  returns: v.null(),
-  handler: async (ctx, { id }) => {
-    const seller = await requireCurrentSeller(ctx);
-    const product = await ctx.db.get(id);
-    if (!product || product.sellerId !== seller._id.toString()) throw new ConvexError("Product not found");
-    if (product.status !== "approved") throw new ConvexError("Only live products can be reported as sold");
-    if (product.soldReportedAt) return null;
-    const now = new Date().toISOString();
-    await ctx.db.patch(id, { soldReportedAt: now });
-    await ctx.db.insert("notifications", {
-      sellerId: "ADMIN",
-      productId: id,
-      message: `Seller says sold: "${product.title}" by ${seller.name}`,
-      url: "/admin",
-      read: false,
-      createdAt: now,
-    });
-    await ctx.db.insert("adminLogs", {
-      action: "sold_reported",
-      productId: id,
-      productTitle: product.title,
-      productCode: product.seq,
-      sellerName: seller.name,
-      price: product.price,
-      createdAt: now,
-    });
-    return null;
-  },
-});
-
 export const getBySeller = query({
   args: {},
   handler: async (ctx) => {
     const seller = await requireCurrentSeller(ctx);
     const me = seller._id.toString();
-    const own = await ctx.db
+    // Items sold elsewhere stay in the seller's list for 30 days, then drop off
+    // (the admin keeps them).
+    const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const shown = (p: Doc<"products">) => p.status !== "sold_elsewhere" || (p.soldElsewhereAt ?? "") >= cutoff;
+    const own = (await ctx.db
       .query("products")
       .withIndex("by_seller", q => q.eq("sellerId", me))
-      .collect();
+      .collect()).filter(shown);
     const linked = await ctx.db
       .query("stores")
       .withIndex("by_linked_user", (q) => q.eq("linkedUserId", seller._id))
@@ -662,7 +633,7 @@ export const getBySeller = query({
       .collect();
     const ownIds = new Set(own.map(p => p._id));
     const managed = storeProducts
-      .filter(p => !ownIds.has(p._id))
+      .filter(p => !ownIds.has(p._id) && shown(p))
       .map(({ sellerId: _sid, sellerPhone: _sp, sellerName: _sn, ...rest }) => ({
         ...rest,
         postedByManager: true as const,

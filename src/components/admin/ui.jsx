@@ -35,6 +35,7 @@ export const STATUS = {
   sold: { label: () => m.statusSold(), cls: "text-st-sold bg-st-sold-bg" },
   paid: { label: () => m.statusPaid(), cls: "text-st-paid bg-st-paid-bg" },
   deletion_requested: { label: () => m.adminDeleteRequests(), cls: "text-st-delete bg-st-delete-bg" },
+  sold_elsewhere: { label: () => m.statusSoldElsewhere(), cls: "text-adm-soft bg-adm-sunk" },
 };
 
 export function StatusChip({ status, className = "" }) {
