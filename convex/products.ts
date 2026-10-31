@@ -25,7 +25,7 @@ import { r2 } from "./r2";
 import { issueSeq } from "./seq";
 import { priceInfo, todayBaghdad, type StoreDiscount } from "./discount";
 
-type PublicProduct = Omit<Doc<"products">, "sellerId" | "sellerPhone" | "profit" | "soldFromId" | "deleteRequestedAt" | "deleteRequestReason" | "deleteRequestFrom" | "offerId" | "soldReportedAt">;
+type PublicProduct = Omit<Doc<"products">, "sellerId" | "sellerPhone" | "profit" | "soldFromId" | "deleteRequestedAt" | "deleteRequestReason" | "deleteRequestFrom" | "offerId" | "soldReportedAt" | "leadCount" | "lastLeadAt" | "followUpAt" | "availabilityCheckedAt">;
 
 const publicProductValidator = v.object({
   _id: v.id("products"),
@@ -72,6 +72,10 @@ const toPublic = ({
   deleteRequestFrom: _deleteRequestFrom,
   offerId: _offerId,
   soldReportedAt: _soldReportedAt,
+  leadCount: _leadCount,
+  lastLeadAt: _lastLeadAt,
+  followUpAt: _followUpAt,
+  availabilityCheckedAt: _availabilityCheckedAt,
   ...rest
 }: Doc<"products">): PublicProduct => rest;
 
@@ -782,6 +786,8 @@ export const updateStatus = mutation({
       Object.assign(patch, await saleTerms(ctx, product, salePrice));
       Object.assign(patch, await ownSaleTerms(ctx, product, ownProfit));
       patch.soldReportedAt = undefined;
+      // the buyer follow-up is answered
+      patch.followUpAt = undefined;
     } else if (product.salePrice !== undefined) {
       // Sale reversed (back to approved/pending/...): restore price and fee.
       Object.assign(patch, await listingTerms(ctx, product));
@@ -844,7 +850,8 @@ export const markUnitSold = mutation({
       dateSold: new Date().toISOString(),
       soldFromId: id,
     });
-    await ctx.db.patch(id, { stock: stock - 1, soldReportedAt: undefined });
+    // A unit sold answers the buyer follow-up; the next buyer starts a new one.
+    await ctx.db.patch(id, { stock: stock - 1, soldReportedAt: undefined, followUpAt: undefined });
     return null;
   },
 });

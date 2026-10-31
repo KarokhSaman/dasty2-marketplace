@@ -31,6 +31,13 @@ export default defineSchema({
     // the photo to show, as fractions of its width/height. Tied to the photo's
     // URL, so it is ignored once that photo is replaced.
     storyCrop: v.optional(v.object({ url: v.string(), x: v.number(), y: v.number(), w: v.number(), h: v.number() })),
+    // Buyer follow-up (admin only): buyers connected to the seller, when the
+    // last one was, and when to ask the seller whether it sold.
+    leadCount: v.optional(v.number()),
+    lastLeadAt: v.optional(v.string()),
+    followUpAt: v.optional(v.string()),
+    // When an admin last confirmed with the seller that it is still for sale.
+    availabilityCheckedAt: v.optional(v.string()),
     status: productStatusValidator,
     city: v.string(),
     sellerId: v.string(),
@@ -87,6 +94,14 @@ export default defineSchema({
     .index("by_status_and_category_and_brand_and_price", ["status", "category", "brand", "price"])
     .index("by_seller",          ["sellerId"])
     .index("by_store",           ["storeId"]),
+
+  // Each time an admin connects a buyer with a product's seller.
+  buyerLeads: defineTable({
+    productId: v.id("products"),
+    buyerPhone: v.optional(v.string()),
+    adminName: v.string(),
+    createdAt: v.string(),
+  }).index("by_productId", ["productId"]),
 
   users: defineTable({
     role: userRoleValidator,
