@@ -6,9 +6,10 @@ import { localizeHref } from "@/paraglide/runtime";
 import { priceInfo } from "@/convex/discount";
 import { buildStoryImage, shareStoryFiles } from "@/lib/storyImage";
 import { getCityLabel } from "@/lib/cities";
+import { CATEGORY_CONFIG } from "@/lib/categories";
 import { formatAmount } from "@/components/ui";
 import {
-  PageHeader, Card, Empty, Skeleton, Segmented, Code, Thumb, btn, fmtIQD, useToast, useCopy, IconCheck, IconCopy,
+  PageHeader, Card, Empty, Skeleton, Segmented, FilterChips, Code, Thumb, btn, fmtIQD, useToast, useCopy, IconCheck, IconCopy,
 } from "@/components/admin/ui";
 
 // Instagram lets you pick up to 10 photos for stories at once.
@@ -91,6 +92,7 @@ export default function AdminStoriesPage() {
   const copy = useCopy();
   const [list, setList] = useState("today");
   const [price, setPrice] = useState("none");
+  const [category, setCategory] = useState("");
   const [picked, setPicked] = useState(null);
   const [making, setMaking] = useState(null);
   const [stories, setStories] = useState(null);
@@ -100,11 +102,20 @@ export default function AdminStoriesPage() {
     () => (products ?? []).filter((p) => p.status === "approved").sort((a, b) => approvedTime(b) - approvedTime(a)),
     [products],
   );
-  const shown = useMemo(() => {
+  const inList = useMemo(() => {
     if (list === "today") return live.filter((p) => approvedTime(p) >= startOfToday());
     if (list === "week") return live.filter((p) => approvedTime(p) >= Date.now() - 7 * DAY);
     return live;
   }, [live, list]);
+  // Only the categories that have products in this list, with how many.
+  const categories = useMemo(() => {
+    const count = (v) => inList.filter((p) => p.category === v).length;
+    const found = CATEGORY_CONFIG.filter((c) => c.value !== "all").map((c) => ({ value: c.value, label: c.value, count: count(c.value) })).filter((c) => c.count);
+    return [{ value: "", label: "All", count: inList.length }, ...found];
+  }, [inList]);
+  // a category with nothing in the chosen list falls back to All
+  const cat = categories.some((c) => c.value === category) ? category : "";
+  const shown = useMemo(() => (cat ? inList.filter((p) => p.category === cat) : inList), [inList, cat]);
 
   // Tick today's approvals for a start, once the products arrive.
   useEffect(() => {
@@ -118,6 +129,9 @@ export default function AdminStoriesPage() {
   const ids = picked ?? [];
   const full = ids.length >= MAX;
   const toggle = (id) => setPicked(ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]);
+  // Tick the shown products, as many as still fit under the limit.
+  const tickShown = () => setPicked([...ids, ...shown.map((p) => p._id).filter((id) => !ids.includes(id))].slice(0, MAX));
+  const allShownPicked = shown.length > 0 && shown.every((p) => ids.includes(p._id));
 
   async function make() {
     const chosen = ids.map((id) => live.find((p) => p._id === id)).filter(Boolean);
@@ -179,9 +193,17 @@ export default function AdminStoriesPage() {
     <div className="max-w-[760px]">
       <PageHeader title="Stories" sub={`Pick up to ${MAX} live products and make all their Instagram stories at once`} />
       <Segmented options={PRICE} value={price} onChange={setPrice} className="mb-2" />
-      <Segmented options={LISTS} value={list} onChange={setList} className="mb-3" size="sm" />
+      <Segmented options={LISTS} value={list} onChange={setList} className="mb-2.5" size="sm" />
+      {categories.length > 2 && <div className="mb-2.5"><FilterChips options={categories} value={cat} onChange={setCategory} /></div>}
+      {shown.length > 1 && !allShownPicked && !full && (
+        <div className="flex justify-end mb-1.5">
+          <button type="button" onClick={tickShown} className={btn("ghost", "sm")}>
+            Tick {Math.min(shown.filter((p) => !ids.includes(p._id)).length, MAX - ids.length)} more{cat ? ` ${cat}` : ""}
+          </button>
+        </div>
+      )}
       {shown.length === 0 ? (
-        <Card><Empty>{list === "today" ? "Nothing approved today yet. Try This week." : "No live products here."}</Empty></Card>
+        <Card><Empty>{cat ? `No live ${cat} products here.` : list === "today" ? "Nothing approved today yet. Try This week." : "No live products here."}</Empty></Card>
       ) : (
         <div className="mb-24">
           {shown.map((p) => (
