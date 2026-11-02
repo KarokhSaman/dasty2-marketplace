@@ -6,18 +6,13 @@ const shortDay = (iso) => (iso ? new Date(iso).toLocaleDateString("en-GB", { day
 // One product in a list: tap to open its panel. On phones it is a compact
 // two-line card; on laptops the seller gets its own column. `compact` keeps the
 // phone layout everywhere, for narrow places like a side panel.
-export default function ProductRow({ product: p, onOpen, selected, onToggle, compact = false }) {
+export default function ProductRow({ product: p, onOpen, compact = false }) {
   const wide = (cls) => (compact ? "" : cls);
   const soldish = p.status === "sold" || p.status === "paid";
   const shown = soldish ? (p.salePrice ?? p.price) : p.price;
   return (
     <div role="button" tabIndex={0} onClick={() => onOpen(p)} onKeyDown={(e) => e.key === "Enter" && onOpen(p)}
-      className={`flex items-center gap-3 px-3 lg:px-4 py-3 min-h-[76px] cursor-pointer transition-colors ${selected ? "bg-adm-accent-soft" : "hover:bg-adm-sunk"}`}>
-      {onToggle && (
-        <input type="checkbox" checked={!!selected} aria-label={`Select ${p.seq ?? p.title}`}
-          onClick={(e) => e.stopPropagation()} onChange={() => onToggle(p)}
-          className="w-[22px] h-[22px] lg:w-[18px] lg:h-[18px] shrink-0 accent-[var(--a-accent)] cursor-pointer" />
-      )}
+      className={`flex items-center gap-3 px-3 lg:px-4 py-3 min-h-[76px] cursor-pointer transition-colors hover:bg-adm-sunk`}>
       <Thumb src={p.photos?.[p.mainPhotoIndex ?? 0]} size={52} />
       <div className="flex-1 min-w-0">
         <p className="text-[14px] font-semibold leading-snug truncate">{p.title}</p>
