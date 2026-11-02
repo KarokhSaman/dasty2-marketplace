@@ -398,6 +398,9 @@ function drawPriceBar(ctx, { edge, fromRight, y, price, family }) {
 // price area (x, y), and the tag's tilt in degrees and the room for the price.
 const CARD_ART = {
   src: "/story-card.png",
+  // the "بۆ زانینی نرخ ئێرە داگرە" label for a story without a price
+  // (public/story-price-label.png, 1087 × 310); its pointer rests on the empty tag
+  label: "/story-price-label.png",
   card: [21, 162, 1161, 253],
   price: [540, 125, -5.0, 520],
 };
@@ -415,7 +418,7 @@ export const STORY_PHOTO_ASPECT = (() => {
 // The card art is drawn as is in Kurdish/Arabic (eyelet on the left, arrow
 // pointing left) and flipped in English (eyelet on the right, arrow pointing
 // right); the price, chips and title are written on it.
-function drawCardArt(ctx, { art, CS, cx, cy, cw, ch, rtl, price, title, city, store, family }) {
+function drawCardArt(ctx, { art, CS, cx, cy, cw, ch, rtl, price, label, title, city, store, family }) {
   const A = CARD_ART;
   const ox = A.card[0] * CS, oy = A.card[1] * CS, iw = art.width * CS, ih = art.height * CS;
   ctx.save();
@@ -431,6 +434,16 @@ function drawCardArt(ctx, { art, CS, cx, cy, cw, ch, rtl, price, title, city, st
   const tcx = rtl ? cx - ox + A.price[0] * CS : cx + cw + ox - A.price[0] * CS;
   const tcy = cy - oy + A.price[1] * CS;
   const roomW = A.price[3] * CS;
+  if (label) {
+    // no price: the tag stays empty for the Instagram link sticker, and the
+    // label above it, tilted with the tag, says to tap there for the price
+    const lw = 765 * CS, lh = lw * (label.height / label.width);
+    ctx.save();
+    ctx.translate(tcx, tcy);
+    ctx.rotate(rtl ? ang : -ang);
+    ctx.drawImage(label, -lw / 2, -50 * CS - lh - 12, lw, lh);
+    ctx.restore();
+  } else {
   const [, amount = price ?? "", unit = ""] = /^(.*?)(?:\s+([A-Za-z]{2,4}))?$/.exec(price ?? "") ?? [];
   let size = 60, aw, uw;
   const measure = () => {
@@ -447,6 +460,7 @@ function drawCardArt(ctx, { art, CS, cx, cy, cw, ch, rtl, price, title, city, st
   ctx.fillStyle = "#5a0a1e"; ctx.font = `800 ${size}px ${family}`; ctx.fillText(amount, start, base);
   if (unit) { ctx.fillStyle = INK_SOFT; ctx.font = `700 ${Math.round(size * 0.62)}px ${family}`; ctx.fillText(unit, start + aw + size * 0.22, base); }
   ctx.restore();
+  }
 
   // chips and title inside the shorter card
   const pad = 56;
@@ -513,7 +527,7 @@ function drawSoldStamp(ctx, { x, y, w, family }) {
   ctx.restore();
 }
 
-function drawStory(ctx, { title, price, img, storyCrop, sold, city, store, code, site, rtl, logo, brand, brandImg, drawings, art, family }) {
+function drawStory(ctx, { title, price, label, img, storyCrop, sold, city, store, code, site, rtl, logo, brand, brandImg, drawings, art, family }) {
   const edge = rtl ? W - 72 : 72;
 
   // Background: white, scattered with small, very faint baby-product
@@ -648,7 +662,7 @@ function drawStory(ctx, { title, price, img, storyCrop, sold, city, store, code,
     // on a sold story the card and price tag fade back so the stamp leads
     ctx.save();
     if (sold) ctx.globalAlpha = 0.4;
-    drawCardArt(ctx, { art, CS, cx, cy, cw, ch, rtl, price, title, city, store, family });
+    drawCardArt(ctx, { art, CS, cx, cy, cw, ch, rtl, price, label, title, city, store, family });
     ctx.restore();
   } else {
   ctx.save();
@@ -710,7 +724,7 @@ function drawStory(ctx, { title, price, img, storyCrop, sold, city, store, code,
 
   // Price bar on the photo's bottom edge, just above the card, on the
   // reading side (left in Kurdish/Arabic, right in English).
-  if (!art) drawPriceBar(ctx, { edge: rtl ? cx + 24 : cx + cw - 24, fromRight: !rtl, y: cy - 2, price, family });
+  if (!art && price) drawPriceBar(ctx, { edge: rtl ? cx + 24 : cx + cw - 24, fromRight: !rtl, y: cy - 2, price, family });
 }
 
 /**
@@ -719,6 +733,8 @@ function drawStory(ctx, { title, price, img, storyCrop, sold, city, store, code,
  * @param {object} p
  * @param {string} p.title      product title
  * @param {string} [p.price]    formatted price, e.g. "50,000 IQD", shown on the tag
+ * @param {boolean} [p.noPrice] leave the tag empty for a link sticker, with the
+ *                              "tap here for the price" label above it
  * @param {string} [p.photo]    absolute image URL (R2)
  * @param {string} [p.city]     localized city
  * @param {string} [p.store]    localized "Store" label, for store products
@@ -729,7 +745,7 @@ function drawStory(ctx, { title, price, img, storyCrop, sold, city, store, code,
  * @param {object} [p.storyCrop] admin-set framing of the photo ({ url, x, y, w, h }
  *                              as fractions); used only while `url` is this photo
  */
-export async function buildStoryImage({ title, price, photo, storyCrop, sold, city, store, code, site, rtl = false, brand }) {
+export async function buildStoryImage({ title, price, noPrice, photo, storyCrop, sold, city, store, code, site, rtl = false, brand }) {
   const crop = storyCrop && storyCrop.url === photo ? storyCrop : null;
   // Webfonts must be resolved before fillText or the card renders in a
   // fallback face (and Kurdish/Arabic glyphs may not render at all).
@@ -738,10 +754,11 @@ export async function buildStoryImage({ title, price, photo, storyCrop, sold, ci
   }
 
   const drawingUrls = CATEGORY_CONFIG.filter((c) => c.value !== "all").map((c) => c.img);
-  const [img, logo, art, brandImg, ...drawings] = await Promise.all([
+  const [img, logo, art, label, brandImg, ...drawings] = await Promise.all([
     loadImage(photo, { cors: true }),
     loadImage("/logo-mndallan.svg"),
     loadImage(CARD_ART.src),
+    noPrice ? loadImage(CARD_ART.label) : null,
     loadImage(brandLogo(brand)),
     ...drawingUrls.map((u) => loadImage(u, { cors: true })),
   ]);
@@ -755,7 +772,7 @@ export async function buildStoryImage({ title, price, photo, storyCrop, sold, ci
     canvas.height = H;
     const ctx = canvas.getContext("2d");
     if (!ctx) return null;
-    drawStory(ctx, { title, price, img: withPhoto ? img : null, storyCrop: crop, sold, city, store, code, site, rtl, logo, brand, brandImg, drawings: withPhoto ? drawings.filter(Boolean) : [], art, family });
+    drawStory(ctx, { title, price: noPrice ? undefined : price, label, img: withPhoto ? img : null, storyCrop: crop, sold, city, store, code, site, rtl, logo, brand, brandImg, drawings: withPhoto ? drawings.filter(Boolean) : [], art, family });
     return canvas;
   };
 
@@ -791,11 +808,22 @@ export async function shareStoryImage(product) {
   }
   if (!blob) return "failed";
 
-  const file = new File([blob], `${product.code || "product"}.png`, { type: "image/png" });
+  return shareStoryFiles([new File([blob], `${product.code || "product"}.png`, { type: "image/png" })]);
+}
 
-  if (navigator.canShare?.({ files: [file] })) {
+/**
+ * Hand several story PNGs to the OS share sheet at once ("Save N Images" on
+ * iPhone, Gallery on Android), or download them one by one where the runtime
+ * cannot share files. Call it straight from a tap: iOS only opens the sheet
+ * under a user gesture, so build the files beforehand.
+ *
+ * @param {File[]} files
+ * @returns {Promise<"shared" | "downloaded" | "failed">}
+ */
+export async function shareStoryFiles(files) {
+  if (navigator.canShare?.({ files })) {
     try {
-      await navigator.share({ files: [file] });
+      await navigator.share({ files });
       return "shared";
     } catch (err) {
       // A user-cancelled sheet is not a failure — do not fall back to a
@@ -805,12 +833,14 @@ export async function shareStoryImage(product) {
   }
 
   try {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = file.name;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 10_000);
+    for (const file of files) {
+      const url = URL.createObjectURL(file);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = file.name;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 10_000);
+    }
     return "downloaded";
   } catch {
     return "failed";
