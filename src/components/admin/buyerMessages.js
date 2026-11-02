@@ -1,4 +1,5 @@
 import { getLocale } from "@/paraglide/runtime";
+import { localPhone } from "@/components/admin/ui";
 
 // WhatsApp messages for connecting a buyer with a seller and following up,
 // sent by the admin from their own WhatsApp. Arabic when the admin uses the
@@ -11,11 +12,9 @@ const code = (p) => (p.seq ? `*${LRM}#${p.seq}${LRM}*` : "");
 // A phone number alone on its own plain line (no bold, no quote), so WhatsApp
 // makes it tappable and it can be copied by itself. The leading RLM keeps the
 // line right-aligned in the right-to-left message.
-// Iraqi numbers show the local way ("+9647724944244" → "07724944244").
-const phoneLine = (phone) => {
-  const n = String(phone ?? "").replace(/[\s-]+/g, "");
-  return `${RLM}${n.startsWith("+964") ? `0${n.slice(4)}` : n.startsWith("00964") ? `0${n.slice(5)}` : n}`;
-};
+// Iraqi numbers show the local way ("+9647724944244" → "07724944244"), with
+// no spaces so the digits never reorder in right-to-left text.
+const phoneLine = (phone) => `${RLM}${localPhone(phone).replace(/[\s-]+/g, "")}`;
 const amount = (n) => `${LRM}${Number(n ?? 0).toLocaleString("en-US")}${LRM}`;
 const ar = () => getLocale() === "ar";
 

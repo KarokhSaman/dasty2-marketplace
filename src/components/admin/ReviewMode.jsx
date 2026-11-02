@@ -13,7 +13,7 @@ import { RejectBox } from "@/components/admin/ProductPanel";
 import CustomSelect from "@/components/ui/CustomSelect";
 import { CATEGORY_CONFIG } from "@/lib/categories";
 import { brandFitsCategory, getBrandChoices } from "@/lib/brands";
-import { StoreTag, Code, Segmented, btn, fmtIQD, inputCls, labelCls, useToast, waLink, IconX, IconCheck, IconRotate, IconStar, IconTrash, IconWhatsApp } from "@/components/admin/ui";
+import { StoreTag, Code, Segmented, btn, fmtIQD, inputCls, labelCls, useToast, waLink, fmtPhone, IconX, IconCheck, IconRotate, IconStar, IconTrash, IconWhatsApp } from "@/components/admin/ui";
 import { approvalMessage } from "@/components/admin/approvalMessage";
 
 const CONDITION = { new: () => m.conditionNew(), likenew: () => m.conditionLikeNew(), used: () => m.conditionUsed() };
@@ -325,7 +325,7 @@ export default function ReviewMode({ queue, onClose }) {
                 <div className="rounded-xl border border-adm-line bg-adm-surface px-3 py-2.5 flex items-center gap-3">
                   <div className="flex-1 min-w-0">
                     <p className="text-[13.5px] font-semibold truncate">{p.sellerName}</p>
-                    <p className="text-[12px] text-adm-soft tabular-nums" dir="ltr">{p.sellerPhone}</p>
+                    <p className="text-[12px] text-adm-soft tabular-nums" dir="ltr">{fmtPhone(p.sellerPhone)}</p>
                   </div>
                 </div>
                 <div className="space-y-1.5">

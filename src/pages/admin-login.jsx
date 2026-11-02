@@ -15,7 +15,7 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-[75vh]">
+    <div className="flex items-center justify-center min-h-[75vh] px-4">
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-6">
           <div className="w-14 h-14 bg-rose-50 rounded-2xl flex items-center justify-center mb-4">

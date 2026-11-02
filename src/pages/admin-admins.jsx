@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import AdminActionsMenu from "@/components/admin/AdminActionsMenu";
-import { PageHeader, SearchBox, Avatar, Empty, Skeleton } from "@/components/admin/ui";
+import { PageHeader, SearchBox, Avatar, Empty, Skeleton, fmtPhone } from "@/components/admin/ui";
 import { RowList } from "@/components/admin/ProductRow";
 
 function formatDate(value) {
@@ -64,7 +64,7 @@ export default function AdminAdminsPage() {
                 </div>
                 {admin.email && <p className="text-[12px] text-adm-soft truncate" dir="ltr">{admin.email}</p>}
                 <p className="text-[11.5px] text-adm-fade">
-                  {admin.phone && <span dir="ltr" className="tabular-nums">{admin.phone} · </span>}
+                  {admin.phone && <span dir="ltr" className="tabular-nums">{fmtPhone(admin.phone)} · </span>}
                   Joined {formatDate(admin.registeredAt)}
                 </p>
               </div>

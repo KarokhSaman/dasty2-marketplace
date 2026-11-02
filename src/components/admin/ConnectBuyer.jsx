@@ -5,7 +5,7 @@ import { getCityLabel } from "@/lib/cities";
 import { errorMessage } from "@/lib/errors";
 import { buyerIntroMessage, sellerHeadsUpMessage } from "@/components/admin/buyerMessages";
 import {
-  Panel, StatusChip, Code, Thumb, btn, fmtIQD, inputCls, labelCls, useToast, waLink, IconWhatsApp,
+  Panel, StatusChip, Code, Thumb, btn, fmtIQD, inputCls, labelCls, useToast, waLink, fmtPhone, IconWhatsApp,
 } from "@/components/admin/ui";
 
 const daysAgo = (iso) => (iso ? Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 86400000)) : null);
@@ -26,7 +26,7 @@ export function BuyerLeads({ productId, total }) {
           {l.buyerPhone ? (
             <a href={waLink(l.buyerPhone)} target="_blank" rel="noopener noreferrer" dir="ltr"
               className="inline-flex items-center gap-1 font-semibold text-adm-wa tabular-nums">
-              <IconWhatsApp className="w-3.5 h-3.5" /> {l.buyerPhone}
+              <IconWhatsApp className="w-3.5 h-3.5" /> {fmtPhone(l.buyerPhone)}
             </a>
           ) : (
             <span className="text-adm-fade">no number entered</span>
@@ -115,7 +115,7 @@ export default function ConnectBuyer({ products, initial, onClose, onOpenProduct
             </button>
 
             <div className="rounded-xl bg-adm-sunk px-3 py-2.5 text-[12.5px]">
-              <b>Seller:</b> {product.sellerName}{product.storeName ? ` · ${product.storeName}` : ""} · <span dir="ltr" className="tabular-nums">{product.sellerPhone}</span>
+              <b>Seller:</b> {product.sellerName}{product.storeName ? ` · ${product.storeName}` : ""} · <span dir="ltr" className="tabular-nums">{fmtPhone(product.sellerPhone)}</span>
               {product.leadCount ? <span className="block text-adm-soft">{product.leadCount} buyer{product.leadCount === 1 ? "" : "s"} connected before</span> : null}
               {product.leadCount ? <BuyerLeads productId={product._id} total={product.leadCount} /> : null}
             </div>

@@ -429,5 +429,7 @@ html:has(.admin-root), html:has(.seller-root) {
   .adm-scope :where(p, h1, h2, h3, h4, span, label, a, button, li) { unicode-bidi: plaintext; }
   [dir="rtl"] .adm-scope :where(p, h1, h2, h3, h4, label, li, span):not(:where(.text-center, .text-end, [dir="ltr"]) *) { text-align: right; }
   [dir="rtl"] .adm-scope :where(.text-end) :where(p, h1, h2, h3, h4, label, li) { text-align: left; }
+  html[dir="ltr"] .adm-scope :where(p, h1, h2, h3, h4, label, li, span):not(:where(.text-center, .text-end) *) { text-align: left; }
+  html[dir="ltr"] .adm-scope :where(.text-end) :where(p, h1, h2, h3, h4, label, li) { text-align: right; }
 }
 

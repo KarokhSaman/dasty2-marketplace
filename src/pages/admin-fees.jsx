@@ -7,7 +7,7 @@ import { errorMessage } from "@/lib/errors";
 import ProductPanel from "@/components/admin/ProductPanel";
 import { useProductActions } from "@/components/admin/useProductActions";
 import {
-  PageHeader, Card, Avatar, Code, ConfirmBox, Empty, Skeleton, btn, fmtIQD, useToast, useCopy, waLink,
+  PageHeader, Card, Avatar, Code, ConfirmBox, Empty, Skeleton, btn, fmtIQD, useToast, useCopy, waLink, fmtPhone,
   IconWhatsApp, IconCopy, IconCheck,
 } from "@/components/admin/ui";
 
@@ -56,7 +56,7 @@ function SellerFees({ group, onOpen }) {
         <Avatar name={group.name} size={42} />
         <div className="flex-1 min-w-0">
           <p className="text-[15px] font-bold truncate">{group.name}</p>
-          <p className="text-[12.5px] text-adm-soft tabular-nums" dir="ltr">{group.phone}</p>
+          <p className="text-[12.5px] text-adm-soft tabular-nums" dir="ltr">{fmtPhone(group.phone)}</p>
         </div>
         <div className="text-end shrink-0">
           <p className="text-[10.5px] font-bold uppercase tracking-[0.05em] text-adm-fade">Owes</p>

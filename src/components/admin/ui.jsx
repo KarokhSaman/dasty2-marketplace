@@ -211,9 +211,10 @@ export const IconWhatsApp = ({ className = "w-[18px] h-[18px]" }) => (
   </svg>
 );
 
-// An invisible left-to-right mark keeps "+964…" in order when the copied
-// number is pasted into Kurdish or Arabic text (otherwise the + jumps to the end).
-export const ltrPhone = (phone) => `\u200E${phone ?? ""}`;
+// A copied number, the local way like the messages ("07724944244"). An
+// invisible left-to-right mark keeps a foreign "+…" number in order when it is
+// pasted into Kurdish or Arabic text (otherwise the + jumps to the end).
+export const ltrPhone = (phone) => `\u200E${localPhone(phone)}`;
 
 // WhatsApp wants the number in international form: Kurdish/Arabic digits
 // become 0-9, a local 07… number becomes 9647…, and a leading 00 is dropped.
@@ -225,6 +226,19 @@ export function waNumber(phone) {
   if (d.startsWith("00")) d = d.slice(2);
   else if (d.startsWith("0")) d = `964${d.slice(1)}`;
   return d;
+}
+
+// An Iraqi number the local way, "07724944244", however it was saved (+964…,
+// 00964…, 964…, 07…, Kurdish or Arabic digits). Anything else stays as saved.
+export function localPhone(phone) {
+  const d = waNumber(phone);
+  return /^9647\d{9}$/.test(d) ? `0${d.slice(3)}` : String(phone ?? "");
+}
+
+// On screen, spaced for reading: "0772 494 4244".
+export function fmtPhone(phone) {
+  const n = localPhone(phone);
+  return /^07\d{9}$/.test(n) ? `${n.slice(0, 4)} ${n.slice(4, 7)} ${n.slice(7)}` : n;
 }
 
 // api.whatsapp.com keeps the message's line breaks on every phone; the short
