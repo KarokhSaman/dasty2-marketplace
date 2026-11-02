@@ -5,12 +5,10 @@ import { api } from "@/convex/_generated/api";
 import * as m from "@/paraglide/messages";
 import CustomSelect from "@/components/ui/CustomSelect";
 import { CATEGORY_CONFIG } from "@/lib/categories";
-import { errorMessage } from "@/lib/errors";
 import ProductRow, { RowList } from "@/components/admin/ProductRow";
 import ProductPanel from "@/components/admin/ProductPanel";
 import ReviewMode from "@/components/admin/ReviewMode";
-import { useProductActions } from "@/components/admin/useProductActions";
-import { PageHeader, SearchBox, FilterChips, Empty, Skeleton, btn, useToast, IconX } from "@/components/admin/ui";
+import { PageHeader, SearchBox, FilterChips, Empty, Skeleton, btn, IconX } from "@/components/admin/ui";
 
 const PAGE = 60;
 const TABS = [
@@ -29,8 +27,6 @@ export default function AdminProductsPage() {
   const search = useSearch({ strict: false }) ?? {};
   const navigate = useNavigate();
   const products = useQuery(api.products.getAll);
-  const actions = useProductActions();
-  const toast = useToast();
 
   const tab = TABS.some(([k]) => k === search.tab) ? search.tab : "all";
   const sellerId = search.sellerId ?? null;
@@ -39,14 +35,12 @@ export default function AdminProductsPage() {
   const [city, setCity] = useState("");
   const [shown, setShown] = useState(PAGE);
   const [openId, setOpenId] = useState(search.focus ?? null);
-  const [selected, setSelected] = useState(() => new Set());
   const [reviewing, setReviewing] = useState(false);
-  const [bulkBusy, setBulkBusy] = useState(false);
 
   const setTab = (next) => navigate({ to: "/admin/products", search: (s) => ({ ...s, tab: next === "all" ? undefined : next, focus: undefined }), replace: true });
   const clearSeller = () => navigate({ to: "/admin/products", search: (s) => ({ ...s, sellerId: undefined }), replace: true });
 
-  useEffect(() => { setShown(PAGE); setSelected(new Set()); }, [tab, sellerId, q, category, city]);
+  useEffect(() => { setShown(PAGE); }, [tab, sellerId, q, category, city]);
 
   const base = useMemo(() => (products ?? []).filter((p) => !sellerId || p.sellerId === sellerId), [products, sellerId]);
 
@@ -72,26 +66,6 @@ export default function AdminProductsPage() {
   const pending = useMemo(() => base.filter((p) => p.status === "pending").sort((a, b) => a.dateAdded.localeCompare(b.dateAdded)), [base]);
   const open = products?.find((p) => p._id === openId) ?? null;
   const sellerName = sellerId ? base[0]?.sellerName : null;
-
-  const picked = list.filter((p) => selected.has(p._id));
-  const canApprove = picked.filter((p) => p.status === "pending");
-  const canPay = picked.filter((p) => p.status === "sold");
-  const toggle = (p) => setSelected((s) => { const n = new Set(s); n.has(p._id) ? n.delete(p._id) : n.add(p._id); return n; });
-
-  async function bulk(kind) {
-    const items = kind === "approve" ? canApprove : canPay;
-    setBulkBusy(true);
-    let ok = 0;
-    try {
-      for (const p of items) { kind === "approve" ? await actions.approve(p) : await actions.markPaid(p); ok++; }
-      toast(kind === "approve" ? `Approved ${ok}` : `Marked ${ok} paid`);
-      setSelected(new Set());
-    } catch (err) {
-      toast(`${ok} done. ${errorMessage(err, "Then something went wrong")}`, "error");
-    } finally {
-      setBulkBusy(false);
-    }
-  }
 
   if (!products) return <Skeleton rows={8} />;
 
@@ -132,7 +106,7 @@ export default function AdminProductsPage() {
         <>
           <RowList>
             {list.slice(0, shown).map((p) => (
-              <ProductRow key={p._id} product={p} onOpen={(x) => setOpenId(x._id)} selected={selected.has(p._id)} onToggle={toggle} />
+              <ProductRow key={p._id} product={p} onOpen={(x) => setOpenId(x._id)} />
             ))}
           </RowList>
           {list.length > shown && (
@@ -141,20 +115,6 @@ export default function AdminProductsPage() {
             </button>
           )}
         </>
-      )}
-
-      {selected.size > 0 && (
-        <div className="fixed z-40 inset-x-3 lg:inset-x-auto lg:start-[calc(232px+32px)] lg:end-8 bottom-[76px] lg:bottom-6 flex justify-center pointer-events-none"
-          style={{ marginBottom: "env(safe-area-inset-bottom, 0px)" }}>
-          <div className="pointer-events-auto flex items-center gap-1.5 rounded-2xl bg-adm-ink text-adm-surface p-1.5 ps-4 shadow-[var(--a-shadow)] max-w-full overflow-x-auto">
-            <span className="text-[13px] font-semibold whitespace-nowrap me-1">{selected.size} selected</span>
-            <button type="button" disabled={!canApprove.length || bulkBusy} onClick={() => bulk("approve")}
-              className="h-9 px-3 rounded-xl bg-white/15 text-[12.5px] font-semibold whitespace-nowrap disabled:opacity-40">{m.adminApprove()} {canApprove.length || ""}</button>
-            <button type="button" disabled={!canPay.length || bulkBusy} onClick={() => bulk("paid")}
-              className="h-9 px-3 rounded-xl bg-white/15 text-[12.5px] font-semibold whitespace-nowrap disabled:opacity-40">{m.adminMarkPaid()} {canPay.length || ""}</button>
-            <button type="button" onClick={() => setSelected(new Set())} aria-label="Clear selection" className="h-9 w-9 grid place-items-center rounded-xl"><IconX className="w-4 h-4" /></button>
-          </div>
-        </div>
       )}
 
       {open && <ProductPanel product={open} onClose={() => setOpenId(null)} />}
