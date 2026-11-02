@@ -8,7 +8,7 @@ import SellerStores from "@/components/admin/SellerStores";
 import ProductRow, { RowList } from "@/components/admin/ProductRow";
 import {
   Panel, Avatar, SectionTitle, Segmented, Switch, ConfirmBox, AmountInput, btn, fmtIQD, inputCls, labelCls,
-  useToast, useCopy, waLink, ltrPhone, IconWhatsApp, IconCopy,
+  useToast, useCopy, waLink, ltrPhone, fmtPhone, IconWhatsApp, IconCopy,
 } from "@/components/admin/ui";
 
 export function feeDeal(s) {
@@ -80,7 +80,7 @@ export default function SellerPanel({ seller: s, products, sellers, stores, onCl
     <Panel open onClose={onClose} wide
       leading={<Avatar name={s.name} size={44} />}
       title={s.name || "Unnamed"}
-      subtitle={<p className="text-[12.5px] text-adm-soft"><span dir="ltr" className="tabular-nums">{s.phone}</span>{s.city ? ` · ${s.city}` : ""}</p>}>
+      subtitle={<p className="text-[12.5px] text-adm-soft"><span dir="ltr" className="tabular-nums">{fmtPhone(s.phone)}</span>{s.city ? ` · ${s.city}` : ""}</p>}>
 
       {s.phone && (
         <div className="grid grid-cols-2 gap-2">

@@ -20,15 +20,16 @@ const ago = (iso) => Math.floor((Date.now() - new Date(iso).getTime()) / DAY);
 // A follow-up row: the product, why it is here, and its quick actions.
 function FollowRow({ product: p, note, onOpen, children }) {
   return (
-    <div className="flex gap-3 items-start rounded-2xl border border-adm-line bg-adm-surface p-2.5 mb-2">
-      <button type="button" onClick={() => onOpen(p)} className="shrink-0"><Thumb src={p.photos?.[p.mainPhotoIndex ?? 0]} size={52} /></button>
-      <div className="flex-1 min-w-0">
-        <button type="button" onClick={() => onOpen(p)} className="block text-start w-full">
-          <span className="block text-[13.5px] font-semibold truncate" dir="auto">{p.title}</span>
+    <div className="rounded-2xl border border-adm-line bg-adm-surface p-2.5 mb-2">
+      <button type="button" onClick={() => onOpen(p)} className="flex gap-3 items-center w-full text-start">
+        <Thumb src={p.photos?.[p.mainPhotoIndex ?? 0]} size={52} />
+        <span className="flex-1 min-w-0">
+          <span className="block text-[13.5px] font-semibold truncate">{p.title}</span>
           <span className="flex items-center gap-1.5 text-[11.5px] text-adm-soft"><Code>{p.seq}</Code> {note}</span>
-        </button>
-        <div className="flex flex-wrap gap-1.5 mt-1.5">{children}</div>
-      </div>
+        </span>
+      </button>
+      {/* Two even columns on phones, so four buttons make two tidy rows. */}
+      <div className="grid grid-cols-2 gap-1.5 mt-2.5 sm:flex sm:flex-wrap">{children}</div>
     </div>
   );
 }
@@ -109,7 +110,7 @@ export default function AdminTodoPage() {
           <span className="text-[11.5px] text-adm-soft max-sm:hidden">New products waiting</span>
         </button>
         <a href="#deletes" className={tile}>
-          <span className="text-[10.5px] font-bold uppercase tracking-[0.05em] text-adm-fade max-w-full truncate">{m.adminDeleteRequests()}</span>
+          <span className="text-[10.5px] font-bold uppercase tracking-[0.05em] text-adm-fade max-w-full truncate">To delete</span>
           <span className="text-[22px] font-bold text-st-delete tabular-nums">{data.deletes.length}</span>
           <span className="text-[11.5px] text-adm-soft max-sm:hidden">Sellers asking to remove</span>
         </a>

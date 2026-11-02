@@ -96,7 +96,8 @@ export default function AdminStoriesPage() {
   const [picked, setPicked] = useState(null);
   const [making, setMaking] = useState(null);
   const [stories, setStories] = useState(null);
-  const [copiedId, setCopiedId] = useState(null);
+  // Every story whose link was copied stays ticked, to keep track while posting.
+  const [copiedIds, setCopiedIds] = useState([]);
 
   const live = useMemo(
     () => (products ?? []).filter((p) => p.status === "approved").sort((a, b) => approvedTime(b) - approvedTime(a)),
@@ -149,7 +150,7 @@ export default function AdminStoriesPage() {
       setMaking(null);
     }
     if (made.length < chosen.length) toast(`${chosen.length - made.length} could not be made`, "error");
-    if (made.length) { setCopiedId(null); setStories(made); }
+    if (made.length) { setCopiedIds([]); setStories(made); }
   }
 
   async function saveAll() {
@@ -160,7 +161,7 @@ export default function AdminStoriesPage() {
 
   async function copyLink(p) {
     await copy(productLink(p), `Link for #${p.seq} copied`);
-    setCopiedId(p._id);
+    setCopiedIds((ids) => (ids.includes(p._id) ? ids : [...ids, p._id]));
   }
 
   if (!products) return <Skeleton rows={5} />;
@@ -177,7 +178,7 @@ export default function AdminStoriesPage() {
         </p>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 mb-24">
           {stories.map((s) => (
-            <StoryCard key={s.product._id} story={s} copied={copiedId === s.product._id} onCopy={() => copyLink(s.product)} />
+            <StoryCard key={s.product._id} story={s} copied={copiedIds.includes(s.product._id)} onCopy={() => copyLink(s.product)} />
           ))}
         </div>
         <div className="fixed inset-x-0 bottom-[calc(60px+env(safe-area-inset-bottom,0px))] lg:bottom-0 lg:start-[232px] z-20 bg-adm-bg/95 backdrop-blur border-t border-adm-line px-4 lg:px-8 py-3">

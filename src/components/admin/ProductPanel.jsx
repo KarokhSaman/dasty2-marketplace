@@ -21,7 +21,7 @@ import { approvalMessage } from "@/components/admin/approvalMessage";
 import ConnectBuyer, { BuyerLeads } from "@/components/admin/ConnectBuyer";
 import {
   Panel, StatusChip, StoreTag, Code, SectionTitle, Segmented, Switch, ConfirmBox, AmountInput, Avatar, Thumb,
-  btn, fmtIQD, inputCls, labelCls, useToast, useCopy, waLink, ltrPhone,
+  btn, fmtIQD, inputCls, labelCls, useToast, useCopy, waLink, ltrPhone, fmtPhone,
   IconRotate, IconStar, IconTrash, IconCheck, IconX, IconCopy, IconWhatsApp, IconExternal, IconCrop,
 } from "@/components/admin/ui";
 
@@ -765,7 +765,7 @@ export default function ProductPanel({ product, onClose }) {
             <Avatar name={p.sellerName} />
             <div className="flex-1 min-w-0">
               <p className="text-[14px] font-semibold truncate">{p.sellerName}{p.storeName ? <span className="text-adm-fade font-normal"> · {p.storeName}</span> : null}</p>
-              <p className="text-[12.5px] text-adm-soft tabular-nums" dir="ltr">{p.sellerPhone}</p>
+              <p className="text-[12.5px] text-adm-soft tabular-nums" dir="ltr">{fmtPhone(p.sellerPhone)}</p>
               {(p.city || p.sellerAddress) && <p className="text-[12px] text-adm-fade truncate">{p.city}{p.sellerAddress ? `, ${p.sellerAddress}` : ""}</p>}
             </div>
           </div>

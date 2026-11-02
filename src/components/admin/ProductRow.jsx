@@ -25,9 +25,9 @@ export default function ProductRow({ product: p, onOpen, selected, onToggle, com
           {p.seq && <Code>{p.seq}</Code>}
           {p.storeId && <StoreTag />}
           {p.featured && <span className="text-st-pending"><IconStar filled className="w-3.5 h-3.5" /></span>}
-          <span className={`truncate ${wide("lg:hidden")}`}>{p.sellerName}</span>
           {!compact && <span className="truncate max-lg:hidden">{p.category} · {shortDay(soldish ? p.dateSold : p.dateAdded)}</span>}
         </div>
+        <p className={`text-[11.5px] text-adm-fade truncate mt-0.5 ${wide("lg:hidden")}`}>{p.sellerName}</p>
       </div>
       {!compact && (
         <div className="max-lg:hidden w-[170px] min-w-0 text-[12.5px]">

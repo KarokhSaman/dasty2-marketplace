@@ -6,7 +6,7 @@ import * as m from "@/paraglide/messages";
 import SellerPanel, { feeDeal } from "@/components/admin/SellerPanel";
 import ProductPanel from "@/components/admin/ProductPanel";
 import { RowList } from "@/components/admin/ProductRow";
-import { PageHeader, SearchBox, FilterChips, Avatar, StoreTag, Empty, Skeleton, fmtIQD, useCopy, ltrPhone, IconWhatsApp } from "@/components/admin/ui";
+import { PageHeader, SearchBox, FilterChips, Avatar, StoreTag, Empty, Skeleton, fmtIQD, useCopy, ltrPhone, fmtPhone, IconWhatsApp } from "@/components/admin/ui";
 
 export default function AdminSellersPage() {
   const search = useSearch({ strict: false }) ?? {};
@@ -88,7 +88,7 @@ export default function AdminSellersPage() {
                 {s.feeMode && s.feeMode !== "default" && <span className="h-[18px] px-1.5 rounded-[5px] text-[10px] font-bold bg-st-pending-bg text-st-pending inline-flex items-center">{feeDeal(s)}</span>}
                 {!s.isActive && <span className="h-[18px] px-1.5 rounded-[5px] text-[10px] font-bold bg-st-rejected-bg text-st-rejected inline-flex items-center">{m.adminInactive()}</span>}
               </div>
-              <p className="text-[12px] text-adm-fade mt-0.5 truncate"><span dir="ltr" className="tabular-nums">{s.phone}</span>{s.city ? ` · ${s.city}` : ""}</p>
+              <p className="text-[12px] text-adm-fade mt-0.5 truncate"><span dir="ltr" className="tabular-nums">{fmtPhone(s.phone)}</span>{s.city ? ` · ${s.city}` : ""}</p>
               <p className="text-[11.5px] text-adm-soft mt-1 flex gap-3">
                 <span><b className="text-adm-ink tabular-nums">{s.live}</b> live</span>
                 <span><b className="text-adm-ink tabular-nums">{s.waiting}</b> waiting</span>
