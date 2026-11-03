@@ -12,8 +12,8 @@ import {
   PageHeader, Card, Empty, Skeleton, Segmented, FilterChips, Code, Thumb, btn, fmtIQD, useToast, useCopy, IconCheck, IconCopy,
 } from "@/components/admin/ui";
 
-// Instagram lets you pick up to 10 photos for stories at once.
-const MAX = 10;
+// Instagram only shows in the phone's share sheet for up to 8 photos at once.
+const MAX = 8;
 const DAY = 86400000;
 // The stories are for the Kurdish audience, whatever language the admin page is in.
 const KU = { locale: "ckb" };
