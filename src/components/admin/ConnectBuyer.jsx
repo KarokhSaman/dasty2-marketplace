@@ -5,7 +5,7 @@ import { getCityLabel } from "@/lib/cities";
 import { errorMessage } from "@/lib/errors";
 import { buyerIntroMessage, sellerHeadsUpMessage } from "@/components/admin/buyerMessages";
 import {
-  Panel, StatusChip, Code, Thumb, btn, fmtIQD, inputCls, labelCls, useToast, waLink, fmtPhone, IconWhatsApp,
+  Panel, StatusChip, Code, Thumb, btn, fmtIQD, inputCls, labelCls, useToast, waLink, fmtPhone, waUsername, IconWhatsApp,
 } from "@/components/admin/ui";
 
 const daysAgo = (iso) => (iso ? Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 86400000)) : null);
@@ -23,7 +23,9 @@ export function BuyerLeads({ productId, total }) {
       {leads.map((l) => (
         <li key={l._id} className="flex items-center gap-2 text-[12px]">
           <span className="text-adm-fade w-12 shrink-0">{day(l.createdAt)}</span>
-          {l.buyerPhone ? (
+          {waUsername(l.buyerPhone) ? (
+            <span className="inline-flex items-center gap-1 font-semibold text-adm-ink" dir="ltr">{waUsername(l.buyerPhone)}</span>
+          ) : l.buyerPhone ? (
             <a href={waLink(l.buyerPhone)} target="_blank" rel="noopener noreferrer" dir="ltr"
               className="inline-flex items-center gap-1 font-semibold text-adm-wa tabular-nums">
               <IconWhatsApp className="w-3.5 h-3.5" /> {fmtPhone(l.buyerPhone)}
@@ -65,12 +67,15 @@ export default function ConnectBuyer({ products, initial, onClose, onOpenProduct
     return (products ?? []).find((p) => p.seq === wanted) ?? null;
   }, [products, wanted, initial]);
   const live = product?.status === "approved";
+  // A username can't open a chat by link, so "Send to buyer" opens the chat picker.
+  const username = waUsername(buyer);
+  const buyerNumber = username ? "" : buyer.trim();
 
   async function record() {
     if (!product || recorded.current === product._id) return;
     recorded.current = product._id;
     try {
-      await connect({ id: product._id, buyerPhone: buyer.trim() || undefined });
+      await connect({ id: product._id, buyerPhone: username ?? (buyerNumber || undefined) });
       toast("Buyer connection recorded");
     } catch (err) {
       recorded.current = null;
@@ -88,10 +93,14 @@ export default function ConnectBuyer({ products, initial, onClose, onOpenProduct
             inputMode="numeric" dir="ltr" placeholder="0096 or #26-0096" autoFocus={!initial} className={inputCls} />
         </div>
         <div>
-          <label className={labelCls} htmlFor="cb-buyer">Buyer's WhatsApp (optional)</label>
-          <input id="cb-buyer" value={buyer} onChange={(e) => setBuyer(e.target.value)} inputMode="tel" dir="ltr"
-            placeholder="0750 123 4567" className={inputCls} />
-          <p className="text-[11.5px] text-adm-fade mt-1">Fills in the buyer's number in the message to the seller, and opens the buyer's chat directly.</p>
+          <label className={labelCls} htmlFor="cb-buyer">Buyer's WhatsApp number or @username (optional)</label>
+          <input id="cb-buyer" value={buyer} onChange={(e) => setBuyer(e.target.value)} dir="ltr" autoCapitalize="none" autoCorrect="off"
+            placeholder="0750 123 4567 or @ahmed" className={inputCls} />
+          <p className="text-[11.5px] text-adm-fade mt-1">
+            {username
+              ? "The seller gets the username to find the buyer. Send to buyer opens WhatsApp's chat list: pick the buyer's chat."
+              : "Fills in the buyer's number in the message to the seller, and opens the buyer's chat directly."}
+          </p>
         </div>
 
         {wanted && !product && (
@@ -126,7 +135,7 @@ export default function ConnectBuyer({ products, initial, onClose, onOpenProduct
               </p>
             )}
 
-            <a href={waLink(buyer.trim() || "", buyerIntroMessage(product, product.sellerPhone))} target="_blank" rel="noopener noreferrer"
+            <a href={waLink(buyerNumber, buyerIntroMessage(product, product.sellerPhone))} target="_blank" rel="noopener noreferrer"
               onClick={record} className={`${btn("wa")} w-full`}>
               <IconWhatsApp className="w-4 h-4" /> Send to buyer (seller's number)
             </a>

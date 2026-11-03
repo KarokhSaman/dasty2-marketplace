@@ -1,5 +1,5 @@
 import { getLocale } from "@/paraglide/runtime";
-import { localPhone } from "@/components/admin/ui";
+import { localPhone, waUsername } from "@/components/admin/ui";
 
 // WhatsApp messages for connecting a buyer with a seller and following up,
 // sent by the admin from their own WhatsApp. Arabic when the admin uses the
@@ -46,12 +46,14 @@ ${phoneLine(sellerPhone)}
 
 export function sellerHeadsUpMessage(p, buyerPhone) {
   const buyer = buyerPhone?.trim();
+  // a WhatsApp username instead of a number: the seller finds the buyer by it
+  const username = waUsername(buyer);
   return ar()
     ? `*مرحباً عزيزي* 👋
 مشترٍ سأل عن منتجك 🤍
 
 🏷️ *${p.title}* · ${code(p)}
-${buyer ? `📞 رقم المشتري:\n${phoneLine(buyer)}\n` : ""}📲 سيتواصل معك قريباً.\n
+${username ? `👤 اسم المشتري في واتساب:\n${RLM}${username}\n` : buyer ? `📞 رقم المشتري:\n${phoneLine(buyer)}\n` : ""}📲 سيتواصل معك قريباً.\n
 > 📌 عند بيعه، يُرجى إبلاغنا.
 
 فريق موقع Mndallan 🧸`
@@ -59,7 +61,7 @@ ${buyer ? `📞 رقم المشتري:\n${phoneLine(buyer)}\n` : ""}📲 سيت�
 کڕیارێک داوای کاڵاکەتانی کرد 🤍
 
 🏷️ *${p.title}* · ${code(p)}
-${buyer ? `📞 ژمارەی کڕیار:\n${phoneLine(buyer)}\n` : ""}📲 بەم زووانە پەیوەندیتان پێوە دەکات.\n
+${username ? `👤 ناوی کڕیار لە واتساپ:\n${RLM}${username}\n` : buyer ? `📞 ژمارەی کڕیار:\n${phoneLine(buyer)}\n` : ""}📲 بەم زووانە پەیوەندیتان پێوە دەکات.\n
 > 📌 کاتێک فرۆشرا، تکایە ئاگادارمان بکەنەوە.
 
 تیمی ماڵپەڕی منداڵان 🧸`;

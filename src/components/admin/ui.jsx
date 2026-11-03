@@ -235,6 +235,14 @@ export function localPhone(phone) {
   return /^9647\d{9}$/.test(d) ? `0${d.slice(3)}` : String(phone ?? "");
 }
 
+// A WhatsApp username like "@ahmed" typed instead of a number, as "@ahmed";
+// null when it is a phone number. Usernames have letters, numbers have none.
+export function waUsername(value) {
+  const t = String(value ?? "").trim();
+  if (!t || !/[a-z]/i.test(t)) return null;
+  return `@${t.replace(/^@+/, "").replace(/\s+/g, "")}`;
+}
+
 // On screen, spaced for reading: "0772 494 4244".
 export function fmtPhone(phone) {
   const n = localPhone(phone);
