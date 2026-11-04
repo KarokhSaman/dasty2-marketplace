@@ -84,8 +84,9 @@ export default function ConnectBuyer({ products, initial, onClose, onOpenProduct
   }
 
   const days = product ? daysAgo(product.approvedAt ?? product.dateAdded) : null;
+  // What was typed stays: only the ✕ or a swipe on the handle closes it.
   return (
-    <Panel open onClose={onClose} title="Connect buyer" short>
+    <Panel open onClose={onClose} title="Connect buyer" short closeOnBackdrop={false}>
       <div className="space-y-3">
         <div>
           <label className={labelCls} htmlFor="cb-code">Item code the buyer sent</label>
