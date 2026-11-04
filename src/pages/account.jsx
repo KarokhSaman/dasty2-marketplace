@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useConvexAuth, useQuery } from "convex/react";
 import * as m from "@/paraglide/messages";
@@ -44,6 +44,14 @@ export default function BuyerAccountPage() {
   const [showFees, setShowFees] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const { isLoading, isAuthenticated } = useConvexAuth();
+
+  // mndallan.com/fee (the short link in Instagram replies) lands on #fees:
+  // open the fee table and bring it into view.
+  useEffect(() => {
+    if (window.location.hash !== "#fees") return;
+    setShowFees(true);
+    requestAnimationFrame(() => document.getElementById("fees")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  }, []);
   const seller = useQuery(api.users.getCurrentSeller, isAuthenticated ? {} : "skip");
   const sellerReady = !isLoading && (!isAuthenticated || seller !== undefined);
   const sellerId = seller?._id ?? null;
@@ -189,6 +197,7 @@ export default function BuyerAccountPage() {
         <div className="border-t border-gray-50"/>
 
         {/* Service fees */}
+        <div id="fees" style={{ scrollMarginTop: 88 }} aria-hidden />
         <button onClick={() => setShowFees(v => !v)}
           className="w-full flex items-center gap-4 px-4 py-3.5 hover:bg-[var(--color-cream)] transition-colors text-start">
           <div className="w-9 h-9 rounded-xl bg-green-50 flex items-center justify-center shrink-0">
