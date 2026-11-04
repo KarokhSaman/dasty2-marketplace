@@ -35,6 +35,26 @@ function requestWithExplicitUrlLocale(
   return new Request(request, { headers })
 }
 
+// Short links for Instagram replies and the bio. Each has a Kurdish and a Latin
+// spelling (Kurdish letters can turn into long %-codes when copied). 302, so a
+// link can be pointed somewhere else later without browsers holding the old one.
+const SELL_GUIDE = 'https://www.instagram.com/s/aGlnaGxpZ2h0OjE4MjgwNTU0NDIxMjkyNjkx'
+const SHORT_LINKS: Record<string, string> = {
+  '/فرۆشتن': SELL_GUIDE,
+  '/sell': SELL_GUIDE,
+  '/کرێی-خزمەتگوزاری': '/account#fees',
+  '/fee': '/account#fees',
+}
+
+function shortLink(request: Request): Response | undefined {
+  if (request.method !== 'GET') return undefined
+  let path = new URL(request.url).pathname.replace(/\/+$/, '')
+  try { path = decodeURIComponent(path) } catch { return undefined }
+  const to = SHORT_LINKS[path.replace(/\s+/g, '-')]
+  if (!to) return undefined
+  return new Response(null, { status: 302, headers: { Location: new URL(to, request.url).toString() } })
+}
+
 const LANG_COOKIE = 'dasty2-lang'
 const BOT = /bot|crawl|spider|slurp|facebookexternalhit|whatsapp|telegrambot|preview/i
 
@@ -58,6 +78,8 @@ function firstVisitLocale(request: Request): 'ckb' | 'en' | 'ar' | undefined {
 
 export default {
   async fetch(request: Request): Promise<Response> {
+    const short = shortLink(request)
+    if (short) return short
     // Pass the original URL to the handler — TanStack Router's `rewrite`
     // option de-localizes it itself. `localizedRequest` differs only in the
     // internal locale-cookie override used for explicit deep links.
