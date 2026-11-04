@@ -112,7 +112,7 @@ export default function AdminShell({ children }) {
         )}
       </button>
       {showNotifs && (
-        <NotificationPanel notifications={notifications ?? []} sellerId={ADMIN_ID} label="Notifications" onClose={() => setShowNotifs(false)} bellRef={ref} />
+        <NotificationPanel notifications={notifications ?? []} sellerId={ADMIN_ID} label="Notifications" onClose={() => setShowNotifs(false)} bellRef={ref} products={products} />
       )}
     </div>
   );

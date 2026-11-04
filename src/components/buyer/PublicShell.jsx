@@ -173,6 +173,8 @@ function HeaderActions() {
     ready && isAuthenticated && sellerId ? { sellerId } : "skip",
   );
   const unread = (notifications ?? []).filter(n => !n.read).length;
+  // Photos and codes for the bell's list, loaded only while it is open.
+  const myProducts = useQuery(api.products.getBySeller, showNotifs && sellerId ? {} : "skip");
 
   if (!ready || isSignupPath(pathname)) {
     return (
@@ -212,6 +214,7 @@ function HeaderActions() {
                 label={m.sellerNotifications()}
                 onClose={() => setShowNotifs(false)}
                 bellRef={bellRef}
+                products={myProducts}
               />
             )}
           </div>
