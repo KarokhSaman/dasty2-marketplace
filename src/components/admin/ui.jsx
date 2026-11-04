@@ -298,9 +298,10 @@ export function useCopy() {
 }
 
 // ── Panel: bottom sheet on phones, side panel on laptops ─
-export function Panel({ open, onClose, title, subtitle, leading, children, footer, wide = false, short = false }) {
+export function Panel({ open, onClose, title, subtitle, leading, children, footer, wide = false, short = false, closeOnBackdrop = true }) {
   const [mounted, setMounted] = useState(false);
   const startY = useRef(null);
+  const backdropDown = useRef(null);
   const [drag, setDrag] = useState(0);
   useEffect(() => setMounted(true), []);
 
@@ -320,10 +321,21 @@ export function Panel({ open, onClose, title, subtitle, leading, children, foote
   const onDown = (e) => { startY.current = e.clientY; e.currentTarget.setPointerCapture?.(e.pointerId); };
   const onMove = (e) => { if (startY.current != null) setDrag(Math.max(0, e.clientY - startY.current)); };
   const onUp = () => { if (startY.current == null) return; if (drag > 110) onClose?.(); else setDrag(0); startY.current = null; };
+  // The dim area closes the panel only on a deliberate tap: a finger that
+  // moved (a scroll) or a long press, as when tapping away the phone keyboard,
+  // keeps it open.
+  const onBackdropDown = (e) => { backdropDown.current = { x: e.clientX, y: e.clientY, t: Date.now() }; };
+  const onBackdropUp = (e) => {
+    const d = backdropDown.current;
+    backdropDown.current = null;
+    if (!closeOnBackdrop || !d) return;
+    if (Math.hypot(e.clientX - d.x, e.clientY - d.y) < 8 && Date.now() - d.t < 500) onClose?.();
+  };
 
   return createPortal(
     <div className="adm-scope fixed inset-0 z-[80]" role="dialog" aria-modal="true" aria-label={typeof title === "string" ? title : "Panel"}>
-      <div className="absolute inset-0 bg-black/40 backdrop-fade" onClick={onClose} aria-hidden />
+      <div className="absolute inset-0 bg-black/40 backdrop-fade touch-none" onPointerDown={onBackdropDown} onPointerUp={onBackdropUp}
+        onPointerCancel={() => { backdropDown.current = null; }} aria-hidden />
       <div
         className={`adm-panel absolute inset-x-0 bottom-0 ${short ? "max-h-[92dvh]" : "h-[92dvh]"} rounded-t-[22px] bg-adm-bg flex flex-col shadow-[var(--a-shadow)]
           lg:inset-x-auto lg:end-0 lg:top-0 lg:h-full lg:max-h-none lg:rounded-none lg:border-s lg:border-adm-line ${wide ? "lg:w-[560px]" : "lg:w-[480px]"}`}
