@@ -8,7 +8,7 @@ import { getLocale } from "@/paraglide/runtime";
 // Invisible left-to-right marks keep the code reading "#26-0096" inside a
 // right-to-left line (otherwise the # jumps to the other end).
 const LRM = "‎";
-const codeOf = (product) => (product.seq ? `*${LRM}#${product.seq}${LRM}*` : "");
+export const codeOf = (product) => (product.seq ? `*${LRM}#${product.seq}${LRM}*` : "");
 
 const MESSAGES = {
   ckb: (code) => `*سڵاو و ڕێز* 👋

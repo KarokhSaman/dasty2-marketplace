@@ -928,9 +928,8 @@ export const getById = query({
     const { user } = await getCurrentUser(ctx);
     if (!isAdminUser(user)) {
       const seller = await requireCurrentSeller(ctx);
-      if (product.sellerId !== seller._id.toString()) {
-        throw new Error("Not authorized");
-      }
+      // Someone else's post looks the same as one that doesn't exist.
+      if (product.sellerId !== seller._id.toString()) return null;
     }
     const offer = await postingOffer(ctx, product);
     return {

@@ -7,12 +7,11 @@ import { getCityOptions } from "@/lib/cities";
 import BottomSheet from "@/components/ui/BottomSheet";
 import { api } from "@/convex/_generated/api";
 import { guessCity } from "@/lib/geo";
+import { sellerNextPath } from "@/lib/sellerNext";
 
-// Where to go once the profile is saved: the add form when the seller came
-// from Sell now (?next=add), otherwise the dashboard.
+// Where to go once the profile is saved: see sellerNextPath.
 function nextPath() {
-  if (typeof window === "undefined") return "/seller";
-  return new URLSearchParams(window.location.search).get("next") === "add" ? "/seller/add" : "/seller";
+  return sellerNextPath(new URLSearchParams(window.location.search).get("next"));
 }
 
 function ErrorBox({ message }) {
@@ -215,7 +214,7 @@ export default function SellerCompleteProfilePage() {
     if (me === undefined) return; // still loading
     // No user row (shouldn't happen post-verify) or already-completed profile.
     if (me && me.name && me.name.trim()) {
-      navigate({ to: nextPath(), replace: true });
+      navigate({ href: nextPath(), replace: true });
     }
   }, [isLoading, isAuthenticated, me, navigate]);
 

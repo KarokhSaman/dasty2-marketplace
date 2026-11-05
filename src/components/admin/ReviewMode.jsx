@@ -15,6 +15,7 @@ import { CATEGORY_CONFIG } from "@/lib/categories";
 import { brandFitsCategory, getBrandChoices } from "@/lib/brands";
 import { StoreTag, Code, Segmented, btn, fmtIQD, inputCls, labelCls, useToast, waLink, waNumber, fmtPhone, IconX, IconCheck, IconRotate, IconStar, IconTrash, IconWhatsApp } from "@/components/admin/ui";
 import { combinedApprovalMessage } from "@/components/admin/approvalMessage";
+import { rejectionMessage } from "@/components/admin/rejectionMessage";
 
 const CONDITION = { new: () => m.conditionNew(), likenew: () => m.conditionLikeNew(), used: () => m.conditionUsed() };
 
@@ -27,7 +28,7 @@ function SendButton({ seller, onSent, label }) {
   const { items } = seller;
   const sent = items.every((a) => a.sent);
   return (
-    <a href={waLink(seller.phone, combinedApprovalMessage(items))} target="_blank" rel="noopener noreferrer"
+    <a href={waLink(seller.phone, seller.message ?? combinedApprovalMessage(items))} target="_blank" rel="noopener noreferrer"
       onClick={() => onSent(items)} className={`${btn(sent ? "outline" : "wa", "sm")} shrink-0`}>
       <IconWhatsApp className="w-4 h-4" /> {sent ? "Sent" : items.length > 1 ? `${label} (${items.length})` : label}
     </a>
@@ -52,6 +53,10 @@ export default function ReviewMode({ queue, onClose }) {
   // once its button was tapped.
   const [approvedList, setApprovedList] = useState([]);
   const markSent = (items) => setApprovedList((list) => list.map((a) => (items.some((x) => x.id === a.id) ? { ...a, sent: true } : a)));
+  // Rejected posts: one message each, since each has its own reason and fix.
+  const [rejectedList, setRejectedList] = useState([]);
+  const markRejectSent = (items) => setRejectedList((list) => list.map((a) => (items.some((x) => x.id === a.id) ? { ...a, sent: true } : a)));
+  const [lastDecision, setLastDecision] = useState(null);
   const [leaving, setLeaving] = useState(false);
   const [mounted, setMounted] = useState(false);
   const swipe = useRef(null);
@@ -73,7 +78,11 @@ export default function ReviewMode({ queue, onClose }) {
     if (!s) sellers.push(s = { key, name: a.sellerName, phone: a.sellerPhone, items: [] });
     s.items.push(a);
   }
-  const unsentSellers = sellers.filter((s) => s.items.some((a) => !a.sent)).length;
+  const rejections = rejectedList.map((a) => ({ key: a.id, name: a.sellerName, phone: a.sellerPhone, items: [a], message: rejectionMessage(a, a.reason) })).reverse();
+  const unsentSellers = new Set([
+    ...sellers.filter((s) => s.items.some((a) => !a.sent)).map((s) => s.key),
+    ...rejectedList.filter((a) => !a.sent).map((a) => waNumber(a.sellerPhone)),
+  ]).size;
   // The seller just approved, and how many of their posts are still to review.
   const lastKey = approvedList[0] && waNumber(approvedList[0].sellerPhone);
   const lastSeller = sellers.find((s) => s.key === lastKey);
@@ -135,7 +144,11 @@ export default function ReviewMode({ queue, onClose }) {
         await actions.approve(p);
         if (p.sellerPhone) setApprovedList((list) => [{ id: p._id, seq: p.seq, title: p.title, sellerName: p.sellerName, sellerPhone: p.sellerPhone, sent: false }, ...list]);
       }
-      else await actions.reject(p, reason);
+      else {
+        await actions.reject(p, reason);
+        if (p.sellerPhone) setRejectedList((list) => [{ id: p._id, seq: p.seq, title: p.title, sellerName: p.sellerName, sellerPhone: p.sellerPhone, reason: reason.trim(), sent: false }, ...list]);
+      }
+      setLastDecision(kind);
       setDone((d) => ({ ...d, [kind === "approve" ? "approved" : "rejected"]: d[kind === "approve" ? "approved" : "rejected"] + 1 }));
       toast(kind === "approve" ? `${dirty ? "Saved and approved" : "Approved"} ${p.seq ?? ""}` : `Rejected ${p.seq ?? ""}`);
       next();
@@ -201,7 +214,15 @@ export default function ReviewMode({ queue, onClose }) {
         </div>
       )}
 
-      {p && approvedList[0] && (
+      {p && lastDecision === "reject" && rejections.length > 0 && (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2 border-b border-adm-line bg-st-rejected-bg shrink-0">
+          <IconX className="w-4 h-4 text-st-rejected shrink-0" />
+          <p className="flex-1 min-w-[140px] text-[12.5px] font-semibold truncate">Rejected {rejectedList[0].seq ? `#${rejectedList[0].seq}` : ""} · {rejectedList[0].sellerName}</p>
+          <SendButton seller={rejections[rejections.length - 1]} onSent={markRejectSent} label="Send message" />
+        </div>
+      )}
+
+      {p && lastDecision !== "reject" && approvedList[0] && (
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2 border-b border-adm-line bg-st-approved-bg shrink-0">
           <IconCheck className="w-4 h-4 text-st-approved shrink-0" />
           <p className="flex-1 min-w-[140px] text-[12.5px] font-semibold truncate">Approved {approvedList[0].seq ? `#${approvedList[0].seq}` : ""} · {approvedList[0].sellerName}</p>
@@ -231,6 +252,21 @@ export default function ReviewMode({ queue, onClose }) {
                         : <p className="text-[12px] text-adm-fade">{c.items.length} posts · {c.items.map((a) => (a.seq ? `#${a.seq}` : a.title)).join(", ")}</p>}
                     </div>
                     <SendButton seller={c} onSent={markSent} label="Send" />
+                  </div>
+                ))}
+              </div>
+            )}
+            {rejections.length > 0 && (
+              <div className="text-start rounded-2xl border border-adm-line bg-adm-surface divide-y divide-adm-line">
+                <p className="px-3.5 py-2.5 text-[12px] font-bold text-adm-soft">Tell each seller why, and how to fix it</p>
+                {rejections.map((c) => (
+                  <div key={c.key} className="flex items-center gap-3 px-3.5 py-2.5">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[13.5px] font-semibold truncate">{c.name}</p>
+                      <p className="text-[12px] text-adm-fade truncate">{c.items[0].seq ? `#${c.items[0].seq} · ` : ""}{c.items[0].title}</p>
+                      <p dir="auto" className="text-[12px] text-st-rejected truncate">{c.items[0].reason}</p>
+                    </div>
+                    <SendButton seller={c} onSent={markRejectSent} label="Send" />
                   </div>
                 ))}
               </div>

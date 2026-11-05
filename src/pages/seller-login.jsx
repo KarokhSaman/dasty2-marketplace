@@ -209,13 +209,13 @@ export default function SellerLoginPage() {
   // Route by role after a verified OTP. Hard navigation so the new session
   // cookie is picked up by the Convex provider + SSR guards. Sellers go through
   // complete-profile, which moves on once the profile is filled: to the add
-  // form if they came from Sell now (?next=add), otherwise the dashboard.
+  // form if they came from Sell now (?next=add), back to the seller page they
+  // were opening (?next=/seller/...), otherwise the dashboard.
   async function handleVerified(role) {
     if (role === "admin" || role === "super_admin") {
       window.location.href = "/admin";
     } else {
-      const toAdd = new URLSearchParams(window.location.search).get("next") === "add";
-      window.location.href = `/seller/complete-profile${toAdd ? "?next=add" : ""}`;
+      window.location.href = `/seller/complete-profile${window.location.search}`;
     }
   }
 

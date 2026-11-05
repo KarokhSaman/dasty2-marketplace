@@ -14,20 +14,21 @@ export async function loadCurrentSeller(queryClient: QueryClient) {
 export async function requireSeller(
   queryClient: QueryClient,
   token?: string | null,
-  { toAddAfterProfile = false }: { toAddAfterProfile?: boolean } = {},
+  // The seller page being opened, to come back to after login and profile.
+  { next }: { next?: string } = {},
 ) {
   const seller = await loadCurrentSeller(queryClient)
   if (!seller && token && typeof window !== 'undefined') {
     return { seller: null }
   }
   if (!seller || !seller.isActive) {
-    throw redirect({ to: '/seller/login' })
+    throw redirect({ to: '/seller/login', search: (next ? { next } : {}) as never })
   }
   // Enforce profile completion — if seller has no name, redirect to complete profile
   if (!seller.name || !seller.name.trim()) {
     throw redirect({
       to: '/seller/complete-profile',
-      search: (toAddAfterProfile ? { next: 'add' } : {}) as never,
+      search: (next ? { next } : {}) as never,
     })
   }
   return { seller }
