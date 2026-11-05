@@ -13,8 +13,8 @@ import { RejectBox } from "@/components/admin/ProductPanel";
 import CustomSelect from "@/components/ui/CustomSelect";
 import { CATEGORY_CONFIG } from "@/lib/categories";
 import { brandFitsCategory, getBrandChoices } from "@/lib/brands";
-import { StoreTag, Code, Segmented, btn, fmtIQD, inputCls, labelCls, useToast, waLink, fmtPhone, IconX, IconCheck, IconRotate, IconStar, IconTrash, IconWhatsApp } from "@/components/admin/ui";
-import { approvalMessage } from "@/components/admin/approvalMessage";
+import { StoreTag, Code, Segmented, btn, fmtIQD, inputCls, labelCls, useToast, waLink, waNumber, fmtPhone, IconX, IconCheck, IconRotate, IconStar, IconTrash, IconWhatsApp } from "@/components/admin/ui";
+import { combinedApprovalMessage } from "@/components/admin/approvalMessage";
 
 const CONDITION = { new: () => m.conditionNew(), likenew: () => m.conditionLikeNew(), used: () => m.conditionUsed() };
 
@@ -22,6 +22,18 @@ const CONDITION = { new: () => m.conditionNew(), likenew: () => m.conditionLikeN
 // or Reject. On phones the photo can be swiped right (approve) or left (reject).
 // Keys on a laptop: A approve, R reject, ← → photos, Esc close. The photo
 // shown can be rotated, made the main one or deleted before deciding.
+// WhatsApp button for one seller: all their approved posts in one message.
+function SendButton({ seller, onSent, label }) {
+  const { items } = seller;
+  const sent = items.every((a) => a.sent);
+  return (
+    <a href={waLink(seller.phone, combinedApprovalMessage(items))} target="_blank" rel="noopener noreferrer"
+      onClick={() => onSent(items)} className={`${btn(sent ? "outline" : "wa", "sm")} shrink-0`}>
+      <IconWhatsApp className="w-4 h-4" /> {sent ? "Sent" : items.length > 1 ? `${label} (${items.length})` : label}
+    </a>
+  );
+}
+
 export default function ReviewMode({ queue, onClose }) {
   const actions = useProductActions();
   const toast = useToast();
@@ -39,7 +51,8 @@ export default function ReviewMode({ queue, onClose }) {
   // Posts approved in this session, for the seller's WhatsApp message; `sent`
   // once its button was tapped.
   const [approvedList, setApprovedList] = useState([]);
-  const markSent = (id) => setApprovedList((list) => list.map((a) => (a.id === id ? { ...a, sent: true } : a)));
+  const markSent = (items) => setApprovedList((list) => list.map((a) => (items.some((x) => x.id === a.id) ? { ...a, sent: true } : a)));
+  const [leaving, setLeaving] = useState(false);
   const [mounted, setMounted] = useState(false);
   const swipe = useRef(null);
   const [dx, setDx] = useState(0);
@@ -51,6 +64,22 @@ export default function ReviewMode({ queue, onClose }) {
   for (const x of live ?? []) if (byId[x._id]) byId[x._id] = x;
   const p = byId[ids[index]];
   const total = ids.length;
+
+  // One row and one message per seller.
+  const sellers = [];
+  for (const a of [...approvedList].reverse()) {
+    const key = waNumber(a.sellerPhone);
+    let s = sellers.find((x) => x.key === key);
+    if (!s) sellers.push(s = { key, name: a.sellerName, phone: a.sellerPhone, items: [] });
+    s.items.push(a);
+  }
+  const unsentSellers = sellers.filter((s) => s.items.some((a) => !a.sent)).length;
+  // The seller just approved, and how many of their posts are still to review.
+  const lastKey = approvedList[0] && waNumber(approvedList[0].sellerPhone);
+  const lastSeller = sellers.find((s) => s.key === lastKey);
+  const moreFromLast = lastKey ? ids.slice(index).filter((id) => waNumber(byId[id]?.sellerPhone) === lastKey).length : 0;
+  const left = total - done.approved - done.rejected;
+  const close = () => { if (unsentSellers > 0 && !leaving) setLeaving(true); else onClose(); };
 
   useEffect(() => setMounted(true), []);
   useEffect(() => lockScroll(), []);
@@ -120,7 +149,7 @@ export default function ReviewMode({ queue, onClose }) {
   useEffect(() => {
     const onKey = (e) => {
       if (e.target.closest?.("input, textarea")) return;
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") close();
       else if (!p) return;
       else if (e.key === "a" || e.key === "A") decide("approve");
       else if (e.key === "r" || e.key === "R") setRejecting((v) => !v);
@@ -154,7 +183,7 @@ export default function ReviewMode({ queue, onClose }) {
   return createPortal(
     <div className="adm-scope fixed inset-0 z-[85] bg-adm-bg text-adm-ink flex flex-col" role="dialog" aria-modal="true" aria-label="Review new products">
       <div className="flex items-center gap-3 px-4 h-14 border-b border-adm-line shrink-0" style={{ marginTop: "env(safe-area-inset-top, 0px)" }}>
-        <button type="button" onClick={onClose} aria-label="Close review" className="w-9 h-9 rounded-xl border border-adm-line bg-adm-surface grid place-items-center"><IconX className="w-4 h-4" /></button>
+        <button type="button" onClick={close} aria-label="Close review" className="w-9 h-9 rounded-xl border border-adm-line bg-adm-surface grid place-items-center"><IconX className="w-4 h-4" /></button>
         <div className="flex-1 min-w-0">
           <p className="text-[14.5px] font-bold">Review new products</p>
           <p className="text-[11.5px] text-adm-fade tabular-nums">{Math.min(index + 1, total)} of {total}</p>
@@ -164,14 +193,23 @@ export default function ReviewMode({ queue, onClose }) {
         </div>
       </div>
 
+      {leaving && (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2 border-b border-adm-line bg-st-pending-bg shrink-0">
+          <p className="flex-1 min-w-[140px] text-[12.5px] font-semibold">{unsentSellers} {unsentSellers === 1 ? "seller" : "sellers"} not messaged yet</p>
+          {p && <button type="button" onClick={() => { setIndex(total); setLeaving(false); }} className={`${btn("dark", "sm")} shrink-0`}>See messages</button>}
+          <button type="button" onClick={onClose} className={`${btn("outline", "sm")} shrink-0`}>Close anyway</button>
+        </div>
+      )}
+
       {p && approvedList[0] && (
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2 border-b border-adm-line bg-st-approved-bg shrink-0">
           <IconCheck className="w-4 h-4 text-st-approved shrink-0" />
           <p className="flex-1 min-w-[140px] text-[12.5px] font-semibold truncate">Approved {approvedList[0].seq ? `#${approvedList[0].seq}` : ""} · {approvedList[0].sellerName}</p>
-          <a href={waLink(approvedList[0].sellerPhone, approvalMessage(approvedList[0]))} target="_blank" rel="noopener noreferrer"
-            onClick={() => markSent(approvedList[0].id)} className={`${btn(approvedList[0].sent ? "outline" : "wa", "sm")} shrink-0`}>
-            <IconWhatsApp className="w-4 h-4" /> {approvedList[0].sent ? "Sent" : "Send message"}
-          </a>
+          {moreFromLast > 0 ? (
+            <p className="text-[12px] font-semibold text-adm-soft shrink-0">{moreFromLast} more from this seller</p>
+          ) : (
+            <SendButton seller={lastSeller} onSent={markSent} label="Send message" />
+          )}
         </div>
       )}
 
@@ -179,26 +217,25 @@ export default function ReviewMode({ queue, onClose }) {
         <div className="flex-1 overflow-y-auto grid place-items-center p-8 text-center">
           <div className="space-y-3 w-full max-w-sm">
             <div className="mx-auto w-16 h-16 rounded-full bg-st-approved-bg text-st-approved grid place-items-center"><IconCheck className="w-8 h-8" /></div>
-            <p className="text-[19px] font-bold">All caught up</p>
-            <p className="text-[13.5px] text-adm-soft">{done.approved} approved · {done.rejected} rejected. Sellers have been notified.</p>
+            <p className="text-[19px] font-bold">{left > 0 ? "Messages to send" : "All caught up"}</p>
+            <p className="text-[13.5px] text-adm-soft">{done.approved} approved · {done.rejected} rejected{left > 0 ? ` · ${left} still to review` : ""}. Sellers have been notified.</p>
             {approvedList.length > 0 && (
               <div className="text-start rounded-2xl border border-adm-line bg-adm-surface divide-y divide-adm-line">
                 <p className="px-3.5 py-2.5 text-[12px] font-bold text-adm-soft">Send each seller the approval message</p>
-                {approvedList.map((a) => (
-                  <div key={a.id} className="flex items-center gap-3 px-3.5 py-2.5">
+                {sellers.map((c) => (
+                  <div key={c.key} className="flex items-center gap-3 px-3.5 py-2.5">
                     <div className="flex-1 min-w-0">
-                      <p className="text-[13.5px] font-semibold truncate">{a.sellerName}</p>
-                      <p className="text-[12px] text-adm-fade truncate">{a.seq ? `#${a.seq} · ` : ""}{a.title}</p>
+                      <p className="text-[13.5px] font-semibold truncate">{c.name}</p>
+                      {c.items.length === 1
+                        ? <p className="text-[12px] text-adm-fade truncate">{c.items[0].seq ? `#${c.items[0].seq} · ` : ""}{c.items[0].title}</p>
+                        : <p className="text-[12px] text-adm-fade">{c.items.length} posts · {c.items.map((a) => (a.seq ? `#${a.seq}` : a.title)).join(", ")}</p>}
                     </div>
-                    <a href={waLink(a.sellerPhone, approvalMessage(a))} target="_blank" rel="noopener noreferrer"
-                      onClick={() => markSent(a.id)} className={`${btn(a.sent ? "outline" : "wa", "sm")} shrink-0`}>
-                      <IconWhatsApp className="w-4 h-4" /> {a.sent ? "Sent" : "Send"}
-                    </a>
+                    <SendButton seller={c} onSent={markSent} label="Send" />
                   </div>
                 ))}
               </div>
             )}
-            <button type="button" onClick={onClose} className={`${btn("dark", "lg")} w-full`}>Done</button>
+            <button type="button" onClick={close} className={`${btn("dark", "lg")} w-full`}>Done</button>
           </div>
         </div>
       ) : (

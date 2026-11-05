@@ -35,6 +35,45 @@ ${code ? `🏷️ رمز المنتج: ${code}\n` : ""}🔒 رقمكم لا يظ
 فريق موقع Mndallan 🧸`,
 };
 
+// Several posts from one seller, approved together, in one message.
+const MANY = {
+  ckb: (lines) => `*سڵاو و ڕێز* 👋
+سوپاس بۆ هەڵبژاردنی *«منداڵان»* بۆ فرۆشتنی کاڵاکانتان 🤍
+
+✅ پۆستەکانتان بە سەرکەوتوویی قبووڵ کران و بڵاوکرانەوە.
+🏷️ کاڵاکانتان:
+${lines}
+
+🔒 ژمارەکەتان لە ماڵپەڕەکەدا نیشان نادرێت؛ کاتێک کڕیارێک پەیوەندیمان پێوە دەکات، ژمارەکەتانی پێ دەدەین.
+
+> 📌 *تێبینییەکی گرنگ*
+> هەر کاتێک کاڵایەکتان بەردەست نەما یان لە ڕێگەی ترەوە فرۆشرا، تکایە ڕاستەوخۆ پۆستەکەی بسڕنەوە، یاخود لە ڕێگەی واتسئاپ یان ئینستاگرامەوە ئاگادارمان بکەنەوە.
+
+لەگەڵ ڕێزماندا،
+تیمی ماڵپەڕی منداڵان 🧸`,
+  ar: (lines) => `*مرحباً وتحية طيبة* 👋
+شكراً لاختياركم *Mndallan* لبيع منتجاتكم 🤍
+
+✅ تمت الموافقة على منشوراتكم ونشرها بنجاح.
+🏷️ منتجاتكم:
+${lines}
+
+🔒 رقمكم لا يظهر على الموقع؛ عندما يتواصل معنا مشترٍ، نشارك رقمكم معه.
+
+> 📌 *ملاحظة مهمة*
+> عند عدم توفر أي منتج أو بيعه بطريقة أخرى، يُرجى حذف منشوره مباشرةً، أو إبلاغنا عبر الواتساب أو الإنستغرام.
+
+مع خالص التحيات،
+فريق موقع Mndallan 🧸`,
+};
+
 export function approvalMessage(product) {
   return (getLocale() === "ar" ? MESSAGES.ar : MESSAGES.ckb)(codeOf(product));
+}
+
+// One post gets the usual message; more than one get the list.
+export function combinedApprovalMessage(products) {
+  if (products.length === 1) return approvalMessage(products[0]);
+  const lines = products.map((p) => `• ${[codeOf(p), p.title].filter(Boolean).join(" · ")}`).join("\n");
+  return (getLocale() === "ar" ? MANY.ar : MANY.ckb)(lines);
 }
