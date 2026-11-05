@@ -18,7 +18,7 @@ export default function MockLoginButton({ role }) {
       const result = await response.json();
       if (!response.ok || !result.ok) throw new Error("mock_login_failed");
       window.location.href =
-        result.role === "admin" ? "/admin" : "/seller/complete-profile";
+        result.role === "admin" ? "/admin" : `/seller/complete-profile${window.location.search}`;
     } catch {
       setError("Mock login is unavailable. Check the development backend setup.");
       setLoading(false);

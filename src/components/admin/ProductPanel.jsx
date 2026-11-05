@@ -18,6 +18,7 @@ import { photoProps } from "@/lib/images";
 import { useProductActions } from "@/components/admin/useProductActions";
 import { actionLabel } from "@/components/admin/logActions";
 import { approvalMessage } from "@/components/admin/approvalMessage";
+import { rejectionMessage } from "@/components/admin/rejectionMessage";
 import ConnectBuyer, { BuyerLeads } from "@/components/admin/ConnectBuyer";
 import {
   Panel, StatusChip, StoreTag, Code, SectionTitle, Segmented, Switch, ConfirmBox, AmountInput, Avatar, Thumb,
@@ -776,6 +777,11 @@ export default function ProductPanel({ product, onClose }) {
               {p.status === "approved" && (
                 <a href={waLink(p.sellerPhone, approvalMessage(p))} target="_blank" rel="noopener noreferrer" className={`${btn("wa")} col-span-2`}>
                   <IconWhatsApp className="w-4 h-4" /> Send approval message
+                </a>
+              )}
+              {p.status === "rejected" && p.notes && (
+                <a href={waLink(p.sellerPhone, rejectionMessage(p, p.notes))} target="_blank" rel="noopener noreferrer" className={`${btn("wa")} col-span-2`}>
+                  <IconWhatsApp className="w-4 h-4" /> Send rejection message
                 </a>
               )}
               {p.status === "approved" && (
