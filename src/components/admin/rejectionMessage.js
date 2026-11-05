@@ -32,13 +32,20 @@ const REASONS = [
     ar: "ننشر منتجات الأطفال فقط على الموقع، لذا لا يمكن نشر هذا المنتج. إذا كنتم تعتقدون أن هناك خطأ، ردوا على هذه الرسالة." },
 ];
 const OTHER = { ckb: "ئەو خاڵەی سەرەوە لە پۆستەکەدا چاک بکەن.", ar: "صححوا النقطة المذكورة أعلاه في المنشور." };
+// A reason the admin typed, next to ready ones.
+const OTHER_TOO = { ckb: "خاڵەکەی تری سەرەوەش چاک بکەن.", ar: "صححوا النقطة الأخرى المذكورة أعلاه أيضاً." };
+
+// Several reasons are saved together in the post's notes with this between them.
+export const REASON_SEPARATOR = " · ";
+
+const list = (lines) => (lines.length === 1 ? lines[0] : lines.map((l) => `• ${l}`).join("\n"));
 
 const MESSAGES = {
   ckb: ({ title, code, reason, fix, url, button }) => `*سڵاو و ڕێز* 👋
 سوپاس بۆ ناردنی پۆستەکەتان بۆ *«منداڵان»* 🤍
 
 ❌ پۆستی *${title}*${code ? ` · ${code}` : ""} قبووڵ نەکرا.
-📝 *هۆکار:* ${reason}
+📝 *هۆکار:*${reason.includes("\n") ? "\n" : " "}${reason}
 
 ${url ? "🛠️ *چۆن چاکی بکەن:*" : "📌 *تێبینی:*"}
 ${fix}
@@ -49,7 +56,7 @@ ${url ? `\n🔗 لەم لینکەوە پۆستەکە بکەنەوە، چاکی �
 شكراً لإرسال منشوركم إلى *Mndallan* 🤍
 
 ❌ لم تتم الموافقة على منشور *${title}*${code ? ` · ${code}` : ""}.
-📝 *السبب:* ${reason}
+📝 *السبب:*${reason.includes("\n") ? "\n" : " "}${reason}
 
 ${url ? "🛠️ *كيفية الإصلاح:*" : "📌 *ملاحظة:*"}
 ${fix}
@@ -60,14 +67,20 @@ ${url ? `\n🔗 افتحوا المنشور من هذا الرابط، أصلح�
 
 export function rejectionMessage(product, reason) {
   const locale = getLocale() === "ar" ? "ar" : "ckb";
-  const known = REASONS.find((r) => r.reason({}, { locale: "ckb" }) === reason.trim());
+  const parts = reason.split(REASON_SEPARATOR).map((text) => ({
+    text: text.trim(),
+    known: REASONS.find((r) => r.reason({}, { locale: "ckb" }) === text.trim()),
+  }));
+  // Fixing anything else can't help a post that can't be published at all.
+  const noFix = parts.find((x) => x.known?.link === false);
+  const shown = noFix ? [noFix] : parts;
   const path = `${locale === "ar" ? "/ar" : ""}/seller/products/${product.id ?? product._id}/edit?from=rejection`;
   return MESSAGES[locale]({
     title: product.title,
     code: codeOf(product),
-    reason: known ? known.reason({}, { locale }) : reason.trim(),
-    fix: (known ?? OTHER)[locale],
-    url: known?.link === false ? null : `${window.location.origin}${path}`,
+    reason: list(shown.map((x) => (x.known ? x.known.reason({}, { locale }) : x.text))),
+    fix: list(shown.map((x) => (x.known ?? (shown.length > 1 ? OTHER_TOO : OTHER))[locale])),
+    url: noFix ? null : `${window.location.origin}${path}`,
     button: m.editProductBtn({}, { locale }),
   });
 }

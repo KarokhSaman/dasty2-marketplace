@@ -18,7 +18,7 @@ import { photoProps } from "@/lib/images";
 import { useProductActions } from "@/components/admin/useProductActions";
 import { actionLabel } from "@/components/admin/logActions";
 import { approvalMessage } from "@/components/admin/approvalMessage";
-import { rejectionMessage } from "@/components/admin/rejectionMessage";
+import { rejectionMessage, REASON_SEPARATOR } from "@/components/admin/rejectionMessage";
 import ConnectBuyer, { BuyerLeads } from "@/components/admin/ConnectBuyer";
 import {
   Panel, StatusChip, StoreTag, Code, SectionTitle, Segmented, Switch, ConfirmBox, AmountInput, Avatar, Thumb,
@@ -54,28 +54,38 @@ const timeAgo = (iso) => {
   return d === 1 ? "yesterday" : d < 30 ? `${d}d ago` : day(iso);
 };
 
-// Reject with a reason: tap a ready reason (in Kurdish, as the seller sees it)
-// or write one.
+// Reject with reasons: tap one or more ready reasons (in Kurdish, as the seller
+// sees them) and/or write one. "Not a baby product" stands alone, since the post
+// can't be published whatever else is fixed.
 export function RejectBox({ onReject, onCancel, busy }) {
-  const [reason, setReason] = useState("");
+  const [picked, setPicked] = useState([]);
+  const [typed, setTyped] = useState("");
+  const alone = m.rejectReasonNotBaby({}, KU);
+  const standsAlone = picked.includes(alone);
+  const reason = standsAlone ? alone : [...picked, typed.trim()].filter(Boolean).join(REASON_SEPARATOR);
+  const toggle = (r) => setPicked((list) => (
+    list.includes(r) ? list.filter((x) => x !== r) : r === alone ? [r] : [...list.filter((x) => x !== alone), r]
+  ));
   return (
     <div className="rounded-2xl bg-st-rejected-bg p-3.5 space-y-2.5">
       <p className="text-[13px] font-bold text-adm-ink">{m.adminRejectReason()}</p>
       <div className="flex flex-wrap gap-1.5">
         {REJECT_REASONS.map((r) => (
-          <button key={r()} type="button" onClick={() => setReason(r())}
-            className={`h-8 px-3 rounded-full border text-[12.5px] font-semibold ${reason === r() ? "bg-st-rejected text-white border-st-rejected" : "border-st-rejected/40 text-st-rejected bg-adm-surface"}`}>
+          <button key={r()} type="button" aria-pressed={picked.includes(r())} onClick={() => toggle(r())}
+            className={`min-h-8 py-1 px-3 rounded-full border text-[12.5px] font-semibold ${picked.includes(r()) ? "bg-st-rejected text-white border-st-rejected" : "border-st-rejected/40 text-st-rejected bg-adm-surface"}`}>
             {r()}
           </button>
         ))}
       </div>
-      <textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={2} dir="auto" placeholder={m.adminRejectPlaceholder()}
-        className={`${inputCls} h-auto py-2.5 resize-none`} />
+      {!standsAlone && (
+        <textarea value={typed} onChange={(e) => setTyped(e.target.value)} rows={2} dir="auto" placeholder={m.adminRejectPlaceholder()}
+          className={`${inputCls} h-auto py-2.5 resize-none`} />
+      )}
       <div className="flex gap-2">
         <button type="button" disabled={!reason.trim() || busy} onClick={() => onReject(reason)} className={`${btn("primary")} flex-1`}>{m.adminRejectSubmit()}</button>
         {onCancel && <button type="button" onClick={onCancel} className={`${btn("outline")} flex-1`}>{m.adminCancel()}</button>}
       </div>
-      <p className="text-[11.5px] text-adm-soft">The seller is notified with this reason and can fix and resubmit.</p>
+      <p className="text-[11.5px] text-adm-soft">Tap one or more reasons. The seller is notified with them and can fix and resubmit.</p>
     </div>
   );
 }
