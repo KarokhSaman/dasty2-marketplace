@@ -1,4 +1,4 @@
-import { mutation } from "./_generated/server";
+import { internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 
 const MIGRATIONS = [
@@ -14,7 +14,7 @@ const MIGRATIONS = [
   },
 ];
 
-export const migrateImageUrls = mutation({
+export const migrateImageUrls = internalMutation({
   args: {
     dryRun: v.optional(v.boolean()), // If true, only show what would be changed, don't update
     environment: v.optional(v.string()), // "development" or "production" or "all"

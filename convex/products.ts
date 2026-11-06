@@ -1274,15 +1274,21 @@ export const getUniqueCategoriesDebug = query({
   },
 });
 
-// ⚠️ DEVELOPMENT ONLY: Clear all products from dev database
+// ⚠️ DEVELOPMENT ONLY: Clear all products from dev database.
+// Two locks, both fail closed on production: an admin must be logged in, and the
+// deployment must be explicitly marked as a dev/local one (ALLOW_MOCK_AUTH is
+// "true" on dev and local, unset on production — the same flag devUploads uses).
 export const devClearAllProducts = mutation({
   args: { confirmDelete: v.boolean() },
   returns: v.object({ deletedCount: v.number() }),
   handler: async (ctx, { confirmDelete }) => {
-    // Safety check: only works in development
-    const isDev = process.env.ENVIRONMENT === "dev" || !process.env.ENVIRONMENT;
-    if (!isDev) {
-      throw new Error("❌ This mutation only works in development!");
+    // Lock 1: only a logged-in admin, never an anonymous caller.
+    await requireAdmin(ctx);
+
+    // Lock 2: only on a deployment that opted in to dev-only tools. A missing
+    // flag means production, so this blocks instead of assuming development.
+    if (process.env.ALLOW_MOCK_AUTH !== "true") {
+      throw new Error("❌ This tool is disabled outside development.");
     }
 
     if (!confirmDelete) {
