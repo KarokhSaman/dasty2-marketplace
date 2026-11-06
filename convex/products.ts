@@ -25,7 +25,7 @@ import { r2 } from "./r2";
 import { issueSeq } from "./seq";
 import { priceInfo, todayBaghdad, type StoreDiscount } from "./discount";
 
-type PublicProduct = Omit<Doc<"products">, "sellerId" | "sellerPhone" | "profit" | "soldFromId" | "deleteRequestedAt" | "deleteRequestReason" | "deleteRequestFrom" | "offerId" | "soldReportedAt" | "leadCount" | "lastLeadAt" | "followUpAt" | "availabilityCheckedAt" | "soldElsewhereAt">;
+type PublicProduct = Omit<Doc<"products">, "sellerId" | "sellerName" | "sellerPhone" | "profit" | "soldFromId" | "deleteRequestedAt" | "deleteRequestReason" | "deleteRequestFrom" | "offerId" | "soldReportedAt" | "leadCount" | "lastLeadAt" | "followUpAt" | "availabilityCheckedAt" | "soldElsewhereAt" | "notes" | "approvedBy" | "storeId"> & { isStore: boolean };
 
 const publicProductValidator = v.object({
   _id: v.id("products"),
@@ -42,7 +42,6 @@ const publicProductValidator = v.object({
   storyCrop: v.optional(v.object({ url: v.string(), x: v.number(), y: v.number(), w: v.number(), h: v.number() })),
   status: productStatusValidator,
   city: v.string(),
-  sellerName: v.string(),
   featured: v.optional(v.boolean()),
   featuredUntil: v.optional(v.string()),
   featuredAt: v.optional(v.string()),
@@ -51,19 +50,18 @@ const publicProductValidator = v.object({
   pinnedUntil: v.optional(v.string()),
   pinnedAt: v.optional(v.string()),
   views: v.optional(v.number()),
-  notes: v.optional(v.string()),
-  approvedBy: v.optional(v.string()),
   approvedAt: v.optional(v.string()),
   dateAdded: v.string(),
   dateSold: v.optional(v.string()),
   stock: v.optional(v.number()),
-  storeId: v.optional(v.id("stores")),
+  isStore: v.boolean(),
   salePrice: v.optional(v.number()),
   storeDiscount: v.optional(v.object({ percent: v.number(), start: v.string(), end: v.string() })),
 });
 
 const toPublic = ({
   sellerId: _sellerId,
+  sellerName: _sellerName,
   sellerPhone: _sellerPhone,
   profit: _profit,
   soldFromId: _soldFromId,
@@ -77,8 +75,11 @@ const toPublic = ({
   followUpAt: _followUpAt,
   availabilityCheckedAt: _availabilityCheckedAt,
   soldElsewhereAt: _soldElsewhereAt,
+  notes: _notes,
+  approvedBy: _approvedBy,
+  storeId,
   ...rest
-}: Doc<"products">): PublicProduct => rest;
+}: Doc<"products">): PublicProduct => ({ ...rest, isStore: !!storeId });
 
 function validateListingInput({
   title,
@@ -157,18 +158,17 @@ async function loadStoreDiscounts(ctx: QueryCtx): Promise<Map<string, StoreDisco
   return map;
 }
 
-// Adds `storeDiscount` to products of discounted stores. Clients work out the
-// price for the current day from it (a cached query result can't notice that a
-// discount started or ended at midnight).
-async function withStoreDiscounts<T extends { storeId?: Id<"stores"> }>(
+// The buyer view of products, with `storeDiscount` on products of discounted
+// stores. Clients work out the price for the current day from it (a cached query
+// result can't notice that a discount started or ended at midnight).
+async function toPublicWithDiscounts(
   ctx: QueryCtx,
-  products: T[],
-): Promise<(T & { storeDiscount?: StoreDiscount })[]> {
+  products: Doc<"products">[],
+): Promise<(PublicProduct & { storeDiscount?: StoreDiscount })[]> {
   const discounts = await loadStoreDiscounts(ctx);
-  if (discounts.size === 0) return products;
   return products.map((p) => {
     const d = p.storeId ? discounts.get(p.storeId) : undefined;
-    return d ? { ...p, storeDiscount: d } : p;
+    return d ? { ...toPublic(p), storeDiscount: d } : toPublic(p);
   });
 }
 
@@ -360,7 +360,7 @@ export const getPublicById = query({
     const inactiveIds = await getInactiveSellerIds(ctx);
     if (inactiveIds.has(product.sellerId)) return null;
     // Store names are never shown to buyers, only whether it is a store product.
-    const [withDiscount] = await withStoreDiscounts(ctx, [toPublic(product)]);
+    const [withDiscount] = await toPublicWithDiscounts(ctx, [product]);
     return withDiscount;
   },
 });
@@ -373,9 +373,9 @@ export const getPublic = query({
       .query("products")
       .withIndex("by_status", (q) => q.eq("status", "approved"))
       .collect();
-    return await withStoreDiscounts(
+    return await toPublicWithDiscounts(
       ctx,
-      products.filter((p) => !inactiveIds.has(p.sellerId)).map(toPublic),
+      products.filter((p) => !inactiveIds.has(p.sellerId)),
     );
   },
 });
@@ -492,9 +492,9 @@ export const getRelated = query({
       )
       .order("desc")
       .take(60);
-    return await withStoreDiscounts(
+    return await toPublicWithDiscounts(
       ctx,
-      products.filter((p) => p._id !== excludeId && !inactiveIds.has(p.sellerId)).map(toPublic),
+      products.filter((p) => p._id !== excludeId && !inactiveIds.has(p.sellerId)),
     );
   },
 });
@@ -549,7 +549,7 @@ export const getFeatured = query({
     });
 
     // Return positioned first, then unpositioned
-    return await withStoreDiscounts(ctx, [...sortedPositioned, ...sortedUnpositioned].map(toPublic));
+    return await toPublicWithDiscounts(ctx, [...sortedPositioned, ...sortedUnpositioned]);
   },
 });
 
@@ -598,9 +598,9 @@ export const getPublicPaginated = query({
     const result = await q.order(sort === "price_asc" ? "asc" : "desc").paginate(paginationOpts);
     return {
       ...result,
-      page: await withStoreDiscounts(
+      page: await toPublicWithDiscounts(
         ctx,
-        result.page.filter((p) => !inactiveIds.has(p.sellerId)).map(toPublic),
+        result.page.filter((p) => !inactiveIds.has(p.sellerId)),
       ),
     };
   },

@@ -170,7 +170,7 @@ function RelatedCard({ product }) {
             </Chip>
           </div>
         </div>
-          {product.storeId && (
+          {product.isStore && (
             <span className="absolute bottom-3 -start-1.5 z-10">
               <span className="relative inline-flex items-center gap-1.5 min-w-[84px] ps-3 pe-3.5 py-1 text-[10.5px] font-bold tracking-[0.04em] leading-none whitespace-nowrap text-white bg-[var(--color-ink)] rounded-e-[5px] shadow-[0_6px_12px_-6px_rgba(11,12,15,0.5)]">
                 <StoreIcon className="w-3 h-3 shrink-0" />
@@ -360,7 +360,7 @@ export default function ProductDetailPage() {
               photo: photos[0],
               storyCrop: product.storyCrop,
               city: cityLabel,
-              store: product.storeId ? m.storeFlag() : undefined,
+              store: product.isStore ? m.storeFlag() : undefined,
               code: product.seq ? `#${product.seq}` : undefined,
               site: storySite,
               rtl: locale !== "en",
@@ -380,7 +380,7 @@ export default function ProductDetailPage() {
             <Chip tone={isNew ? "success" : product.condition === "likenew" ? "neutral" : "warning"} dot>
               {isNew ? m.badgeNew() : product.condition === "likenew" ? m.conditionLikeNew() : m.badgeUsed()}
             </Chip>
-            {product.storeId && (
+            {product.isStore && (
               <span className="chip-base gap-1 text-white bg-[var(--color-ink)] shadow-sm">
                 <StoreIcon className="w-3.5 h-3.5" />
                 {m.storeFlag()}
@@ -412,7 +412,7 @@ export default function ProductDetailPage() {
               </Chip>
             )}
           </div>
-          {product.storeId && (
+          {product.isStore && (
             <p className="-mt-2 mb-4 text-[12.5px] text-[var(--color-ink-soft)] flex items-center gap-1.5">
               <StoreIcon className="w-3.5 h-3.5 shrink-0" />
               {m.storeTagHint()}

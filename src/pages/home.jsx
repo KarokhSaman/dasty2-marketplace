@@ -235,7 +235,7 @@ export default function HomePage() {
   };
   const storeArgs = storesOnly ? { stores: true } : {};
   // A list saved from earlier only counts while it matches the filter.
-  const forFilter = (list) => (storesOnly ? list?.filter((p) => !!p.storeId) : list);
+  const forFilter = (list) => (storesOnly ? list?.filter((p) => p.isStore) : list);
   const cachedFeaturedNow = forFilter(cachedFeatured);
   const cachedResultsNow = forFilter(cachedResults);
 
