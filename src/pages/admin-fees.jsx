@@ -130,7 +130,7 @@ export default function AdminFeesPage() {
       {groups.length === 0 ? (
         <Card><Empty>Every fee is collected. Sold items show up here until they are marked paid.</Empty></Card>
       ) : (
-        <div className="grid gap-3 xl:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
           {groups.map((g) => <SellerFees key={g.id} group={g} onOpen={setOpenId} />)}
         </div>
       )}
