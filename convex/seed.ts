@@ -1,4 +1,4 @@
-import { mutation } from "./_generated/server";
+import { internalMutation } from "./_generated/server";
 import type { Category, Condition } from "./types";
 
 const R2_BASE = (process.env.R2_PUBLIC_URL ?? "").replace(/\/$/, "");
@@ -141,7 +141,7 @@ function calcProfit(price: number): number {
   return 30000;
 }
 
-export const seedProducts = mutation({
+export const seedProducts = internalMutation({
   args: {},
   handler: async (ctx) => {
     const existing = await ctx.db

@@ -35,6 +35,11 @@ jobs:
           cache: 'npm'
       - run: npm ci
 
+      - name: Guard checks (privacy + translations)
+        run: |
+          npm run check:privacy
+          npm run check:i18n
+
       # VITE_* values are inlined into the client bundle at build time and come
       # from wrangler.jsonc, so the bundle and the Worker runtime cannot drift.
       - name: Resolve VITE_* from wrangler.jsonc (env.dev)
@@ -65,6 +70,11 @@ jobs:
           node-version: '22'
           cache: 'npm'
       - run: npm ci
+
+      - name: Guard checks (privacy + translations)
+        run: |
+          npm run check:privacy
+          npm run check:i18n
 
       - name: Resolve VITE_* from wrangler.jsonc (env.production)
         run: node scripts/ci-export-env.mjs production >> "$GITHUB_ENV"

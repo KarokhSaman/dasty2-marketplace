@@ -12,6 +12,7 @@
     "cf-typegen": "wrangler types",
     "typecheck": "tsc --noEmit",
     "check:i18n": "node scripts/check-translations.mjs",
+    "check:privacy": "node scripts/check-public-product.mjs",
     "convex": "convex dev",
     "convex:codegen": "convex codegen"
   },

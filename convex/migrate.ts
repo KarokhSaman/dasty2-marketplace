@@ -121,7 +121,7 @@ export const migrateToVerifySpeed = internalMutation({
   },
 });
 
-export const migrateCategories = mutation({
+export const migrateCategories = internalMutation({
   args: {},
   handler: async (ctx) => {
     const products = await ctx.db.query("products").collect();
