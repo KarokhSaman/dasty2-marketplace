@@ -7,6 +7,7 @@ import { LanguagePicker } from "@/components/LocaleSwitcher";
 import { logoAnimationStyles, useLogoAnimation } from "@/components/buyer/PublicShell";
 import NotificationPanel from "@/components/ui/NotificationPanel";
 import { Panel, ToastProvider, IconChevron } from "@/components/admin/ui";
+import { setMessageTemplates } from "@/components/admin/messageTemplates";
 
 const ADMIN_ID = "ADMIN";
 
@@ -21,6 +22,7 @@ const ICONS = {
   fees: <><rect x="2" y="6" width="20" height="13" rx="2" /><circle cx="12" cy="12.5" r="2.5" /><path d="M6 10v.01M18 15v.01" /></>,
   offers: <><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8Z" /><circle cx="7.5" cy="7.5" r="1.5" /></>,
   stories: <><rect x="6" y="2.5" width="12" height="19" rx="2.5" /><path d="M9.5 15.5h5" /><circle cx="12" cy="10" r="2.5" /></>,
+  templates: <><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z" /><path d="M8 8h8M8 12h5" /></>,
   logs: <><path d="M12 8v4l3 2" /><circle cx="12" cy="12" r="9" /></>,
   admins: <><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6Z" /><path d="m9 12 2 2 4-4" /></>,
   more: <><circle cx="5" cy="12" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="19" cy="12" r="1.6" /></>,
@@ -64,6 +66,10 @@ export default function AdminShell({ children }) {
   const activeOffer = useQuery(api.offers.getActive, isAuthenticated ? {} : "skip");
   const notifications = useQuery(api.notifications.getBySeller, isAuthenticated ? { sellerId: ADMIN_ID } : "skip");
   const unread = (notifications ?? []).filter((n) => !n.read).length;
+  // The admin's wording for the WhatsApp messages. Pages wait for it (below), so
+  // a message can't go out in the old wording while it loads.
+  const templates = useQuery(api.messageTemplates.list, isAuthenticated ? {} : "skip");
+  if (templates) setMessageTemplates(templates);
 
   useEffect(() => {
     if (isAuthenticated) { setAuthTimedOut(false); return; }
@@ -93,6 +99,7 @@ export default function AdminShell({ children }) {
     { href: "/admin/fees", key: "fees", label: "Fees", long: "Fees to collect", badge: counts.owing, hot: true },
     { href: "/admin/stories", key: "stories", label: "Stories", long: "Instagram stories", extra: true },
     { href: "/admin/offers", key: "offers", label: m.adminOffers(), badge: activeOffer ? "Live" : null, extra: true },
+    { href: "/admin/templates", key: "templates", label: "Message templates", extra: true },
     { href: "/admin/logs", key: "logs", label: "Admin log", extra: true },
     { href: "/admin/admins", key: "admins", label: "Admins", extra: true },
   ];
@@ -152,7 +159,7 @@ export default function AdminShell({ children }) {
 
         {/* ── Page ── */}
         <main className="lg:ms-[232px] px-4 lg:px-8 pt-4 pb-28 lg:pb-12 max-w-[1180px]">
-          {isAuthenticated ? children : authTimedOut ? (
+          {isAuthenticated && templates ? children : authTimedOut ? (
             <div className="mx-auto max-w-md py-20 text-center space-y-4">
               <p className="text-sm font-semibold">{m.errSessionExpired()}</p>
               <button onClick={signOut} className="h-10 px-4 rounded-xl bg-adm-ink text-adm-surface text-sm font-semibold">{m.adminSignOut()}</button>
