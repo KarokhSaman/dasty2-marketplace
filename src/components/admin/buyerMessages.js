@@ -42,11 +42,21 @@ export function sellerHeadsUpMessage(p, buyerPhone) {
   });
 }
 
-export function soldFollowUpMessage(p) {
+// One line per post in a combined message: "• *#26-0095* · Chicco Stroller".
+const itemList = (list) => list.map((p) => `• ${code(p)} · ${p.title}`.replace(/ · $/, "")).join("\n");
+
+// Takes one product or a list of a seller's products. For 2+ it sends a single
+// message that lists them all, so the seller isn't messaged once per item.
+export function soldFollowUpMessage(input) {
+  const list = Array.isArray(input) ? input : [input];
+  if (list.length > 1) return renderTemplate("soldFollowUpMany", { items: itemList(list) });
+  const p = list[0];
   // a stocked product sells unit by unit: ask how many
   return renderTemplate((p.stock ?? 1) > 1 ? "soldFollowUpStock" : "soldFollowUp", { title: p.title, code: code(p) });
 }
 
-export function stillForSaleMessage(p) {
-  return renderTemplate("stillForSale", { title: p.title, code: code(p) });
+export function stillForSaleMessage(input) {
+  const list = Array.isArray(input) ? input : [input];
+  if (list.length > 1) return renderTemplate("stillForSaleMany", { items: itemList(list) });
+  return renderTemplate("stillForSale", { title: list[0].title, code: code(list[0]) });
 }

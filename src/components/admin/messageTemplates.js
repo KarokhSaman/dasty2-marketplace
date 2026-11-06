@@ -196,6 +196,26 @@ export const TEMPLATES = [
 فريق موقع Mndallan 🧸`,
   },
   {
+    key: "soldFollowUpMany", group: "sold", title: "Was it sold? (several items)",
+    when: "To do: asking the seller about several of their posts in one message", vars: [V.items], required: ["items"], sample: { items: SAMPLE.items },
+    ckb: `*سڵاو گیان* 👋
+ئەم کاڵایانەتان فرۆشران؟ 🤍
+{items}
+ئەگەر هەریەکێکیان فرۆشرا، تکایە نرخی فرۆشتنەکەی پێمان بڵێن.
+
+> 📌 بۆیە ئەپرسینەوە بۆ ئەوەی ژمارەکەت بە کەسی تر نەدەین.
+
+تیمی ماڵپەڕی منداڵان 🧸`,
+    ar: `*مرحباً عزيزي* 👋
+هل تم بيع هذه المنتجات؟ 🤍
+{items}
+إذا تم بيع أيٍّ منها، يُرجى إخبارنا بسعر بيعه.
+
+> 📌 نسأل حتى لا نعطي رقمك لشخص آخر.
+
+فريق موقع Mndallan 🧸`,
+  },
+  {
     key: "soldFollowUpStock", group: "sold", title: "How many were sold?",
     when: "The same follow-up, for a post with more than one piece", vars: [V.title, V.code], required: ["title"],
     ckb: `*سڵاو گیان* 👋
@@ -220,6 +240,22 @@ export const TEMPLATES = [
     ar: `*مرحباً عزيزي* 👋
 هل *{title}* · {code} ما زال متوفراً؟ 🤍
 إذا تم بيعه أو لم يعد متوفراً، أبلغنا لنزيله من الموقع.
+
+فريق موقع Mndallan 🧸`,
+  },
+  {
+    key: "stillForSaleMany", group: "sold", title: "Still for sale? (several items)",
+    when: "To do: asking about several old posts from one seller in one message", vars: [V.items], required: ["items"], sample: { items: SAMPLE.items },
+    ckb: `*سڵاو گیان* 👋
+ئەم کاڵایانەتان هێشتا بەردەستن؟ 🤍
+{items}
+ئەگەر هەریەکێکیان فرۆشرا یان نەما، ئاگادارمان بکەنەوە تا لە ماڵپەڕەکە لای ببەین.
+
+تیمی ماڵپەڕی منداڵان 🧸`,
+    ar: `*مرحباً عزيزي* 👋
+هل ما زالت هذه المنتجات متوفرة؟ 🤍
+{items}
+إذا تم بيع أيٍّ منها أو لم يعد متوفراً، أبلغنا لنزيله من الموقع.
 
 فريق موقع Mndallan 🧸`,
   },
