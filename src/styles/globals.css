@@ -381,9 +381,11 @@ html[dir='rtl'] .font-display {
   --color-st-delete-bg: var(--a-orange-bg);
 }
 
-/* Nothing on an admin or seller page may drag the page sideways (e.g. a swiped photo). */
-html:has(.admin-root), html:has(.admin-root) body,
-html:has(.seller-root), html:has(.seller-root) body { overflow-x: clip; }
+/* Nothing on an admin or seller page may drag the page sideways (e.g. a swiped
+   photo). Clip on <body>, not <html>: overflow on the root element makes iOS
+   Safari anchor position:fixed bars (the phone bottom nav) to the document
+   instead of the viewport, so they drift up at the end of a scroll. */
+html:has(.admin-root) body, html:has(.seller-root) body { overflow-x: clip; }
 
 /* Seller pages reuse the admin building blocks and colours. */
 html:has(.admin-root), html:has(.seller-root) {
