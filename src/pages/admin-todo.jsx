@@ -34,6 +34,38 @@ function FollowRow({ product: p, note, onOpen, children }) {
   );
 }
 
+// Group a list of posts by their seller, keeping the order they came in.
+function groupBySeller(list) {
+  const groups = new Map();
+  for (const p of list) {
+    const g = groups.get(p.sellerId);
+    if (g) g.push(p);
+    else groups.set(p.sellerId, [p]);
+  }
+  return [...groups.values()];
+}
+
+// A seller's posts in a follow-up list. When they have more than one, the posts
+// sit in one box under a single "Ask seller" button that sends one message
+// listing them all — so the seller isn't messaged once per item. `children` is
+// given `many` so each row can drop its own Ask seller button when grouped.
+function SellerBlock({ group, message, children }) {
+  const many = group.length > 1;
+  return (
+    <div className={many ? "rounded-2xl border border-adm-line p-1.5 mb-2" : ""}>
+      {many && (
+        <div className="flex items-center gap-2 px-1.5 py-1.5">
+          <span className="text-[11.5px] font-semibold text-adm-soft flex-1 min-w-0">{group.length} items from one seller</span>
+          <a href={waLink(group[0].sellerPhone, message(group))} target="_blank" rel="noopener noreferrer" className={btn("wa", "sm")}>
+            <IconWhatsApp className="w-3.5 h-3.5" /> Ask seller
+          </a>
+        </div>
+      )}
+      {children(many)}
+    </div>
+  );
+}
+
 function Group({ id, title, count, action, children }) {
   return (
     <section id={id} className="mb-6 scroll-mt-20">
@@ -150,15 +182,19 @@ export default function AdminTodoPage() {
 
       {data.followUps.length > 0 && (
         <Group title="Ask seller: sold?" count={data.followUps.length}>
-          <p className="text-[12.5px] text-adm-fade -mt-1 mb-2">A buyer was connected 3+ days ago and it is still live. Sold opens it to set the sale price (one unit at a time for stocked items); Not yet asks again in 3 days.</p>
-          {data.followUps.map((p) => (
-            <FollowRow key={p._id} product={p} onOpen={(x) => setOpenId(x._id)}
-              note={`· ${p.leadCount ?? 1} buyer${(p.leadCount ?? 1) === 1 ? "" : "s"} · last ${ago(p.lastLeadAt ?? p.followUpAt)}d ago`}>
-              <a href={waLink(p.sellerPhone, soldFollowUpMessage(p))} target="_blank" rel="noopener noreferrer" className={btn("wa", "sm")}><IconWhatsApp className="w-3.5 h-3.5" /> Ask seller</a>
-              <button type="button" onClick={() => setOpenId(p._id)} className={btn("primary", "sm")}>Sold</button>
-              <button type="button" onClick={() => run(() => snooze({ id: p._id }), "Asking again in 3 days")} className={btn("outline", "sm")}>Not yet</button>
-              <button type="button" onClick={() => run(() => actions.markSoldElsewhere(p), "Sold elsewhere, seller notified")} className={btn("outline", "sm")}>Sold elsewhere</button>
-            </FollowRow>
+          <p className="text-[12.5px] text-adm-fade -mt-1 mb-2">A buyer was connected 3+ days ago and it is still live. Sold opens it to set the sale price (one unit at a time for stocked items); Not yet asks again in 3 days. A seller's items are messaged together.</p>
+          {groupBySeller(data.followUps).map((group) => (
+            <SellerBlock key={group[0].sellerId} group={group} message={soldFollowUpMessage}>
+              {(many) => group.map((p) => (
+                <FollowRow key={p._id} product={p} onOpen={(x) => setOpenId(x._id)}
+                  note={`· ${p.leadCount ?? 1} buyer${(p.leadCount ?? 1) === 1 ? "" : "s"} · last ${ago(p.lastLeadAt ?? p.followUpAt)}d ago`}>
+                  {!many && <a href={waLink(p.sellerPhone, soldFollowUpMessage(p))} target="_blank" rel="noopener noreferrer" className={btn("wa", "sm")}><IconWhatsApp className="w-3.5 h-3.5" /> Ask seller</a>}
+                  <button type="button" onClick={() => setOpenId(p._id)} className={btn("primary", "sm")}>Sold</button>
+                  <button type="button" onClick={() => run(() => snooze({ id: p._id }), "Asking again in 3 days")} className={btn("outline", "sm")}>Not yet</button>
+                  <button type="button" onClick={() => run(() => actions.markSoldElsewhere(p), "Sold elsewhere, seller notified")} className={btn("outline", "sm")}>Sold elsewhere</button>
+                </FollowRow>
+              ))}
+            </SellerBlock>
           ))}
         </Group>
       )}
@@ -175,15 +211,19 @@ export default function AdminTodoPage() {
 
       {data.stale.length > 0 && (
         <Group title="Still for sale?" count={data.stale.length}>
-          <p className="text-[12.5px] text-adm-fade -mt-1 mb-2">Live {STALE_DAYS}+ days without a check. Still for sale clears it for another {STALE_DAYS / 7} weeks.</p>
-          {data.stale.slice(0, 12).map((p) => (
-            <FollowRow key={p._id} product={p} onOpen={(x) => setOpenId(x._id)}
-              note={`· live ${ago(p.approvedAt ?? p.dateAdded)} days${p.availabilityCheckedAt ? `, checked ${ago(p.availabilityCheckedAt)}d ago` : ", not checked"}`}>
-              <a href={waLink(p.sellerPhone, stillForSaleMessage(p))} target="_blank" rel="noopener noreferrer" className={btn("wa", "sm")}><IconWhatsApp className="w-3.5 h-3.5" /> Ask seller</a>
-              <button type="button" onClick={() => run(() => confirmAvailable({ id: p._id }), "Still for sale, checked")} className={btn("outline", "sm")}>Still for sale</button>
-              <button type="button" onClick={() => setOpenId(p._id)} className={btn("primary", "sm")}>Sold</button>
-              <button type="button" onClick={() => run(() => actions.markSoldElsewhere(p), "Sold elsewhere, seller notified")} className={btn("outline", "sm")}>Sold elsewhere</button>
-            </FollowRow>
+          <p className="text-[12.5px] text-adm-fade -mt-1 mb-2">Live {STALE_DAYS}+ days without a check. Still for sale clears it for another {STALE_DAYS / 7} weeks. A seller's items are messaged together.</p>
+          {groupBySeller(data.stale.slice(0, 12)).map((group) => (
+            <SellerBlock key={group[0].sellerId} group={group} message={stillForSaleMessage}>
+              {(many) => group.map((p) => (
+                <FollowRow key={p._id} product={p} onOpen={(x) => setOpenId(x._id)}
+                  note={`· live ${ago(p.approvedAt ?? p.dateAdded)} days${p.availabilityCheckedAt ? `, checked ${ago(p.availabilityCheckedAt)}d ago` : ", not checked"}`}>
+                  {!many && <a href={waLink(p.sellerPhone, stillForSaleMessage(p))} target="_blank" rel="noopener noreferrer" className={btn("wa", "sm")}><IconWhatsApp className="w-3.5 h-3.5" /> Ask seller</a>}
+                  <button type="button" onClick={() => run(() => confirmAvailable({ id: p._id }), "Still for sale, checked")} className={btn("outline", "sm")}>Still for sale</button>
+                  <button type="button" onClick={() => setOpenId(p._id)} className={btn("primary", "sm")}>Sold</button>
+                  <button type="button" onClick={() => run(() => actions.markSoldElsewhere(p), "Sold elsewhere, seller notified")} className={btn("outline", "sm")}>Sold elsewhere</button>
+                </FollowRow>
+              ))}
+            </SellerBlock>
           ))}
           {data.stale.length > 12 && <p className="text-center text-[12px] text-adm-fade">{data.stale.length - 12} more after these</p>}
         </Group>
