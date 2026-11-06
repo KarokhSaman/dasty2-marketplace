@@ -42,6 +42,8 @@ export const ACTIONS = {
   unfeatured: ["Sponsor stopped", "grey"],
   offer_created: ["Offer created", "accent"],
   offer_edited: ["Offer edited", "accent"],
+  template_edited: ["Message template changed", "accent"],
+  template_reset: ["Message template reset", "grey"],
   offer_deactivated: ["Offer switched off", "grey"],
   offer_reactivated: ["Offer switched on", "green"],
   offer_deleted: ["Offer deleted", "red"],

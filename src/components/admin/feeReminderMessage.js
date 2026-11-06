@@ -1,8 +1,7 @@
-import { getLocale } from "@/paraglide/runtime";
+import { messageLocale, renderTemplate } from "@/components/admin/messageTemplates";
 
 // WhatsApp reminder to a seller about the service fees they owe, sent by the
-// admin from the Fees page. Arabic when the admin uses the site in Arabic,
-// Kurdish otherwise (English included), like the approval message.
+// admin from the Fees page. The wording is in messageTemplates.js.
 
 // Where sellers send their service fees (Super Qi, FIB or FastPay).
 export const FEE_PAYMENT_NUMBER = "07724944244";
@@ -15,29 +14,9 @@ const LRM = "\u200E";
 // leading right-to-left mark keeps that line right-aligned like the rest.
 const RLM = "\u200F";
 
-const MESSAGES = {
-  ckb: (total, number, items) => `*سڵاو گیان* 👋
-پیرۆزە کاڵاکەتان فرۆشرا 🤍
-
-🧾 *کرێی خزمەتگوزاری بۆ فرۆشتنەکانت*
-${items("کاڵای", "کرێ", "دینار")}💰 کۆی گشتی: *${total} دینار*
-
-> 💳 دەتوانیت لە ڕێگەی *Super Qi* یان *FIB* یان *FastPay* پارەکە بنێریت بۆ ئەم ژمارەیە:
-${number}
-
-لەگەڵ ڕێزماندا،
-تیمی ماڵپەڕی منداڵان 🧸`,
-  ar: (total, number, items) => `*مرحباً عزيزي* 👋
-مبروك، تم بيع منتجك 🤍
-
-🧾 *رسوم الخدمة لمبيعاتك*
-${items("المنتج", "الرسوم", "دينار")}💰 المجموع: *${total} دينار*
-
-> 💳 يمكنك الدفع عبر *Super Qi* أو *FIB* أو *FastPay* على هذا الرقم:
-${number}
-
-مع خالص التحيات،
-فريق موقع Mndallan 🧸`,
+const ITEM_WORDS = {
+  ckb: { item: "کاڵای", fee: "کرێ", currency: "دینار" },
+  ar: { item: "المنتج", fee: "الرسوم", currency: "دينار" },
 };
 
 /**
@@ -45,12 +24,16 @@ ${number}
  * `{ code, fee }` with the fee formatted ("26-0096", "5,000"), one line each.
  */
 export function feeReminderMessage(total, items = []) {
-  const build = getLocale() === "ar" ? MESSAGES.ar : MESSAGES.ckb;
+  const { item, fee, currency } = ITEM_WORDS[messageLocale()];
   // Each line opens with a word, not the code: WhatsApp picks a line's
   // direction from its first letter, and a leading code turned the line
   // left-to-right and scrambled the fee.
-  const lines = (item, fee, currency) => items
-    .map((it) => `🏷️ ${item} ${it.code ? `*${LRM}#${it.code}${LRM}*` : "—"} · ${fee}: *${it.fee} ${currency}*\n`)
-    .join("");
-  return build(`${LRM}${total}${LRM}`, `${RLM}${FEE_PAYMENT_NUMBER}`, lines);
+  const lines = items
+    .map((it) => `🏷️ ${item} ${it.code ? `*${LRM}#${it.code}${LRM}*` : "—"} · ${fee}: *${it.fee} ${currency}*`)
+    .join("\n");
+  return renderTemplate("feeReminder", {
+    items: lines || null,
+    total: `${LRM}${total}${LRM}`,
+    number: `${RLM}${FEE_PAYMENT_NUMBER}`,
+  });
 }

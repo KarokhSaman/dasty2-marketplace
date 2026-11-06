@@ -90,7 +90,7 @@ export default function ProductCard({ product, onSave }) {
             </div>
           )}
         </div>
-          {product.storeId && (
+          {product.isStore && (
             <span className="absolute bottom-3 -start-1.5 z-10">
               <span className="relative inline-flex items-center gap-1.5 min-w-[84px] ps-3 pe-3.5 py-1 text-[10.5px] font-bold tracking-[0.04em] leading-none whitespace-nowrap text-white bg-[var(--color-ink)] rounded-e-[5px] shadow-[0_6px_12px_-6px_rgba(11,12,15,0.5)]">
                 <StoreIcon className="w-3 h-3 shrink-0" />

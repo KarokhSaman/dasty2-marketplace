@@ -193,6 +193,14 @@ export default defineSchema({
     createdAt:    v.string(),
   }),
 
+  messageTemplates: defineTable({
+    key:       v.string(),
+    locale:    v.union(v.literal("ckb"), v.literal("ar")),
+    body:      v.string(),
+    updatedAt: v.string(),
+  })
+    .index("by_key_and_locale", ["key", "locale"]),
+
   notifications: defineTable({
     sellerId: v.string(),
     productId: v.string(),
