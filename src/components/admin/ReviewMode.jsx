@@ -13,9 +13,10 @@ import { RejectBox } from "@/components/admin/ProductPanel";
 import CustomSelect from "@/components/ui/CustomSelect";
 import { CATEGORY_CONFIG } from "@/lib/categories";
 import { brandFitsCategory, getBrandChoices } from "@/lib/brands";
-import { StoreTag, Code, Segmented, btn, fmtIQD, inputCls, labelCls, useToast, waLink, waNumber, fmtPhone, IconX, IconCheck, IconRotate, IconStar, IconTrash, IconWhatsApp } from "@/components/admin/ui";
+import { StoreTag, Code, Segmented, btn, fmtIQD, inputCls, labelCls, useToast, waLink, waNumber, fmtPhone, IconX, IconCheck, IconRotate, IconStar, IconTrash, IconCrop, IconWhatsApp } from "@/components/admin/ui";
 import { combinedApprovalMessage } from "@/components/admin/approvalMessage";
 import { rejectionMessage } from "@/components/admin/rejectionMessage";
+import { StoryCropSheet } from "@/components/admin/ProductPanel";
 
 const CONDITION = { new: () => m.conditionNew(), likenew: () => m.conditionLikeNew(), used: () => m.conditionUsed() };
 
@@ -44,11 +45,15 @@ export default function ReviewMode({ queue, onClose }) {
   const [turns, setTurns] = useState(0);
   const [photoBusy, setPhotoBusy] = useState(false);
   const [confirmDel, setConfirmDel] = useState(false);
+  const [cropping, setCropping] = useState(false);
   const upload = useImageUpload();
   const live = useQuery(api.products.getAll);
   const [rejecting, setRejecting] = useState(false);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState({ approved: 0, rejected: 0 });
+  // Posts passed over this session. They stay pending, so they come back in the
+  // next review; the count is just for the running tally.
+  const [skipped, setSkipped] = useState(0);
   // Posts approved in this session, for the seller's WhatsApp message; `sent`
   // once its button was tapped.
   const [approvedList, setApprovedList] = useState([]);
@@ -94,7 +99,7 @@ export default function ReviewMode({ queue, onClose }) {
   useEffect(() => lockScroll(), []);
 
   // Each product opens on its main photo, with its details not being edited.
-  useEffect(() => { setPhoto(byId[ids[index]]?.mainPhotoIndex ?? 0); setTurns(0); setConfirmDel(false); setEditing(false); setDraft(null); }, [index]);
+  useEffect(() => { setPhoto(byId[ids[index]]?.mainPhotoIndex ?? 0); setTurns(0); setConfirmDel(false); setCropping(false); setEditing(false); setDraft(null); }, [index]);
 
   // Detail fixes made during review. Saved with "Save" or together with Approve.
   const startEdit = () => {
@@ -159,6 +164,16 @@ export default function ReviewMode({ queue, onClose }) {
     }
   }
 
+  // Pass over a post without a decision: it stays pending and comes back in the
+  // next review. Nothing is saved.
+  function skip() {
+    if (!p || busy) return;
+    setLastDecision("skip");
+    setSkipped((n) => n + 1);
+    toast(`Skipped ${p.seq ?? ""} — still in To review`);
+    next();
+  }
+
   useEffect(() => {
     const onKey = (e) => {
       if (e.target.closest?.("input, textarea")) return;
@@ -166,6 +181,7 @@ export default function ReviewMode({ queue, onClose }) {
       else if (!p) return;
       else if (e.key === "a" || e.key === "A") decide("approve");
       else if (e.key === "r" || e.key === "R") setRejecting((v) => !v);
+      else if (e.key === "s" || e.key === "S") skip();
       else if (e.key === "ArrowRight") setPhoto((i) => Math.min(i + 1, (p.photos?.length ?? 1) - 1));
       else if (e.key === "ArrowLeft") setPhoto((i) => Math.max(i - 1, 0));
     };
@@ -174,7 +190,7 @@ export default function ReviewMode({ queue, onClose }) {
   });
 
   // Swipe on the photo. Direction is physical: right = approve in every language.
-  const onDown = (e) => { if (busy || turns || confirmDel || photoBusy || editing) return; swipe.current = e.clientX; e.currentTarget.setPointerCapture?.(e.pointerId); };
+  const onDown = (e) => { if (busy || turns || confirmDel || photoBusy || editing || cropping) return; swipe.current = e.clientX; e.currentTarget.setPointerCapture?.(e.pointerId); };
   const onMove = (e) => { if (swipe.current != null) setDx(e.clientX - swipe.current); };
   const onUp = () => {
     if (swipe.current == null) return;
@@ -222,7 +238,13 @@ export default function ReviewMode({ queue, onClose }) {
         </div>
       )}
 
-      {p && lastDecision !== "reject" && approvedList[0] && (
+      {p && lastDecision === "skip" && (
+        <div className="flex items-center gap-x-3 px-4 py-2 border-b border-adm-line bg-adm-sunk shrink-0">
+          <p className="flex-1 min-w-0 text-[12.5px] font-semibold text-adm-soft truncate">Skipped — it stays in To review for next time</p>
+        </div>
+      )}
+
+      {p && lastDecision !== "reject" && lastDecision !== "skip" && approvedList[0] && (
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2 border-b border-adm-line bg-st-approved-bg shrink-0">
           <IconCheck className="w-4 h-4 text-st-approved shrink-0" />
           <p className="flex-1 min-w-[140px] text-[12.5px] font-semibold truncate">Approved {approvedList[0].seq ? `#${approvedList[0].seq}` : ""} · {approvedList[0].sellerName}</p>
@@ -239,7 +261,7 @@ export default function ReviewMode({ queue, onClose }) {
           <div className="space-y-3 w-full max-w-sm">
             <div className="mx-auto w-16 h-16 rounded-full bg-st-approved-bg text-st-approved grid place-items-center"><IconCheck className="w-8 h-8" /></div>
             <p className="text-[19px] font-bold">{left > 0 ? "Messages to send" : "All caught up"}</p>
-            <p className="text-[13.5px] text-adm-soft">{done.approved} approved · {done.rejected} rejected{left > 0 ? ` · ${left} still to review` : ""}. Sellers have been notified.</p>
+            <p className="text-[13.5px] text-adm-soft">{done.approved} approved · {done.rejected} rejected{skipped > 0 ? ` · ${skipped} skipped` : ""}{left > 0 ? ` · ${left} still to review` : ""}. Sellers have been notified.</p>
             {approvedList.length > 0 && (
               <div className="text-start rounded-2xl border border-adm-line bg-adm-surface divide-y divide-adm-line">
                 <p className="px-3.5 py-2.5 text-[12px] font-bold text-adm-soft">Send each seller the approval message</p>
@@ -307,7 +329,9 @@ export default function ReviewMode({ queue, onClose }) {
                   ) : (
                     <>
                       <button type="button" disabled={photoBusy} onClick={() => setTurns(1)} className={btn("outline", "sm")}><IconRotate className="w-4 h-4" /> Rotate</button>
-                      {photo !== (p.mainPhotoIndex ?? 0) && (
+                      {photo === (p.mainPhotoIndex ?? 0) ? (
+                        <button type="button" disabled={photoBusy} onClick={() => setCropping(true)} className={btn("outline", "sm")}><IconCrop className="w-4 h-4" /> Story crop</button>
+                      ) : (
                         <button type="button" disabled={photoBusy} onClick={makeMain} className={btn("outline", "sm")}><IconStar className="w-4 h-4" /> Make main</button>
                       )}
                       {photos.length > 1 && (
@@ -416,15 +440,34 @@ export default function ReviewMode({ queue, onClose }) {
           </div>
 
           {!rejecting && (
-            <div className="shrink-0 border-t border-adm-line bg-adm-bg px-4 pt-3 grid grid-cols-2 gap-3 max-w-5xl w-full mx-auto"
+            <div className="shrink-0 border-t border-adm-line bg-adm-bg px-4 pt-3 max-w-5xl w-full mx-auto"
               style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom))" }}>
-              <button type="button" disabled={busy} onClick={() => setRejecting(true)} className={`${btn("danger", "lg")}`}>
-                {m.adminReject()} <kbd className="max-lg:hidden text-[10px] border border-current rounded px-1 opacity-60">R</kbd>
-              </button>
-              <button type="button" disabled={busy} onClick={() => decide("approve")} className={`${btn("approve", "lg")}`}>
-                {dirty ? "Save & approve" : m.adminApprove()} <kbd className="max-lg:hidden text-[10px] border border-current rounded px-1 opacity-60">A</kbd>
+              <div className="grid grid-cols-2 gap-3">
+                <button type="button" disabled={busy} onClick={() => setRejecting(true)} className={`${btn("danger", "lg")}`}>
+                  {m.adminReject()} <kbd className="max-lg:hidden text-[10px] border border-current rounded px-1 opacity-60">R</kbd>
+                </button>
+                <button type="button" disabled={busy} onClick={() => decide("approve")} className={`${btn("approve", "lg")}`}>
+                  {dirty ? "Save & approve" : m.adminApprove()} <kbd className="max-lg:hidden text-[10px] border border-current rounded px-1 opacity-60">A</kbd>
+                </button>
+              </div>
+              <button type="button" disabled={busy} onClick={skip} className={`${btn("ghost", "sm")} w-full mt-2 text-adm-soft`}>
+                Skip for now <kbd className="max-lg:hidden text-[10px] border border-current rounded px-1 opacity-60">S</kbd>
               </button>
             </div>
+          )}
+
+          {cropping && photos[photo] && (
+            <StoryCropSheet url={photos[photo]} saved={p.storyCrop?.url === photos[photo] ? p.storyCrop : null}
+              onClose={() => setCropping(false)}
+              onSave={async (crop) => {
+                try {
+                  await actions.setStoryCrop(p, crop);
+                  toast(crop ? "Story crop saved" : "Story crop back to automatic");
+                  setCropping(false);
+                } catch (err) {
+                  toast(errorMessage(err, "Could not save the crop"), "error");
+                }
+              }} />
           )}
         </>
       )}

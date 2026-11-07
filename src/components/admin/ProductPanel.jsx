@@ -226,7 +226,7 @@ function PhotoTile({ product, url, index, isMain, onlyOne, actions, toast }) {
 // landscape photo, say); the part that shows is saved, as fractions of the
 // photo, and the story's frame then takes that part's shape. "Automatic"
 // clears it so the story's own crop is used again.
-function StoryCropSheet({ url, saved, onClose, onSave }) {
+export function StoryCropSheet({ url, saved, onClose, onSave }) {
   const frameRef = useRef(null);
   const [nat, setNat] = useState(null); // natural photo size
   const [box, setBox] = useState({ w: 300, h: 300 / STORY_PHOTO_ASPECT });
