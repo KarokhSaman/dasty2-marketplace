@@ -712,12 +712,11 @@ function drawStory(ctx, { title, price, label, img, storyCrop, sold, city, store
   ctx.save();
   ctx.direction = "ltr";
   ctx.textBaseline = "alphabetic";
-  ctx.fillStyle = INK;
-  ctx.font = `700 32px ${family}`; // the same size as the product code
-  ctx.textAlign = rtl ? "right" : "left";
-  if (site) ctx.fillText(site, rtl ? cx + cw - 24 : cx + 24, footY);
+  // the web address looks exactly like the product code
   ctx.fillStyle = INK_SOFT;
   ctx.font = `700 32px ${family}`;
+  ctx.textAlign = rtl ? "right" : "left";
+  if (site) ctx.fillText(site, rtl ? cx + cw - 24 : cx + 24, footY);
   ctx.textAlign = rtl ? "left" : "right";
   if (code) ctx.fillText(code, rtl ? cx + 24 : cx + cw - 24, footY);
   ctx.restore();
