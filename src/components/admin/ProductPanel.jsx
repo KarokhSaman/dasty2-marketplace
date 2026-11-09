@@ -9,7 +9,7 @@ import { CATEGORY_CONFIG } from "@/lib/categories";
 import { brandFitsCategory, getBrandChoices } from "@/lib/brands";
 import { priceInfo } from "@/convex/discount";
 import { rotatePhoto } from "@/lib/rotateImage";
-import { STORY_PHOTO_ASPECT, shareStoryImage } from "@/lib/storyImage";
+import { STORY_FILL_MAX_ASPECT, STORY_PHOTO_ASPECT, shareStoryImage } from "@/lib/storyImage";
 import { getCityLabel } from "@/lib/cities";
 import { formatAmount } from "@/components/ui";
 import { useImageUpload } from "@/lib/useImageUpload";
@@ -27,9 +27,9 @@ import {
 } from "@/components/admin/ui";
 
 const CONDITIONS = [
-  { value: "new", label: () => m.conditionNew() },
-  { value: "likenew", label: () => m.conditionLikeNew() },
-  { value: "used", label: () => m.conditionUsed() },
+  { value: "new", label: (...a) => m.conditionNew(...a) },
+  { value: "likenew", label: (...a) => m.conditionLikeNew(...a) },
+  { value: "used", label: (...a) => m.conditionUsed(...a) },
 ];
 
 // Reject reasons are always in Kurdish, whatever language the admin page is
@@ -221,10 +221,10 @@ function PhotoTile({ product, url, index, isMain, onlyOne, actions, toast }) {
 }
 
 // Admin frames the main photo for the Instagram story: drag to move, pinch,
-// wheel or the slider to zoom, inside a frame the exact shape of the story's
-// photo frame. Zooming out below "fill" fits more of the photo (a whole
-// landscape photo, say); the part that shows is saved, as fractions of the
-// photo, and the story's frame then takes that part's shape. "Automatic"
+// wheel or the slider to zoom, inside a frame the exact shape of the story,
+// which the photo fills. Zooming out below "fill" fits more of the photo (a
+// whole landscape photo, say); the part that shows is saved, as fractions of
+// the photo, and a wide part then sits in a frame of its shape. "Automatic"
 // clears it so the story's own crop is used again.
 export function StoryCropSheet({ url, saved, onClose, onSave }) {
   const frameRef = useRef(null);
@@ -317,12 +317,15 @@ export function StoryCropSheet({ url, saved, onClose, onSave }) {
     return { x: x0 / nat.w, y: y0 / nat.h, w: (x1 - x0) / nat.w, h: (y1 - y0) / nat.h };
   })() : null;
 
-  // mini story preview: the story's photo area, with the frame taking the
-  // shape of that part, centred in it as in the story
-  const mini = 70;
-  const areaW = mini * 0.866, areaH = areaW / STORY_PHOTO_ASPECT;
-  const pk = part ? Math.min(areaW / (part.w * nat.w), areaH / (part.h * nat.h)) : 1;
-  const fw = part ? part.w * nat.w * pk : areaW, fh = part ? part.h * nat.h * pk : areaH;
+  // mini story preview: a tall part fills the whole story; a wide one sits in
+  // a frame in the middle that takes its shape, as in the story
+  const mini = 70, miniH = mini / STORY_PHOTO_ASPECT;
+  const pw = part ? part.w * nat.w : 1, ph = part ? part.h * nat.h : 1;
+  const tall = pw / ph <= STORY_FILL_MAX_ASPECT;
+  const areaW = tall ? mini : mini * 0.926, areaH = tall ? miniH : miniH * 0.42;
+  const pk = (tall ? Math.max : Math.min)(areaW / pw, areaH / ph);
+  const fw = tall ? mini : pw * pk, fh = tall ? miniH : ph * pk;
+  const fx = (mini - fw) / 2, fy = tall ? 0 : miniH * 0.2 + (areaH - fh) / 2;
 
   async function save() {
     setBusy(true);
@@ -364,15 +367,12 @@ export function StoryCropSheet({ url, saved, onClose, onSave }) {
           <span className="text-white/60">+</span>
         </div>
         <div className="flex items-center gap-3 mt-3 mx-4 p-2.5 rounded-2xl bg-[#1b1c20] w-[calc(100%-32px)] max-w-[360px]">
-          <div className="relative shrink-0 rounded-md bg-[#fefcf9] overflow-hidden" style={{ width: mini, height: mini * 16 / 9 }}>
-            <div className="absolute overflow-hidden rounded-[3px] bg-white p-[1.5px]"
-              style={{ left: mini * 0.067 + (areaW - fw) / 2, top: mini * 16 / 9 * 0.115 + (areaH - fh) / 2, width: fw, height: fh }}>
-              <div className="relative w-full h-full overflow-hidden rounded-[2px]">
-                {part && <img src={url} alt="" className="absolute left-0 top-0 max-w-none origin-top-left"
-                  style={{ width: nat.w * pk, transform: `translate(${-part.x * nat.w * pk}px, ${-part.y * nat.h * pk}px)` }} />}
-              </div>
+          <div className="relative shrink-0 rounded-md bg-[#1b1416] overflow-hidden" style={{ width: mini, height: miniH }}>
+            <div className={`absolute overflow-hidden ${tall ? "" : "rounded-[3px]"}`} style={{ left: fx, top: fy, width: fw, height: fh }}>
+              {part && <img src={url} alt="" className="absolute left-0 top-0 max-w-none origin-top-left"
+                style={{ width: nat.w * pk, transform: `translate(${(fw - pw * pk) / 2 - part.x * nat.w * pk}px, ${(fh - ph * pk) / 2 - part.y * nat.h * pk}px)` }} />}
             </div>
-            <img src="/story-card.png" alt="" className="absolute" style={{ left: mini * 0.04, width: mini * 0.92, bottom: mini * 16 / 9 * 0.06 }} />
+            <div className="absolute rounded-[5px] bg-white/20 border border-white/40" style={{ left: mini * 0.045, right: mini * 0.045, bottom: miniH * 0.14, height: miniH * 0.22 }} />
           </div>
           <p className="text-[12.5px] text-white/75 leading-snug">How it shows in the story. Anything outside the frame is left out.</p>
         </div>
@@ -403,6 +403,7 @@ function SoldStoryButton({ product: p, toast }) {
         storyCrop: p.storyCrop,
         sold: true,
         city: p.city ? getCityLabel(p.city, "ckb") : undefined,
+        condition: CONDITIONS.find((c) => c.value === p.condition)?.label({}, KU),
         store: p.storeId ? m.storeFlag({}, KU) : undefined,
         code: p.seq ? `#${p.seq}` : undefined,
         site: "www.mndallan.com",

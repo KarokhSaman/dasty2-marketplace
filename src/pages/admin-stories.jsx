@@ -17,6 +17,7 @@ const MAX = 8;
 const DAY = 86400000;
 // The stories are for the Kurdish audience, whatever language the admin page is in.
 const KU = { locale: "ckb" };
+const CONDITION_KU = { new: () => m.conditionNew({}, KU), likenew: () => m.conditionLikeNew({}, KU), used: () => m.conditionUsed({}, KU) };
 
 const LISTS = [
   { value: "today", label: "Approved today" },
@@ -43,7 +44,9 @@ function storyFor(p, noPrice) {
     photo: mainPhoto(p),
     storyCrop: p.storyCrop,
     city: p.city ? getCityLabel(p.city, "ckb") : undefined,
+    condition: CONDITION_KU[p.condition]?.(),
     store: p.storeId ? m.storeFlag({}, KU) : undefined,
+    hint: noPrice ? m.storyTapPrice({}, KU) : m.storyTapHint({}, KU),
     code: p.seq ? `#${p.seq}` : undefined,
     site: "www.mndallan.com",
     rtl: true,
