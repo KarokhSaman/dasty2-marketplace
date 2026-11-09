@@ -398,11 +398,11 @@ function drawPriceBar(ctx, { edge, fromRight, y, price, family }) {
 // price area (x, y), and the tag's tilt in degrees and the room for the price.
 const CARD_ART = {
   src: "/story-card.png",
-  // the "بۆ زانینی نرخ ئێرە داگرە" label for a story without a price
-  // (public/story-price-label.png, 1087 × 310); its pointer rests on the empty tag
+  // the two-tone "زانینی نرخ؟ خوارەوە داگرە" label for a story without a price
+  // (public/story-price-label.png, 1000 × 224); its pointer rests on the empty tag
   label: "/story-price-label.png",
-  card: [21, 162, 1161, 253],
-  price: [540, 125, -5.0, 520],
+  card: [29, 168, 1147, 242],
+  price: [508, 127, -5.0, 470],
 };
 
 // The shape (width / height) of the photo inside its frame when the card art
@@ -429,7 +429,7 @@ function drawCardArt(ctx, { art, CS, cx, cy, cw, ch, rtl, price, label, title, c
     ctx.drawImage(art, 0, 0, iw, ih);
   }
   ctx.restore();
-  // price on the tag, centred between the eyelet and the button
+  // price on the tag, centred in its white area past the eyelet
   const ang = (A.price[2] * Math.PI) / 180;
   const tcx = rtl ? cx - ox + A.price[0] * CS : cx + cw + ox - A.price[0] * CS;
   const tcy = cy - oy + A.price[1] * CS;
@@ -437,7 +437,7 @@ function drawCardArt(ctx, { art, CS, cx, cy, cw, ch, rtl, price, label, title, c
   if (label) {
     // no price: the tag stays empty for the Instagram link sticker, and the
     // label above it, tilted with the tag, says to tap there for the price
-    const lw = 765 * CS, lh = lw * (label.height / label.width);
+    const lw = 600 * CS, lh = lw * (label.height / label.width);
     ctx.save();
     ctx.translate(tcx, tcy);
     ctx.rotate(rtl ? ang : -ang);
@@ -712,12 +712,11 @@ function drawStory(ctx, { title, price, label, img, storyCrop, sold, city, store
   ctx.save();
   ctx.direction = "ltr";
   ctx.textBaseline = "alphabetic";
-  ctx.fillStyle = INK;
-  ctx.font = `600 44px ${family}`;
-  ctx.textAlign = rtl ? "right" : "left";
-  if (site) ctx.fillText(site, rtl ? cx + cw - 24 : cx + 24, footY);
+  // the web address looks exactly like the product code
   ctx.fillStyle = INK_SOFT;
   ctx.font = `700 32px ${family}`;
+  ctx.textAlign = rtl ? "right" : "left";
+  if (site) ctx.fillText(site, rtl ? cx + cw - 24 : cx + 24, footY);
   ctx.textAlign = rtl ? "left" : "right";
   if (code) ctx.fillText(code, rtl ? cx + 24 : cx + cw - 24, footY);
   ctx.restore();
@@ -739,7 +738,7 @@ function drawStory(ctx, { title, price, label, img, storyCrop, sold, city, store
  * @param {string} [p.city]     localized city
  * @param {string} [p.store]    localized "Store" label, for store products
  * @param {string} [p.code]     product code, e.g. "#26-0009"
- * @param {string} [p.site]     web address shown on the card, e.g. "www.mndallan.com"
+ * @param {string} [p.site]     web address shown on the card, e.g. "mndallan.com"
  * @param {boolean} [p.rtl]     right-to-left layout for ckb/ar
  * @param {string} [p.brand]    brand name; its logo goes in the header
  * @param {object} [p.storyCrop] admin-set framing of the photo ({ url, x, y, w, h }

@@ -310,8 +310,8 @@ export default function ProductDetailPage() {
   // render use the production domain (so hydration matches), then the effect
   // swaps in the real origin after mount (e.g. localhost in dev).
   const productUrl = `${origin}${localizeHref(`/products/${id}`, { locale })}`;
-  // The story shows the address people type: www. on the live site.
-  const storySite = new URL(productUrl).host === "mndallan.com" ? "www.mndallan.com" : new URL(productUrl).host;
+  // The story shows the site's address without "www.".
+  const storySite = new URL(productUrl).host.replace(/^www\./, "");
 
   const priceNow = priceInfo(product);
 
