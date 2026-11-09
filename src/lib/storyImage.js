@@ -713,7 +713,7 @@ function drawStory(ctx, { title, price, label, img, storyCrop, sold, city, store
   ctx.direction = "ltr";
   ctx.textBaseline = "alphabetic";
   ctx.fillStyle = INK;
-  ctx.font = `600 44px ${family}`;
+  ctx.font = `700 32px ${family}`; // the same size as the product code
   ctx.textAlign = rtl ? "right" : "left";
   if (site) ctx.fillText(site, rtl ? cx + cw - 24 : cx + 24, footY);
   ctx.fillStyle = INK_SOFT;
@@ -739,7 +739,7 @@ function drawStory(ctx, { title, price, label, img, storyCrop, sold, city, store
  * @param {string} [p.city]     localized city
  * @param {string} [p.store]    localized "Store" label, for store products
  * @param {string} [p.code]     product code, e.g. "#26-0009"
- * @param {string} [p.site]     web address shown on the card, e.g. "www.mndallan.com"
+ * @param {string} [p.site]     web address shown on the card, e.g. "mndallan.com"
  * @param {boolean} [p.rtl]     right-to-left layout for ckb/ar
  * @param {string} [p.brand]    brand name; its logo goes in the header
  * @param {object} [p.storyCrop] admin-set framing of the photo ({ url, x, y, w, h }

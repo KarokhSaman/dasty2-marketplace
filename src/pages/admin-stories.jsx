@@ -45,7 +45,7 @@ function storyFor(p, noPrice) {
     city: p.city ? getCityLabel(p.city, "ckb") : undefined,
     store: p.storeId ? m.storeFlag({}, KU) : undefined,
     code: p.seq ? `#${p.seq}` : undefined,
-    site: "www.mndallan.com",
+    site: "mndallan.com",
     rtl: true,
     brand: p.brand,
   };
