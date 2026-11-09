@@ -8,6 +8,12 @@ const MIGRATIONS = [
     env: "development",
   },
   {
+    // a Workers Builds rebuild of dev shipped this host on 2026-11-09
+    old: "dev-assets.dasty2mndalan.com",
+    new: "dev-assets.mndallan.com",
+    env: "development",
+  },
+  {
     old: "assets.dasty2mndalan.com",
     new: "assets.mndallan.com",
     env: "production",
