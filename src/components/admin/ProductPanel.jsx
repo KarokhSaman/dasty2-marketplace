@@ -23,7 +23,7 @@ import ConnectBuyer, { BuyerLeads } from "@/components/admin/ConnectBuyer";
 import {
   Panel, StatusChip, StoreTag, Code, SectionTitle, Segmented, Switch, ConfirmBox, AmountInput, Avatar, Thumb,
   btn, fmtIQD, inputCls, labelCls, useToast, useCopy, waLink, ltrPhone, fmtPhone,
-  IconRotate, IconStar, IconTrash, IconCheck, IconX, IconCopy, IconWhatsApp, IconExternal, IconCrop,
+  IconRotate, IconStar, IconTrash, IconCheck, IconX, IconCopy, IconWhatsApp, IconExternal, IconCrop, IconChevron,
 } from "@/components/admin/ui";
 
 const CONDITIONS = [
@@ -386,6 +386,31 @@ export function StoryCropSheet({ url, saved, onClose, onSave }) {
   );
 }
 
+// The payment receipt the seller sent for this sale's fee, kept after it is
+// paid so it can be looked up later. Opens in a window over this one.
+function FeeReceiptRow({ product: p }) {
+  const [viewing, setViewing] = useState(false);
+  const when = p.feeReceiptAt
+    ? new Date(p.feeReceiptAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })
+    : "";
+  return (
+    <>
+      <button type="button" onClick={() => setViewing(true)} className="mt-3 w-full flex items-center gap-3 rounded-xl bg-st-approved-bg p-2 ps-3 text-start">
+        <img {...photoProps(p.feeReceiptUrl, 140)} alt="Payment receipt" className="w-12 h-12 rounded-lg object-cover shrink-0" />
+        <span className="flex-1 min-w-0">
+          <span className="block text-[12.5px] font-bold text-st-approved">{p.status === "paid" ? "Payment receipt" : "Receipt uploaded — confirm the payment"}</span>
+          <span className="block text-[11.5px] text-adm-soft">Tap to view{when ? ` · sent ${when}` : ""}</span>
+        </span>
+        <IconChevron className="w-4 h-4 text-adm-fade shrink-0 rtl:rotate-180" />
+      </button>
+      <Panel open={viewing} onClose={() => setViewing(false)} title="Payment receipt" short
+        subtitle={<p className="text-[12px] text-adm-soft">{p.sellerName}{when ? ` · ${when}` : ""}</p>}>
+        <img src={p.feeReceiptUrl} alt="Payment receipt" className="w-full rounded-xl border border-adm-line" />
+      </Panel>
+    </>
+  );
+}
+
 // Shares the "sold" Instagram story for a sold product: the same story design
 // with a SOLD · فرۆشرا stamp on the photo and the card faded back. Always the
 // Kurdish layout, whatever language the admin page is in. Uses the product's
@@ -647,6 +672,7 @@ export default function ProductPanel({ product, onClose }) {
             Sold elsewhere{p.soldElsewhereAt ? ` on ${new Date(p.soldElsewhereAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}` : ""}: hidden from the site, no fee. Choose {m.statusApproved()} above to put it back live.
           </p>
         )}
+        {(p.status === "sold" || p.status === "paid") && !nextStatus && p.feeReceiptUrl && <FeeReceiptRow product={p} />}
         {p.status === "rejected" && !nextStatus && p.notes && (
           <p className="mt-2 text-[12.5px] text-st-rejected bg-st-rejected-bg rounded-xl px-3 py-2">{p.notes}</p>
         )}
