@@ -35,5 +35,7 @@ export function feeReminderMessage(total, items = []) {
     items: lines || null,
     total: `${LRM}${total}${LRM}`,
     number: `${RLM}${FEE_PAYMENT_NUMBER}`,
+    // their dashboard, where the Send payment receipt button is
+    link: `${window.location.origin}${messageLocale() === "ar" ? "/ar" : ""}/seller`,
   });
 }
