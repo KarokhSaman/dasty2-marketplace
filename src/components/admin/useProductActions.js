@@ -7,6 +7,8 @@ import * as m from "@/paraglide/messages";
 // screens so they all behave the same.
 export function useProductActions() {
   const updateStatus = useMutation(api.products.updateStatus);
+  const markFeesPaidMutation = useMutation(api.products.markFeesPaid);
+  const linkFeeReceiptMutation = useMutation(api.products.linkFeeReceipt);
   const markUnitSoldMutation = useMutation(api.products.markUnitSold);
   const returnUnitMutation = useMutation(api.products.returnUnit);
   const resolveDeleteRequest = useMutation(api.products.resolveDeleteRequest);
@@ -96,6 +98,21 @@ export function useProductActions() {
     await log("marked_paid", p);
   }
 
+  // Several of one seller's sales paid together (Fees page checklist). The
+  // server keeps their receipt and takes it off the sales left unpaid.
+  async function markFeesPaid(items) {
+    await markFeesPaidMutation({ ids: items.map((p) => p._id) });
+    for (const p of items) {
+      await notify(p, m.adminPaidMsg({ title: p.title }));
+      await log("marked_paid", p);
+    }
+  }
+
+  // Points a sale at a receipt the seller sent for another sale (no upload).
+  async function linkFeeReceipt(p, from) {
+    await linkFeeReceiptMutation({ id: p._id, fromId: from._id });
+  }
+
   async function resolveDelete(p, action) {
     await resolveDeleteRequest({ id: p._id, action });
     if (action === "approve") {
@@ -160,6 +177,11 @@ export function useProductActions() {
     await log("photo_rotated", p, `Photo ${i + 1} rotated ${turns * 90}°`);
   }
 
+  async function swapCroppedPhoto(p, i, oldUrl, newUrl) {
+    await replacePhoto({ id: p._id, index: i, oldUrl, newUrl });
+    await log("photo_cropped", p, `Photo ${i + 1} cropped`);
+  }
+
   // Sold outside Mndallan: hidden, no fee; the seller is told why (in
   // Kurdish, like rejections). The server logs it.
   async function markSoldElsewhere(p) {
@@ -173,7 +195,7 @@ export function useProductActions() {
   }
 
   return {
-    approve, reject, setPending, makeLive, returnUnit, markSold, markPaid, resolveDelete, remove,
-    sponsor, unsponsor, saveDetails, setMainPhoto, removePhoto, addPhotos, swapPhoto, setStoryCrop, markSoldElsewhere, isStocked, log,
+    approve, reject, setPending, makeLive, returnUnit, markSold, markPaid, markFeesPaid, linkFeeReceipt, resolveDelete, remove,
+    sponsor, unsponsor, saveDetails, setMainPhoto, removePhoto, addPhotos, swapPhoto, swapCroppedPhoto, setStoryCrop, markSoldElsewhere, isStocked, log,
   };
 }

@@ -35,7 +35,8 @@ export function feeReminderMessage(total, items = []) {
     items: lines || null,
     total: `${LRM}${total}${LRM}`,
     number: `${RLM}${FEE_PAYMENT_NUMBER}`,
-    // their dashboard, where the Send payment receipt button is
-    link: `${window.location.origin}${messageLocale() === "ar" ? "/ar" : ""}/seller`,
+    // No links in messages: the template says where to tap instead. A saved
+    // wording that still has {link} drops that line.
+    link: null,
   });
 }

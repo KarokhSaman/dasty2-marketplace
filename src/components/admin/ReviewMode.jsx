@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { rotatePhoto } from "@/lib/rotateImage";
+import { rotatePhoto, cropPhoto } from "@/lib/rotateImage";
+import PhotoCropSheet from "@/components/admin/PhotoCropSheet";
 import { useImageUpload } from "@/lib/useImageUpload";
 import * as m from "@/paraglide/messages";
 import { errorMessage } from "@/lib/errors";
@@ -13,7 +14,7 @@ import { RejectBox } from "@/components/admin/ProductPanel";
 import CustomSelect from "@/components/ui/CustomSelect";
 import { CATEGORY_CONFIG } from "@/lib/categories";
 import { brandFitsCategory, getBrandChoices } from "@/lib/brands";
-import { StoreTag, Code, Segmented, btn, fmtIQD, inputCls, labelCls, useToast, waLink, waNumber, fmtPhone, IconX, IconCheck, IconRotate, IconStar, IconTrash, IconCrop, IconWhatsApp } from "@/components/admin/ui";
+import { StoreTag, Code, Segmented, btn, fmtIQD, inputCls, labelCls, useToast, waLink, waNumber, fmtPhone, IconX, IconCheck, IconRotate, IconStar, IconTrash, IconCrop, IconScissors, IconWhatsApp } from "@/components/admin/ui";
 import { combinedApprovalMessage } from "@/components/admin/approvalMessage";
 import { rejectionMessage } from "@/components/admin/rejectionMessage";
 import { StoryCropSheet } from "@/components/admin/ProductPanel";
@@ -46,6 +47,7 @@ export default function ReviewMode({ queue, onClose }) {
   const [photoBusy, setPhotoBusy] = useState(false);
   const [confirmDel, setConfirmDel] = useState(false);
   const [cropping, setCropping] = useState(false);
+  const [trimming, setTrimming] = useState(false); // cutting the photo itself, not the story frame
   const upload = useImageUpload();
   const live = useQuery(api.products.getAll);
   const [rejecting, setRejecting] = useState(false);
@@ -99,7 +101,7 @@ export default function ReviewMode({ queue, onClose }) {
   useEffect(() => lockScroll(), []);
 
   // Each product opens on its main photo, with its details not being edited.
-  useEffect(() => { setPhoto(byId[ids[index]]?.mainPhotoIndex ?? 0); setTurns(0); setConfirmDel(false); setCropping(false); setEditing(false); setDraft(null); }, [index]);
+  useEffect(() => { setPhoto(byId[ids[index]]?.mainPhotoIndex ?? 0); setTurns(0); setConfirmDel(false); setCropping(false); setTrimming(false); setEditing(false); setDraft(null); }, [index]);
 
   // Detail fixes made during review. Saved with "Save" or together with Approve.
   const startEdit = () => {
@@ -177,6 +179,8 @@ export default function ReviewMode({ queue, onClose }) {
   useEffect(() => {
     const onKey = (e) => {
       if (e.target.closest?.("input, textarea")) return;
+      // a cropper is open on top: its own keys only (Esc closes it)
+      if (cropping || trimming) return;
       if (e.key === "Escape") close();
       else if (!p) return;
       else if (e.key === "a" || e.key === "A") decide("approve");
@@ -190,7 +194,7 @@ export default function ReviewMode({ queue, onClose }) {
   });
 
   // Swipe on the photo. Direction is physical: right = approve in every language.
-  const onDown = (e) => { if (busy || turns || confirmDel || photoBusy || editing || cropping) return; swipe.current = e.clientX; e.currentTarget.setPointerCapture?.(e.pointerId); };
+  const onDown = (e) => { if (busy || turns || confirmDel || photoBusy || editing || cropping || trimming) return; swipe.current = e.clientX; e.currentTarget.setPointerCapture?.(e.pointerId); };
   const onMove = (e) => { if (swipe.current != null) setDx(e.clientX - swipe.current); };
   const onUp = () => {
     if (swipe.current == null) return;
@@ -329,6 +333,7 @@ export default function ReviewMode({ queue, onClose }) {
                   ) : (
                     <>
                       <button type="button" disabled={photoBusy} onClick={() => setTurns(1)} className={btn("outline", "sm")}><IconRotate className="w-4 h-4" /> Rotate</button>
+                      <button type="button" disabled={photoBusy} onClick={() => setTrimming(true)} className={btn("outline", "sm")}><IconScissors className="w-4 h-4" /> Crop</button>
                       {photo === (p.mainPhotoIndex ?? 0) ? (
                         <button type="button" disabled={photoBusy} onClick={() => setCropping(true)} className={btn("outline", "sm")}><IconCrop className="w-4 h-4" /> Story crop</button>
                       ) : (
@@ -454,6 +459,17 @@ export default function ReviewMode({ queue, onClose }) {
                 Skip for now <kbd className="max-lg:hidden text-[10px] border border-current rounded px-1 opacity-60">S</kbd>
               </button>
             </div>
+          )}
+
+          {trimming && photos[photo] && (
+            <PhotoCropSheet url={photos[photo]} onClose={() => setTrimming(false)}
+              note={photo === (p.mainPhotoIndex ?? 0) && p.storyCrop?.url === photos[photo] ? "This photo's story crop goes back to automatic." : null}
+              onSave={(part) => photoAction(async () => {
+                const url = photos[photo];
+                const newUrl = await upload(await cropPhoto(url, part));
+                await actions.swapCroppedPhoto(p, photo, url, newUrl);
+                setTrimming(false);
+              }, "Photo cropped")} />
           )}
 
           {cropping && photos[photo] && (

@@ -24,7 +24,6 @@ const SAMPLE = {
   buyer: `📞 07507654321`,
   reason: "پۆلەکە هەڵەیە",
   fix: "پۆلی دروستی کاڵاکە هەڵبژێرن.",
-  link: "https://mndallan.com/seller/products/…/edit",
   button: "دووبارە ناردن",
 };
 
@@ -39,7 +38,6 @@ const V = {
   buyer: { name: "buyer", hint: "Buyer's number or name" },
   reason: { name: "reason", hint: "Rejection reason" },
   fix: { name: "fix", hint: "How to fix it" },
-  link: { name: "link", hint: "Link to the post" },
   button: { name: "button", hint: "Button name" },
 };
 
@@ -117,7 +115,7 @@ export const TEMPLATES = [
   },
   {
     key: "rejection", group: "posts", title: "Post rejected",
-    when: "After you reject a post the seller can fix", vars: [V.title, V.code, V.reason, V.fix, V.button, V.link], required: ["title", "reason", "fix", "link"],
+    when: "After you reject a post the seller can fix", vars: [V.title, V.code, V.reason, V.fix, V.button], required: ["title", "reason", "fix"],
     ckb: `*سڵاو و ڕێز* 👋
 سوپاس بۆ ناردنی پۆستەکەتان بۆ *«منداڵان»* 🤍
 
@@ -127,8 +125,7 @@ export const TEMPLATES = [
 🛠️ *چۆن چاکی بکەن:*
 {fix}
 
-🔗 لەم لینکەوە پۆستەکە بکەنەوە، چاکی بکەن و دوگمەی «{button}» دابگرن:
-{link}
+📱 *هەنگاوەکان:* بچنە ناو هەژمارەکەتان لە ماڵپەڕی منداڵان، لە سەرەتای داشبۆرد لەسەر پۆستەکە دوگمەی «چاککردن» دابگرن، چاکی بکەن و دوگمەی «{button}» دابگرن.
 
 > پاش ئەوە دووبارە سەیری دەکەینەوە و ئاگادارتان دەکەینەوە.
 
@@ -143,8 +140,7 @@ export const TEMPLATES = [
 🛠️ *كيفية الإصلاح:*
 {fix}
 
-🔗 افتحوا المنشور من هذا الرابط، أصلحوه واضغطوا زر «{button}»:
-{link}
+📱 *الخطوات:* ادخلوا إلى حسابكم في موقع Mndallan، وفي أعلى لوحة التحكم اضغطوا زر «إصلاح» على المنشور، أصلحوه ثم اضغطوا زر «{button}».
 
 > بعد ذلك سنراجعه مرة أخرى ونبلغكم.
 
@@ -153,7 +149,7 @@ export const TEMPLATES = [
   },
   {
     key: "rejectionNoFix", group: "posts", title: "Post rejected, can't be fixed",
-    when: "After you reject a post as not a baby product (no link)", vars: [V.title, V.code, V.reason, V.fix], required: ["title", "reason", "fix"],
+    when: "After you reject a post as not a baby product (nothing to fix)", vars: [V.title, V.code, V.reason, V.fix], required: ["title", "reason", "fix"],
     ckb: `*سڵاو و ڕێز* 👋
 سوپاس بۆ ناردنی پۆستەکەتان بۆ *«منداڵان»* 🤍
 
@@ -261,7 +257,7 @@ export const TEMPLATES = [
   },
   {
     key: "feeReminder", group: "sold", title: "Fee reminder",
-    when: "Fees page: the Send reminder button", vars: [V.items, V.total, V.number, V.link], required: ["items", "total", "number"], sample: { items: SAMPLE.feeItems, link: "https://mndallan.com/seller" },
+    when: "Fees page: the Send reminder button", vars: [V.items, V.total, V.number], required: ["items", "total", "number"], sample: { items: SAMPLE.feeItems },
     ckb: `*سڵاو گیان* 👋
 پیرۆزە کاڵاکەتان فرۆشرا 🤍
 
@@ -272,8 +268,7 @@ export const TEMPLATES = [
 > 💳 دەتوانیت لە ڕێگەی *Super Qi* یان *FIB* یان *FastPay* پارەکە بنێریت بۆ ئەم ژمارەیە:
 {number}
 
-📎 *پاش پارەدان:* بچۆ ناو هەژمارەکەت، لە داشبۆرد دوگمەی «ناردنی وەسڵی پارەدان» دابگرە و وێنەی وەسڵەکە بنێرە:
-{link}
+📎 *پاش پارەدان:* بچۆ ناو هەژمارەکەت لە ماڵپەڕی منداڵان، لە داشبۆرد دوگمەی «ناردنی وەسڵی پارەدان» دابگرە و وێنەی وەسڵەکە بنێرە.
 
 لەگەڵ ڕێزماندا،
 تیمی ماڵپەڕی منداڵان 🧸`,
@@ -287,8 +282,7 @@ export const TEMPLATES = [
 > 💳 يمكنك الدفع عبر *Super Qi* أو *FIB* أو *FastPay* على هذا الرقم:
 {number}
 
-📎 *بعد الدفع:* ادخل إلى حسابك، واضغط زر «إرسال إيصال الدفع» في لوحة التحكم وأرسل صورة الإيصال:
-{link}
+📎 *بعد الدفع:* ادخل إلى حسابك في موقع Mndallan، واضغط زر «إرسال إيصال الدفع» في لوحة التحكم وأرسل صورة الإيصال.
 
 مع خالص التحيات،
 فريق موقع Mndallan 🧸`,
