@@ -754,7 +754,7 @@ export default function ProductPanel({ product, onClose }) {
           {p.storeId && <p className="text-[11.5px] text-adm-fade mt-1">Store products are always new.</p>}
         </div>
         <div>
-          <label htmlFor="d-price" className={labelCls}>{soldish ? "Sale price (IQD)" : `${m.fieldPrice()} (IQD)`}</label>
+          <label htmlFor="d-price" className={labelCls}>{soldish ? "Sale price (IQD)" : m.fieldPrice()}</label>
           <AmountInput id="d-price" value={price} onChange={setPrice} />
           <p className="text-[11.5px] text-adm-fade mt-1">
             {price && price !== shownPrice(p)
