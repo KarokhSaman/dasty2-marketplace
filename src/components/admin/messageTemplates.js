@@ -261,7 +261,7 @@ export const TEMPLATES = [
   },
   {
     key: "feeReminder", group: "sold", title: "Fee reminder",
-    when: "Fees page: the Send reminder button", vars: [V.items, V.total, V.number], required: ["items", "total", "number"], sample: { items: SAMPLE.feeItems },
+    when: "Fees page: the Send reminder button", vars: [V.items, V.total, V.number, V.link], required: ["items", "total", "number"], sample: { items: SAMPLE.feeItems, link: "https://mndallan.com/seller" },
     ckb: `*سڵاو گیان* 👋
 پیرۆزە کاڵاکەتان فرۆشرا 🤍
 
@@ -271,6 +271,9 @@ export const TEMPLATES = [
 
 > 💳 دەتوانیت لە ڕێگەی *Super Qi* یان *FIB* یان *FastPay* پارەکە بنێریت بۆ ئەم ژمارەیە:
 {number}
+
+📎 *پاش پارەدان:* بچۆ ناو هەژمارەکەت، لە داشبۆرد دوگمەی «ناردنی وەسڵی پارەدان» دابگرە و وێنەی وەسڵەکە بنێرە:
+{link}
 
 لەگەڵ ڕێزماندا،
 تیمی ماڵپەڕی منداڵان 🧸`,
@@ -283,6 +286,9 @@ export const TEMPLATES = [
 
 > 💳 يمكنك الدفع عبر *Super Qi* أو *FIB* أو *FastPay* على هذا الرقم:
 {number}
+
+📎 *بعد الدفع:* ادخل إلى حسابك، واضغط زر «إرسال إيصال الدفع» في لوحة التحكم وأرسل صورة الإيصال:
+{link}
 
 مع خالص التحيات،
 فريق موقع Mndallan 🧸`,

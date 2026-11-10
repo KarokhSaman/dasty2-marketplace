@@ -9,9 +9,11 @@ import WaText from "@/components/admin/WaText";
 import { photoProps } from "@/lib/images";
 import { useProductActions } from "@/components/admin/useProductActions";
 import {
-  PageHeader, Card, Avatar, Code, ConfirmBox, Empty, Skeleton, btn, fmtIQD, useToast, useCopy, waLink, fmtPhone,
-  IconWhatsApp, IconCopy, IconCheck, IconExternal,
+  PageHeader, Card, Avatar, Code, ConfirmBox, Empty, Skeleton, Panel, btn, fmtIQD, useToast, useCopy, waLink, fmtPhone,
+  IconWhatsApp, IconCopy, IconCheck, IconChevron,
 } from "@/components/admin/ui";
+
+const receiptDate = (at) => new Date(at).toLocaleDateString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 
 function SellerFees({ group, onOpen }) {
   const actions = useProductActions();
@@ -20,6 +22,7 @@ function SellerFees({ group, onOpen }) {
   const [confirm, setConfirm] = useState(false);
   const [busy, setBusy] = useState(false);
   const [showMsg, setShowMsg] = useState(false);
+  const [viewing, setViewing] = useState(false);
   const text = feeReminderMessage(fmtIQD(group.total), group.items.map((p) => ({ code: p.seq, fee: fmtIQD(p.profit) })));
 
   async function payAll() {
@@ -50,15 +53,20 @@ function SellerFees({ group, onOpen }) {
       </div>
 
       {group.receipt && (
-        <a href={group.receipt.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 rounded-xl bg-st-approved-bg p-2 ps-3">
+        <button type="button" onClick={() => setViewing(true)} className="w-full flex items-center gap-3 rounded-xl bg-st-approved-bg p-2 ps-3 text-start">
           <img {...photoProps(group.receipt.url, 140)} alt="Payment receipt" className="w-12 h-12 rounded-lg object-cover shrink-0" />
           <div className="flex-1 min-w-0">
             <p className="text-[12.5px] font-bold text-st-approved">Receipt uploaded — confirm the payment</p>
-            <p className="text-[11.5px] text-adm-soft">Tap to view · {new Date(group.receipt.at).toLocaleDateString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</p>
+            <p className="text-[11.5px] text-adm-soft">Tap to view · {receiptDate(group.receipt.at)}</p>
           </div>
-          <IconExternal className="w-4 h-4 text-adm-fade shrink-0" />
-        </a>
+          <IconChevron className="w-4 h-4 text-adm-fade shrink-0 rtl:rotate-180" />
+        </button>
       )}
+      <Panel open={viewing} onClose={() => setViewing(false)} title="Payment receipt" short
+        subtitle={group.receipt && <p className="text-[12px] text-adm-soft">{group.name} · {receiptDate(group.receipt.at)}</p>}>
+        {group.receipt && <img src={group.receipt.url} alt="Payment receipt" className="w-full rounded-xl border border-adm-line" />}
+        <p className="text-[12px] text-adm-fade">If it covers only one sale, open that sale and mark it paid — the receipt then comes off the others, which still owe.</p>
+      </Panel>
 
       <div className="space-y-1.5">
         {group.items.map((p) => (

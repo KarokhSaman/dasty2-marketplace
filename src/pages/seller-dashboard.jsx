@@ -23,6 +23,7 @@ function FeeReceipt({ owed }) {
   const submit = useMutation(api.products.submitFeeReceipt);
   const toast = useToast();
   const [busy, setBusy] = useState(false);
+  const [viewing, setViewing] = useState(false);
   const withReceipt = owed.find((p) => p.feeReceiptUrl);
 
   async function pick(e) {
@@ -44,9 +45,12 @@ function FeeReceipt({ owed }) {
   if (withReceipt) {
     return (
       <div className="flex items-center gap-2.5 rounded-xl bg-st-approved-bg p-2 ps-3">
-        <a href={withReceipt.feeReceiptUrl} target="_blank" rel="noopener noreferrer" className="shrink-0">
+        <button type="button" onClick={() => setViewing(true)} className="shrink-0">
           <img {...photoProps(withReceipt.feeReceiptUrl, 120)} alt="" className="w-11 h-11 rounded-lg object-cover" />
-        </a>
+        </button>
+        <Panel open={viewing} onClose={() => setViewing(false)} short title={m.feeReceiptSent()}>
+          <img src={withReceipt.feeReceiptUrl} alt="" className="w-full rounded-xl border border-adm-line" />
+        </Panel>
         <div className="flex-1 min-w-0">
           <p className="text-[13px] font-bold text-st-approved">✓ {m.feeReceiptSent()}</p>
           <p className="text-[11.5px] text-adm-soft">{m.feeReceiptConfirming()}</p>

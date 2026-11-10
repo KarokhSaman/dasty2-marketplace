@@ -766,6 +766,20 @@ export const updateStatus = mutation({
       Object.assign(patch, await listingTerms(ctx, product));
     }
     await ctx.db.patch(id, patch);
+    // A receipt is stamped on all the seller's unpaid sales, but confirming one
+    // as paid means it was for that sale: take it off the others, which still
+    // need their own payment. (Mark all paid then just marks them paid too.)
+    if (fields.status === "paid" && product.status === "sold" && product.feeReceiptUrl) {
+      const others = await ctx.db
+        .query("products")
+        .withIndex("by_seller", (q) => q.eq("sellerId", product.sellerId))
+        .collect();
+      for (const o of others) {
+        if (o._id !== id && o.status === "sold" && o.feeReceiptUrl === product.feeReceiptUrl) {
+          await ctx.db.patch(o._id, { feeReceiptUrl: undefined, feeReceiptAt: undefined });
+        }
+      }
+    }
   },
 });
 
