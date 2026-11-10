@@ -25,7 +25,7 @@ import { r2 } from "./r2";
 import { issueSeq } from "./seq";
 import { priceInfo, todayBaghdad, type StoreDiscount } from "./discount";
 
-type PublicProduct = Omit<Doc<"products">, "sellerId" | "sellerName" | "sellerPhone" | "profit" | "soldFromId" | "deleteRequestedAt" | "deleteRequestReason" | "deleteRequestFrom" | "offerId" | "soldReportedAt" | "leadCount" | "lastLeadAt" | "followUpAt" | "availabilityCheckedAt" | "soldElsewhereAt" | "notes" | "approvedBy" | "storeId"> & { isStore: boolean };
+type PublicProduct = Omit<Doc<"products">, "sellerId" | "sellerName" | "sellerPhone" | "profit" | "soldFromId" | "deleteRequestedAt" | "deleteRequestReason" | "deleteRequestFrom" | "offerId" | "soldReportedAt" | "feeReceiptUrl" | "feeReceiptAt" | "leadCount" | "lastLeadAt" | "followUpAt" | "availabilityCheckedAt" | "soldElsewhereAt" | "notes" | "approvedBy" | "storeId"> & { isStore: boolean };
 
 const publicProductValidator = v.object({
   _id: v.id("products"),
@@ -70,6 +70,8 @@ const toPublic = ({
   deleteRequestFrom: _deleteRequestFrom,
   offerId: _offerId,
   soldReportedAt: _soldReportedAt,
+  feeReceiptUrl: _feeReceiptUrl,
+  feeReceiptAt: _feeReceiptAt,
   leadCount: _leadCount,
   lastLeadAt: _lastLeadAt,
   followUpAt: _followUpAt,
@@ -1058,6 +1060,48 @@ export const requestDelete = mutation({
       createdAt: now,
     });
     return null;
+  },
+});
+
+// Seller uploads one proof-of-payment screenshot for their service fee. It is
+// stamped on every owed (sold) item of theirs, so the admin stops chasing and
+// just confirms with Mark paid on the Fees page. The admin is notified.
+export const submitFeeReceipt = mutation({
+  args: { url: v.string() },
+  returns: v.number(),
+  handler: async (ctx, { url }) => {
+    const seller = await requireCurrentSeller(ctx);
+    const link = url.trim();
+    if (!link) throw new ConvexError("No receipt to send");
+    if (link.length > 2000) throw new ConvexError("Receipt link is too long");
+
+    const owed = (await ctx.db
+      .query("products")
+      .withIndex("by_seller", (q) => q.eq("sellerId", seller._id.toString()))
+      .collect()).filter((p) => p.status === "sold");
+    if (owed.length === 0) throw new ConvexError("You have no fees to confirm");
+
+    const now = new Date().toISOString();
+    for (const p of owed) {
+      await ctx.db.patch(p._id, { feeReceiptUrl: link, feeReceiptAt: now });
+    }
+    await ctx.db.insert("notifications", {
+      sellerId: "ADMIN",
+      productId: owed[0]._id,
+      message: `Payment receipt from ${seller.name} — ${owed.length} ${owed.length === 1 ? "fee" : "fees"} to confirm`,
+      url: "/admin/fees",
+      read: false,
+      createdAt: now,
+    });
+    await ctx.db.insert("adminLogs", {
+      adminName: seller.name,
+      action: "fee_receipt_submitted",
+      productId: owed[0]._id.toString(),
+      productTitle: owed.length === 1 ? owed[0].title : `${owed.length} items`,
+      sellerName: seller.name,
+      createdAt: now,
+    });
+    return owed.length;
   },
 });
 

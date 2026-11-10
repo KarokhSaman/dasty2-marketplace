@@ -6,10 +6,11 @@ import { feeReminderMessage } from "@/components/admin/feeReminderMessage";
 import { errorMessage } from "@/lib/errors";
 import ProductPanel from "@/components/admin/ProductPanel";
 import WaText from "@/components/admin/WaText";
+import { photoProps } from "@/lib/images";
 import { useProductActions } from "@/components/admin/useProductActions";
 import {
   PageHeader, Card, Avatar, Code, ConfirmBox, Empty, Skeleton, btn, fmtIQD, useToast, useCopy, waLink, fmtPhone,
-  IconWhatsApp, IconCopy, IconCheck,
+  IconWhatsApp, IconCopy, IconCheck, IconExternal,
 } from "@/components/admin/ui";
 
 function SellerFees({ group, onOpen }) {
@@ -48,6 +49,17 @@ function SellerFees({ group, onOpen }) {
         </div>
       </div>
 
+      {group.receipt && (
+        <a href={group.receipt.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 rounded-xl bg-st-approved-bg p-2 ps-3">
+          <img {...photoProps(group.receipt.url, 140)} alt="Payment receipt" className="w-12 h-12 rounded-lg object-cover shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-[12.5px] font-bold text-st-approved">Receipt uploaded — confirm the payment</p>
+            <p className="text-[11.5px] text-adm-soft">Tap to view · {new Date(group.receipt.at).toLocaleDateString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</p>
+          </div>
+          <IconExternal className="w-4 h-4 text-adm-fade shrink-0" />
+        </a>
+      )}
+
       <div className="space-y-1.5">
         {group.items.map((p) => (
           <button key={p._id} type="button" onClick={() => onOpen(p._id)}
@@ -70,7 +82,7 @@ function SellerFees({ group, onOpen }) {
           confirmLabel="Mark all paid" onConfirm={payAll} onCancel={() => setConfirm(false)} />
       ) : (
         <div className="grid grid-cols-2 lg:flex lg:flex-wrap gap-2">
-          {group.phone ? (
+          {group.phone && !group.receipt ? (
             <a href={waLink(group.phone, text)} target="_blank" rel="noopener noreferrer" className={`${btn("wa")} lg:flex-none`}>
               <IconWhatsApp className="w-4 h-4" /> Send reminder
             </a>
@@ -96,12 +108,14 @@ export default function AdminFeesPage() {
     const map = new Map();
     for (const p of products ?? []) {
       if (p.status !== "sold") continue;
-      const g = map.get(p.sellerId) ?? { id: p.sellerId, name: p.sellerName, phone: p.sellerPhone, items: [], total: 0 };
+      const g = map.get(p.sellerId) ?? { id: p.sellerId, name: p.sellerName, phone: p.sellerPhone, items: [], total: 0, receipt: null };
       g.items.push(p);
       g.total += p.profit ?? 0;
+      if (p.feeReceiptUrl && (!g.receipt || (p.feeReceiptAt ?? "") > g.receipt.at)) g.receipt = { url: p.feeReceiptUrl, at: p.feeReceiptAt ?? "" };
       map.set(p.sellerId, g);
     }
-    return [...map.values()].sort((a, b) => b.total - a.total);
+    // Sellers who sent a receipt first — they only need a tap to confirm.
+    return [...map.values()].sort((a, b) => (b.receipt ? 1 : 0) - (a.receipt ? 1 : 0) || b.total - a.total);
   }, [products]);
 
   if (!products) return <Skeleton rows={4} />;

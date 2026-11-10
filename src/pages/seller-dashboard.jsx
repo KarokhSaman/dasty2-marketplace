@@ -7,6 +7,7 @@ import { getLocale } from "@/paraglide/runtime";
 import { useSellerSession } from "@/lib/useSellerSession";
 import { formatNumberLocale } from "@/lib/utils";
 import { photoProps } from "@/lib/images";
+import { useImageUpload } from "@/lib/useImageUpload";
 import { errorMessage } from "@/lib/errors";
 import OfferTicker from "@/components/seller/OfferTicker";
 import { Panel, btn, useToast, useCopy, IconCopy, IconCheck, IconTrash, IconChevron } from "@/components/admin/ui";
@@ -14,6 +15,59 @@ import StoreIcon from "@/components/ui/StoreIcon";
 
 // Where sellers send their service fees.
 export const FEE_PAYMENT_NUMBER = "07724944244";
+
+// Proof of payment: the seller uploads a screenshot of their transfer. It is
+// stamped on all their owed items, so the admin stops chasing and just confirms.
+function FeeReceipt({ owed }) {
+  const upload = useImageUpload();
+  const submit = useMutation(api.products.submitFeeReceipt);
+  const toast = useToast();
+  const [busy, setBusy] = useState(false);
+  const withReceipt = owed.find((p) => p.feeReceiptUrl);
+
+  async function pick(e) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setBusy(true);
+    try {
+      const url = await upload(file);
+      await submit({ url });
+      toast(m.feeReceiptSentToast());
+    } catch (err) {
+      toast(errorMessage(err, m.feeReceiptError()), "error");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (withReceipt) {
+    return (
+      <div className="flex items-center gap-2.5 rounded-xl bg-st-approved-bg p-2 ps-3">
+        <a href={withReceipt.feeReceiptUrl} target="_blank" rel="noopener noreferrer" className="shrink-0">
+          <img {...photoProps(withReceipt.feeReceiptUrl, 120)} alt="" className="w-11 h-11 rounded-lg object-cover" />
+        </a>
+        <div className="flex-1 min-w-0">
+          <p className="text-[13px] font-bold text-st-approved">✓ {m.feeReceiptSent()}</p>
+          <p className="text-[11.5px] text-adm-soft">{m.feeReceiptConfirming()}</p>
+        </div>
+        <label className={`${btn("outline", "sm")} shrink-0 cursor-pointer ${busy ? "opacity-60 pointer-events-none" : ""}`}>
+          {m.replaceReceipt()}
+          <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={pick} disabled={busy} />
+        </label>
+      </div>
+    );
+  }
+  return (
+    <div className="space-y-1">
+      <label className={`${btn("dark", "sm")} w-full cursor-pointer ${busy ? "opacity-60 pointer-events-none" : ""}`}>
+        {m.sendFeeReceipt()}
+        <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={pick} disabled={busy} />
+      </label>
+      <p className="text-[11px] text-adm-fade text-center">{m.feeReceiptHint()}</p>
+    </div>
+  );
+}
 
 const EDITABLE = ["pending", "approved", "rejected"];
 const STATUS = {
@@ -253,6 +307,7 @@ export default function SellerDashboard() {
                   <IconCopy className="w-4 h-4" /> {m.copyNumber()}
                 </button>
               </div>
+              <FeeReceipt owed={owed} />
             </div>
           )}
           {!rejected.length && !feeOwed && (

@@ -32,6 +32,7 @@ const PUBLIC_FIELDS = new Set([
 // even though the allow-list above would already catch them.
 const MUST_DROP = [
   'sellerId', 'sellerName', 'sellerPhone', 'profit', 'notes', 'approvedBy',
+  'feeReceiptUrl', 'feeReceiptAt',
   'storeId', 'offerId', 'soldFromId', 'leadCount', 'lastLeadAt', 'followUpAt',
   'availabilityCheckedAt', 'soldReportedAt', 'soldElsewhereAt',
   'deleteRequestedAt', 'deleteRequestReason', 'deleteRequestFrom',

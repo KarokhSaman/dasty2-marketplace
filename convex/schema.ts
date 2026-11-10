@@ -55,6 +55,11 @@ export default defineSchema({
     views: v.optional(v.number()),
     // The seller said "I sold it"; an admin confirms by marking it sold.
     soldReportedAt: v.optional(v.string()),
+    // Proof the seller paid the service fee: a screenshot they upload from their
+    // dashboard. Set on every owed (sold) item of theirs when they submit one.
+    // The admin sees it on the Fees page and confirms with Mark paid.
+    feeReceiptUrl: v.optional(v.string()),
+    feeReceiptAt: v.optional(v.string()),
     notes: v.optional(v.string()),
     approvedBy: v.optional(v.string()),
     // ISO time of the first approval; the home feed is newest-approved first.
