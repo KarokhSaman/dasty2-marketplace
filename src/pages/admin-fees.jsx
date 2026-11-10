@@ -23,16 +23,24 @@ function SellerFees({ group, onOpen }) {
   const [busy, setBusy] = useState(false);
   const [showMsg, setShowMsg] = useState(false);
   const [viewing, setViewing] = useState(false);
+  // The sales being marked paid. With a receipt nothing starts ticked: the
+  // admin picks the sales it pays for. Without one, all start ticked.
+  const [picked, setPicked] = useState(() => new Set(group.receipt ? [] : group.items.map((p) => p._id)));
+  const chosen = group.items.filter((p) => picked.has(p._id));
+  const chosenTotal = chosen.reduce((s, p) => s + (p.profit ?? 0), 0);
+  const left = group.items.length - chosen.length;
+  const allPicked = left === 0;
+  const toggle = (id) => setPicked((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
   const text = feeReminderMessage(fmtIQD(group.total), group.items.map((p) => ({ code: p.seq, fee: fmtIQD(p.profit) })));
 
-  async function payAll() {
+  async function payChosen() {
     setBusy(true);
-    let ok = 0;
     try {
-      for (const p of group.items) { await actions.markPaid(p); ok++; }
-      toast(`${group.name}: ${ok} marked paid`);
+      await actions.markFeesPaid(chosen);
+      toast(`${group.name}: ${chosen.length} marked paid`);
+      setPicked(new Set());
     } catch (err) {
-      toast(`${ok} marked paid. ${errorMessage(err, "Then something went wrong")}`, "error");
+      toast(errorMessage(err, "Could not mark them paid"), "error");
     } finally {
       setBusy(false); setConfirm(false);
     }
@@ -65,19 +73,38 @@ function SellerFees({ group, onOpen }) {
       <Panel open={viewing} onClose={() => setViewing(false)} title="Payment receipt" short
         subtitle={group.receipt && <p className="text-[12px] text-adm-soft">{group.name} · {receiptDate(group.receipt.at)}</p>}>
         {group.receipt && <img src={group.receipt.url} alt="Payment receipt" className="w-full rounded-xl border border-adm-line" />}
-        <p className="text-[12px] text-adm-fade">If it covers only one sale, open that sale and mark it paid — the receipt then comes off the others, which still owe.</p>
+        <p className="text-[12px] text-adm-fade">Tick the sales it pays for, then Mark paid. It comes off any sale you leave unticked, which still owes.</p>
       </Panel>
 
       <div className="space-y-1.5">
-        {group.items.map((p) => (
-          <button key={p._id} type="button" onClick={() => onOpen(p._id)}
-            className="w-full flex items-center gap-2.5 rounded-xl bg-adm-sunk px-3 py-2 text-start text-[12.5px] hover:bg-adm-line/60">
-            {p.seq && <Code>{p.seq}</Code>}
-            <span className="flex-1 min-w-0 truncate">{p.title}</span>
-            <span className="text-adm-soft tabular-nums max-sm:hidden" dir="ltr">{fmtIQD(p.salePrice ?? p.price)}</span>
-            <span className="font-bold text-adm-accent tabular-nums" dir="ltr">{fmtIQD(p.profit)}</span>
+        <div className="flex items-center gap-2 text-[12px]">
+          <p className={`flex-1 min-w-0 ${group.receipt && !chosen.length ? "font-semibold text-st-approved" : "text-adm-fade"}`}>
+            {group.receipt && !chosen.length ? "Tick the sales this receipt pays for" : `${chosen.length} of ${group.items.length} ticked`}
+          </p>
+          <button type="button" onClick={() => setPicked(new Set(allPicked ? [] : group.items.map((p) => p._id)))} className="font-semibold text-adm-accent shrink-0">
+            {allPicked ? "Untick all" : "Tick all"}
           </button>
-        ))}
+        </div>
+        {group.items.map((p) => {
+          const on = picked.has(p._id);
+          return (
+            <div key={p._id} className={`flex items-center rounded-xl ${on ? "bg-adm-accent-soft" : "bg-adm-sunk"}`}>
+              <button type="button" role="checkbox" aria-checked={on} aria-label={`Paid: ${p.title}`} onClick={() => toggle(p._id)}
+                className="w-10 self-stretch grid place-items-center shrink-0">
+                <span className={`w-5 h-5 rounded-md grid place-items-center border-[1.5px] ${on ? "bg-adm-accent border-adm-accent text-white" : "border-adm-fade bg-adm-surface"}`}>
+                  {on && <IconCheck className="w-3.5 h-3.5" />}
+                </span>
+              </button>
+              <button type="button" onClick={() => onOpen(p._id)}
+                className="flex-1 min-w-0 flex items-center gap-2.5 pe-3 py-2 text-start text-[12.5px]">
+                {p.seq && <Code>{p.seq}</Code>}
+                <span className="flex-1 min-w-0 truncate">{p.title}</span>
+                <span className="text-adm-soft tabular-nums max-sm:hidden" dir="ltr">{fmtIQD(p.salePrice ?? p.price)}</span>
+                <span className="font-bold text-adm-accent tabular-nums" dir="ltr">{fmtIQD(p.profit)}</span>
+              </button>
+            </div>
+          );
+        })}
       </div>
 
       {showMsg && (
@@ -85,9 +112,10 @@ function SellerFees({ group, onOpen }) {
       )}
 
       {confirm ? (
-        <ConfirmBox tone="neutral" busy={busy} title={`Mark all ${group.items.length} paid?`}
-          text={`Do this once ${group.name} has paid ${fmtIQD(group.total)} IQD. Each sale moves to Paid and the seller is notified.`}
-          confirmLabel="Mark all paid" onConfirm={payAll} onCancel={() => setConfirm(false)} />
+        <ConfirmBox tone="neutral" busy={busy} title={allPicked ? `Mark all ${chosen.length} paid?` : `Mark ${chosen.length} of ${group.items.length} paid?`}
+          text={`Do this once ${group.name} has paid ${fmtIQD(chosenTotal)} IQD. Each ticked sale moves to Paid and the seller is notified.${
+            group.receipt && left ? ` The receipt comes off the other ${left}, which still owe.` : ""}`}
+          confirmLabel={`Mark ${chosen.length} paid`} onConfirm={payChosen} onCancel={() => setConfirm(false)} />
       ) : (
         <div className="grid grid-cols-2 lg:flex lg:flex-wrap gap-2">
           {group.phone && !group.receipt ? (
@@ -97,8 +125,9 @@ function SellerFees({ group, onOpen }) {
           ) : null}
           <button type="button" onClick={() => copy(text, "Message copied")} className={btn("outline")}><IconCopy className="w-4 h-4" /> Copy message</button>
           <button type="button" onClick={() => setShowMsg((v) => !v)} className={`${btn("ghost")} max-lg:hidden`}>{showMsg ? "Hide message" : "See message"}</button>
-          <button type="button" onClick={() => setConfirm(true)} className={`${btn("dark")} col-span-2 lg:ms-auto`}>
-            <IconCheck className="w-4 h-4" /> Mark all {group.items.length} paid
+          <button type="button" disabled={!chosen.length} onClick={() => setConfirm(true)} className={`${btn("dark")} col-span-2 lg:ms-auto`}>
+            <IconCheck className="w-4 h-4" />
+            {!chosen.length ? "Tick sales to mark paid" : `${allPicked ? "Mark all" : "Mark"} ${chosen.length} paid · ${fmtIQD(chosenTotal)}`}
           </button>
         </div>
       )}

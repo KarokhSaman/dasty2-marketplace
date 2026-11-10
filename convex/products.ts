@@ -783,6 +783,50 @@ export const updateStatus = mutation({
   },
 });
 
+// Fees page: the admin ticks the sales a seller's payment covers and marks them
+// paid in one go. Their receipt stays on them as the record (it is one photo;
+// each sale only holds its link). It comes off the seller's other unpaid sales,
+// which still owe.
+export const markFeesPaid = mutation({
+  args: { ids: v.array(v.id("products")) },
+  returns: v.null(),
+  handler: async (ctx, { ids }) => {
+    await requireAdmin(ctx);
+    if (ids.length === 0) throw new ConvexError("Tick the sales that were paid");
+    const paid: Doc<"products">[] = [];
+    for (const id of ids) {
+      const product = await ctx.db.get(id);
+      if (!product || product.status !== "sold") {
+        throw new ConvexError("A sale changed meanwhile. Refresh and try again.");
+      }
+      paid.push(product);
+    }
+    for (const product of paid) {
+      await ctx.db.patch(product._id, {
+        status: "paid",
+        ...(await saleTerms(ctx, product, undefined)),
+        ...(await ownSaleTerms(ctx, product, undefined)),
+        soldReportedAt: undefined,
+        followUpAt: undefined,
+      });
+    }
+    const receipts = new Set(paid.map((p) => p.feeReceiptUrl).filter(Boolean));
+    if (receipts.size === 0) return null;
+    for (const sellerId of new Set(paid.map((p) => p.sellerId))) {
+      const others = await ctx.db
+        .query("products")
+        .withIndex("by_seller", (q) => q.eq("sellerId", sellerId))
+        .collect();
+      for (const o of others) {
+        if (o.status === "sold" && !ids.includes(o._id) && o.feeReceiptUrl && receipts.has(o.feeReceiptUrl)) {
+          await ctx.db.patch(o._id, { feeReceiptUrl: undefined, feeReceiptAt: undefined });
+        }
+      }
+    }
+    return null;
+  },
+});
+
 // One-off: products approved before approvedAt was recorded get their posting
 // time, so they keep their place in the home feed. Safe to run again.
 //   npx convex run products:backfillApprovedAt

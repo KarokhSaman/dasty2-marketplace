@@ -8,7 +8,8 @@ import CustomSelect from "@/components/ui/CustomSelect";
 import { CATEGORY_CONFIG } from "@/lib/categories";
 import { brandFitsCategory, getBrandChoices } from "@/lib/brands";
 import { priceInfo } from "@/convex/discount";
-import { rotatePhoto } from "@/lib/rotateImage";
+import { rotatePhoto, cropPhoto } from "@/lib/rotateImage";
+import PhotoCropSheet from "@/components/admin/PhotoCropSheet";
 import { STORY_PHOTO_ASPECT, shareStoryImage } from "@/lib/storyImage";
 import { getCityLabel } from "@/lib/cities";
 import { formatAmount } from "@/components/ui";
@@ -23,7 +24,7 @@ import ConnectBuyer, { BuyerLeads } from "@/components/admin/ConnectBuyer";
 import {
   Panel, StatusChip, StoreTag, Code, SectionTitle, Segmented, Switch, ConfirmBox, AmountInput, Avatar, Thumb,
   btn, fmtIQD, inputCls, labelCls, useToast, useCopy, waLink, ltrPhone, fmtPhone,
-  IconRotate, IconStar, IconTrash, IconCheck, IconX, IconCopy, IconWhatsApp, IconExternal, IconCrop, IconChevron,
+  IconRotate, IconStar, IconTrash, IconCheck, IconX, IconCopy, IconWhatsApp, IconExternal, IconCrop, IconChevron, IconScissors,
 } from "@/components/admin/ui";
 
 const CONDITIONS = [
@@ -145,8 +146,20 @@ function PhotoTile({ product, url, index, isMain, onlyOne, actions, toast }) {
   const upload = useImageUpload();
   const [turns, setTurns] = useState(0);
   const [cropping, setCropping] = useState(false);
+  const [trimming, setTrimming] = useState(false); // cutting the photo itself, not the story frame
   const [saving, setSaving] = useState(false);
   const [confirmDel, setConfirmDel] = useState(false);
+
+  async function saveCrop(part) {
+    try {
+      const newUrl = await upload(await cropPhoto(url, part));
+      await actions.swapCroppedPhoto(product, index, url, newUrl);
+      setTrimming(false);
+      toast("Photo cropped");
+    } catch (err) {
+      toast(errorMessage(err, "Could not crop the photo"), "error");
+    }
+  }
 
   async function saveRotation() {
     setSaving(true);
@@ -168,6 +181,15 @@ function PhotoTile({ product, url, index, isMain, onlyOne, actions, toast }) {
     <div className={`relative aspect-square rounded-xl overflow-hidden bg-adm-sunk ring-2 ${isMain ? "ring-adm-accent" : "ring-transparent"}`}>
       <img {...photoProps(url, 320)} alt="" className="w-full h-full object-cover transition-transform duration-200" style={turns ? { transform: `rotate(${turns * 90}deg)` } : undefined} />
       {isMain && <span className="absolute top-1.5 start-1.5 text-[10px] font-bold bg-adm-accent text-white rounded-full px-2 py-0.5">Main</span>}
+      {!saving && !confirmDel && !turns && (
+        <button type="button" aria-label="Crop photo" title="Crop photo" className={`${round} absolute top-1 end-1`} onClick={() => setTrimming(true)}>
+          <IconScissors className="w-4 h-4" />
+        </button>
+      )}
+      {trimming && (
+        <PhotoCropSheet url={url} onClose={() => setTrimming(false)} onSave={saveCrop}
+          note={isMain && product.storyCrop?.url === url ? "This photo's story crop goes back to automatic." : null} />
+      )}
       {saving ? (
         <div className="absolute inset-0 grid place-items-center bg-black/40"><span className="w-7 h-7 border-2 border-white/40 border-t-white rounded-full animate-spin" /></div>
       ) : confirmDel ? (
@@ -734,7 +756,7 @@ export default function ProductPanel({ product, onClose }) {
           <AddPhotoTile product={p} actions={actions} toast={toast} />
         </div>
         {p.status === "sold" && <SoldStoryButton product={p} toast={toast} />}
-        <p className="text-[11.5px] text-adm-fade mt-1.5">Rotate turns the preview first; ✓ saves it once. The star makes a photo the main one; the red crop button on the main photo sets how it sits in the Instagram story. Add photo uploads your own shots, up to {MAX_PHOTOS}.</p>
+        <p className="text-[11.5px] text-adm-fade mt-1.5">Rotate turns the preview first; ✓ saves it once. The scissors crop the photo itself, everywhere it shows. The star makes a photo the main one; the red crop button on the main photo sets how it sits in the Instagram story. Add photo uploads your own shots, up to {MAX_PHOTOS}.</p>
       </section>
 
       {/* Money */}
