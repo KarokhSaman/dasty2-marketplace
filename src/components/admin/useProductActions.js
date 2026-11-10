@@ -8,6 +8,7 @@ import * as m from "@/paraglide/messages";
 export function useProductActions() {
   const updateStatus = useMutation(api.products.updateStatus);
   const markFeesPaidMutation = useMutation(api.products.markFeesPaid);
+  const linkFeeReceiptMutation = useMutation(api.products.linkFeeReceipt);
   const markUnitSoldMutation = useMutation(api.products.markUnitSold);
   const returnUnitMutation = useMutation(api.products.returnUnit);
   const resolveDeleteRequest = useMutation(api.products.resolveDeleteRequest);
@@ -107,6 +108,11 @@ export function useProductActions() {
     }
   }
 
+  // Points a sale at a receipt the seller sent for another sale (no upload).
+  async function linkFeeReceipt(p, from) {
+    await linkFeeReceiptMutation({ id: p._id, fromId: from._id });
+  }
+
   async function resolveDelete(p, action) {
     await resolveDeleteRequest({ id: p._id, action });
     if (action === "approve") {
@@ -189,7 +195,7 @@ export function useProductActions() {
   }
 
   return {
-    approve, reject, setPending, makeLive, returnUnit, markSold, markPaid, markFeesPaid, resolveDelete, remove,
+    approve, reject, setPending, makeLive, returnUnit, markSold, markPaid, markFeesPaid, linkFeeReceipt, resolveDelete, remove,
     sponsor, unsponsor, saveDetails, setMainPhoto, removePhoto, addPhotos, swapPhoto, swapCroppedPhoto, setStoryCrop, markSoldElsewhere, isStocked, log,
   };
 }

@@ -33,7 +33,6 @@ export function rejectionMessage(product, reason) {
   // Fixing anything else can't help a post that can't be published at all.
   const noFix = parts.find((x) => x.known?.link === false);
   const shown = noFix ? [noFix] : parts;
-  const path = `${locale === "ar" ? "/ar" : ""}/seller/products/${product.id ?? product._id}/edit?from=rejection`;
   const reasons = shown.map((x) => (x.known ? x.known.reason({}, { locale }) : x.text));
   return renderTemplate(noFix ? "rejectionNoFix" : "rejection", {
     title: product.title,
@@ -41,7 +40,9 @@ export function rejectionMessage(product, reason) {
     // several reasons start on their own line, under the heading
     reason: reasons.length > 1 ? `\n${list(reasons)}` : reasons[0],
     fix: list(shown.map((x) => templateText(x.known?.fix ?? (shown.length > 1 ? "fixOtherToo" : "fixOther"), locale))),
-    link: `${window.location.origin}${path}`,
+    // No links in messages: the template says where to tap instead. A saved
+    // wording that still has {link} drops that line.
+    link: null,
     button: m.editProductBtn({}, { locale }),
   });
 }

@@ -34,6 +34,7 @@ export const ACTIONS = {
   delete_requested: ["Delete requested", "orange"],
   delete_rejected: ["Delete declined", "grey"],
   fee_receipt_submitted: ["Payment receipt uploaded", "green"],
+  fee_receipt_linked: ["Payment receipt linked", "green"],
   seller_fee_changed: ["Fee deal changed", "amber"],
   seller_promoted_to_admin: ["Made admin", "accent"],
   admin_demoted_to_seller: ["Made seller", "grey"],

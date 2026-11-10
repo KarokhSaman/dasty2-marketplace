@@ -293,6 +293,31 @@ async function deleteUnusedR2Photos(ctx: MutationCtx, product: Doc<"products">) 
 }
 
 // Deletes the R2 files behind `urls` that no product other than `skipId` uses.
+// A payment receipt is one photo that several sales may link to. Once no sale
+// links to it any more (and it isn't a product photo), delete it from R2 so it
+// doesn't take storage. Call after the sale(s) dropping it are patched.
+async function deleteUnusedReceipts(ctx: MutationCtx, urls: (string | undefined)[]) {
+  const keys = new Map<string, string>();
+  for (const url of urls) {
+    const key = url ? uploadedPhotoKey(url) : null;
+    if (key) keys.set(key, url!);
+  }
+  if (keys.size === 0) return;
+  for (const p of await ctx.db.query("products").collect()) {
+    for (const url of [p.feeReceiptUrl, ...p.photos]) {
+      const key = url ? uploadedPhotoKey(url) : null;
+      if (key) keys.delete(key);
+    }
+  }
+  for (const key of keys.keys()) {
+    try {
+      await r2.deleteObject(ctx, key);
+    } catch (err) {
+      console.error(`Could not delete R2 receipt ${key}`, err);
+    }
+  }
+}
+
 async function deleteUnusedR2Files(ctx: MutationCtx, urls: string[], skipId?: Id<"products">) {
   const keys = new Set<string>();
   for (const url of urls) {
@@ -765,21 +790,45 @@ export const updateStatus = mutation({
       // Sale reversed (back to approved/pending/...): restore price and fee.
       Object.assign(patch, await listingTerms(ctx, product));
     }
-    await ctx.db.patch(id, patch);
-    // A receipt is stamped on all the seller's unpaid sales, but confirming one
-    // as paid means it was for that sale: take it off the others, which still
-    // need their own payment. (Mark all paid then just marks them paid too.)
-    if (fields.status === "paid" && product.status === "sold" && product.feeReceiptUrl) {
-      const others = await ctx.db
-        .query("products")
-        .withIndex("by_seller", (q) => q.eq("sellerId", product.sellerId))
-        .collect();
-      for (const o of others) {
-        if (o._id !== id && o.status === "sold" && o.feeReceiptUrl === product.feeReceiptUrl) {
-          await ctx.db.patch(o._id, { feeReceiptUrl: undefined, feeReceiptAt: undefined });
-        }
-      }
+    // A receipt belongs to the payment it was sent for. A sale moved back from
+    // paid, or out of sold, no longer has that payment, so its receipt goes
+    // (the photo stays while other sales still link to it). Which sales a
+    // receipt pays for is decided on the Fees page (markFeesPaid), not here.
+    const dropsReceipt = !!product.feeReceiptUrl && fields.status !== "paid" && fields.status !== product.status;
+    if (dropsReceipt) {
+      patch.feeReceiptUrl = undefined;
+      patch.feeReceiptAt = undefined;
     }
+    await ctx.db.patch(id, patch);
+    if (dropsReceipt) await deleteUnusedReceipts(ctx, [product.feeReceiptUrl]);
+  },
+});
+
+// Gives a sale a receipt the seller already sent for another of their sales,
+// when one payment covered both but the receipt only reached one. It links
+// the same photo: nothing is uploaded or copied.
+export const linkFeeReceipt = mutation({
+  args: { id: v.id("products"), fromId: v.id("products") },
+  returns: v.null(),
+  handler: async (ctx, { id, fromId }) => {
+    const { user } = await requireAdmin(ctx);
+    const product = await ctx.db.get(id);
+    const from = await ctx.db.get(fromId);
+    if (!product || !from || !from.feeReceiptUrl) throw new ConvexError("That receipt is no longer there.");
+    if (product.sellerId !== from.sellerId) throw new ConvexError("The receipt is from another seller.");
+    if (product.status !== "sold" && product.status !== "paid") throw new ConvexError("Only a sold or paid sale can have a receipt.");
+    await ctx.db.patch(id, { feeReceiptUrl: from.feeReceiptUrl, feeReceiptAt: from.feeReceiptAt });
+    await ctx.db.insert("adminLogs", {
+      adminName: user!.name,
+      action: "fee_receipt_linked",
+      productId: id.toString(),
+      productTitle: product.title,
+      productCode: product.seq,
+      sellerName: product.sellerName,
+      notes: from.seq ? `Receipt from #${from.seq}` : undefined,
+      createdAt: new Date().toISOString(),
+    });
+    return null;
   },
 });
 
@@ -1143,6 +1192,8 @@ export const submitFeeReceipt = mutation({
     for (const p of owed) {
       await ctx.db.patch(p._id, { feeReceiptUrl: link, feeReceiptAt: now });
     }
+    // a replaced receipt goes, unless a paid sale still keeps it as its record
+    await deleteUnusedReceipts(ctx, owed.map((p) => p.feeReceiptUrl).filter((u) => u !== link));
     await ctx.db.insert("notifications", {
       sellerId: "ADMIN",
       productId: owed[0]._id,
