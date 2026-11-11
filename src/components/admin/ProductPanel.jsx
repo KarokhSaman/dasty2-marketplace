@@ -874,7 +874,16 @@ export default function ProductPanel({ product, onClose }) {
           <div className="flex items-center gap-3">
             <Avatar name={p.sellerName} />
             <div className="flex-1 min-w-0">
-              <p className="text-[14px] font-semibold truncate">{p.sellerName}{p.storeName ? <span className="text-adm-fade font-normal"> · {p.storeName}</span> : null}</p>
+              {/* The seller's name and the store's name are often in different
+                  scripts (Arabic and English), so each gets its own line and
+                  its own direction instead of being joined with "·". */}
+              <p className="text-[14px] font-semibold truncate"><bdi>{p.sellerName}</bdi></p>
+              {p.storeName && (
+                <p className="flex items-center gap-1.5 min-w-0 my-0.5">
+                  <StoreTag />
+                  <bdi className="text-[13px] font-semibold text-adm-ink truncate">{p.storeName}</bdi>
+                </p>
+              )}
               <p className="text-[12.5px] text-adm-soft tabular-nums" dir="ltr">{fmtPhone(p.sellerPhone)}</p>
               {(p.city || p.sellerAddress) && <p className="text-[12px] text-adm-fade truncate">{p.city}{p.sellerAddress ? `, ${p.sellerAddress}` : ""}</p>}
             </div>

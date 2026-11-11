@@ -125,7 +125,7 @@ export default function ConnectBuyer({ products, initial, onClose, onOpenProduct
             </button>
 
             <div className="rounded-xl bg-adm-sunk px-3 py-2.5 text-[12.5px]">
-              <b>Seller:</b> {product.sellerName}{product.storeName ? ` · ${product.storeName}` : ""} · <span dir="ltr" className="tabular-nums">{fmtPhone(product.sellerPhone)}</span>
+              <b>Seller:</b> <bdi>{product.sellerName}</bdi>{product.storeName ? <> · <bdi>{product.storeName}</bdi></> : null} ·<span dir="ltr" className="tabular-nums">{fmtPhone(product.sellerPhone)}</span>
               {product.leadCount ? <span className="block text-adm-soft">{product.leadCount} buyer{product.leadCount === 1 ? "" : "s"} connected before</span> : null}
               {product.leadCount ? <BuyerLeads productId={product._id} total={product.leadCount} /> : null}
             </div>
