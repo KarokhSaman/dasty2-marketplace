@@ -329,6 +329,7 @@
   "adminDeleteRejectedMsg": "داواکاری سڕینەوەی \"{title}\" ڕەتکرایەوە. کاڵاکە دووبارە بڵاوکراوەتەوە.",
   "adminDeleteFromPending": "هێشتا پەسەند نەکراوە",
   "storeFlag": "فرۆشگا",
+  "storyStoreLabel": "نوێ هی دوکان",
   "storeTagHint": "کاڵایەکی نوێیە لە یەکێک لە فرۆشگا هاوبەشەکانمانەوە.",
   "storesFilter": "فرۆشگاکان",
   "noStoreProducts": "هێشتا کاڵای فرۆشگا نییە",
