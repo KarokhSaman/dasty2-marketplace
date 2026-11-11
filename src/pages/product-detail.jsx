@@ -360,7 +360,7 @@ export default function ProductDetailPage() {
               photo: photos[0],
               storyCrop: product.storyCrop,
               city: cityLabel,
-              store: product.isStore ? m.storeFlag() : undefined,
+              store: product.isStore ? m.storyStoreLabel() : undefined,
               code: product.seq ? `#${product.seq}` : undefined,
               site: storySite,
               rtl: locale !== "en",

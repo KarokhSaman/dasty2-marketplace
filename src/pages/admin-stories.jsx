@@ -43,7 +43,7 @@ function storyFor(p, noPrice) {
     photo: mainPhoto(p),
     storyCrop: p.storyCrop,
     city: p.city ? getCityLabel(p.city, "ckb") : undefined,
-    store: p.storeId ? m.storeFlag({}, KU) : undefined,
+    store: p.storeId ? m.storyStoreLabel({}, KU) : undefined,
     code: p.seq ? `#${p.seq}` : undefined,
     site: "mndallan.com",
     rtl: true,
