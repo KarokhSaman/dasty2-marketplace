@@ -10,7 +10,7 @@ import { brandFitsCategory, getBrandChoices } from "@/lib/brands";
 import { priceInfo } from "@/convex/discount";
 import { rotatePhoto, cropPhoto } from "@/lib/rotateImage";
 import PhotoCropSheet from "@/components/admin/PhotoCropSheet";
-import { STORY_PHOTO_ASPECT, shareStoryImage } from "@/lib/storyImage";
+import { STORY_PHOTO_ASPECT, shareStoryImage, storyConditionLabel } from "@/lib/storyImage";
 import { getCityLabel } from "@/lib/cities";
 import { formatAmount } from "@/components/ui";
 import { useImageUpload } from "@/lib/useImageUpload";
@@ -500,6 +500,7 @@ function SoldStoryButton({ product: p, toast }) {
         sold: true,
         city: p.city ? getCityLabel(p.city, "ckb") : undefined,
         store: p.storeId ? m.storyStoreLabel({}, KU) : undefined,
+        condition: storyConditionLabel(p, !!p.storeId, "ckb"),
         code: p.seq ? `#${p.seq}` : undefined,
         site: "mndallan.com",
         rtl: true,

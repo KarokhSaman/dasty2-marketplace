@@ -11,8 +11,18 @@
 
 import { brandLogo, brandLogoIsName } from "@/lib/brands";
 import { CATEGORY_CONFIG } from "@/lib/categories";
+import * as m from "@/paraglide/messages";
 import interLatin from "@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url";
 import vazirmatnArabic from "@fontsource-variable/vazirmatn/files/vazirmatn-arabic-wght-normal.woff2?url";
+
+// The condition chip's words for a product ("new", "like new", "used"), in
+// `locale` (the page's own when not given). Store products show their
+// "new from a shop" chip instead, so they get none.
+export function storyConditionLabel(product, isStore, locale) {
+  if (isStore) return undefined;
+  const label = { new: m.conditionNew, likenew: m.conditionLikeNew, used: m.conditionUsed }[product.condition];
+  return label?.({}, locale ? { locale } : undefined);
+}
 
 const W = 1080;
 const H = 1920;
@@ -194,6 +204,8 @@ function wrapTitle(ctx, text, maxWidth, family) {
 
 const PIN_PATH = "M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0zM15 11a3 3 0 11-6 0 3 3 0 016 0z";
 const STORE_PATH = "M3 9l1-5h16l1 5M3 9v11h18V9M3 9h18M9 20v-6h6v6";
+// a price tag, for the condition chip
+const TAG_PATH = "M12.6 2.6A2 2 0 0 0 11.2 2H4a2 2 0 0 0-2 2v7.2a2 2 0 0 0 .6 1.4l8.7 8.7a2.4 2.4 0 0 0 3.4 0l6.6-6.6a2.4 2.4 0 0 0 0-3.4zM7.5 7.5h.01";
 
 // A 24×24 outline icon (the site's SVG paths) drawn at `size` px.
 function drawIcon(ctx, d, x, y, size, color) {
@@ -208,13 +220,15 @@ function drawIcon(ctx, d, x, y, size, color) {
   ctx.restore();
 }
 
-// City chip (outlined) and, for store products, a white "Store" chip. Laid out
-// from the reading edge, so it mirrors in Kurdish/Arabic.
-function drawChips(ctx, { city, store, family, rtl, edge, top }) {
+// City chip (outlined) and a white chip after it: "new from a shop" for store
+// products, or the condition (new / like new / used) for everyone else. Laid
+// out from the reading edge, so it mirrors in Kurdish/Arabic.
+function drawChips(ctx, { city, store, condition, family, rtl, edge, top }) {
   const chips = [];
   ctx.font = `700 36px ${family}`;
   if (city) chips.push({ kind: "city", text: city, w: 28 + 38 + 12 + ctx.measureText(city).width + 30 });
   if (store) chips.push({ kind: "store", text: store, w: 28 + 38 + 12 + ctx.measureText(store).width + 30 });
+  else if (condition) chips.push({ kind: "condition", text: condition, w: 28 + 38 + 12 + ctx.measureText(condition).width + 30 });
   ctx.save();
   ctx.direction = "ltr";
   ctx.textAlign = "left";
@@ -237,7 +251,7 @@ function drawChips(ctx, { city, store, family, rtl, edge, top }) {
     }
     const color = c.kind === "city" ? "#ffffff" : INK;
     const iconX = rtl ? x + c.w - 28 - 38 : x + 28;
-    drawIcon(ctx, c.kind === "city" ? PIN_PATH : STORE_PATH, iconX, mid - 19, 38, color);
+    drawIcon(ctx, c.kind === "city" ? PIN_PATH : c.kind === "store" ? STORE_PATH : TAG_PATH, iconX, mid - 19, 38, color);
     ctx.fillStyle = color;
     ctx.fillText(c.text, rtl ? x + 30 : x + 28 + 38 + 12, mid + 2);
     at = rtl ? x - 18 : x + c.w + 18;
@@ -418,7 +432,7 @@ export const STORY_PHOTO_ASPECT = (() => {
 // The card art is drawn as is in Kurdish/Arabic (eyelet on the left, arrow
 // pointing left) and flipped in English (eyelet on the right, arrow pointing
 // right); the price, chips and title are written on it.
-function drawCardArt(ctx, { art, CS, cx, cy, cw, ch, rtl, price, label, title, city, store, family }) {
+function drawCardArt(ctx, { art, CS, cx, cy, cw, ch, rtl, price, label, title, city, store, condition, family }) {
   const A = CARD_ART;
   const ox = A.card[0] * CS, oy = A.card[1] * CS, iw = art.width * CS, ih = art.height * CS;
   ctx.save();
@@ -465,7 +479,7 @@ function drawCardArt(ctx, { art, CS, cx, cy, cw, ch, rtl, price, label, title, c
   // chips and title inside the shorter card
   const pad = 56;
   const chipTop = cy + 34;
-  drawChipsSized(ctx, { city, store, family, rtl, edge: rtl ? cx + cw - pad : cx + pad, top: chipTop });
+  drawChipsSized(ctx, { city, store, condition, family, rtl, edge: rtl ? cx + cw - pad : cx + pad, top: chipTop });
   const inner = cw - 2 * pad - 40;
   let tsize = 58, lines;
   for (; tsize >= 40; tsize -= 2) {
@@ -527,7 +541,7 @@ function drawSoldStamp(ctx, { x, y, w, family }) {
   ctx.restore();
 }
 
-function drawStory(ctx, { title, price, label, img, storyCrop, sold, city, store, code, site, rtl, logo, brand, brandImg, drawings, art, family }) {
+function drawStory(ctx, { title, price, label, img, storyCrop, sold, city, store, condition, code, site, rtl, logo, brand, brandImg, drawings, art, family }) {
   const edge = rtl ? W - 72 : 72;
 
   // Background: white, scattered with small, very faint baby-product
@@ -662,7 +676,7 @@ function drawStory(ctx, { title, price, label, img, storyCrop, sold, city, store
     // on a sold story the card and price tag fade back so the stamp leads
     ctx.save();
     if (sold) ctx.globalAlpha = 0.4;
-    drawCardArt(ctx, { art, CS, cx, cy, cw, ch, rtl, price, label, title, city, store, family });
+    drawCardArt(ctx, { art, CS, cx, cy, cw, ch, rtl, price, label, title, city, store, condition, family });
     ctx.restore();
   } else {
   ctx.save();
@@ -696,7 +710,7 @@ function drawStory(ctx, { title, price, label, img, storyCrop, sold, city, store
   ctx.restore();
 
   // Card content: chips, then the title.
-  drawChips(ctx, { city, store, family, rtl, edge: rtl ? cx + cw - 60 : cx + 60, top: cy + 58 });
+  drawChips(ctx, { city, store, condition, family, rtl, edge: rtl ? cx + cw - 60 : cx + 60, top: cy + 58 });
   ctx.save();
   ctx.direction = rtl ? "rtl" : "ltr";
   ctx.textAlign = rtl ? "right" : "left";
@@ -736,7 +750,9 @@ function drawStory(ctx, { title, price, label, img, storyCrop, sold, city, store
  *                              "tap here for the price" label above it
  * @param {string} [p.photo]    absolute image URL (R2)
  * @param {string} [p.city]     localized city
- * @param {string} [p.store]    localized "Store" label, for store products
+ * @param {string} [p.store]    localized "new from a shop" label, for store products
+ * @param {string} [p.condition] localized condition (new / like new / used), shown
+ *                              when there is no store label
  * @param {string} [p.code]     product code, e.g. "#26-0009"
  * @param {string} [p.site]     web address shown on the card, e.g. "mndallan.com"
  * @param {boolean} [p.rtl]     right-to-left layout for ckb/ar
@@ -744,7 +760,7 @@ function drawStory(ctx, { title, price, label, img, storyCrop, sold, city, store
  * @param {object} [p.storyCrop] admin-set framing of the photo ({ url, x, y, w, h }
  *                              as fractions); used only while `url` is this photo
  */
-export async function buildStoryImage({ title, price, noPrice, photo, storyCrop, sold, city, store, code, site, rtl = false, brand }) {
+export async function buildStoryImage({ title, price, noPrice, photo, storyCrop, sold, city, store, condition, code, site, rtl = false, brand }) {
   const crop = storyCrop && storyCrop.url === photo ? storyCrop : null;
   // Webfonts must be resolved before fillText or the card renders in a
   // fallback face (and Kurdish/Arabic glyphs may not render at all).
@@ -771,7 +787,7 @@ export async function buildStoryImage({ title, price, noPrice, photo, storyCrop,
     canvas.height = H;
     const ctx = canvas.getContext("2d");
     if (!ctx) return null;
-    drawStory(ctx, { title, price: noPrice ? undefined : price, label, img: withPhoto ? img : null, storyCrop: crop, sold, city, store, code, site, rtl, logo, brand, brandImg, drawings: withPhoto ? drawings.filter(Boolean) : [], art, family });
+    drawStory(ctx, { title, price: noPrice ? undefined : price, label, img: withPhoto ? img : null, storyCrop: crop, sold, city, store, condition, code, site, rtl, logo, brand, brandImg, drawings: withPhoto ? drawings.filter(Boolean) : [], art, family });
     return canvas;
   };
 
