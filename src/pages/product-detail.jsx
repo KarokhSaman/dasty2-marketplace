@@ -21,6 +21,7 @@ import {
   formatAmount,
 } from "@/components/ui";
 import { photoProps } from "@/lib/images";
+import { storyConditionLabel } from "@/lib/storyImage";
 import { priceInfo } from "@/convex/discount";
 import StoreIcon from "@/components/ui/StoreIcon";
 
@@ -361,6 +362,7 @@ export default function ProductDetailPage() {
               storyCrop: product.storyCrop,
               city: cityLabel,
               store: product.isStore ? m.storyStoreLabel() : undefined,
+              condition: storyConditionLabel(product, product.isStore),
               code: product.seq ? `#${product.seq}` : undefined,
               site: storySite,
               rtl: locale !== "en",

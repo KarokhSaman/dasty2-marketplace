@@ -4,7 +4,7 @@ import { api } from "@/convex/_generated/api";
 import * as m from "@/paraglide/messages";
 import { localizeHref } from "@/paraglide/runtime";
 import { priceInfo } from "@/convex/discount";
-import { buildStoryImage, shareStoryFiles } from "@/lib/storyImage";
+import { buildStoryImage, shareStoryFiles, storyConditionLabel } from "@/lib/storyImage";
 import { getCityLabel } from "@/lib/cities";
 import { CATEGORY_CONFIG } from "@/lib/categories";
 import { formatAmount } from "@/components/ui";
@@ -44,6 +44,7 @@ function storyFor(p, noPrice) {
     storyCrop: p.storyCrop,
     city: p.city ? getCityLabel(p.city, "ckb") : undefined,
     store: p.storeId ? m.storyStoreLabel({}, KU) : undefined,
+    condition: storyConditionLabel(p, !!p.storeId, "ckb"),
     code: p.seq ? `#${p.seq}` : undefined,
     site: "mndallan.com",
     rtl: true,
