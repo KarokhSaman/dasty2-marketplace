@@ -88,7 +88,7 @@ export default function AdminTodoPage() {
   const [openId, setOpenId] = useState(null);
   const [reviewing, setReviewing] = useState(false);
   const [connecting, setConnecting] = useState(false);
-  const snooze = useMutation(api.leads.snoozeFollowUp);
+  const closeFollowUp = useMutation(api.leads.closeFollowUp);
   const confirmAvailable = useMutation(api.leads.confirmAvailable);
   const actions = useProductActions();
   const toast = useToast();
@@ -182,7 +182,7 @@ export default function AdminTodoPage() {
 
       {data.followUps.length > 0 && (
         <Group title="Ask seller: sold?" count={data.followUps.length}>
-          <p className="text-[12.5px] text-adm-fade -mt-1 mb-2">A buyer was connected 3+ days ago and it is still live. Sold opens it to set the sale price (one unit at a time for stocked items); Not yet asks again in 3 days. A seller's items are messaged together.</p>
+          <p className="text-[12.5px] text-adm-fade -mt-1 mb-2">A buyer was connected 3+ days ago and it is still live. Sold opens it to set the sale price (one unit at a time for stocked items); Not yet closes it until you connect the next buyer. A seller's items are messaged together.</p>
           {groupBySeller(data.followUps).map((group) => (
             <SellerBlock key={group[0].sellerId} group={group} message={soldFollowUpMessage}>
               {(many) => group.map((p) => (
@@ -190,7 +190,7 @@ export default function AdminTodoPage() {
                   note={`· ${p.leadCount ?? 1} buyer${(p.leadCount ?? 1) === 1 ? "" : "s"} · last ${ago(p.lastLeadAt ?? p.followUpAt)}d ago`}>
                   {!many && <a href={waLink(p.sellerPhone, soldFollowUpMessage(p))} target="_blank" rel="noopener noreferrer" className={btn("wa", "sm")}><IconWhatsApp className="w-3.5 h-3.5" /> Ask seller</a>}
                   <button type="button" onClick={() => setOpenId(p._id)} className={btn("primary", "sm")}>Sold</button>
-                  <button type="button" onClick={() => run(() => snooze({ id: p._id }), "Asking again in 3 days")} className={btn("outline", "sm")}>Not yet</button>
+                  <button type="button" onClick={() => run(() => closeFollowUp({ id: p._id }), "Closed. The next buyer starts a new follow-up")} className={btn("outline", "sm")}>Not yet</button>
                   <button type="button" onClick={() => run(() => actions.markSoldElsewhere(p), "Sold elsewhere, seller notified")} className={btn("outline", "sm")}>Sold elsewhere</button>
                 </FollowRow>
               ))}

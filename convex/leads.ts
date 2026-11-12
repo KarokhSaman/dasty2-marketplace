@@ -24,8 +24,10 @@ export const connectBuyer = mutation({
     await ctx.db.patch(id, {
       leadCount: (product.leadCount ?? 0) + 1,
       lastLeadAt: now,
-      // 3 days after the first unanswered buyer: later buyers don't push it
-      // back, or a busy product would never be followed up.
+      // Ask the seller whether it sold 3 days after the first buyer nobody has
+      // asked about yet. Later buyers don't push that date back, so a busy
+      // product is still asked about; the answer covers every buyer so far.
+      // After "Not yet" (closeFollowUp) the next buyer starts a new 3 days.
       followUpAt: product.followUpAt ?? inDays(FOLLOW_UP_DAYS),
     });
     await ctx.db.insert("adminLogs", {
@@ -43,13 +45,15 @@ export const connectBuyer = mutation({
   },
 });
 
-// "Not yet": ask the seller again in a few days.
-export const snoozeFollowUp = mutation({
+// "Not yet": the seller hasn't sold it, which answers for every buyer connected
+// so far. The follow-up closes and doesn't come back by itself; the next buyer
+// connected starts a new one.
+export const closeFollowUp = mutation({
   args: { id: v.id("products") },
   returns: v.null(),
   handler: async (ctx, { id }) => {
     await requireAdmin(ctx);
-    await ctx.db.patch(id, { followUpAt: inDays(FOLLOW_UP_DAYS) });
+    await ctx.db.patch(id, { followUpAt: undefined });
     return null;
   },
 });
