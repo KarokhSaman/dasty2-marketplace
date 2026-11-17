@@ -422,5 +422,9 @@
   "reelHeadline": "باشترینەکانی",
   "reelHeadline2": "ئەم هەفتەیە",
   "reelSub": "کاڵای منداڵ بە نرخی گونجاو",
-  "reelEndLine": "زیاتر لە {count} کاڵا چاوەڕێتە"
+  "reelEndLine": "زیاتر لە {count} کاڵا چاوەڕێتە",
+  "reelCaptionTitle": "✨ باشترینەکانی ئەم هەفتەیە لە منداڵان 👶",
+  "reelCaptionBuy": "📲 بۆ کڕین کۆدی کاڵاکە بە واتسئاپ بنێرە: {phone}",
+  "reelCaptionBio": "🔗 لینکی ماڵپەڕەکەمان لە بایۆی پەیجەکەدایە",
+  "reelCaptionMore": "🛍️ زیاتر لە {count} کاڵای منداڵ بە نرخی گونجاو"
 }

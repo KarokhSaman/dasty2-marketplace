@@ -422,5 +422,9 @@
   "reelHeadline": "Best picks",
   "reelHeadline2": "this week",
   "reelSub": "Baby items at good prices",
-  "reelEndLine": "More than {count} items are waiting for you"
+  "reelEndLine": "More than {count} items are waiting for you",
+  "reelCaptionTitle": "✨ This week's best picks at Mndallan 👶",
+  "reelCaptionBuy": "📲 To buy, send the product code on WhatsApp: {phone}",
+  "reelCaptionBio": "🔗 Our website link is in the page bio",
+  "reelCaptionMore": "🛍️ More than {count} baby items at good prices"
 }

@@ -422,5 +422,9 @@
   "reelHeadline": "أفضل المنتجات",
   "reelHeadline2": "هذا الأسبوع",
   "reelSub": "مستلزمات الأطفال بأسعار مناسبة",
-  "reelEndLine": "أكثر من {count} منتج بانتظارك"
+  "reelEndLine": "أكثر من {count} منتج بانتظارك",
+  "reelCaptionTitle": "✨ أفضل منتجات هذا الأسبوع في منداڵان 👶",
+  "reelCaptionBuy": "📲 للشراء أرسل رمز المنتج على واتساب: {phone}",
+  "reelCaptionBio": "🔗 رابط موقعنا في البايو",
+  "reelCaptionMore": "🛍️ أكثر من {count} منتج للأطفال بأسعار مناسبة"
 }

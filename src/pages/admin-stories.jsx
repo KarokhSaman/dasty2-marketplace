@@ -56,15 +56,51 @@ function storyFor(p, noPrice) {
 
 // The reel's Kurdish lines. The end card counts the live products in round
 // hundreds ("more than 200"), or fifties below 100.
-function reelText(liveCount) {
+const roundedCount = (liveCount) => {
   const step = liveCount >= 100 ? 100 : 50;
-  const count = Math.max(step, Math.floor(liveCount / step) * step).toLocaleString("ar-EG");
+  return Math.max(step, Math.floor(liveCount / step) * step).toLocaleString("ar-EG");
+};
+
+function reelText(liveCount) {
+  const count = roundedCount(liveCount);
   return {
     headline: m.reelHeadline({}, KU),
     headline2: m.reelHeadline2({}, KU),
     sub: m.reelSub({}, KU),
     endLine: m.reelEndLine({ count }, KU),
   };
+}
+
+const NUMBERS = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣"];
+const WHATSAPP_PHONE = "0750 971 7177";
+
+// The reel's Instagram caption, in Kurdish: a short first line (all that
+// shows before "more"), one line per product with its code so buyers can
+// send it on WhatsApp, how to buy, "link in bio", and 5 hashtags (the most
+// Instagram allows): the brand, baby items, and the products' cities.
+function reelCaption(chosen, liveCount) {
+  const lines = chosen.map((p, i) => [
+    `${NUMBERS[i]} ${p.title}`,
+    `${formatAmount(priceInfo(p).price)} IQD`,
+    p.city ? getCityLabel(p.city, "ckb") : null,
+    p.seq ? `#${p.seq}` : null,
+  ].filter(Boolean).join(" · "));
+  const cities = [...new Set(chosen.map((p) => p.city && getCityLabel(p.city, "ckb")).filter(Boolean))]
+    .map((c) => `#${c.replace(/\s+/g, "_")}`);
+  const tags = ["#منداڵان", "#کاڵای_منداڵ", ...cities.slice(0, 2), "#کوردستان", "#mndallan"];
+  // keep 5: drop "Kurdistan" when two cities are there
+  const five = tags.length > 5 ? tags.filter((t) => t !== "#کوردستان") : tags;
+  return [
+    m.reelCaptionTitle({}, KU),
+    "",
+    ...lines,
+    "",
+    m.reelCaptionBuy({ phone: WHATSAPP_PHONE }, KU),
+    m.reelCaptionBio({}, KU),
+    m.reelCaptionMore({ count: roundedCount(liveCount) }, KU),
+    "",
+    five.slice(0, 5).join(" "),
+  ].join("\n");
 }
 
 function PickRow({ product: p, picked, disabled, onToggle }) {
@@ -193,7 +229,7 @@ export default function AdminStoriesPage() {
       const day = new Date().toISOString().slice(0, 10);
       const videoFile = new File([video], `mndallan-reel-${day}.mp4`, { type: "video/mp4" });
       const coverFile = new File([cover], `mndallan-reel-${day}-cover.png`, { type: "image/png" });
-      setReel({ video: videoFile, cover: coverFile, videoUrl: URL.createObjectURL(videoFile), coverUrl: URL.createObjectURL(coverFile), count: chosen.length });
+      setReel({ video: videoFile, cover: coverFile, videoUrl: URL.createObjectURL(videoFile), coverUrl: URL.createObjectURL(coverFile), count: chosen.length, caption: reelCaption(chosen, live.length) });
     } catch (err) {
       console.error(err);
       toast("Could not make the reel", "error");
@@ -228,9 +264,9 @@ export default function AdminStoriesPage() {
           actions={<button type="button" onClick={() => setReel(null)} className={btn("ghost")}>Back</button>} />
         <p className="rounded-2xl bg-adm-sunk px-3.5 py-3 text-[12.5px] text-adm-soft leading-relaxed mb-3">
           1. Save the reel and the cover. 2. In Instagram, make a new reel from the video and add a trending sound.
-          3. Tap <b>Edit cover</b> → <b>Add from camera roll</b> and pick the cover.
+          3. Tap <b>Edit cover</b> → <b>Add from camera roll</b> and pick the cover. 4. Tap <b>Copy caption</b> and paste it.
         </p>
-        <div className="grid grid-cols-2 gap-2.5 mb-24">
+        <div className="grid grid-cols-2 gap-2.5 mb-2.5">
           <div className="rounded-2xl border border-adm-line bg-adm-surface p-1.5">
             <video src={reel.videoUrl} controls muted playsInline loop autoPlay className="w-full aspect-[9/16] rounded-xl bg-adm-sunk" />
             <button type="button" onClick={() => saveFile(reel.video, "Reel")} className={`${btn("primary", "sm")} w-full mt-1.5`}>Save reel</button>
@@ -239,6 +275,15 @@ export default function AdminStoriesPage() {
             <img src={reel.coverUrl} alt="Reel cover" className="w-full aspect-[9/16] rounded-xl object-cover bg-adm-sunk" />
             <button type="button" onClick={() => saveFile(reel.cover, "Cover")} className={`${btn("outline", "sm")} w-full mt-1.5`}>Save cover</button>
           </div>
+        </div>
+        <div className="rounded-2xl border border-adm-line bg-adm-surface p-3 mb-24">
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <span className="text-[13px] font-semibold">Caption</span>
+            <button type="button" onClick={() => copy(reel.caption, "Caption copied")} className={btn("primary", "sm")}>
+              <IconCopy className="w-3.5 h-3.5" /> Copy caption
+            </button>
+          </div>
+          <p dir="rtl" lang="ckb" className="whitespace-pre-wrap text-start text-[13.5px] leading-relaxed text-adm-soft select-all">{reel.caption}</p>
         </div>
       </div>
     );
