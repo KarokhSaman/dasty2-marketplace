@@ -417,5 +417,10 @@
   "descHintHeight": "بەرز و نزم دەکرێت: ",
   "descHintFold": "بچوک دەکرێتەوە: ",
   "descSectionTitle": "وەسفی کاڵاکەت بکە:",
-  "editProfileBtn": "گۆڕینی زانیاری"
+  "editProfileBtn": "گۆڕینی زانیاری",
+
+  "reelHeadline": "باشترینەکانی",
+  "reelHeadline2": "ئەم هەفتەیە",
+  "reelSub": "کاڵای منداڵ بە نرخی گونجاو",
+  "reelEndLine": "زیاتر لە {count} کاڵا چاوەڕێتە"
 }

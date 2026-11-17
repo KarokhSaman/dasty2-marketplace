@@ -417,5 +417,10 @@
   "descHintHeight": "Height-adjustable: ",
   "descHintFold": "Foldable: ",
   "descSectionTitle": "Describe your product:",
-  "editProfileBtn": "Edit details"
+  "editProfileBtn": "Edit details",
+
+  "reelHeadline": "Best picks",
+  "reelHeadline2": "this week",
+  "reelSub": "Baby items at good prices",
+  "reelEndLine": "More than {count} items are waiting for you"
 }
