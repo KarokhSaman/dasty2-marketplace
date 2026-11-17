@@ -44,13 +44,19 @@ const SHORT_LINKS: Record<string, string> = {
   '/sell': SELL_GUIDE,
   '/کرێی-خزمەتگوزاری': '/account#fees',
   '/fee': '/account#fees',
+  // our pages, for the thank-you message (and short spellings)
+  '/instagram': 'https://www.instagram.com/mndallan_bazaar',
+  '/ig': 'https://www.instagram.com/mndallan_bazaar',
+  '/facebook': 'https://www.facebook.com/share/18iwvTv5uv/',
+  '/fb': 'https://www.facebook.com/share/18iwvTv5uv/',
 }
 
 function shortLink(request: Request): Response | undefined {
   if (request.method !== 'GET') return undefined
   let path = new URL(request.url).pathname.replace(/\/+$/, '')
   try { path = decodeURIComponent(path) } catch { return undefined }
-  const to = SHORT_LINKS[path.replace(/\s+/g, '-')]
+  // phones often capitalise a typed link ("/Instagram"), so case doesn't matter
+  const to = SHORT_LINKS[path.replace(/\s+/g, '-').toLowerCase()]
   if (!to) return undefined
   return new Response(null, { status: 302, headers: { Location: new URL(to, request.url).toString() } })
 }

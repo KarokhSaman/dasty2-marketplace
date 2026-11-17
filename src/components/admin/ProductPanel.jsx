@@ -21,9 +21,10 @@ import { actionLabel } from "@/components/admin/logActions";
 import { approvalMessage } from "@/components/admin/approvalMessage";
 import { rejectionMessage, REASON_SEPARATOR } from "@/components/admin/rejectionMessage";
 import ConnectBuyer, { BuyerLeads } from "@/components/admin/ConnectBuyer";
+import { thankYouMessage } from "@/components/admin/buyerMessages";
 import {
   Panel, StatusChip, StoreTag, Code, SectionTitle, Segmented, Switch, ConfirmBox, AmountInput, Avatar, Thumb,
-  btn, fmtIQD, inputCls, labelCls, useToast, useCopy, waLink, ltrPhone, fmtPhone,
+  btn, fmtIQD, inputCls, labelCls, useToast, useCopy, waLink, waUsername, ltrPhone, fmtPhone,
   IconRotate, IconStar, IconTrash, IconCheck, IconX, IconCopy, IconWhatsApp, IconExternal, IconCrop, IconChevron, IconScissors,
 } from "@/components/admin/ui";
 
@@ -408,6 +409,38 @@ export function StoryCropSheet({ url, saved, onClose, onSave }) {
   );
 }
 
+// A paid sale: the same short thank-you to the seller and to the buyer. The
+// app doesn't know which connected buyer bought it, so each buyer with a
+// number gets their own button; Copy message covers the rest.
+function ThankYouRow({ product: p }) {
+  const leads = useQuery(api.leads.listForProduct, { id: p._id });
+  const copy = useCopy();
+  const text = thankYouMessage();
+  const seen = new Set();
+  const buyers = (leads ?? []).filter((l) => l.buyerPhone && !waUsername(l.buyerPhone) && !seen.has(l.buyerPhone) && seen.add(l.buyerPhone));
+  return (
+    <div className="mt-3 rounded-xl border border-adm-line bg-adm-surface p-3 space-y-2">
+      <p className="text-[12.5px] font-semibold">Thank-you message</p>
+      <div className="grid grid-cols-2 gap-2">
+        {p.sellerPhone && (
+          <a href={waLink(p.sellerPhone, text)} target="_blank" rel="noopener noreferrer" className={`${btn("wa", "sm")} col-span-2`}>
+            <IconWhatsApp className="w-4 h-4" /> Send to seller
+          </a>
+        )}
+        {buyers.map((l) => (
+          <a key={l._id} href={waLink(l.buyerPhone, text)} target="_blank" rel="noopener noreferrer" className={`${btn("outline", "sm")} col-span-2`}>
+            <IconWhatsApp className="w-4 h-4" /> Send to buyer <span dir="ltr" className="tabular-nums">{fmtPhone(l.buyerPhone)}</span>
+          </a>
+        ))}
+        <button type="button" onClick={() => copy(text, "Message copied")} className={`${btn("ghost", "sm")} col-span-2`}>
+          <IconCopy className="w-4 h-4" /> Copy message
+        </button>
+      </div>
+      {leads && !buyers.length && <p className="text-[11.5px] text-adm-fade">No buyer number saved for this sale. Copy the message to send it to the buyer.</p>}
+    </div>
+  );
+}
+
 // The payment receipt the seller sent for this sale's fee, kept after it is
 // paid so it can be looked up later. Opens in a window over this one.
 function FeeReceiptRow({ product: p }) {
@@ -747,6 +780,7 @@ export default function ProductPanel({ product, onClose }) {
         {(p.status === "sold" || p.status === "paid") && !nextStatus && (
           p.feeReceiptUrl ? <FeeReceiptRow product={p} /> : <LinkReceiptRow product={p} actions={actions} toast={toast} />
         )}
+        {p.status === "paid" && !nextStatus && <ThankYouRow product={p} />}
         {p.status === "rejected" && !nextStatus && p.notes && (
           <p className="mt-2 text-[12.5px] text-st-rejected bg-st-rejected-bg rounded-xl px-3 py-2">{p.notes}</p>
         )}

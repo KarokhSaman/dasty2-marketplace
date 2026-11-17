@@ -49,6 +49,7 @@ export const TEMPLATE_GROUPS = [
   { key: "posts", title: "Approved and rejected posts" },
   { key: "sold", title: "Sold items and fees" },
   { key: "buyers", title: "Connecting a buyer" },
+  { key: "thanks", title: "After a paid sale" },
   { key: "fixes", title: "How to fix it: one line per rejection reason" },
 ];
 
@@ -285,6 +286,26 @@ export const TEMPLATES = [
 📎 *بعد الدفع:* ادخل إلى حسابك في موقع Mndallan، واضغط زر «إرسال إيصال الدفع» في لوحة التحكم وأرسل صورة الإيصال.
 
 مع خالص التحيات،
+فريق موقع Mndallan 🧸`,
+  },
+  {
+    key: "thankYou", group: "thanks", title: "Thank you",
+    when: "After a sale is paid: to the seller and to the buyer (one message for both)", vars: [], required: [],
+    ckb: `*سوپاس بۆ هەڵبژاردنی «منداڵان»* 🤍
+ئەگەر هەر تێبینی یان پێشنیارێکت هەیە، خۆشحاڵ دەبین پێمانی بڵێیت.
+
+📲 فۆڵۆی پەیجەکانمان بکە و ئێمە بە هاوڕێکانت بناسێنە:
+📸 mndallan.com/instagram
+👍 mndallan.com/facebook
+
+تیمی ماڵپەڕی منداڵان 🧸`,
+    ar: `*شكراً لاختياركم Mndallan* 🤍
+إذا كان لديك أي ملاحظة أو اقتراح، يسعدنا أن تخبرنا.
+
+📲 تابع صفحاتنا وعرّف أصدقاءك علينا:
+📸 mndallan.com/instagram
+👍 mndallan.com/facebook
+
 فريق موقع Mndallan 🧸`,
   },
   {
