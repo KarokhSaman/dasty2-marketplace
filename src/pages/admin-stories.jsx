@@ -161,7 +161,8 @@ export default function AdminStoriesPage() {
     try {
       for (const [i, p] of chosen.entries()) {
         setMaking({ done: i, total: chosen.length });
-        const blob = await buildStoryImage(storyFor(p, price === "none"));
+        // each story in the next colour, so a run of them doesn't look the same
+        const blob = await buildStoryImage({ ...storyFor(p, price === "none"), theme: i });
         if (!blob) continue;
         const file = new File([blob], `${p.seq || p._id}${price === "none" ? "-link" : ""}.png`, { type: "image/png" });
         made.push({ product: p, file, url: URL.createObjectURL(file) });
