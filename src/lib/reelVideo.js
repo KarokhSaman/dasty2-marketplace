@@ -12,7 +12,7 @@ import { brandLogo } from "@/lib/brands";
 import { CATEGORY_CONFIG } from "@/lib/categories";
 import {
   STORY_W as W, STORY_H as H, INK, INK_SOFT, BRAND, BRAND_LIGHT, BRAND_DARK, CARD_ART, STORY_FONT,
-  loadImage, loadStoryFonts, roundedRect, smartCrop, drawCardArt, drawBackdrop, drawHeader, drawBrandPill,
+  loadImage, loadStoryFonts, roundedRect, smartCrop, drawCardArt, drawBackdrop, drawHeader, drawBrandPill, pickTheme,
 } from "@/lib/storyImage";
 
 export const REEL_MAX = 5;
@@ -124,7 +124,7 @@ function drawIntro(ctx, A, f) {
 
 // ---------- one product, laid out like its story ----------
 function drawProduct(ctx, A, i, f) {
-  const { story: p, img, brandImg } = A.items[i];
+  const { story: p, img, brandImg, look, art, base } = A.items[i];
   const n = A.items.length;
   // the story's layout with the card art (see drawStory)
   const cx = 72, cw = W - 144;
@@ -182,8 +182,8 @@ function drawProduct(ctx, A, i, f) {
   ctx.save();
   ctx.translate(0, (1 - inC) * 520 + outP * 700);
   drawCardArt(ctx, {
-    art: A.art, CS, cx, cy, cw, ch, rtl: true, price: p.price, label: null,
-    title: p.title, city: p.city, store: p.store, condition: p.condition, family: A.family,
+    art, CS, cx, cy, cw, ch, rtl: true, price: p.price, label: null,
+    title: p.title, city: p.city, store: p.store, condition: p.condition, family: A.family, priceColor: look.price,
   });
   ctx.restore();
 
@@ -390,12 +390,21 @@ function drawFrame(ctx, A, frame) {
   if (frame < INTRO) {
     drawIntro(ctx, A, frame);
     if (frame >= INTRO - 6) drawProduct(ctx, A, 0, frame - INTRO);
+    // (the first product is red, on the intro's white page)
     return;
   }
-  ctx.drawImage(A.base, 0, 0);
-  drawHeader(ctx, { logo: A.logo, family: A.family });
   const i = Math.floor((frame - INTRO) / PER);
   const f = frame - INTRO - i * PER;
+  // each product on its own colour's page; the new colour sweeps in from the left
+  const prev = i > 0 && f < 10 ? A.items[i - 1].base : null;
+  if (prev) {
+    ctx.drawImage(prev, 0, 0);
+    const wipe = W * easeOut(clamp01(f / 10));
+    ctx.save(); ctx.beginPath(); ctx.rect(0, 0, wipe, H); ctx.clip();
+    ctx.drawImage(A.items[i].base, 0, 0);
+    ctx.restore();
+  } else ctx.drawImage(A.items[i].base, 0, 0);
+  drawHeader(ctx, { logo: A.logo, family: A.family });
   if (i > 0 && f < 6) drawProduct(ctx, A, i - 1, f + PER);
   drawProduct(ctx, A, i, f);
 }
@@ -422,17 +431,32 @@ async function prepare(stories, text) {
     ...drawingUrls.map((u) => loadImage(u, { cors: true })),
   ]);
   if (!art) throw new Error("Could not load the card art");
-  const items = await Promise.all(stories.slice(0, REEL_MAX).map(async (story) => ({
-    story,
-    img: await loadImage(story.photo, { cors: true }),
-    brandImg: await loadImage(brandLogo(story.brand)),
-  })));
+  const inks = drawings.filter(Boolean);
+  // one page per colour theme, drawn once
+  const pages = new Map();
+  const page = (tint) => {
+    if (!pages.has(tint)) {
+      const c = document.createElement("canvas");
+      c.width = W; c.height = H;
+      drawBackdrop(c.getContext("2d"), inks, tint);
+      pages.set(tint, c);
+    }
+    return pages.get(tint);
+  };
+  // each product in the next colour, as in the stories
+  const items = await Promise.all(stories.slice(0, REEL_MAX).map(async (story, i) => {
+    const look = pickTheme(i);
+    return {
+      story, look, base: page(look.tint),
+      art: (await loadImage(look.art)) ?? art,
+      img: await loadImage(story.photo, { cors: true }),
+      brandImg: await loadImage(brandLogo(story.brand)),
+    };
+  }));
   const pageFont = getComputedStyle(document.body).fontFamily || "sans-serif";
   const family = fontsOk ? `"${STORY_FONT}", ${pageFont}` : pageFont;
 
-  const base = document.createElement("canvas");
-  base.width = W; base.height = H;
-  drawBackdrop(base.getContext("2d"), drawings.filter(Boolean));
+  const base = page(null);
 
   const canvas = document.createElement("canvas");
   canvas.width = W; canvas.height = H;

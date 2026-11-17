@@ -419,6 +419,25 @@ const CARD_ART = {
   price: [508, 127, -5.0, 470],
 };
 
+// Colour themes for the card, so stories posted one after another don't all
+// look the same: the card art recoloured (public/story-card-*.png, same
+// shape as the red one), a soft tint over the white page, and the price's
+// colour on the tag. Red, the brand colour, comes first.
+export const STORY_THEMES = [
+  { name: "red", art: "/story-card.png", tint: null, price: "#5a0a1e" },
+  { name: "teal", art: "/story-card-teal.png", tint: "#dff4f1", price: "#0b4a44" },
+  { name: "blue", art: "/story-card-blue.png", tint: "#e3ebfa", price: "#0d2f6b" },
+  { name: "amber", art: "/story-card-amber.png", tint: "#fdf0d5", price: "#6b3a00" },
+  { name: "purple", art: "/story-card-purple.png", tint: "#f1e6f6", price: "#3f1257" },
+];
+
+// A theme index, or for a single story the product code's number
+// ("#26-0309" → 309), so neighbouring products get different colours.
+function pickTheme(theme, code) {
+  const n = Number.isInteger(theme) ? theme : Number(/(\d+)\D*$/.exec(code ?? "")?.[1] ?? 0);
+  return STORY_THEMES[((n % STORY_THEMES.length) + STORY_THEMES.length) % STORY_THEMES.length];
+}
+
 // The shape (width / height) of the photo inside its frame when the card art
 // is used, as laid out in drawStory. The admin's story-crop tool uses it so a
 // saved crop fills the frame exactly.
@@ -432,7 +451,7 @@ export const STORY_PHOTO_ASPECT = (() => {
 // The card art is drawn as is in Kurdish/Arabic (eyelet on the left, arrow
 // pointing left) and flipped in English (eyelet on the right, arrow pointing
 // right); the price, chips and title are written on it.
-function drawCardArt(ctx, { art, CS, cx, cy, cw, ch, rtl, price, label, title, city, store, condition, family }) {
+function drawCardArt(ctx, { art, CS, cx, cy, cw, ch, rtl, price, label, title, city, store, condition, family, priceColor = TAG_PRICE }) {
   const A = CARD_ART;
   const ox = A.card[0] * CS, oy = A.card[1] * CS, iw = art.width * CS, ih = art.height * CS;
   ctx.save();
@@ -471,7 +490,7 @@ function drawCardArt(ctx, { art, CS, cx, cy, cw, ch, rtl, price, label, title, c
   ctx.rotate(rtl ? ang : -ang);
   const start = -(aw + uw) / 2, base = size * 0.36;
   ctx.direction = "ltr"; ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
-  ctx.fillStyle = "#5a0a1e"; ctx.font = `800 ${size}px ${family}`; ctx.fillText(amount, start, base);
+  ctx.fillStyle = priceColor; ctx.font = `800 ${size}px ${family}`; ctx.fillText(amount, start, base);
   if (unit) { ctx.fillStyle = INK_SOFT; ctx.font = `700 ${Math.round(size * 0.62)}px ${family}`; ctx.fillText(unit, start + aw + size * 0.22, base); }
   ctx.restore();
   }
@@ -543,7 +562,7 @@ function drawSoldStamp(ctx, { x, y, w, family }) {
 
 // White page scattered with small, very faint baby-product drawings (the
 // site's category drawings).
-function drawBackdrop(ctx, drawings) {
+function drawBackdrop(ctx, drawings, tint) {
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, W, H);
   if (drawings.length) {
@@ -561,6 +580,14 @@ function drawBackdrop(ctx, drawings) {
         ctx.restore();
       }
     }
+  }
+  // the theme's soft colour over the page, under the faint drawings' ink
+  if (tint) {
+    ctx.save();
+    ctx.globalCompositeOperation = "multiply";
+    ctx.fillStyle = tint;
+    ctx.fillRect(0, 0, W, H);
+    ctx.restore();
   }
 }
 
@@ -619,10 +646,10 @@ function drawBrandPill(ctx, { brand, brandImg, family }) {
   }
 }
 
-function drawStory(ctx, { title, price, label, img, storyCrop, sold, city, store, condition, code, site, rtl, logo, brand, brandImg, drawings, art, family }) {
+function drawStory(ctx, { title, price, label, img, storyCrop, sold, city, store, condition, code, site, rtl, logo, brand, brandImg, drawings, art, family, theme = STORY_THEMES[0] }) {
   const edge = rtl ? W - 72 : 72;
 
-  drawBackdrop(ctx, drawings);
+  drawBackdrop(ctx, drawings, theme.tint);
   drawHeader(ctx, { logo, family });
   drawBrandPill(ctx, { brand, brandImg, family });
 
@@ -686,7 +713,7 @@ function drawStory(ctx, { title, price, label, img, storyCrop, sold, city, store
     // on a sold story the card and price tag fade back so the stamp leads
     ctx.save();
     if (sold) ctx.globalAlpha = 0.4;
-    drawCardArt(ctx, { art, CS, cx, cy, cw, ch, rtl, price, label, title, city, store, condition, family });
+    drawCardArt(ctx, { art, CS, cx, cy, cw, ch, rtl, price, label, title, city, store, condition, family, priceColor: theme.price });
     ctx.restore();
   } else {
   ctx.save();
@@ -767,10 +794,13 @@ function drawStory(ctx, { title, price, label, img, storyCrop, sold, city, store
  * @param {string} [p.site]     web address shown on the card, e.g. "mndallan.com"
  * @param {boolean} [p.rtl]     right-to-left layout for ckb/ar
  * @param {string} [p.brand]    brand name; its logo goes in the header
+ * @param {number} [p.theme]   colour theme (index into STORY_THEMES, wraps
+ *                              around); left out, the product code picks it
  * @param {object} [p.storyCrop] admin-set framing of the photo ({ url, x, y, w, h }
  *                              as fractions); used only while `url` is this photo
  */
-export async function buildStoryImage({ title, price, noPrice, photo, storyCrop, sold, city, store, condition, code, site, rtl = false, brand }) {
+export async function buildStoryImage({ title, price, noPrice, photo, storyCrop, sold, city, store, condition, code, site, rtl = false, brand, theme }) {
+  const look = pickTheme(theme, code);
   const crop = storyCrop && storyCrop.url === photo ? storyCrop : null;
   // Webfonts must be resolved before fillText or the card renders in a
   // fallback face (and Kurdish/Arabic glyphs may not render at all).
@@ -782,7 +812,7 @@ export async function buildStoryImage({ title, price, noPrice, photo, storyCrop,
   const [img, logo, art, label, brandImg, ...drawings] = await Promise.all([
     loadImage(photo, { cors: true }),
     loadImage("/logo-mndallan.svg"),
-    loadImage(CARD_ART.src),
+    loadImage(look.art).then((a) => a ?? loadImage(CARD_ART.src)),
     noPrice ? loadImage(CARD_ART.label) : null,
     loadImage(brandLogo(brand)),
     ...drawingUrls.map((u) => loadImage(u, { cors: true })),
@@ -797,7 +827,7 @@ export async function buildStoryImage({ title, price, noPrice, photo, storyCrop,
     canvas.height = H;
     const ctx = canvas.getContext("2d");
     if (!ctx) return null;
-    drawStory(ctx, { title, price: noPrice ? undefined : price, label, img: withPhoto ? img : null, storyCrop: crop, sold, city, store, condition, code, site, rtl, logo, brand, brandImg, drawings: withPhoto ? drawings.filter(Boolean) : [], art, family });
+    drawStory(ctx, { title, price: noPrice ? undefined : price, label, img: withPhoto ? img : null, storyCrop: crop, sold, city, store, condition, code, site, rtl, logo, brand, brandImg, drawings: withPhoto ? drawings.filter(Boolean) : [], art, family, theme: look });
     return canvas;
   };
 
@@ -876,5 +906,5 @@ export async function shareStoryFiles(files) {
 // so each product in a reel looks exactly like its story.
 export {
   W as STORY_W, H as STORY_H, INK, INK_SOFT, BRAND, BRAND_LIGHT, BRAND_DARK, CARD_ART, STORY_FONT,
-  loadImage, loadStoryFonts, roundedRect, smartCrop, drawCardArt, drawBackdrop, drawHeader, drawBrandPill,
+  loadImage, loadStoryFonts, roundedRect, smartCrop, drawCardArt, drawBackdrop, drawHeader, drawBrandPill, pickTheme,
 };

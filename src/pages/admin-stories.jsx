@@ -5,6 +5,7 @@ import * as m from "@/paraglide/messages";
 import { localizeHref } from "@/paraglide/runtime";
 import { priceInfo } from "@/convex/discount";
 import { buildStoryImage, shareStoryFiles, storyConditionLabel } from "@/lib/storyImage";
+import { buildSpotlightImage } from "@/lib/spotlightImage";
 import { getCityLabel } from "@/lib/cities";
 import { CATEGORY_CONFIG } from "@/lib/categories";
 import { formatAmount } from "@/components/ui";
@@ -14,6 +15,8 @@ import {
 
 // Instagram only shows in the phone's share sheet for up to 8 photos at once.
 const MAX = 8;
+// After every 5 regular stories comes a Spotlight story, to break the pattern.
+const SPOTLIGHT_EVERY = 6;
 // A reel shows each product for about 2 seconds, so 5 keep it near 15 seconds.
 const REEL_MAX = 5;
 const DAY = 86400000;
@@ -56,15 +59,51 @@ function storyFor(p, noPrice) {
 
 // The reel's Kurdish lines. The end card counts the live products in round
 // hundreds ("more than 200"), or fifties below 100.
-function reelText(liveCount) {
+const roundedCount = (liveCount) => {
   const step = liveCount >= 100 ? 100 : 50;
-  const count = Math.max(step, Math.floor(liveCount / step) * step).toLocaleString("ar-EG");
+  return Math.max(step, Math.floor(liveCount / step) * step).toLocaleString("ar-EG");
+};
+
+function reelText(liveCount) {
+  const count = roundedCount(liveCount);
   return {
     headline: m.reelHeadline({}, KU),
     headline2: m.reelHeadline2({}, KU),
     sub: m.reelSub({}, KU),
     endLine: m.reelEndLine({ count }, KU),
   };
+}
+
+const NUMBERS = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣"];
+const WHATSAPP_PHONE = "07509717177";
+
+// The reel's Instagram caption, in Kurdish: a short first line (all that
+// shows before "more"), one line per product with its code so buyers can
+// send it on WhatsApp, how to buy, "link in bio", and 5 hashtags (the most
+// Instagram allows): the brand, baby items, and the products' cities.
+function reelCaption(chosen, liveCount) {
+  const lines = chosen.map((p, i) => [
+    `${NUMBERS[i]} ${p.title}`,
+    `${formatAmount(priceInfo(p).price)} IQD`,
+    p.city ? getCityLabel(p.city, "ckb") : null,
+    p.seq ? `#${p.seq}` : null,
+  ].filter(Boolean).join(" · "));
+  const cities = [...new Set(chosen.map((p) => p.city && getCityLabel(p.city, "ckb")).filter(Boolean))]
+    .map((c) => `#${c.replace(/\s+/g, "_")}`);
+  const tags = ["#منداڵان", "#کاڵای_منداڵ", ...cities.slice(0, 2), "#کوردستان", "#mndallan"];
+  // keep 5: drop "Kurdistan" when two cities are there
+  const five = tags.length > 5 ? tags.filter((t) => t !== "#کوردستان") : tags;
+  return [
+    m.reelCaptionTitle({}, KU),
+    "",
+    ...lines,
+    "",
+    m.reelCaptionBuy({ phone: WHATSAPP_PHONE }, KU),
+    m.reelCaptionBio({}, KU),
+    m.reelCaptionMore({ count: roundedCount(liveCount) }, KU),
+    "",
+    five.slice(0, 5).join(" "),
+  ].join("\n");
 }
 
 function PickRow({ product: p, picked, disabled, onToggle }) {
@@ -161,10 +200,15 @@ export default function AdminStoriesPage() {
     try {
       for (const [i, p] of chosen.entries()) {
         setMaking({ done: i, total: chosen.length });
-        const blob = await buildStoryImage(storyFor(p, price === "none"));
+        // every 6th is a Spotlight (no price, a white bar for the link);
+        // the others each in the next colour, so a run doesn't look the same
+        const spotlight = (i + 1) % SPOTLIGHT_EVERY === 0;
+        const blob = spotlight
+          ? await buildSpotlightImage({ title: p.title, category: p.category, photo: mainPhoto(p), storyCrop: p.storyCrop, code: p.seq ? `#${p.seq}` : undefined })
+          : await buildStoryImage({ ...storyFor(p, price === "none"), theme: i });
         if (!blob) continue;
-        const file = new File([blob], `${p.seq || p._id}${price === "none" ? "-link" : ""}.png`, { type: "image/png" });
-        made.push({ product: p, file, url: URL.createObjectURL(file) });
+        const file = new File([blob], `${p.seq || p._id}${spotlight ? "-spotlight" : price === "none" ? "-link" : ""}.png`, { type: "image/png" });
+        made.push({ product: p, file, url: URL.createObjectURL(file), spotlight });
       }
     } finally {
       setMaking(null);
@@ -192,7 +236,7 @@ export default function AdminStoriesPage() {
       const day = new Date().toISOString().slice(0, 10);
       const videoFile = new File([video], `mndallan-reel-${day}.mp4`, { type: "video/mp4" });
       const coverFile = new File([cover], `mndallan-reel-${day}-cover.png`, { type: "image/png" });
-      setReel({ video: videoFile, cover: coverFile, videoUrl: URL.createObjectURL(videoFile), coverUrl: URL.createObjectURL(coverFile), count: chosen.length });
+      setReel({ video: videoFile, cover: coverFile, videoUrl: URL.createObjectURL(videoFile), coverUrl: URL.createObjectURL(coverFile), count: chosen.length, caption: reelCaption(chosen, live.length) });
     } catch (err) {
       console.error(err);
       toast("Could not make the reel", "error");
@@ -227,9 +271,9 @@ export default function AdminStoriesPage() {
           actions={<button type="button" onClick={() => setReel(null)} className={btn("ghost")}>Back</button>} />
         <p className="rounded-2xl bg-adm-sunk px-3.5 py-3 text-[12.5px] text-adm-soft leading-relaxed mb-3">
           1. Save the reel and the cover. 2. In Instagram, make a new reel from the video and add a trending sound.
-          3. Tap <b>Edit cover</b> → <b>Add from camera roll</b> and pick the cover.
+          3. Tap <b>Edit cover</b> → <b>Add from camera roll</b> and pick the cover. 4. Tap <b>Copy caption</b> and paste it.
         </p>
-        <div className="grid grid-cols-2 gap-2.5 mb-24">
+        <div className="grid grid-cols-2 gap-2.5 mb-2.5">
           <div className="rounded-2xl border border-adm-line bg-adm-surface p-1.5">
             <video src={reel.videoUrl} controls muted playsInline loop autoPlay className="w-full aspect-[9/16] rounded-xl bg-adm-sunk" />
             <button type="button" onClick={() => saveFile(reel.video, "Reel")} className={`${btn("primary", "sm")} w-full mt-1.5`}>Save reel</button>
@@ -238,6 +282,15 @@ export default function AdminStoriesPage() {
             <img src={reel.coverUrl} alt="Reel cover" className="w-full aspect-[9/16] rounded-xl object-cover bg-adm-sunk" />
             <button type="button" onClick={() => saveFile(reel.cover, "Cover")} className={`${btn("outline", "sm")} w-full mt-1.5`}>Save cover</button>
           </div>
+        </div>
+        <div className="rounded-2xl border border-adm-line bg-adm-surface p-3 mb-24">
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <span className="text-[13px] font-semibold">Caption</span>
+            <button type="button" onClick={() => copy(reel.caption, "Caption copied")} className={btn("primary", "sm")}>
+              <IconCopy className="w-3.5 h-3.5" /> Copy caption
+            </button>
+          </div>
+          <p dir="rtl" lang="ckb" className="whitespace-pre-wrap text-start text-[13.5px] leading-relaxed text-adm-soft select-all">{reel.caption}</p>
         </div>
       </div>
     );
@@ -252,6 +305,7 @@ export default function AdminStoriesPage() {
         <p className="rounded-2xl bg-adm-sunk px-3.5 py-3 text-[12.5px] text-adm-soft leading-relaxed mb-3">
           1. Save all to Photos. 2. In Instagram, add a story and pick them all from your gallery.
           3. On each one, tap <b>Copy link</b> here, add a link sticker and paste{price === "none" ? ", then put the sticker on the empty tag" : ""}.
+          {stories.some((s) => s.spotlight) && <> On the Spotlight story, put the link sticker on the white bar.</>}
         </p>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 mb-24">
           {stories.map((s) => (
@@ -290,21 +344,22 @@ export default function AdminStoriesPage() {
         </div>
       )}
       <div className="fixed inset-x-0 bottom-[calc(60px+env(safe-area-inset-bottom,0px))] lg:bottom-0 lg:start-[232px] z-20 bg-adm-bg/95 backdrop-blur border-t border-adm-line px-4 lg:px-8 py-3">
-        <div className="max-w-[760px] flex items-center gap-3">
+        <div className="max-w-[760px] flex items-center gap-2">
           {ids.length > 0 && (
-            <button type="button" onClick={() => setPicked([])} className={btn("ghost")}>Clear</button>
+            <button type="button" onClick={() => setPicked([])} className={`${btn("ghost")} shrink-0 px-3`}>Clear</button>
           )}
+          {/* Short labels so all three fit on a phone */}
           <button type="button" onClick={makeReel} disabled={!ids.length || ids.length > REEL_MAX || !!making || reelMaking != null}
-            title={ids.length > REEL_MAX ? `A reel takes up to ${REEL_MAX} products` : undefined}
-            className={`${btn("outline", "lg")} shrink-0`}>
+            title={ids.length > REEL_MAX ? `A reel takes up to ${REEL_MAX} products` : "Make one reel of the ticked products"}
+            className={`${btn("outline", "lg")} shrink-0 px-4`}>
             {reelMaking != null ? (
-              <><span className="w-4 h-4 border-2 border-current/30 border-t-current rounded-full animate-spin" /> Reel {Math.round(reelMaking * 100)}%</>
-            ) : ids.length > REEL_MAX ? `Reel: max ${REEL_MAX}` : "Make reel"}
+              <><span className="w-4 h-4 border-2 border-current/30 border-t-current rounded-full animate-spin" /> {Math.round(reelMaking * 100)}%</>
+            ) : ids.length > REEL_MAX ? `Reel ≤ ${REEL_MAX}` : "Reel"}
           </button>
-          <button type="button" onClick={make} disabled={!ids.length || !!making || reelMaking != null} className={`${btn("primary", "lg")} flex-1`}>
+          <button type="button" onClick={make} disabled={!ids.length || !!making || reelMaking != null} className={`${btn("primary", "lg")} flex-1 min-w-0`}>
             {making ? (
-              <><span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> Making {making.done + 1} of {making.total}…</>
-            ) : ids.length ? `Make ${ids.length} ${ids.length === 1 ? "story" : "stories"}${full ? " (max)" : ""}` : "Pick products"}
+              <><span className="w-4 h-4 shrink-0 border-2 border-white/40 border-t-white rounded-full animate-spin" /> <span className="truncate">Making {making.done + 1} of {making.total}…</span></>
+            ) : <span className="truncate">{ids.length ? `Make ${ids.length} ${ids.length === 1 ? "story" : "stories"}` : "Pick products"}</span>}
           </button>
         </div>
       </div>
