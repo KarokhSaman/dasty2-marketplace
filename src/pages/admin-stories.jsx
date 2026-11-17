@@ -291,21 +291,22 @@ export default function AdminStoriesPage() {
         </div>
       )}
       <div className="fixed inset-x-0 bottom-[calc(60px+env(safe-area-inset-bottom,0px))] lg:bottom-0 lg:start-[232px] z-20 bg-adm-bg/95 backdrop-blur border-t border-adm-line px-4 lg:px-8 py-3">
-        <div className="max-w-[760px] flex items-center gap-3">
+        <div className="max-w-[760px] flex items-center gap-2">
           {ids.length > 0 && (
-            <button type="button" onClick={() => setPicked([])} className={btn("ghost")}>Clear</button>
+            <button type="button" onClick={() => setPicked([])} className={`${btn("ghost")} shrink-0 px-3`}>Clear</button>
           )}
+          {/* Short labels so all three fit on a phone */}
           <button type="button" onClick={makeReel} disabled={!ids.length || ids.length > REEL_MAX || !!making || reelMaking != null}
-            title={ids.length > REEL_MAX ? `A reel takes up to ${REEL_MAX} products` : undefined}
-            className={`${btn("outline", "lg")} shrink-0`}>
+            title={ids.length > REEL_MAX ? `A reel takes up to ${REEL_MAX} products` : "Make one reel of the ticked products"}
+            className={`${btn("outline", "lg")} shrink-0 px-4`}>
             {reelMaking != null ? (
-              <><span className="w-4 h-4 border-2 border-current/30 border-t-current rounded-full animate-spin" /> Reel {Math.round(reelMaking * 100)}%</>
-            ) : ids.length > REEL_MAX ? `Reel: max ${REEL_MAX}` : "Make reel"}
+              <><span className="w-4 h-4 border-2 border-current/30 border-t-current rounded-full animate-spin" /> {Math.round(reelMaking * 100)}%</>
+            ) : ids.length > REEL_MAX ? `Reel ≤ ${REEL_MAX}` : "Reel"}
           </button>
-          <button type="button" onClick={make} disabled={!ids.length || !!making || reelMaking != null} className={`${btn("primary", "lg")} flex-1`}>
+          <button type="button" onClick={make} disabled={!ids.length || !!making || reelMaking != null} className={`${btn("primary", "lg")} flex-1 min-w-0`}>
             {making ? (
-              <><span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> Making {making.done + 1} of {making.total}…</>
-            ) : ids.length ? `Make ${ids.length} ${ids.length === 1 ? "story" : "stories"}${full ? " (max)" : ""}` : "Pick products"}
+              <><span className="w-4 h-4 shrink-0 border-2 border-white/40 border-t-white rounded-full animate-spin" /> <span className="truncate">Making {making.done + 1} of {making.total}…</span></>
+            ) : <span className="truncate">{ids.length ? `Make ${ids.length} ${ids.length === 1 ? "story" : "stories"}` : "Pick products"}</span>}
           </button>
         </div>
       </div>
