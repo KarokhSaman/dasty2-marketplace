@@ -426,5 +426,23 @@
   "reelCaptionTitle": "✨ This week's best picks at Mndallan 👶",
   "reelCaptionBuy": "📲 To buy, send the product code on WhatsApp: {phone}",
   "reelCaptionBio": "🔗 Our website link is in the page bio",
-  "reelCaptionMore": "🛍️ More than {count} baby items at good prices"
+  "reelCaptionMore": "🛍️ More than {count} baby items at good prices",
+
+  "spotlightToy1": "Make your child",
+  "spotlightToy2": "happy",
+  "spotlightStroller1": "A good stroller",
+  "spotlightStroller2": "at a low price?",
+  "spotlightCarSeat1": "Your child's safety",
+  "spotlightCarSeat2": "in the car?",
+  "spotlightSleep1": "Peaceful sleep",
+  "spotlightSleep2": "for your child?",
+  "spotlightFeeding1": "Yum yum...",
+  "spotlightFeeding2": "tasty?",
+  "spotlightWalk1": "Help your child",
+  "spotlightWalk2": "walk",
+  "spotlightPump1": "Easier",
+  "spotlightPump2": "breastfeeding",
+  "spotlightOther1": "Your child's needs",
+  "spotlightOther2": "at a fair price?",
+  "spotlightFindHere": "Find it here"
 }

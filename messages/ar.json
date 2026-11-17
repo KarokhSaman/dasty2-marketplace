@@ -426,5 +426,23 @@
   "reelCaptionTitle": "✨ أفضل منتجات هذا الأسبوع في منداڵان 👶",
   "reelCaptionBuy": "📲 للشراء أرسل رمز المنتج على واتساب: {phone}",
   "reelCaptionBio": "🔗 رابط موقعنا في البايو",
-  "reelCaptionMore": "🛍️ أكثر من {count} منتج للأطفال بأسعار مناسبة"
+  "reelCaptionMore": "🛍️ أكثر من {count} منتج للأطفال بأسعار مناسبة",
+
+  "spotlightToy1": "أسعد",
+  "spotlightToy2": "طفلك",
+  "spotlightStroller1": "عربة أطفال جيدة",
+  "spotlightStroller2": "بسعر منخفض؟",
+  "spotlightCarSeat1": "سلامة طفلك",
+  "spotlightCarSeat2": "في السيارة؟",
+  "spotlightSleep1": "نوم هادئ",
+  "spotlightSleep2": "لطفلك؟",
+  "spotlightFeeding1": "يم يم...",
+  "spotlightFeeding2": "لذيذ؟",
+  "spotlightWalk1": "ساعد طفلك",
+  "spotlightWalk2": "على المشي",
+  "spotlightPump1": "رضاعة",
+  "spotlightPump2": "أسهل",
+  "spotlightOther1": "احتياجات طفلك",
+  "spotlightOther2": "بسعر مناسب؟",
+  "spotlightFindHere": "تجده هنا"
 }

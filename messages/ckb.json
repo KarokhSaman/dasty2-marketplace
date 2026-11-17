@@ -426,5 +426,23 @@
   "reelCaptionTitle": "✨ باشترینەکانی ئەم هەفتەیە لە منداڵان 👶",
   "reelCaptionBuy": "📲 بۆ کڕین کۆدی کاڵاکە بە واتسئاپ بنێرە: {phone}",
   "reelCaptionBio": "🔗 لینکی ماڵپەڕەکەمان لە بایۆی پەیجەکەدایە",
-  "reelCaptionMore": "🛍️ زیاتر لە {count} کاڵای منداڵ بە نرخی گونجاو"
+  "reelCaptionMore": "🛍️ زیاتر لە {count} کاڵای منداڵ بە نرخی گونجاو",
+
+  "spotlightToy1": "منداڵەکەت",
+  "spotlightToy2": "دڵخۆش بکە",
+  "spotlightStroller1": "عارەبانەیەکی باش",
+  "spotlightStroller2": "بە نرخێکی کەم؟",
+  "spotlightCarSeat1": "سەلامەتی منداڵەکەت",
+  "spotlightCarSeat2": "لە ئۆتۆمبێلدا؟",
+  "spotlightSleep1": "خەوێکی ئارام",
+  "spotlightSleep2": "بۆ منداڵەکەت؟",
+  "spotlightFeeding1": "یەم یەممم...",
+  "spotlightFeeding2": "بەتامە؟",
+  "spotlightWalk1": "یارمەتی منداڵەکەت بدە",
+  "spotlightWalk2": "بۆ ڕۆیشتن",
+  "spotlightPump1": "شیرپێدانی",
+  "spotlightPump2": "ئاسانتر",
+  "spotlightOther1": "پێویستییەکانی منداڵەکەت",
+  "spotlightOther2": "بە نرخی گونجاو؟",
+  "spotlightFindHere": "لێرە بیدۆزەوە"
 }

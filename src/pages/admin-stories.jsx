@@ -5,6 +5,7 @@ import * as m from "@/paraglide/messages";
 import { localizeHref } from "@/paraglide/runtime";
 import { priceInfo } from "@/convex/discount";
 import { buildStoryImage, shareStoryFiles, storyConditionLabel } from "@/lib/storyImage";
+import { buildSpotlightImage } from "@/lib/spotlightImage";
 import { getCityLabel } from "@/lib/cities";
 import { CATEGORY_CONFIG } from "@/lib/categories";
 import { formatAmount } from "@/components/ui";
@@ -14,6 +15,8 @@ import {
 
 // Instagram only shows in the phone's share sheet for up to 8 photos at once.
 const MAX = 8;
+// After every 5 regular stories comes a Spotlight story, to break the pattern.
+const SPOTLIGHT_EVERY = 6;
 // A reel shows each product for about 2 seconds, so 5 keep it near 15 seconds.
 const REEL_MAX = 5;
 const DAY = 86400000;
@@ -197,11 +200,15 @@ export default function AdminStoriesPage() {
     try {
       for (const [i, p] of chosen.entries()) {
         setMaking({ done: i, total: chosen.length });
-        // each story in the next colour, so a run of them doesn't look the same
-        const blob = await buildStoryImage({ ...storyFor(p, price === "none"), theme: i });
+        // every 6th is a Spotlight (no price, a white bar for the link);
+        // the others each in the next colour, so a run doesn't look the same
+        const spotlight = (i + 1) % SPOTLIGHT_EVERY === 0;
+        const blob = spotlight
+          ? await buildSpotlightImage({ title: p.title, category: p.category, photo: mainPhoto(p), storyCrop: p.storyCrop, code: p.seq ? `#${p.seq}` : undefined })
+          : await buildStoryImage({ ...storyFor(p, price === "none"), theme: i });
         if (!blob) continue;
-        const file = new File([blob], `${p.seq || p._id}${price === "none" ? "-link" : ""}.png`, { type: "image/png" });
-        made.push({ product: p, file, url: URL.createObjectURL(file) });
+        const file = new File([blob], `${p.seq || p._id}${spotlight ? "-spotlight" : price === "none" ? "-link" : ""}.png`, { type: "image/png" });
+        made.push({ product: p, file, url: URL.createObjectURL(file), spotlight });
       }
     } finally {
       setMaking(null);
@@ -298,6 +305,7 @@ export default function AdminStoriesPage() {
         <p className="rounded-2xl bg-adm-sunk px-3.5 py-3 text-[12.5px] text-adm-soft leading-relaxed mb-3">
           1. Save all to Photos. 2. In Instagram, add a story and pick them all from your gallery.
           3. On each one, tap <b>Copy link</b> here, add a link sticker and paste{price === "none" ? ", then put the sticker on the empty tag" : ""}.
+          {stories.some((s) => s.spotlight) && <> On the Spotlight story, put the link sticker on the white bar.</>}
         </p>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 mb-24">
           {stories.map((s) => (
