@@ -72,7 +72,7 @@ function reelText(liveCount) {
 }
 
 const NUMBERS = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣"];
-const WHATSAPP_PHONE = "0750 971 7177";
+const WHATSAPP_PHONE = "07509717177";
 
 // The reel's Instagram caption, in Kurdish: a short first line (all that
 // shows before "more"), one line per product with its code so buyers can
