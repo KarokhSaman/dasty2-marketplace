@@ -60,3 +60,8 @@ export function stillForSaleMessage(input) {
   if (list.length > 1) return renderTemplate("stillForSaleMany", { items: itemList(list) });
   return renderTemplate("stillForSale", { title: list[0].title, code: code(list[0]) });
 }
+
+// After a paid sale: the same short thank-you to the seller and to the buyer.
+export function thankYouMessage() {
+  return renderTemplate("thankYou", {});
+}

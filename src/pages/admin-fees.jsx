@@ -3,6 +3,7 @@ import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { getLocale } from "@/paraglide/runtime";
 import { feeReminderMessage } from "@/components/admin/feeReminderMessage";
+import { thankYouMessage } from "@/components/admin/buyerMessages";
 import { errorMessage } from "@/lib/errors";
 import ProductPanel from "@/components/admin/ProductPanel";
 import WaText from "@/components/admin/WaText";
@@ -10,12 +11,12 @@ import { photoProps } from "@/lib/images";
 import { useProductActions } from "@/components/admin/useProductActions";
 import {
   PageHeader, Card, Avatar, Code, ConfirmBox, Empty, Skeleton, Panel, btn, fmtIQD, useToast, useCopy, waLink, fmtPhone,
-  IconWhatsApp, IconCopy, IconCheck, IconChevron,
+  IconWhatsApp, IconCopy, IconCheck, IconChevron, IconX,
 } from "@/components/admin/ui";
 
 const receiptDate = (at) => new Date(at).toLocaleDateString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 
-function SellerFees({ group, onOpen }) {
+function SellerFees({ group, onOpen, onPaid }) {
   const actions = useProductActions();
   const toast = useToast();
   const copy = useCopy();
@@ -39,6 +40,7 @@ function SellerFees({ group, onOpen }) {
       await actions.markFeesPaid(chosen);
       toast(`${group.name}: ${chosen.length} marked paid`);
       setPicked(new Set());
+      onPaid?.(group);
     } catch (err) {
       toast(errorMessage(err, "Could not mark them paid"), "error");
     } finally {
@@ -140,6 +142,11 @@ function SellerFees({ group, onOpen }) {
 export default function AdminFeesPage() {
   const products = useQuery(api.products.getAll);
   const [openId, setOpenId] = useState(null);
+  // Sellers marked paid on this visit, for the thank-you message. Their card
+  // may be gone (nothing left owing), so they get a strip of their own.
+  const [justPaid, setJustPaid] = useState([]);
+  const addPaid = (g) => setJustPaid((list) => [{ id: g.id, name: g.name, phone: g.phone }, ...list.filter((x) => x.id !== g.id)]);
+  const dropPaid = (id) => setJustPaid((list) => list.filter((x) => x.id !== id));
 
   const groups = useMemo(() => {
     const map = new Map();
@@ -162,11 +169,28 @@ export default function AdminFeesPage() {
   return (
     <div>
       <PageHeader title="Fees to collect" sub={groups.length ? `${fmtIQD(total)} IQD from ${groups.length} seller${groups.length === 1 ? "" : "s"}` : "Nothing owed right now"} />
+      {justPaid.length > 0 && (
+        <Card className="p-3 mb-3 space-y-2">
+          <p className="text-[12.5px] font-semibold">Just paid: send a thank-you</p>
+          {justPaid.map((s) => (
+            <div key={s.id} className="flex items-center gap-2">
+              <span className="flex-1 min-w-0 text-[13px] truncate"><bdi>{s.name}</bdi></span>
+              {s.phone && (
+                <a href={waLink(s.phone, thankYouMessage())} target="_blank" rel="noopener noreferrer" onClick={() => dropPaid(s.id)} className={`${btn("wa", "sm")} shrink-0`}>
+                  <IconWhatsApp className="w-4 h-4" /> Send thank-you
+                </a>
+              )}
+              <button type="button" onClick={() => dropPaid(s.id)} aria-label="Skip" className={`${btn("ghost", "sm")} shrink-0`}><IconX className="w-4 h-4" /></button>
+            </div>
+          ))}
+          <p className="text-[11.5px] text-adm-fade">To thank the buyer too, open the sale: its Thank-you message has a button per buyer.</p>
+        </Card>
+      )}
       {groups.length === 0 ? (
         <Card><Empty>Every fee is collected. Sold items show up here until they are marked paid.</Empty></Card>
       ) : (
         <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
-          {groups.map((g) => <SellerFees key={g.id} group={g} onOpen={setOpenId} />)}
+          {groups.map((g) => <SellerFees key={g.id} group={g} onOpen={setOpenId} onPaid={addPaid} />)}
         </div>
       )}
       {open && <ProductPanel product={open} onClose={() => setOpenId(null)} />}
