@@ -541,11 +541,9 @@ function drawSoldStamp(ctx, { x, y, w, family }) {
   ctx.restore();
 }
 
-function drawStory(ctx, { title, price, label, img, storyCrop, sold, city, store, condition, code, site, rtl, logo, brand, brandImg, drawings, art, family }) {
-  const edge = rtl ? W - 72 : 72;
-
-  // Background: white, scattered with small, very faint baby-product
-  // drawings (the site's category drawings).
+// White page scattered with small, very faint baby-product drawings (the
+// site's category drawings).
+function drawBackdrop(ctx, drawings) {
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, W, H);
   if (drawings.length) {
@@ -564,9 +562,10 @@ function drawStory(ctx, { title, price, label, img, storyCrop, sold, city, store
       }
     }
   }
+}
 
-  // Header, the same in every language: Mndallan on the left (the site's
-  // logo, red name, grey tagline), the brand's logo on the right.
+// Mndallan on the left of the header: the site's logo, red name, grey tagline.
+function drawHeader(ctx, { logo, family }) {
   if (logo) {
     const size = 100;
     const x = 64;
@@ -584,6 +583,10 @@ function drawStory(ctx, { title, price, label, img, storyCrop, sold, city, store
     ctx.fillText("Baby Marketplace", tx, 152);
     ctx.restore();
   }
+}
+
+// The brand's logo in a white pill, on the right of the header.
+function drawBrandPill(ctx, { brand, brandImg, family }) {
   if (brandImg) {
     // Symbol-only logos get the brand name beside them, as on the product page.
     const withName = !brandLogoIsName(brand);
@@ -614,7 +617,14 @@ function drawStory(ctx, { title, price, label, img, storyCrop, sold, city, store
       ctx.restore();
     }
   }
+}
 
+function drawStory(ctx, { title, price, label, img, storyCrop, sold, city, store, condition, code, site, rtl, logo, brand, brandImg, drawings, art, family }) {
+  const edge = rtl ? W - 72 : 72;
+
+  drawBackdrop(ctx, drawings);
+  drawHeader(ctx, { logo, family });
+  drawBrandPill(ctx, { brand, brandImg, family });
 
   // Photo: in a white frame that takes the (trimmed) photo's shape.
   // Red card: just tall enough for the chips and the title; the web address
@@ -861,3 +871,10 @@ export async function shareStoryFiles(files) {
     return "failed";
   }
 }
+
+// Drawing pieces the product reel (lib/reelVideo.js) shares with the story,
+// so each product in a reel looks exactly like its story.
+export {
+  W as STORY_W, H as STORY_H, INK, INK_SOFT, BRAND, BRAND_LIGHT, BRAND_DARK, CARD_ART, STORY_FONT,
+  loadImage, loadStoryFonts, roundedRect, smartCrop, drawCardArt, drawBackdrop, drawHeader, drawBrandPill,
+};

@@ -417,5 +417,10 @@
   "descHintHeight": "يمكن تعديل الارتفاع: ",
   "descHintFold": "يمكن طيه: ",
   "descSectionTitle": "صف منتجك:",
-  "editProfileBtn": "تعديل المعلومات"
+  "editProfileBtn": "تعديل المعلومات",
+
+  "reelHeadline": "أفضل المنتجات",
+  "reelHeadline2": "هذا الأسبوع",
+  "reelSub": "مستلزمات الأطفال بأسعار مناسبة",
+  "reelEndLine": "أكثر من {count} منتج بانتظارك"
 }

@@ -14,6 +14,8 @@ import {
 
 // Instagram only shows in the phone's share sheet for up to 8 photos at once.
 const MAX = 8;
+// A reel shows each product for about 2 seconds, so 5 keep it near 15 seconds.
+const REEL_MAX = 5;
 const DAY = 86400000;
 // The stories are for the Kurdish audience, whatever language the admin page is in.
 const KU = { locale: "ckb" };
@@ -49,6 +51,19 @@ function storyFor(p, noPrice) {
     site: "mndallan.com",
     rtl: true,
     brand: p.brand,
+  };
+}
+
+// The reel's Kurdish lines. The end card counts the live products in round
+// hundreds ("more than 200"), or fifties below 100.
+function reelText(liveCount) {
+  const step = liveCount >= 100 ? 100 : 50;
+  const count = Math.max(step, Math.floor(liveCount / step) * step).toLocaleString("ar-EG");
+  return {
+    headline: m.reelHeadline({}, KU),
+    headline2: m.reelHeadline2({}, KU),
+    sub: m.reelSub({}, KU),
+    endLine: m.reelEndLine({ count }, KU),
   };
 }
 
@@ -97,6 +112,9 @@ export default function AdminStoriesPage() {
   const [picked, setPicked] = useState(null);
   const [making, setMaking] = useState(null);
   const [stories, setStories] = useState(null);
+  // a made reel: { video, cover } files and their preview URLs
+  const [reel, setReel] = useState(null);
+  const [reelMaking, setReelMaking] = useState(null);
   // Every story whose link was copied stays ticked, to keep track while posting.
   const [copiedIds, setCopiedIds] = useState([]);
 
@@ -127,6 +145,7 @@ export default function AdminStoriesPage() {
 
   // Let the made images go when they are replaced or the page closes.
   useEffect(() => () => stories?.forEach((s) => URL.revokeObjectURL(s.url)), [stories]);
+  useEffect(() => () => { if (reel) { URL.revokeObjectURL(reel.videoUrl); URL.revokeObjectURL(reel.coverUrl); } }, [reel]);
 
   const ids = picked ?? [];
   const full = ids.length >= MAX;
@@ -154,6 +173,40 @@ export default function AdminStoriesPage() {
     if (made.length) { setCopiedIds([]); setStories(made); }
   }
 
+  // One reel (MP4, no sound) of the ticked products, with prices, plus a cover
+  // image. Made in the browser; the drawing code is loaded only when needed.
+  async function makeReel() {
+    const chosen = ids.map((id) => live.find((p) => p._id === id)).filter(Boolean).slice(0, REEL_MAX);
+    if (!chosen.length) return;
+    setReelMaking(0);
+    try {
+      const { canMakeReel, buildReelVideo, buildReelCover } = await import("@/lib/reelVideo");
+      if (!(await canMakeReel())) {
+        toast("This browser can't make videos. Try Chrome on a computer or Android.", "error");
+        return;
+      }
+      const list = chosen.map((p) => storyFor(p, false));
+      const text = reelText(live.length);
+      const cover = await buildReelCover(list, text);
+      const video = await buildReelVideo(list, text, (x) => setReelMaking(x));
+      const day = new Date().toISOString().slice(0, 10);
+      const videoFile = new File([video], `mndallan-reel-${day}.mp4`, { type: "video/mp4" });
+      const coverFile = new File([cover], `mndallan-reel-${day}-cover.png`, { type: "image/png" });
+      setReel({ video: videoFile, cover: coverFile, videoUrl: URL.createObjectURL(videoFile), coverUrl: URL.createObjectURL(coverFile), count: chosen.length });
+    } catch (err) {
+      console.error(err);
+      toast("Could not make the reel", "error");
+    } finally {
+      setReelMaking(null);
+    }
+  }
+
+  async function saveFile(file, what) {
+    const result = await shareStoryFiles([file]);
+    if (result === "downloaded") toast(`${what} downloaded`);
+    else if (result === "failed") toast(`Could not save the ${what.toLowerCase()}`, "error");
+  }
+
   async function saveAll() {
     const result = await shareStoryFiles(stories.map((s) => s.file));
     if (result === "downloaded") toast(`${stories.length} stories downloaded`);
@@ -166,6 +219,29 @@ export default function AdminStoriesPage() {
   }
 
   if (!products) return <Skeleton rows={5} />;
+
+  if (reel) {
+    return (
+      <div className="max-w-[760px]">
+        <PageHeader title="Reel ready" sub={`${reel.count} ${reel.count === 1 ? "product" : "products"} · about ${Math.round((57 + reel.count * 57 + 120) / 30)} seconds · no sound`}
+          actions={<button type="button" onClick={() => setReel(null)} className={btn("ghost")}>Back</button>} />
+        <p className="rounded-2xl bg-adm-sunk px-3.5 py-3 text-[12.5px] text-adm-soft leading-relaxed mb-3">
+          1. Save the reel and the cover. 2. In Instagram, make a new reel from the video and add a trending sound.
+          3. Tap <b>Edit cover</b> → <b>Add from camera roll</b> and pick the cover.
+        </p>
+        <div className="grid grid-cols-2 gap-2.5 mb-24">
+          <div className="rounded-2xl border border-adm-line bg-adm-surface p-1.5">
+            <video src={reel.videoUrl} controls muted playsInline loop autoPlay className="w-full aspect-[9/16] rounded-xl bg-adm-sunk" />
+            <button type="button" onClick={() => saveFile(reel.video, "Reel")} className={`${btn("primary", "sm")} w-full mt-1.5`}>Save reel</button>
+          </div>
+          <div className="rounded-2xl border border-adm-line bg-adm-surface p-1.5">
+            <img src={reel.coverUrl} alt="Reel cover" className="w-full aspect-[9/16] rounded-xl object-cover bg-adm-sunk" />
+            <button type="button" onClick={() => saveFile(reel.cover, "Cover")} className={`${btn("outline", "sm")} w-full mt-1.5`}>Save cover</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (stories) {
     return (
@@ -193,7 +269,7 @@ export default function AdminStoriesPage() {
 
   return (
     <div className="max-w-[760px]">
-      <PageHeader title="Stories" sub={`Pick up to ${MAX} live products and make all their Instagram stories at once`} />
+      <PageHeader title="Stories" sub={`Pick up to ${MAX} live products and make all their Instagram stories at once, or up to ${REEL_MAX} for one reel`} />
       <Segmented options={PRICE} value={price} onChange={setPrice} className="mb-2" />
       <Segmented options={LISTS} value={list} onChange={setList} className="mb-2.5" size="sm" />
       {categories.length > 2 && <div className="mb-2.5"><FilterChips options={categories} value={cat} onChange={setCategory} /></div>}
@@ -218,7 +294,14 @@ export default function AdminStoriesPage() {
           {ids.length > 0 && (
             <button type="button" onClick={() => setPicked([])} className={btn("ghost")}>Clear</button>
           )}
-          <button type="button" onClick={make} disabled={!ids.length || !!making} className={`${btn("primary", "lg")} flex-1`}>
+          <button type="button" onClick={makeReel} disabled={!ids.length || ids.length > REEL_MAX || !!making || reelMaking != null}
+            title={ids.length > REEL_MAX ? `A reel takes up to ${REEL_MAX} products` : undefined}
+            className={`${btn("outline", "lg")} shrink-0`}>
+            {reelMaking != null ? (
+              <><span className="w-4 h-4 border-2 border-current/30 border-t-current rounded-full animate-spin" /> Reel {Math.round(reelMaking * 100)}%</>
+            ) : ids.length > REEL_MAX ? `Reel: max ${REEL_MAX}` : "Make reel"}
+          </button>
+          <button type="button" onClick={make} disabled={!ids.length || !!making || reelMaking != null} className={`${btn("primary", "lg")} flex-1`}>
             {making ? (
               <><span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> Making {making.done + 1} of {making.total}…</>
             ) : ids.length ? `Make ${ids.length} ${ids.length === 1 ? "story" : "stories"}${full ? " (max)" : ""}` : "Pick products"}
