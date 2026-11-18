@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import * as m from "@/paraglide/messages";
@@ -194,6 +194,16 @@ export default function AdminStoriesPage() {
   useEffect(() => () => stories?.forEach((s) => URL.revokeObjectURL(s.url)), [stories]);
   useEffect(() => () => { if (reel) { URL.revokeObjectURL(reel.videoUrl); URL.revokeObjectURL(reel.coverUrl); } }, [reel]);
 
+  // Where the list was scrolled to when the stories or reel opened, so Back
+  // returns to the same spot instead of the top.
+  const listScroll = useRef(null);
+  const showing = !!(stories || reel);
+  useLayoutEffect(() => {
+    if (showing) window.scrollTo(0, 0);
+    else if (listScroll.current != null) { window.scrollTo(0, listScroll.current); listScroll.current = null; }
+  }, [showing]);
+  const rememberList = () => { if (!showing) listScroll.current = window.scrollY; };
+
   const ids = picked ?? [];
   const full = ids.length >= MAX;
   const toggle = (id) => setPicked(ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]);
@@ -222,7 +232,7 @@ export default function AdminStoriesPage() {
       setMaking(null);
     }
     if (made.length < chosen.length) toast(`${chosen.length - made.length} could not be made`, "error");
-    if (made.length) { setCopiedIds([]); setStories(made); }
+    if (made.length) { rememberList(); setCopiedIds([]); setStories(made); }
   }
 
   // One reel (MP4, no sound) of the ticked products, with prices, plus a cover
@@ -244,6 +254,7 @@ export default function AdminStoriesPage() {
       const day = new Date().toISOString().slice(0, 10);
       const videoFile = new File([video], `mndallan-reel-${day}.mp4`, { type: "video/mp4" });
       const coverFile = new File([cover], `mndallan-reel-${day}-cover.png`, { type: "image/png" });
+      rememberList();
       setReel({ video: videoFile, cover: coverFile, videoUrl: URL.createObjectURL(videoFile), coverUrl: URL.createObjectURL(coverFile), count: chosen.length, caption: reelCaption(chosen, live.length) });
     } catch (err) {
       console.error(err);
