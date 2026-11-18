@@ -81,12 +81,20 @@ const WHATSAPP_PHONE = "07509717177";
 // shows before "more"), one line per product with its code so buyers can
 // send it on WhatsApp, how to buy, "link in bio", and 5 hashtags (the most
 // Instagram allows): the brand, baby items, and the products' cities.
+// Codes have no "#", or Instagram counts them as hashtags too. Every line
+// starts with a right-to-left mark so it reads right to left even when it
+// begins with a number or a Latin word.
+const RLM = "\u200F";
+// Left-to-right bits (prices, codes, the phone, Latin hashtags) are wrapped
+// in an LTR isolate so the right-to-left line doesn't flip them
+// ("IQD 100,000", "0316-26"); codes use a non-breaking hyphen.
+const ltr = (text) => `\u2066${text}\u2069`;
 function reelCaption(chosen, liveCount) {
   const lines = chosen.map((p, i) => [
     `${NUMBERS[i]} ${p.title}`,
-    `${formatAmount(priceInfo(p).price)} IQD`,
+    ltr(`${formatAmount(priceInfo(p).price)} IQD`),
     p.city ? getCityLabel(p.city, "ckb") : null,
-    p.seq ? `#${p.seq}` : null,
+    p.seq ? `${m.reelCaptionCode({}, KU)} ${ltr(p.seq.replace("-", "\u2011"))}` : null,
   ].filter(Boolean).join(" · "));
   const cities = [...new Set(chosen.map((p) => p.city && getCityLabel(p.city, "ckb")).filter(Boolean))]
     .map((c) => `#${c.replace(/\s+/g, "_")}`);
@@ -98,12 +106,12 @@ function reelCaption(chosen, liveCount) {
     "",
     ...lines,
     "",
-    m.reelCaptionBuy({ phone: WHATSAPP_PHONE }, KU),
+    m.reelCaptionBuy({ phone: ltr(WHATSAPP_PHONE) }, KU),
     m.reelCaptionBio({}, KU),
     m.reelCaptionMore({ count: roundedCount(liveCount) }, KU),
     "",
-    five.slice(0, 5).join(" "),
-  ].join("\n");
+    five.slice(0, 5).map((t) => (/^#[A-Za-z]/.test(t) ? ltr(t) : t)).join(" "),
+  ].map((line) => (line ? RLM + line : line)).join("\n");
 }
 
 function PickRow({ product: p, picked, disabled, onToggle }) {
