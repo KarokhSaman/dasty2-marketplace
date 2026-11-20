@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { useConvexAuth, useQuery } from "convex/react";
 import * as m from "@/paraglide/messages";
 import { api } from "@/convex/_generated/api";
+import { SignOutConfirm } from "@/components/admin/ui";
 
 const FEE_TIERS = [
   { range: "5,000 – 9,000",       fee: "2,000" },
@@ -43,6 +44,7 @@ export default function BuyerAccountPage() {
   const [showHow, setShowHow]   = useState(false);
   const [showFees, setShowFees] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
+  const [confirmOut, setConfirmOut] = useState(false); // Sign out asks first
   const { isLoading, isAuthenticated } = useConvexAuth();
 
   // mndallan.com/fee (the short link in Instagram replies) lands on #fees:
@@ -157,7 +159,7 @@ export default function BuyerAccountPage() {
             <div className="border-t border-gray-50"/>
             <MenuItem
               label={m.accountSignOut()}
-              onClick={handleSignOut}
+              onClick={() => setConfirmOut(true)}
               chevron={false}
               iconBg="bg-gray-50"
               icon={<svg className="w-4 h-4 text-[var(--color-ink-soft)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H9m4 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1"/></svg>}
@@ -253,6 +255,7 @@ export default function BuyerAccountPage() {
       </div>
 
       <p className="text-center text-xs text-[var(--color-ink-fade)] mt-6">{m.acctFooter()}</p>
+      <SignOutConfirm open={confirmOut} onCancel={() => setConfirmOut(false)} onConfirm={handleSignOut} />
     </div>
   );
 }

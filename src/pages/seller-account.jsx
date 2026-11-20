@@ -10,7 +10,7 @@ import { todayBaghdad } from "@/convex/discount";
 import CustomSelect from "@/components/ui/CustomSelect";
 import ChangePhoneModal from "@/components/seller/ChangePhoneModal";
 import { FEE_PAYMENT_NUMBER } from "@/pages/seller-dashboard";
-import { Panel, btn, useCopy, useToast, IconCopy, IconChevron, IconWhatsApp } from "@/components/admin/ui";
+import { Panel, btn, useCopy, useToast, IconCopy, IconChevron, IconWhatsApp, SignOutConfirm } from "@/components/admin/ui";
 
 const FEE_TIERS = [
   ["5,000 – 9,000", "2,000"], ["10,000 – 29,000", "3,000"], ["30,000 – 49,000", "4,000"],
@@ -84,6 +84,7 @@ export default function SellerAccountPage() {
   const [city, setCity] = useState("");
   const [address, setAddress] = useState("");
   const [saving, setSaving] = useState(false);
+  const [confirmOut, setConfirmOut] = useState(false); // Sign out asks first
 
   if (isLoading || !seller) {
     return (
@@ -240,11 +241,12 @@ export default function SellerAccountPage() {
         </MenuRow>
         <MenuRow label={m.acctContactTitle()} sub={m.acctContactSub()} href={`https://wa.me/${CONTACT_WHATSAPP}`}
           icon={<span className="text-adm-wa"><IconWhatsApp /></span>} />
-        <MenuRow label={m.accountSignOut()} onClick={signOut} danger chevron={false}
+        <MenuRow label={m.accountSignOut()} onClick={() => setConfirmOut(true)} danger chevron={false}
           icon={<Icon d={<path d="M15 17l5-5-5-5M20 12H9M12 21H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h7" />} />} />
       </div>
 
       <p className="text-center text-[12px] text-adm-fade">{m.acctFooter()}</p>
+      <SignOutConfirm open={confirmOut} onCancel={() => setConfirmOut(false)} onConfirm={signOut} />
 
       <Panel open={editing} onClose={() => setEditing(false)} title={m.accountUpdateTitle()} short>
         <form onSubmit={save} className="space-y-3">

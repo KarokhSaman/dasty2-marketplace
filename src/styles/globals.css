@@ -388,7 +388,8 @@ html[dir='rtl'] .font-display {
 html:has(.admin-root) body, html:has(.seller-root) body { overflow-x: clip; }
 
 /* Seller pages reuse the admin building blocks and colours. */
-html:has(.admin-root), html:has(.seller-root) {
+/* .adm-vars: an admin-styled piece shown on a buyer page (the sign-out sheet) */
+html:has(.admin-root), html:has(.seller-root), .adm-vars {
   color-scheme: light;
   --a-bg: #fefcf9;
   --a-surface: #ffffff;
