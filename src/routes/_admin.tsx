@@ -7,6 +7,7 @@ export const Route = createFileRoute('/_admin')({
   // ("Mndallan Admin"): it opens at /admin full-screen, with no Safari bars.
   head: () => ({
     meta: [
+      { title: 'Mndallan Admin' },
       { name: 'apple-mobile-web-app-capable', content: 'yes' },
       { name: 'mobile-web-app-capable', content: 'yes' },
       { name: 'apple-mobile-web-app-title', content: 'Mndallan Admin' },
@@ -15,7 +16,6 @@ export const Route = createFileRoute('/_admin')({
     ],
     links: [
       { rel: 'manifest', href: '/admin.webmanifest' },
-      // sized, so the iPhone picks it over the site's plain (unsized) icon
       { rel: 'apple-touch-icon', sizes: '180x180', href: '/icons/admin-180.png' },
     ],
   }),
