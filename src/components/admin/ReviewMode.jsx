@@ -16,7 +16,7 @@ import { CATEGORY_CONFIG } from "@/lib/categories";
 import { brandFitsCategory, getBrandChoices } from "@/lib/brands";
 import { StoreTag, Code, Segmented, btn, fmtIQD, inputCls, labelCls, useToast, waLink, waNumber, fmtPhone, IconX, IconCheck, IconRotate, IconStar, IconTrash, IconCrop, IconScissors, IconWhatsApp } from "@/components/admin/ui";
 import { combinedApprovalMessage } from "@/components/admin/approvalMessage";
-import { rejectionMessage } from "@/components/admin/rejectionMessage";
+import { rejectionMessage, reasonKey } from "@/components/admin/rejectionMessage";
 import { StoryCropSheet } from "@/components/admin/ProductPanel";
 
 const CONDITION = { new: () => m.conditionNew(), likenew: () => m.conditionLikeNew(), used: () => m.conditionUsed() };
@@ -85,7 +85,21 @@ export default function ReviewMode({ queue, onClose }) {
     if (!s) sellers.push(s = { key, name: a.sellerName, phone: a.sellerPhone, items: [] });
     s.items.push(a);
   }
-  const rejections = rejectedList.map((a) => ({ key: a.id, name: a.sellerName, phone: a.sellerPhone, items: [a], message: rejectionMessage(a, a.reason) })).reverse();
+  // One message per seller and reason: their posts rejected for the same
+  // reason(s) go in one message; different reasons need different fixes, so
+  // they stay apart. Posts already messaged don't join a new message.
+  const rejections = [];
+  for (const a of [...rejectedList].reverse()) {
+    const key = `${waNumber(a.sellerPhone)}|${reasonKey(a.reason)}|${a.sent ? "sent" : "new"}`;
+    let g = rejections.find((x) => x.key === key);
+    if (!g) rejections.push(g = { key, name: a.sellerName, phone: a.sellerPhone, reason: a.reason, items: [] });
+    g.items.push(a);
+  }
+  for (const g of rejections) g.message = rejectionMessage(g.items, g.reason);
+  // The group the post just rejected is in, and how many of that seller's
+  // posts are still to review (wait for them, so one message covers all).
+  const lastRejection = rejectedList[0] && rejections.find((g) => g.items.some((a) => a.id === rejectedList[0].id));
+  const moreFromRejected = rejectedList[0] ? ids.slice(index).filter((id) => waNumber(byId[id]?.sellerPhone) === waNumber(rejectedList[0].sellerPhone)).length : 0;
   const unsentSellers = new Set([
     ...sellers.filter((s) => s.items.some((a) => !a.sent)).map((s) => s.key),
     ...rejectedList.filter((a) => !a.sent).map((a) => waNumber(a.sellerPhone)),
@@ -238,7 +252,11 @@ export default function ReviewMode({ queue, onClose }) {
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2 border-b border-adm-line bg-st-rejected-bg shrink-0">
           <IconX className="w-4 h-4 text-st-rejected shrink-0" />
           <p className="flex-1 min-w-[140px] text-[12.5px] font-semibold truncate">Rejected {rejectedList[0].seq ? `#${rejectedList[0].seq}` : ""} · {rejectedList[0].sellerName}</p>
-          <SendButton seller={rejections[rejections.length - 1]} onSent={markRejectSent} label="Send message" />
+          {moreFromRejected > 0 ? (
+            <p className="text-[12px] font-semibold text-adm-soft shrink-0">{moreFromRejected} more from this seller</p>
+          ) : lastRejection && (
+            <SendButton seller={lastRejection} onSent={markRejectSent} label="Send message" />
+          )}
         </div>
       )}
 
@@ -289,8 +307,10 @@ export default function ReviewMode({ queue, onClose }) {
                   <div key={c.key} className="flex items-center gap-3 px-3.5 py-2.5">
                     <div className="flex-1 min-w-0">
                       <p className="text-[13.5px] font-semibold truncate">{c.name}</p>
-                      <p className="text-[12px] text-adm-fade truncate">{c.items[0].seq ? `#${c.items[0].seq} · ` : ""}{c.items[0].title}</p>
-                      <p dir="auto" className="text-[12px] text-st-rejected truncate">{c.items[0].reason}</p>
+                      {c.items.length === 1
+                        ? <p className="text-[12px] text-adm-fade truncate">{c.items[0].seq ? `#${c.items[0].seq} · ` : ""}{c.items[0].title}</p>
+                        : <p className="text-[12px] text-adm-fade">{c.items.length} posts · {c.items.map((a) => (a.seq ? `#${a.seq}` : a.title)).join(", ")}</p>}
+                      <p dir="auto" className="text-[12px] text-st-rejected truncate">{c.reason}</p>
                     </div>
                     <SendButton seller={c} onSent={markRejectSent} label="Send" />
                   </div>

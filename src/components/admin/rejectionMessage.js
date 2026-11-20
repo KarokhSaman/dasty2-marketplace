@@ -24,7 +24,16 @@ export const REASON_SEPARATOR = " · ";
 
 const list = (lines) => (lines.length === 1 ? lines[0] : lines.map((l) => `• ${l}`).join("\n"));
 
-export function rejectionMessage(product, reason) {
+// The same reasons, however they were ticked or spaced: posts rejected for
+// these get one combined message.
+export const reasonKey = (reason) => reason.split(REASON_SEPARATOR).map((t) => t.trim()).filter(Boolean).sort().join("|");
+
+// Takes one post, or a list of one seller's posts rejected for the same
+// reason(s); 2+ get one message listing them all.
+export function rejectionMessage(input, reason) {
+  const products = Array.isArray(input) ? input : [input];
+  const product = products[0];
+  const many = products.length > 1;
   const locale = messageLocale();
   const parts = reason.split(REASON_SEPARATOR).map((text) => ({
     text: text.trim(),
@@ -34,9 +43,11 @@ export function rejectionMessage(product, reason) {
   const noFix = parts.find((x) => x.known?.link === false);
   const shown = noFix ? [noFix] : parts;
   const reasons = shown.map((x) => (x.known ? x.known.reason({}, { locale }) : x.text));
-  return renderTemplate(noFix ? "rejectionNoFix" : "rejection", {
+  return renderTemplate(`${noFix ? "rejectionNoFix" : "rejection"}${many ? "Many" : ""}`, {
     title: product.title,
     code: codeOf(product),
+    // one line per post: "• *#26-0095* · Chicco Stroller"
+    items: many ? products.map((p) => `• ${[codeOf(p), p.title].filter(Boolean).join(" · ")}`).join("\n") : null,
     // several reasons start on their own line, under the heading
     reason: reasons.length > 1 ? `\n${list(reasons)}` : reasons[0],
     fix: list(shown.map((x) => templateText(x.known?.fix ?? (shown.length > 1 ? "fixOtherToo" : "fixOther"), locale))),

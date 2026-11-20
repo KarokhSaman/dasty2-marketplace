@@ -175,6 +175,70 @@ export const TEMPLATES = [
 فريق موقع Mndallan 🧸`,
   },
   {
+    key: "rejectionMany", group: "posts", title: "Several posts rejected",
+    when: "When 2 or more posts from one seller are rejected for the same reason in one Review", vars: [V.items, V.reason, V.fix, V.button], required: ["items", "reason", "fix"], sample: { items: SAMPLE.items },
+    ckb: `*سڵاو و ڕێز* 👋
+سوپاس بۆ ناردنی پۆستەکانتان بۆ *«منداڵان»* 🤍
+
+❌ ئەم پۆستانەتان قبووڵ نەکران:
+{items}
+📝 *هۆکار:* {reason}
+
+🛠️ *چۆن چاکیان بکەن:*
+{fix}
+
+📱 *هەنگاوەکان:* بچنە ناو هەژمارەکەتان لە ماڵپەڕی منداڵان، لە سەرەتای داشبۆرد لەسەر هەر پۆستێک دوگمەی «چاککردن» دابگرن، چاکی بکەن و دوگمەی «{button}» دابگرن.
+
+> پاش ئەوە دووبارە سەیریان دەکەینەوە و ئاگادارتان دەکەینەوە.
+
+لەگەڵ ڕێزماندا،
+تیمی ماڵپەڕی منداڵان 🧸`,
+    ar: `*مرحباً وتحية طيبة* 👋
+شكراً لإرسال منشوراتكم إلى *Mndallan* 🤍
+
+❌ لم تتم الموافقة على هذه المنشورات:
+{items}
+📝 *السبب:* {reason}
+
+🛠️ *كيفية الإصلاح:*
+{fix}
+
+📱 *الخطوات:* ادخلوا إلى حسابكم في موقع Mndallan، وفي أعلى لوحة التحكم اضغطوا زر «إصلاح» على كل منشور، أصلحوه ثم اضغطوا زر «{button}».
+
+> بعد ذلك سنراجعها مرة أخرى ونبلغكم.
+
+مع خالص التحيات،
+فريق موقع Mndallan 🧸`,
+  },
+  {
+    key: "rejectionNoFixMany", group: "posts", title: "Several posts rejected, can't be fixed",
+    when: "When 2 or more posts from one seller are rejected as not baby products in one Review", vars: [V.items, V.reason, V.fix], required: ["items", "reason", "fix"], sample: { items: SAMPLE.items },
+    ckb: `*سڵاو و ڕێز* 👋
+سوپاس بۆ ناردنی پۆستەکانتان بۆ *«منداڵان»* 🤍
+
+❌ ئەم پۆستانەتان قبووڵ نەکران:
+{items}
+📝 *هۆکار:* {reason}
+
+📌 *تێبینی:*
+{fix}
+
+لەگەڵ ڕێزماندا،
+تیمی ماڵپەڕی منداڵان 🧸`,
+    ar: `*مرحباً وتحية طيبة* 👋
+شكراً لإرسال منشوراتكم إلى *Mndallan* 🤍
+
+❌ لم تتم الموافقة على هذه المنشورات:
+{items}
+📝 *السبب:* {reason}
+
+📌 *ملاحظة:*
+{fix}
+
+مع خالص التحيات،
+فريق موقع Mndallan 🧸`,
+  },
+  {
     key: "soldFollowUp", group: "sold", title: "Was it sold?",
     when: "To do: asking the seller after a buyer was connected", vars: [V.title, V.code], required: ["title"],
     ckb: `*سڵاو گیان* 👋
