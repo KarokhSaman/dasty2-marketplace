@@ -6,7 +6,7 @@ import * as m from "@/paraglide/messages";
 import { LanguagePicker } from "@/components/LocaleSwitcher";
 import { logoAnimationStyles, useLogoAnimation } from "@/components/buyer/PublicShell";
 import NotificationPanel from "@/components/ui/NotificationPanel";
-import { Panel, ToastProvider, IconChevron } from "@/components/admin/ui";
+import { Panel, ToastProvider, IconChevron, Avatar, SignOutConfirm, btn } from "@/components/admin/ui";
 import { setMessageTemplates } from "@/components/admin/messageTemplates";
 
 const ADMIN_ID = "ADMIN";
@@ -90,6 +90,8 @@ export default function AdminShell({ children }) {
     await fetch("/api/auth/logout", { method: "POST" });
     window.location.href = "/admin/login";
   }
+  // Sign out always asks first (a double tap on More used to land on it).
+  const [confirmOut, setConfirmOut] = useState(false);
 
   const is = (href) => (href === "/admin" ? pathname === "/admin" || pathname === "/admin/" : pathname.startsWith(href));
   const nav = [
@@ -142,7 +144,7 @@ export default function AdminShell({ children }) {
           <div className="mt-auto pt-3 border-t border-adm-line space-y-2">
             <LanguagePicker />
             <div className="px-2 text-[11.5px] text-adm-fade truncate" dir="ltr">{me?.email || me?.name || "Admin"}</div>
-            <button onClick={signOut} className="w-full text-start h-9 px-3 rounded-xl text-[13px] font-semibold text-st-rejected hover:bg-st-rejected-bg">
+            <button onClick={() => setConfirmOut(true)} className="w-full text-start h-9 px-3 rounded-xl text-[13px] font-semibold text-st-rejected hover:bg-st-rejected-bg">
               {m.adminSignOut()}
             </button>
           </div>
@@ -194,6 +196,17 @@ export default function AdminShell({ children }) {
         </nav>
 
         <Panel open={moreOpen} onClose={() => setMoreOpen(false)} title="More" short>
+          {/* Who's signed in, with Sign out at the top, away from the More
+              button at the bottom of the screen (a quick second tap on it
+              used to land on a Sign out button down there). */}
+          <div className="flex items-center gap-3 rounded-2xl border border-adm-line bg-adm-surface px-3.5 py-3">
+            <Avatar name={me?.name || "Admin"} size={40} />
+            <div className="flex-1 min-w-0">
+              <p className="text-[14.5px] font-bold truncate"><bdi>{me?.name || "Admin"}</bdi></p>
+              <p className="text-[12px] text-adm-fade truncate" dir="ltr">{me?.email || "Admin"}</p>
+            </div>
+            <button type="button" onClick={() => setConfirmOut(true)} className={`${btn("danger", "sm")} shrink-0`}>{m.adminSignOut()}</button>
+          </div>
           <div className="space-y-2">
             {nav.filter((n) => n.extra).map((n) => (
               <Link key={n.href} to={n.href}
@@ -209,11 +222,8 @@ export default function AdminShell({ children }) {
             <p className="text-[11px] font-bold uppercase tracking-[0.06em] text-adm-fade mb-2 px-1">Language</p>
             <LanguagePicker />
           </div>
-          <div className="text-[12px] text-adm-fade px-1" dir="ltr">{me?.email || me?.name || "Admin"}</div>
-          <button onClick={signOut} className="w-full h-12 rounded-2xl border border-adm-line bg-adm-surface text-st-rejected text-[15px] font-semibold">
-            {m.adminSignOut()}
-          </button>
         </Panel>
+        <SignOutConfirm open={confirmOut} onCancel={() => setConfirmOut(false)} onConfirm={signOut} />
       </div>
     </ToastProvider>
   );

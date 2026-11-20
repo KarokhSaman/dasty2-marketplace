@@ -368,6 +368,45 @@ export function Panel({ open, onClose, title, subtitle, leading, children, foote
 }
 
 // Inline "are you sure?" box used inside panels instead of browser dialogs.
+// "Are you sure you want to sign out?", for admins and sellers alike: a small
+// sheet over everything (a centred box on laptops). Sign out is on top; Cancel
+// is at the bottom, where the thumb already is, so a slip cancels.
+export function SignOutConfirm({ open, onCancel, onConfirm }) {
+  const [busy, setBusy] = useState(false);
+  const cancel = useRef(onCancel);
+  cancel.current = onCancel;
+  useEffect(() => {
+    if (!open) return undefined;
+    setBusy(false);
+    // Esc closes only this question, not the sheet under it (caught first and
+    // stopped, so the More sheet's own Esc never sees it)
+    const onKey = (e) => { if (e.key === "Escape") { e.stopPropagation(); cancel.current(); } };
+    document.addEventListener("keydown", onKey, true);
+    const unlock = lockScroll();
+    return () => { document.removeEventListener("keydown", onKey, true); unlock(); };
+  }, [open]);
+  if (!open || typeof document === "undefined") return null;
+  return createPortal(
+    <div className="adm-scope adm-vars fixed inset-0 z-[95] flex flex-col justify-end lg:justify-center lg:items-center" role="alertdialog" aria-modal="true" aria-label={m.signOutConfirm()}>
+      <div className="absolute inset-0 bg-black/45" onClick={onCancel} aria-hidden />
+      <div className="adm-panel relative bg-adm-bg rounded-t-[22px] lg:rounded-[22px] lg:w-[380px] px-4 pt-5 flex flex-col gap-2.5 shadow-[var(--a-shadow)]"
+        style={{ paddingBottom: "max(16px, env(safe-area-inset-bottom))" }}>
+        <span className="mx-auto w-12 h-12 rounded-full bg-st-rejected-bg text-st-rejected grid place-items-center">
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M15 17l5-5-5-5M20 12H9M12 21H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h7" />
+          </svg>
+        </span>
+        <p className="text-center text-[16px] font-bold text-adm-ink mb-1">{m.signOutConfirm()}</p>
+        <button type="button" disabled={busy} onClick={() => { setBusy(true); onConfirm(); }} className={`${btn("primary", "lg")} w-full`}>
+          {m.accountSignOut()}
+        </button>
+        <button type="button" onClick={onCancel} className={`${btn("outline", "lg")} w-full`}>{m.adminCancel()}</button>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
 export function ConfirmBox({ title, text, confirmLabel, tone = "danger", onConfirm, onCancel, busy }) {
   return (
     <div className={`rounded-2xl p-3.5 ${tone === "danger" ? "bg-st-rejected-bg" : "bg-adm-sunk"}`}>
