@@ -1,0 +1,16 @@
+{
+  "id": "/admin",
+  "name": "Mndallan Admin",
+  "short_name": "Mndallan Admin",
+  "start_url": "/admin",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#fefcf9",
+  "theme_color": "#fefcf9",
+  "icons": [
+    { "src": "/icons/admin-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/admin-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/admin-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icons/admin-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

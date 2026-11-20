@@ -75,7 +75,9 @@ export const Route = createRootRouteWithContext<RouterContext>()({
       links: [
         { rel: 'stylesheet', href: appCss },
         { rel: 'icon', type: 'image/svg+xml', href: '/logo-mndallan.svg' },
-        { rel: 'apple-touch-icon', href: '/logo-mndallan.svg' },
+        // iPhones ignore an SVG Home Screen icon, so this is a PNG of the logo
+        // (admin pages use their own "Admin" icon, see _admin.tsx)
+        { rel: 'apple-touch-icon', href: '/icons/mndallan-180.png' },
         // hreflang — base locale doubles as x-default for SEO.
         {
           rel: 'alternate',
