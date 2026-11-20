@@ -279,8 +279,9 @@ export default function ReviewMode({ queue, onClose }) {
       )}
 
       {!p ? (
-        <div className="flex-1 overflow-y-auto grid place-items-center p-8 text-center">
-          <div className="space-y-3 w-full max-w-sm">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden grid place-items-center px-4 py-8 text-center">
+          {/* min-w-0: a long one-line reason must not widen the column past the screen */}
+          <div className="space-y-3 w-full max-w-sm min-w-0">
             <div className="mx-auto w-16 h-16 rounded-full bg-st-approved-bg text-st-approved grid place-items-center"><IconCheck className="w-8 h-8" /></div>
             <p className="text-[19px] font-bold">{left > 0 ? "Messages to send" : "All caught up"}</p>
             <p className="text-[13.5px] text-adm-soft">{done.approved} approved · {done.rejected} rejected{skipped > 0 ? ` · ${skipped} skipped` : ""}{left > 0 ? ` · ${left} still to review` : ""}. Sellers have been notified.</p>
@@ -310,7 +311,7 @@ export default function ReviewMode({ queue, onClose }) {
                       {c.items.length === 1
                         ? <p className="text-[12px] text-adm-fade truncate">{c.items[0].seq ? `#${c.items[0].seq} · ` : ""}{c.items[0].title}</p>
                         : <p className="text-[12px] text-adm-fade">{c.items.length} posts · {c.items.map((a) => (a.seq ? `#${a.seq}` : a.title)).join(", ")}</p>}
-                      <p dir="auto" className="text-[12px] text-st-rejected truncate">{c.reason}</p>
+                      <p dir="auto" className="text-[12px] text-st-rejected line-clamp-2 break-words">{c.reason}</p>
                     </div>
                     <SendButton seller={c} onSent={markRejectSent} label="Send" />
                   </div>
