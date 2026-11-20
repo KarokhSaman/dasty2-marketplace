@@ -61,12 +61,15 @@ export const Route = createRootRouteWithContext<RouterContext>()({
     // De-localized pathname (TanStack Router's rewrite.input strips the locale
     // prefix before matching), so we re-localize per language for hreflang.
     const pathname = matches[matches.length - 1]?.pathname ?? '/'
+    // Admin pages bring their own Home Screen name and icon (_admin.tsx); the
+    // shop's would win on an iPhone and save the admin as a plain shortcut.
+    const isAdmin = matches.some((m) => m.routeId.startsWith('/_admin'))
 
     return {
       meta: [
         { charSet: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' },
-        { title: 'Mndallan - Buy & Sell Baby Products' },
+        ...(isAdmin ? [] : [{ title: 'Mndallan - Buy & Sell Baby Products' }]),
         {
           name: 'description',
           content: 'کڕین و فرۆشتنی کاڵای منداڵان لە کوردستان، عێراق',
@@ -77,7 +80,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
         { rel: 'icon', type: 'image/svg+xml', href: '/logo-mndallan.svg' },
         // iPhones ignore an SVG Home Screen icon, so this is a PNG of the logo
         // (admin pages use their own "Admin" icon, see _admin.tsx)
-        { rel: 'apple-touch-icon', href: '/icons/mndallan-180.png' },
+        ...(isAdmin ? [] : [{ rel: 'apple-touch-icon', href: '/icons/mndallan-180.png' }]),
         // hreflang — base locale doubles as x-default for SEO.
         {
           rel: 'alternate',
