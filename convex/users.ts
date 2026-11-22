@@ -234,6 +234,19 @@ export const getAll = query({
   },
 });
 
+// The admin sent this seller the "how to post your first item" message from
+// To do. Remembered so the seller leaves that list for good.
+export const markFirstPostNudged = mutation({
+  args: { id: v.id("users") },
+  handler: async (ctx, { id }) => {
+    await requireAdmin(ctx);
+    const user = await ctx.db.get(id);
+    if (!user || user.firstPostNudgedAt) return null;
+    await ctx.db.patch(id, { firstPostNudgedAt: new Date().toISOString() });
+    return null;
+  },
+});
+
 export const getAdmins = query({
   args: {},
   handler: async (ctx) => {

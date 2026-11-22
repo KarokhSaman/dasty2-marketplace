@@ -123,6 +123,9 @@ export default defineSchema({
     // active platform offer). feeValue is IQD for "flat", 0-100 for "percentage".
     feeMode: v.optional(feeModeValidator),
     feeValue: v.optional(v.number()),
+    // When the admin sent the "how to post your first item" WhatsApp message
+    // to a seller who signed up but never posted. Set once: never asked again.
+    firstPostNudgedAt: v.optional(v.string()),
   })
     .index("by_role", ["role"])
     .index("by_role_and_isActive", ["role", "isActive"])
