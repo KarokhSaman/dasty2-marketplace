@@ -50,6 +50,7 @@ export const TEMPLATE_GROUPS = [
   { key: "sold", title: "Sold items and fees" },
   { key: "buyers", title: "Connecting a buyer" },
   { key: "thanks", title: "After a paid sale" },
+  { key: "sellers", title: "New sellers" },
   { key: "fixes", title: "How to fix it: one line per rejection reason" },
 ];
 
@@ -68,7 +69,7 @@ export const TEMPLATES = [
 > هەر کاتێک کاڵاکەتان بەردەست نەما یان لە ڕێگەی ترەوە فرۆشرا، تکایە ڕاستەوخۆ پۆستەکە بسڕنەوە، یاخود لە ڕێگەی واتسئاپ یان ئینستاگرامەوە ئاگادارمان بکەنەوە.
 
 لەگەڵ ڕێزماندا،
-تیمی ماڵپەڕی منداڵان 🧸`,
+تیمی ماڵپەڕی منداڵان`,
     ar: `*مرحباً وتحية طيبة* 👋
 شكراً لاختياركم *Mndallan* لبيع منتجاتكم 🤍
 
@@ -80,7 +81,7 @@ export const TEMPLATES = [
 > عند عدم توفر المنتج أو بيعه بطريقة أخرى، يُرجى حذف المنشور مباشرةً، أو إبلاغنا عبر الواتساب أو الإنستغرام.
 
 مع خالص التحيات،
-فريق موقع Mndallan 🧸`,
+فريق موقع Mndallan`,
   },
   {
     key: "approvalMany", group: "posts", title: "Several posts approved",
@@ -98,7 +99,7 @@ export const TEMPLATES = [
 > هەر کاتێک کاڵایەکتان بەردەست نەما یان لە ڕێگەی ترەوە فرۆشرا، تکایە ڕاستەوخۆ پۆستەکەی بسڕنەوە، یاخود لە ڕێگەی واتسئاپ یان ئینستاگرامەوە ئاگادارمان بکەنەوە.
 
 لەگەڵ ڕێزماندا،
-تیمی ماڵپەڕی منداڵان 🧸`,
+تیمی ماڵپەڕی منداڵان`,
     ar: `*مرحباً وتحية طيبة* 👋
 شكراً لاختياركم *Mndallan* لبيع منتجاتكم 🤍
 
@@ -112,7 +113,7 @@ export const TEMPLATES = [
 > عند عدم توفر أي منتج أو بيعه بطريقة أخرى، يُرجى حذف منشوره مباشرةً، أو إبلاغنا عبر الواتساب أو الإنستغرام.
 
 مع خالص التحيات،
-فريق موقع Mndallan 🧸`,
+فريق موقع Mndallan`,
   },
   {
     key: "rejection", group: "posts", title: "Post rejected",
@@ -131,7 +132,7 @@ export const TEMPLATES = [
 > پاش ئەوە دووبارە سەیری دەکەینەوە و ئاگادارتان دەکەینەوە.
 
 لەگەڵ ڕێزماندا،
-تیمی ماڵپەڕی منداڵان 🧸`,
+تیمی ماڵپەڕی منداڵان`,
     ar: `*مرحباً وتحية طيبة* 👋
 شكراً لإرسال منشوركم إلى *Mndallan* 🤍
 
@@ -146,7 +147,7 @@ export const TEMPLATES = [
 > بعد ذلك سنراجعه مرة أخرى ونبلغكم.
 
 مع خالص التحيات،
-فريق موقع Mndallan 🧸`,
+فريق موقع Mndallan`,
   },
   {
     key: "rejectionNoFix", group: "posts", title: "Post rejected, can't be fixed",
@@ -161,7 +162,7 @@ export const TEMPLATES = [
 {fix}
 
 لەگەڵ ڕێزماندا،
-تیمی ماڵپەڕی منداڵان 🧸`,
+تیمی ماڵپەڕی منداڵان`,
     ar: `*مرحباً وتحية طيبة* 👋
 شكراً لإرسال منشوركم إلى *Mndallan* 🤍
 
@@ -172,7 +173,7 @@ export const TEMPLATES = [
 {fix}
 
 مع خالص التحيات،
-فريق موقع Mndallan 🧸`,
+فريق موقع Mndallan`,
   },
   {
     key: "rejectionMany", group: "posts", title: "Several posts rejected",
@@ -192,7 +193,7 @@ export const TEMPLATES = [
 > پاش ئەوە دووبارە سەیریان دەکەینەوە و ئاگادارتان دەکەینەوە.
 
 لەگەڵ ڕێزماندا،
-تیمی ماڵپەڕی منداڵان 🧸`,
+تیمی ماڵپەڕی منداڵان`,
     ar: `*مرحباً وتحية طيبة* 👋
 شكراً لإرسال منشوراتكم إلى *Mndallan* 🤍
 
@@ -208,7 +209,7 @@ export const TEMPLATES = [
 > بعد ذلك سنراجعها مرة أخرى ونبلغكم.
 
 مع خالص التحيات،
-فريق موقع Mndallan 🧸`,
+فريق موقع Mndallan`,
   },
   {
     key: "rejectionNoFixMany", group: "posts", title: "Several posts rejected, can't be fixed",
@@ -224,7 +225,7 @@ export const TEMPLATES = [
 {fix}
 
 لەگەڵ ڕێزماندا،
-تیمی ماڵپەڕی منداڵان 🧸`,
+تیمی ماڵپەڕی منداڵان`,
     ar: `*مرحباً وتحية طيبة* 👋
 شكراً لإرسال منشوراتكم إلى *Mndallan* 🤍
 
@@ -236,7 +237,7 @@ export const TEMPLATES = [
 {fix}
 
 مع خالص التحيات،
-فريق موقع Mndallan 🧸`,
+فريق موقع Mndallan`,
   },
   {
     key: "soldFollowUp", group: "sold", title: "Was it sold?",
@@ -247,14 +248,14 @@ export const TEMPLATES = [
 
 > 📌 بۆیە ئەپرسینەوە بۆ ئەوەی ژمارەکەت بە کەسی تر نەدەین.
 
-تیمی ماڵپەڕی منداڵان 🧸`,
+تیمی ماڵپەڕی منداڵان`,
     ar: `*مرحباً عزيزي* 👋
 هل تم بيع *{title}* · {code}؟ 🤍
 إذا تم بيعه، يُرجى إخبارنا بسعر البيع.
 
 > 📌 نسأل حتى لا نعطي رقمك لشخص آخر.
 
-فريق موقع Mndallan 🧸`,
+فريق موقع Mndallan`,
   },
   {
     key: "soldFollowUpMany", group: "sold", title: "Was it sold? (several items)",
@@ -266,7 +267,7 @@ export const TEMPLATES = [
 
 > 📌 بۆیە ئەپرسینەوە بۆ ئەوەی ژمارەکەت بە کەسی تر نەدەین.
 
-تیمی ماڵپەڕی منداڵان 🧸`,
+تیمی ماڵپەڕی منداڵان`,
     ar: `*مرحباً عزيزي* 👋
 هل تم بيع هذه المنتجات؟ 🤍
 {items}
@@ -274,7 +275,7 @@ export const TEMPLATES = [
 
 > 📌 نسأل حتى لا نعطي رقمك لشخص آخر.
 
-فريق موقع Mndallan 🧸`,
+فريق موقع Mndallan`,
   },
   {
     key: "soldFollowUpStock", group: "sold", title: "How many were sold?",
@@ -283,12 +284,12 @@ export const TEMPLATES = [
 چەند دانە لە *{title}* · {code} فرۆشران؟ 🤍
 تکایە ژمارەی فرۆشراوەکان و نرخی فرۆشتنەکەمان پێ بڵێن.
 
-تیمی ماڵپەڕی منداڵان 🧸`,
+تیمی ماڵپەڕی منداڵان`,
     ar: `*مرحباً عزيزي* 👋
 كم قطعة بعت من *{title}* · {code}؟ 🤍
 يُرجى إخبارنا بعدد القطع المباعة وسعر البيع.
 
-فريق موقع Mndallan 🧸`,
+فريق موقع Mndallan`,
   },
   {
     key: "stillForSale", group: "sold", title: "Still for sale?",
@@ -297,12 +298,12 @@ export const TEMPLATES = [
 کاڵای *{title}* · {code} هێشتا بەردەستە؟ 🤍
 ئەگەر فرۆشرا یان نەما، ئاگادارمان بکەنەوە تا لە ماڵپەڕەکە لای ببەین.
 
-تیمی ماڵپەڕی منداڵان 🧸`,
+تیمی ماڵپەڕی منداڵان`,
     ar: `*مرحباً عزيزي* 👋
 هل *{title}* · {code} ما زال متوفراً؟ 🤍
 إذا تم بيعه أو لم يعد متوفراً، أبلغنا لنزيله من الموقع.
 
-فريق موقع Mndallan 🧸`,
+فريق موقع Mndallan`,
   },
   {
     key: "stillForSaleMany", group: "sold", title: "Still for sale? (several items)",
@@ -312,13 +313,13 @@ export const TEMPLATES = [
 {items}
 ئەگەر هەریەکێکیان فرۆشرا یان نەما، ئاگادارمان بکەنەوە تا لە ماڵپەڕەکە لای ببەین.
 
-تیمی ماڵپەڕی منداڵان 🧸`,
+تیمی ماڵپەڕی منداڵان`,
     ar: `*مرحباً عزيزي* 👋
 هل ما زالت هذه المنتجات متوفرة؟ 🤍
 {items}
 إذا تم بيع أيٍّ منها أو لم يعد متوفراً، أبلغنا لنزيله من الموقع.
 
-فريق موقع Mndallan 🧸`,
+فريق موقع Mndallan`,
   },
   {
     key: "feeReminder", group: "sold", title: "Fee reminder",
@@ -336,7 +337,7 @@ export const TEMPLATES = [
 📎 *پاش پارەدان:* بچۆ ناو هەژمارەکەت لە ماڵپەڕی منداڵان، لە داشبۆرد دوگمەی «ناردنی وەسڵی پارەدان» دابگرە و وێنەی وەسڵەکە بنێرە.
 
 لەگەڵ ڕێزماندا،
-تیمی ماڵپەڕی منداڵان 🧸`,
+تیمی ماڵپەڕی منداڵان`,
     ar: `*مرحباً عزيزي* 👋
 مبروك، تم بيع منتجك 🤍
 
@@ -350,7 +351,7 @@ export const TEMPLATES = [
 📎 *بعد الدفع:* ادخل إلى حسابك في موقع Mndallan، واضغط زر «إرسال إيصال الدفع» في لوحة التحكم وأرسل صورة الإيصال.
 
 مع خالص التحيات،
-فريق موقع Mndallan 🧸`,
+فريق موقع Mndallan`,
   },
   {
     key: "thankYou", group: "thanks", title: "Thank you",
@@ -362,7 +363,7 @@ export const TEMPLATES = [
 📸 mndallan.com/instagram
 👍 mndallan.com/facebook
 
-تیمی ماڵپەڕی منداڵان 🧸`,
+تیمی ماڵپەڕی منداڵان`,
     ar: `*شكراً لاختياركم Mndallan* 🤍
 إذا كان لديك أي ملاحظة أو اقتراح، يسعدنا أن تخبرنا.
 
@@ -370,7 +371,7 @@ export const TEMPLATES = [
 📸 mndallan.com/instagram
 👍 mndallan.com/facebook
 
-فريق موقع Mndallan 🧸`,
+فريق موقع Mndallan`,
   },
   {
     key: "buyerIntro", group: "buyers", title: "To the buyer",
@@ -385,7 +386,7 @@ export const TEMPLATES = [
 
 > 📌 ئەگەر کڕیت، تکایە ئاگادارمان بکەنەوە.
 
-تیمی ماڵپەڕی منداڵان 🧸`,
+تیمی ماڵپەڕی منداڵان`,
     ar: `*مرحباً عزيزي* 👋
 شكراً لتواصلك مع *Mndallan* 🤍
 
@@ -396,7 +397,7 @@ export const TEMPLATES = [
 
 > 📌 إذا اشتريته، يُرجى إبلاغنا.
 
-فريق موقع Mndallan 🧸`,
+فريق موقع Mndallan`,
   },
   {
     key: "sellerHeadsUp", group: "buyers", title: "To the seller",
@@ -410,7 +411,7 @@ export const TEMPLATES = [
 
 > 📌 کاتێک فرۆشرا، تکایە ئاگادارمان بکەنەوە.
 
-تیمی ماڵپەڕی منداڵان 🧸`,
+تیمی ماڵپەڕی منداڵان`,
     ar: `*مرحباً عزيزي* 👋
 مشترٍ سأل عن منتجك 🤍
 
@@ -420,7 +421,51 @@ export const TEMPLATES = [
 
 > 📌 عند بيعه، يُرجى إبلاغنا.
 
-فريق موقع Mndallan 🧸`,
+فريق موقع Mndallan`,
+  },
+  {
+    key: "firstPost", group: "sellers", title: "How to post your first item",
+    when: "To do: to a seller who signed up but hasn't posted anything yet (sent once)", vars: [], required: [],
+    ckb: `*سڵاو گیان* 👋
+سوپاس بۆ خۆتۆمارکردن لە *«منداڵان»* 🤍
+بە ٥ هەنگاو کاڵاکەت بفرۆشە:
+
+1. لە mndallan.com دوگمەی «ئێستا بیفرۆشە» دابگرە
+2. بە ژمارەی واتساپەکەت بچۆ ژوورەوە
+3. وێنە، دۆخ و نرخی کاڵاکەت دابنێ و بینێرە
+4. دوای پەسەندکردن لە ماڵپەڕ و ئینستاگرام بڵاوی دەکەینەوە ✨
+5. هەر کڕیارێک داوای کرد، لە واتساپ ئاگادارت دەکەینەوە
+
+💡 دانانی کاڵا بەخۆڕاییە، کرێ تەنها دوای فرۆشتن
+
+📌 شێوازی پۆست کردن بە ڤیدیۆ:
+mndallan.com/sell
+
+📌 کرێی خزمەتگوزاری:
+mndallan.com/fee
+
+هەر پرسیارێکت هەبوو لە خزمەتداین ❤️
+تیمی ماڵپەڕی منداڵان`,
+    ar: `*مرحباً عزيزي* 👋
+شكراً لتسجيلك في *Mndallan* 🤍
+بِع منتجك في ٥ خطوات:
+
+1. في mndallan.com اضغط زر «بيع الآن»
+2. سجّل الدخول برقم واتساب الخاص بك
+3. أضف الصور والحالة والسعر وأرسله
+4. بعد الموافقة ننشره على الموقع وإنستغرام ✨
+5. عندما يطلبه مشترٍ، نبلغك على واتساب
+
+💡 نشر المنتج مجاني، والعمولة فقط بعد البيع
+
+📌 طريقة النشر بالفيديو:
+mndallan.com/sell
+
+📌 عمولة الخدمة:
+mndallan.com/fee
+
+إذا كان لديك أي سؤال فنحن في خدمتك ❤️
+فريق موقع Mndallan`,
   },
   fixLine("fixPhotos", "Photos aren't clear",
     "وێنەی ڕوون و لە شوێنێکی ڕووناکدا بگرن و لە جێی وێنەکانی ئێستا دایبنێن.",

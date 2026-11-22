@@ -7,64 +7,15 @@ import ProductRow, { RowList } from "@/components/admin/ProductRow";
 import ProductPanel from "@/components/admin/ProductPanel";
 import ReviewMode from "@/components/admin/ReviewMode";
 import ConnectBuyer from "@/components/admin/ConnectBuyer";
-import { soldFollowUpMessage, stillForSaleMessage } from "@/components/admin/buyerMessages";
+import { soldFollowUpMessage, firstPostMessage } from "@/components/admin/buyerMessages";
+import { FollowRow, SellerBlock, groupBySeller, ago } from "@/components/admin/followUps";
 import { useProductActions } from "@/components/admin/useProductActions";
-import { PageHeader, Empty, Skeleton, Code, Thumb, btn, fmtIQD, useToast, waLink, IconCheck, IconWhatsApp } from "@/components/admin/ui";
+import { PageHeader, Skeleton, btn, fmtIQD, fmtPhone, useToast, waLink, IconCheck, IconWhatsApp } from "@/components/admin/ui";
 
-// A live post nobody has approved or confirmed with the seller for this long
-// is checked with the seller.
-const STALE_DAYS = 28;
-const DAY = 86400000;
-const ago = (iso) => Math.floor((Date.now() - new Date(iso).getTime()) / DAY);
-
-// A follow-up row: the product, why it is here, and its quick actions.
-function FollowRow({ product: p, note, onOpen, children }) {
-  return (
-    <div className="rounded-2xl border border-adm-line bg-adm-surface p-2.5 mb-2">
-      <button type="button" onClick={() => onOpen(p)} className="flex gap-3 items-center w-full text-start">
-        <Thumb src={p.photos?.[p.mainPhotoIndex ?? 0]} size={52} />
-        <span className="flex-1 min-w-0">
-          <span className="block text-[13.5px] font-semibold truncate">{p.title}</span>
-          <span className="flex items-center gap-1.5 text-[11.5px] text-adm-soft"><Code>{p.seq}</Code> {note}</span>
-        </span>
-      </button>
-      {/* Two even columns on phones, so four buttons make two tidy rows. */}
-      <div className="grid grid-cols-2 gap-1.5 mt-2.5 sm:flex sm:flex-wrap">{children}</div>
-    </div>
-  );
-}
-
-// Group a list of posts by their seller, keeping the order they came in.
-function groupBySeller(list) {
-  const groups = new Map();
-  for (const p of list) {
-    const g = groups.get(p.sellerId);
-    if (g) g.push(p);
-    else groups.set(p.sellerId, [p]);
-  }
-  return [...groups.values()];
-}
-
-// A seller's posts in a follow-up list. When they have more than one, the posts
-// sit in one box under a single "Ask seller" button that sends one message
-// listing them all — so the seller isn't messaged once per item. `children` is
-// given `many` so each row can drop its own Ask seller button when grouped.
-function SellerBlock({ group, message, children }) {
-  const many = group.length > 1;
-  return (
-    <div className={many ? "rounded-2xl border border-adm-line p-1.5 mb-2" : ""}>
-      {many && (
-        <div className="flex items-center gap-2 px-1.5 py-1.5">
-          <span className="text-[11.5px] font-semibold text-adm-soft flex-1 min-w-0">{group.length} items from one seller</span>
-          <a href={waLink(group[0].sellerPhone, message(group))} target="_blank" rel="noopener noreferrer" className={btn("wa", "sm")}>
-            <IconWhatsApp className="w-3.5 h-3.5" /> Ask seller
-          </a>
-        </div>
-      )}
-      {children(many)}
-    </div>
-  );
-}
+// Sellers who signed up but never posted, shown a few at a time, once they
+// have had this many days to post on their own.
+const NUDGE_PAGE = 10;
+const NUDGE_AFTER_DAYS = 7;
 
 function Group({ id, title, count, action, children }) {
   return (
@@ -81,7 +32,7 @@ function Group({ id, title, count, action, children }) {
 
 // Admin start page: only what needs someone today, most urgent first: new
 // products to review, delete requests, buyer follow-ups, sold items whose fee
-// hasn't been collected, and live posts to check are still for sale.
+// hasn't been collected. Old posts to check are under Products → Not checked.
 export default function AdminTodoPage() {
   const products = useQuery(api.products.getAll);
   const sellers = useQuery(api.users.getAll);
@@ -89,7 +40,8 @@ export default function AdminTodoPage() {
   const [reviewing, setReviewing] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const closeFollowUp = useMutation(api.leads.closeFollowUp);
-  const confirmAvailable = useMutation(api.leads.confirmAvailable);
+  const markNudged = useMutation(api.users.markFirstPostNudged);
+  const [nudgeShown, setNudgeShown] = useState(NUDGE_PAGE);
   const actions = useProductActions();
   const toast = useToast();
 
@@ -108,18 +60,22 @@ export default function AdminTodoPage() {
       // Buyer connected a few days ago and it is still live: did it sell?
       followUps: all.filter((p) => p.status === "approved" && p.followUpAt && p.followUpAt <= new Date().toISOString())
         .sort((a, b) => a.followUpAt.localeCompare(b.followUpAt)),
-      // Live for weeks with nobody confirming it is still for sale.
-      stale: all.filter((p) => {
-        if (p.status !== "approved") return false;
-        const last = [p.approvedAt ?? p.dateAdded, p.availabilityCheckedAt].filter(Boolean).sort().pop();
-        return last && ago(last) >= STALE_DAYS;
-      }).sort((a, b) => (a.availabilityCheckedAt ?? a.approvedAt ?? a.dateAdded).localeCompare(b.availabilityCheckedAt ?? b.approvedAt ?? b.dateAdded)),
     };
   }, [products]);
 
+  // Signed up, not a single post, and not sent the "how to post" message yet.
+  // A new seller gets a week to post on their own before showing here.
+  const noPost = useMemo(() => {
+    if (!products || !sellers) return [];
+    const posted = new Set(products.map((p) => p.sellerId));
+    return sellers
+      .filter((s) => s.isActive && !s.firstPostNudgedAt && !posted.has(s._id) && ago(s.registeredAt) >= NUDGE_AFTER_DAYS)
+      .sort((a, b) => b.registeredAt.localeCompare(a.registeredAt));
+  }, [products, sellers]);
+
   if (!products) return <Skeleton rows={6} />;
   const open = products.find((p) => p._id === openId) ?? null;
-  const nothing = !data.pending.length && !data.deletes.length && !data.sold.length && !data.followUps.length && !data.stale.length;
+  const nothing = !data.pending.length && !data.deletes.length && !data.sold.length && !data.followUps.length && !noPost.length;
   const run = async (fn, done) => { try { await fn(); toast(done); } catch { toast("Could not save", "error"); } };
   const today = new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
 
@@ -209,30 +165,33 @@ export default function AdminTodoPage() {
         </Group>
       )}
 
-      {data.stale.length > 0 && (
-        <Group title="Still for sale?" count={data.stale.length}>
-          <p className="text-[12.5px] text-adm-fade -mt-1 mb-2">Live {STALE_DAYS}+ days without a check. Still for sale clears it for another {STALE_DAYS / 7} weeks. A seller's items are messaged together.</p>
-          {groupBySeller(data.stale.slice(0, 12)).map((group) => (
-            <SellerBlock key={group[0].sellerId} group={group} message={stillForSaleMessage}>
-              {(many) => group.map((p) => (
-                <FollowRow key={p._id} product={p} onOpen={(x) => setOpenId(x._id)}
-                  note={`· live ${ago(p.approvedAt ?? p.dateAdded)} days${p.availabilityCheckedAt ? `, checked ${ago(p.availabilityCheckedAt)}d ago` : ", not checked"}`}>
-                  {!many && <a href={waLink(p.sellerPhone, stillForSaleMessage(p))} target="_blank" rel="noopener noreferrer" className={btn("wa", "sm")}><IconWhatsApp className="w-3.5 h-3.5" /> Ask seller</a>}
-                  <button type="button" onClick={() => run(() => confirmAvailable({ id: p._id }), "Still for sale, checked")} className={btn("outline", "sm")}>Still for sale</button>
-                  <button type="button" onClick={() => setOpenId(p._id)} className={btn("primary", "sm")}>Sold</button>
-                  <button type="button" onClick={() => run(() => actions.markSoldElsewhere(p), "Sold elsewhere, seller notified")} className={btn("outline", "sm")}>Sold elsewhere</button>
-                </FollowRow>
-              ))}
-            </SellerBlock>
-          ))}
-          {data.stale.length > 12 && <p className="text-center text-[12px] text-adm-fade">{data.stale.length - 12} more after these</p>}
+      {noPost.length > 0 && (
+        <Group title="New sellers: no post yet" count={noPost.length}>
+          <p className="text-[12.5px] text-adm-fade -mt-1 mb-2">Signed up {NUDGE_AFTER_DAYS}+ days ago and never posted. Send sends them how to post their first item; after that they leave this list for good.</p>
+          <div className="rounded-2xl border border-adm-line bg-adm-surface divide-y divide-adm-line mb-2">
+            {noPost.slice(0, nudgeShown).map((s) => (
+              <div key={s._id} className="flex items-center gap-3 px-3 py-2.5">
+                <span className="flex-1 min-w-0">
+                  <bdi className="block text-[13.5px] font-semibold truncate">{s.name || "No name"}</bdi>
+                  <span className="block text-[11.5px] text-adm-soft truncate">
+                    <span dir="ltr">{fmtPhone(s.phone)}</span>{s.city ? ` · ${s.city}` : ""} · joined {ago(s.registeredAt)}d ago
+                  </span>
+                </span>
+                <a href={waLink(s.phone, firstPostMessage())} target="_blank" rel="noopener noreferrer"
+                  onClick={() => run(() => markNudged({ id: s._id }), "Sent. They won't show here again")}
+                  className={`${btn("wa", "sm")} shrink-0`}>
+                  <IconWhatsApp className="w-3.5 h-3.5" /> Send
+                </a>
+              </div>
+            ))}
+          </div>
+          {noPost.length > nudgeShown && (
+            <button type="button" onClick={() => setNudgeShown((n) => n + NUDGE_PAGE)} className={`${btn("outline", "sm")} w-full`}>
+              Show more ({noPost.length - nudgeShown} left)
+            </button>
+          )}
         </Group>
       )}
-
-
-
-
-
 
       {data.pending.length > 0 && (
         <div className="lg:hidden sticky z-20" style={{ bottom: "calc(72px + env(safe-area-inset-bottom, 0px))" }}>

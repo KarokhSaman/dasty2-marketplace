@@ -65,3 +65,8 @@ export function stillForSaleMessage(input) {
 export function thankYouMessage() {
   return renderTemplate("thankYou", {});
 }
+
+// To a seller who signed up but hasn't posted yet: how to post the first item.
+export function firstPostMessage() {
+  return renderTemplate("firstPost", {});
+}
