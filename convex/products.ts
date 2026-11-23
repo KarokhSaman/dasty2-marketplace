@@ -790,17 +790,51 @@ export const updateStatus = mutation({
       // Sale reversed (back to approved/pending/...): restore price and fee.
       Object.assign(patch, await listingTerms(ctx, product));
     }
-    // A receipt belongs to the payment it was sent for. A sale moved back from
-    // paid, or out of sold, no longer has that payment, so its receipt goes
-    // (the photo stays while other sales still link to it). Which sales a
-    // receipt pays for is decided on the Fees page (markFeesPaid), not here.
-    const dropsReceipt = !!product.feeReceiptUrl && fields.status !== "paid" && fields.status !== product.status;
+    // A receipt belongs to the sale it was sent for. Switching between sold and
+    // paid keeps it (paid → sold is usually undoing a tap, and the seller has
+    // already paid). Only undoing the sale itself (back to live, sold
+    // elsewhere, ...) drops it; the photo stays while other sales still link to
+    // it. Which sales a receipt pays for is decided on the Fees page
+    // (markFeesPaid), not here.
+    const stillSold = fields.status === "sold" || fields.status === "paid";
+    const dropsReceipt = !!product.feeReceiptUrl && !stillSold && fields.status !== product.status;
     if (dropsReceipt) {
       patch.feeReceiptUrl = undefined;
       patch.feeReceiptAt = undefined;
     }
     await ctx.db.patch(id, patch);
     if (dropsReceipt) await deleteUnusedReceipts(ctx, [product.feeReceiptUrl]);
+  },
+});
+
+// The admin adds the receipt for one sale themselves, usually a photo the
+// seller sent on WhatsApp instead of uploading it. Replaces any receipt the
+// sale had (the old photo goes, unless another sale still uses it).
+export const adminSetFeeReceipt = mutation({
+  args: { id: v.id("products"), url: v.string() },
+  returns: v.null(),
+  handler: async (ctx, { id, url }) => {
+    const { user } = await requireAdmin(ctx);
+    const link = url.trim();
+    if (!link) throw new ConvexError("No receipt to save");
+    if (link.length > 2000) throw new ConvexError("Receipt link is too long");
+    const product = await ctx.db.get(id);
+    if (!product) throw new ConvexError("Product not found");
+    if (product.status !== "sold" && product.status !== "paid") throw new ConvexError("Only a sold or paid sale can have a receipt.");
+    const old = product.feeReceiptUrl;
+    await ctx.db.patch(id, { feeReceiptUrl: link, feeReceiptAt: new Date().toISOString() });
+    if (old && old !== link) await deleteUnusedReceipts(ctx, [old]);
+    await ctx.db.insert("adminLogs", {
+      adminName: user!.name,
+      action: "fee_receipt_admin_uploaded",
+      productId: id.toString(),
+      productTitle: product.title,
+      productCode: product.seq,
+      sellerName: product.sellerName,
+      notes: old ? "Replaced the receipt" : undefined,
+      createdAt: new Date().toISOString(),
+    });
+    return null;
   },
 });
 
