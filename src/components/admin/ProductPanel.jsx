@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "@tanstack/react-router";
-import { useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import * as m from "@/paraglide/messages";
 import CustomSelect from "@/components/ui/CustomSelect";
@@ -441,9 +441,39 @@ function ThankYouRow({ product: p }) {
   );
 }
 
+// Uploads a receipt photo for this sale on the seller's behalf (they often send
+// it on WhatsApp instead). Replaces the sale's receipt if it had one.
+function UploadReceiptButton({ product: p, toast, label, className }) {
+  const upload = useImageUpload();
+  const save = useMutation(api.products.adminSetFeeReceipt);
+  const [busy, setBusy] = useState(false);
+  async function pick(e) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setBusy(true);
+    try {
+      const url = await upload(file);
+      await save({ id: p._id, url });
+      toast("Receipt saved");
+    } catch (err) {
+      toast(errorMessage(err, "Could not upload the receipt"), "error");
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <label className={`${className} cursor-pointer ${busy ? "opacity-60 pointer-events-none" : ""}`}>
+      {busy && <span className="w-3.5 h-3.5 border-2 border-current/30 border-t-current rounded-full animate-spin" />}
+      {label}
+      <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={pick} disabled={busy} />
+    </label>
+  );
+}
+
 // The payment receipt the seller sent for this sale's fee, kept after it is
 // paid so it can be looked up later. Opens in a window over this one.
-function FeeReceiptRow({ product: p }) {
+function FeeReceiptRow({ product: p, toast }) {
   const [viewing, setViewing] = useState(false);
   const when = p.feeReceiptAt
     ? new Date(p.feeReceiptAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })
@@ -461,6 +491,7 @@ function FeeReceiptRow({ product: p }) {
       <Panel open={viewing} onClose={() => setViewing(false)} title="Payment receipt" short
         subtitle={<p className="text-[12px] text-adm-soft">{p.sellerName}{when ? ` · ${when}` : ""}</p>}>
         <img src={p.feeReceiptUrl} alt="Payment receipt" className="w-full rounded-xl border border-adm-line" />
+        <UploadReceiptButton product={p} toast={toast} label="Replace receipt" className={`${btn("outline")} w-full mt-3`} />
       </Panel>
     </>
   );
@@ -478,7 +509,6 @@ function LinkReceiptRow({ product: p, actions, toast }) {
     .filter((o) => o._id !== p._id && o.sellerId === p.sellerId && o.feeReceiptUrl)
     .sort((a, b) => (b.feeReceiptAt ?? "").localeCompare(a.feeReceiptAt ?? ""))
     .filter((o) => !seen.has(o.feeReceiptUrl) && seen.add(o.feeReceiptUrl));
-  if (!options.length) return null;
   const day = (at) => (at ? new Date(at).toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : "");
 
   async function link(from) {
@@ -495,11 +525,17 @@ function LinkReceiptRow({ product: p, actions, toast }) {
 
   return (
     <div className="mt-3 rounded-xl border border-dashed border-adm-line p-2.5">
-      <button type="button" onClick={() => setOpen((v) => !v)} className="w-full flex items-center gap-2 text-start">
-        <span className="flex-1 min-w-0 text-[12.5px] font-semibold text-adm-soft">No receipt · link one this seller already sent</span>
-        <IconChevron className={`w-4 h-4 text-adm-fade shrink-0 transition-transform ${open ? "rotate-90" : "rtl:rotate-180"}`} />
-      </button>
-      {open && (
+      <div className="flex items-center gap-2">
+        <span className="flex-1 min-w-0 text-[12.5px] font-semibold text-adm-soft">No receipt yet</span>
+        <UploadReceiptButton product={p} toast={toast} label="Upload receipt" className={`${btn("outline", "sm")} shrink-0`} />
+      </div>
+      {options.length > 0 && (
+        <button type="button" onClick={() => setOpen((v) => !v)} className="w-full flex items-center gap-2 text-start mt-2">
+          <span className="flex-1 min-w-0 text-[12px] text-adm-fade">Or link one this seller already sent</span>
+          <IconChevron className={`w-4 h-4 text-adm-fade shrink-0 transition-transform ${open ? "rotate-90" : "rtl:rotate-180"}`} />
+        </button>
+      )}
+      {open && options.length > 0 && (
         <div className="mt-2 space-y-1.5">
           {options.map((o) => (
             <div key={o._id} className="flex items-center gap-2.5 rounded-lg bg-adm-sunk p-1.5 ps-2">
@@ -778,7 +814,7 @@ export default function ProductPanel({ product, onClose }) {
           </p>
         )}
         {(p.status === "sold" || p.status === "paid") && !nextStatus && (
-          p.feeReceiptUrl ? <FeeReceiptRow product={p} /> : <LinkReceiptRow product={p} actions={actions} toast={toast} />
+          p.feeReceiptUrl ? <FeeReceiptRow product={p} toast={toast} /> : <LinkReceiptRow product={p} actions={actions} toast={toast} />
         )}
         {p.status === "paid" && !nextStatus && <ThankYouRow product={p} />}
         {p.status === "rejected" && !nextStatus && p.notes && (
@@ -841,7 +877,8 @@ export default function ProductPanel({ product, onClose }) {
           ))}
           <AddPhotoTile product={p} actions={actions} toast={toast} />
         </div>
-        {p.status === "sold" && <SoldStoryButton product={p} toast={toast} />}
+        {/* on paid too: the story is often remembered only after the fee is in */}
+        {(p.status === "sold" || p.status === "paid") && <SoldStoryButton product={p} toast={toast} />}
         <p className="text-[11.5px] text-adm-fade mt-1.5">Rotate turns the preview first; ✓ saves it once. The scissors crop the photo itself, everywhere it shows. The star makes a photo the main one; the red crop button on the main photo sets how it sits in the Instagram story. Add photo uploads your own shots, up to {MAX_PHOTOS}.</p>
       </section>
 
