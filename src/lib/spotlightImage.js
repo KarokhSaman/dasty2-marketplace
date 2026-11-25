@@ -52,7 +52,7 @@ function fit(ctx, font, text, px, max, min = 34) {
   return f;
 }
 
-function drawSpotlight(ctx, { img, storyCrop, title, code, logo, q1, q2, find, family, pageFamily, drawings = [] }) {
+function drawSpotlight(ctx, { img, storyCrop, title, code, q1, q2, find, family, pageFamily, drawings = [] }) {
   const font = (px) => `900 ${px}px ${family}`;
 
   // deep brand wine, with the baby drawings faint in white
@@ -81,35 +81,21 @@ function drawSpotlight(ctx, { img, storyCrop, title, code, logo, q1, q2, find, f
   }
   const soft = "rgba(255,255,255,0.88)", strong = "#ffffff", quiet = "rgba(255,255,255,0.7)";
 
-  // Mndallan in a white pill, centred at the top
-  {
-    ctx.save();
-    ctx.font = `800 40px ${pageFamily}`;
-    const tw = ctx.measureText("Mndallan").width;
-    const pw = 64 + 16 + tw + 56, ph = 92, px = (W - pw) / 2, py = 70;
-    roundedRect(ctx, px, py, pw, ph, ph / 2); ctx.fillStyle = "#ffffff"; ctx.fill();
-    ctx.shadowColor = "transparent";
-    if (logo) ctx.drawImage(logo, px + 28, py + 14, 64, 64);
-    ctx.fillStyle = BRAND; ctx.direction = "ltr"; ctx.textAlign = "left"; ctx.textBaseline = "middle";
-    ctx.fillText("Mndallan", px + 28 + 64 + 16, py + ph / 2 + 2);
-    ctx.restore();
-  }
-
   // the question: a lighter first line, then the second on a red highlight
   ctx.save();
   ctx.direction = "rtl"; ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
   ctx.fillStyle = soft;
-  fit(ctx, font, q1, 66, W - 140); ctx.fillText(q1, W / 2, 316);
+  fit(ctx, font, q1, 66, W - 140); ctx.fillText(q1, W / 2, 290);
   const f2 = fit(ctx, font, q2, 86, W - 200);
   const w2 = ctx.measureText(q2).width;
-  const hb = f2 * 1.5, hy = 432 - f2 * 1.02;
+  const hb = f2 * 1.5, hy = 406 - f2 * 1.02;
   roundedRect(ctx, W / 2 - w2 / 2 - 40, hy, w2 + 80, hb, 26);
   ctx.fillStyle = BRAND; ctx.fill();
-  ctx.fillStyle = "#ffffff"; ctx.fillText(q2, W / 2, 432);
+  ctx.fillStyle = "#ffffff"; ctx.fillText(q2, W / 2, 406);
   ctx.restore();
 
   // the seller's photo, straight, in a large rounded card with a thin white rim
-  const fx = 72, fy = 540, fw = W - 144, fh = 900;
+  const fx = 72, fy = 500, fw = W - 144, fh = 940;
   const crop = img && (storyCrop
     ? { sx: storyCrop.x * img.width, sy: storyCrop.y * img.height, sw: storyCrop.w * img.width, sh: storyCrop.h * img.height }
     : smartCrop(img, fw / fh));
@@ -182,9 +168,8 @@ export async function buildSpotlightImage({ title, category, photo, storyCrop, c
   const crop = storyCrop && storyCrop.url === photo ? storyCrop : null;
 
   const drawingUrls = CATEGORY_CONFIG.filter((c) => c.value !== "all").map((c) => c.img);
-  const [img, logo, storyOk, spotOk, ...drawingImgs] = await Promise.all([
+  const [img, storyOk, spotOk, ...drawingImgs] = await Promise.all([
     loadImage(photo, { cors: true }),
-    loadImage("/logo-mndallan.svg"),
     loadStoryFonts(),
     loadSpotFont(),
     ...drawingUrls.map((u) => loadImage(u, { cors: true })),
@@ -200,7 +185,7 @@ export async function buildSpotlightImage({ title, category, photo, storyCrop, c
     canvas.width = W; canvas.height = H;
     const ctx = canvas.getContext("2d");
     if (!ctx) return null;
-    drawSpotlight(ctx, { img: withPhoto ? img : null, storyCrop: crop, title, code, logo, q1, q2, find, family, pageFamily, drawings: withPhoto ? drawings : [] });
+    drawSpotlight(ctx, { img: withPhoto ? img : null, storyCrop: crop, title, code, q1, q2, find, family, pageFamily, drawings: withPhoto ? drawings : [] });
     return canvas;
   };
   const toBlob = (canvas) => new Promise((resolve, reject) => {
