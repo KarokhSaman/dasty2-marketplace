@@ -10,13 +10,38 @@ import { getCityLabel } from "@/lib/cities";
 import { CATEGORY_CONFIG } from "@/lib/categories";
 import { formatAmount } from "@/components/ui";
 import {
-  PageHeader, Card, Empty, Skeleton, Segmented, FilterChips, Code, Thumb, btn, fmtIQD, useToast, useCopy, IconCheck, IconCopy,
+  PageHeader, Card, Empty, Skeleton, Segmented, FilterChips, Code, Thumb, btn, fmtIQD, useToast, useCopy, IconCheck, IconCopy, IconStar,
 } from "@/components/admin/ui";
+
+// Icons for the three make buttons
+const IconStory = (p) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...p}>
+    <rect x="6" y="2.5" width="12" height="19" rx="3" /><path d="M10 6.5h4" />
+  </svg>
+);
+const IconReel = (p) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...p}>
+    <rect x="3" y="3" width="18" height="18" rx="4" /><path d="M3 8.5h18M8 3l2.5 5.5M14 3l2.5 5.5" /><path d="m10.5 12.5 4 2.5-4 2.5z" fill="currentColor" />
+  </svg>
+);
+
+// One of the three equal make buttons: icon and name, or its progress while making.
+function MakeButton({ icon: Icon, label, busy, progress, disabled, onClick }) {
+  return (
+    <button type="button" onClick={onClick} disabled={disabled}
+      className="inline-flex items-center justify-center gap-1.5 h-11 w-full min-w-0 px-2 rounded-xl border border-adm-line bg-adm-surface text-adm-ink text-[13.5px] font-semibold whitespace-nowrap transition-colors hover:border-adm-fade active:scale-[0.98] disabled:opacity-45 disabled:pointer-events-none">
+      {busy ? (
+        <span className="w-4 h-4 shrink-0 border-2 border-adm-accent/30 border-t-adm-accent rounded-full animate-spin" />
+      ) : (
+        <Icon className="w-[18px] h-[18px] shrink-0 text-adm-accent" />
+      )}
+      <span className="truncate tabular-nums">{busy ? progress : label}</span>
+    </button>
+  );
+}
 
 // Instagram only shows in the phone's share sheet for up to 8 photos at once.
 const MAX = 8;
-// After every 5 regular stories comes a Spotlight story, to break the pattern.
-const SPOTLIGHT_EVERY = 6;
 // A reel shows each product for about 2 seconds, so 5 keep it near 15 seconds.
 const REEL_MAX = 5;
 const DAY = 86400000;
@@ -211,16 +236,16 @@ export default function AdminStoriesPage() {
   const tickShown = () => setPicked([...ids, ...shown.map((p) => p._id).filter((id) => !ids.includes(id))].slice(0, MAX));
   const allShownPicked = shown.length > 0 && shown.every((p) => ids.includes(p._id));
 
-  async function make() {
+  // Stories (each in the next colour, so a run doesn't look the same) or
+  // Spotlights (no price, a white bar for the link) of the ticked products.
+  async function make(kind) {
     const chosen = ids.map((id) => live.find((p) => p._id === id)).filter(Boolean);
     if (!chosen.length) return;
     const made = [];
+    const spotlight = kind === "spotlight";
     try {
       for (const [i, p] of chosen.entries()) {
-        setMaking({ done: i, total: chosen.length });
-        // every 6th is a Spotlight (no price, a white bar for the link);
-        // the others each in the next colour, so a run doesn't look the same
-        const spotlight = (i + 1) % SPOTLIGHT_EVERY === 0;
+        setMaking({ kind, done: i, total: chosen.length });
         const blob = spotlight
           ? await buildSpotlightImage({ title: p.title, category: p.category, photo: mainPhoto(p), storyCrop: p.storyCrop, code: p.seq ? `#${p.seq}` : undefined })
           : await buildStoryImage({ ...storyFor(p, price === "none"), theme: i });
@@ -272,7 +297,7 @@ export default function AdminStoriesPage() {
 
   async function saveAll() {
     const result = await shareStoryFiles(stories.map((s) => s.file));
-    if (result === "downloaded") toast(`${stories.length} stories downloaded`);
+    if (result === "downloaded") toast(`${stories.length} downloaded`);
     else if (result === "failed") toast("Could not save the stories", "error");
   }
 
@@ -316,15 +341,15 @@ export default function AdminStoriesPage() {
   }
 
   if (stories) {
+    const spotlights = stories.every((s) => s.spotlight);
     return (
       <div className="max-w-[760px]">
-        <PageHeader title={`${stories.length} ${stories.length === 1 ? "story" : "stories"} ready`}
-          sub={price === "none" ? "Without price · the tag is left for the link sticker" : "With price"}
+        <PageHeader title={`${stories.length} ${spotlights ? (stories.length === 1 ? "Spotlight" : "Spotlights") : stories.length === 1 ? "story" : "stories"} ready`}
+          sub={spotlights ? "No price · the white bar is for the link sticker" : price === "none" ? "Without price · the tag is left for the link sticker" : "With price"}
           actions={<button type="button" onClick={() => setStories(null)} className={btn("ghost")}>Back</button>} />
         <p className="rounded-2xl bg-adm-sunk px-3.5 py-3 text-[12.5px] text-adm-soft leading-relaxed mb-3">
           1. Save all to Photos. 2. In Instagram, add a story and pick them all from your gallery.
-          3. On each one, tap <b>Copy link</b> here, add a link sticker and paste{price === "none" ? ", then put the sticker on the empty tag" : ""}.
-          {stories.some((s) => s.spotlight) && <> On the Spotlight story, put the link sticker on the white bar.</>}
+          3. On each one, tap <b>Copy link</b> here, add a link sticker and paste{spotlights ? ", then put the sticker on the white bar" : price === "none" ? ", then put the sticker on the empty tag" : ""}.
         </p>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 mb-24">
           {stories.map((s) => (
@@ -342,7 +367,7 @@ export default function AdminStoriesPage() {
 
   return (
     <div className="max-w-[760px]">
-      <PageHeader title="Stories" sub={`Pick up to ${MAX} live products and make all their Instagram stories at once, or up to ${REEL_MAX} for one reel`} />
+      <PageHeader title="Stories" sub={`Pick up to ${MAX} live products, then make their stories or Spotlights at once, or one reel of up to ${REEL_MAX}`} />
       <Segmented options={PRICE} value={price} onChange={setPrice} className="mb-2" />
       <Segmented options={LISTS} value={list} onChange={setList} className="mb-2.5" size="sm" />
       {categories.length > 2 && <div className="mb-2.5"><FilterChips options={categories} value={cat} onChange={setCategory} /></div>}
@@ -356,30 +381,34 @@ export default function AdminStoriesPage() {
       {shown.length === 0 ? (
         <Card><Empty>{cat ? `No live ${cat} products here.` : list === "today" ? "Nothing approved today yet. Try This week." : "No live products here."}</Empty></Card>
       ) : (
-        <div className="mb-24">
+        <div className="mb-32">
           {shown.map((p) => (
             <PickRow key={p._id} product={p} picked={ids.includes(p._id)} disabled={full && !ids.includes(p._id)} onToggle={() => toggle(p._id)} />
           ))}
         </div>
       )}
-      <div className="fixed inset-x-0 bottom-[calc(60px+env(safe-area-inset-bottom,0px))] lg:bottom-0 lg:start-[232px] z-20 bg-adm-bg/95 backdrop-blur border-t border-adm-line px-4 lg:px-8 py-3">
-        <div className="max-w-[760px] flex items-center gap-2">
-          {ids.length > 0 && (
-            <button type="button" onClick={() => setPicked([])} className={`${btn("ghost")} shrink-0 px-3`}>Clear</button>
-          )}
-          {/* Short labels so all three fit on a phone */}
-          <button type="button" onClick={makeReel} disabled={!ids.length || ids.length > REEL_MAX || !!making || reelMaking != null}
-            title={ids.length > REEL_MAX ? `A reel takes up to ${REEL_MAX} products` : "Make one reel of the ticked products"}
-            className={`${btn("outline", "lg")} shrink-0 px-4`}>
-            {reelMaking != null ? (
-              <><span className="w-4 h-4 border-2 border-current/30 border-t-current rounded-full animate-spin" /> {Math.round(reelMaking * 100)}%</>
-            ) : ids.length > REEL_MAX ? `Reel ≤ ${REEL_MAX}` : "Reel"}
-          </button>
-          <button type="button" onClick={make} disabled={!ids.length || !!making || reelMaking != null} className={`${btn("primary", "lg")} flex-1 min-w-0`}>
-            {making ? (
-              <><span className="w-4 h-4 shrink-0 border-2 border-white/40 border-t-white rounded-full animate-spin" /> <span className="truncate">Making {making.done + 1} of {making.total}…</span></>
-            ) : <span className="truncate">{ids.length ? `Make ${ids.length} ${ids.length === 1 ? "story" : "stories"}` : "Pick products"}</span>}
-          </button>
+      <div className="fixed inset-x-0 bottom-[calc(60px+env(safe-area-inset-bottom,0px))] lg:bottom-0 lg:start-[232px] z-20 bg-adm-bg/95 backdrop-blur border-t border-adm-line px-4 lg:px-8 pt-2 pb-3">
+        <div className="max-w-[760px]">
+          <div className="flex items-center justify-between h-6 mb-1.5 text-[12.5px]">
+            <span className={ids.length ? "font-semibold" : "text-adm-fade"}>
+              {ids.length ? `${ids.length} of ${MAX} picked` : "Tick products to start"}
+            </span>
+            {ids.length > 0 && (
+              <button type="button" onClick={() => setPicked([])} className="font-semibold text-adm-soft hover:text-adm-ink px-1">Clear</button>
+            )}
+          </div>
+          {/* three equal buttons: what each makes, in the same shape */}
+          <div className="grid grid-cols-3 gap-2">
+            <MakeButton icon={IconStory} label="Stories" onClick={() => make("story")}
+              busy={making?.kind === "story"} progress={making ? `${making.done + 1} of ${making.total}` : ""}
+              disabled={!ids.length || !!making || reelMaking != null} />
+            <MakeButton icon={IconStar} label="Spotlight" onClick={() => make("spotlight")}
+              busy={making?.kind === "spotlight"} progress={making ? `${making.done + 1} of ${making.total}` : ""}
+              disabled={!ids.length || !!making || reelMaking != null} />
+            <MakeButton icon={IconReel} label={ids.length > REEL_MAX ? `Reel ≤ ${REEL_MAX}` : "Reel"} onClick={makeReel}
+              busy={reelMaking != null} progress={reelMaking != null ? `${Math.round(reelMaking * 100)}%` : ""}
+              disabled={!ids.length || ids.length > REEL_MAX || !!making || reelMaking != null} />
+          </div>
         </div>
       </div>
     </div>

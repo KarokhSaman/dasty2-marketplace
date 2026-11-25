@@ -222,8 +222,10 @@ function drawIcon(ctx, d, x, y, size, color) {
 
 // City chip (outlined) and a white chip after it: "new from a shop" for store
 // products, or the condition (new / like new / used) for everyone else. Laid
-// out from the reading edge, so it mirrors in Kurdish/Arabic.
-function drawChips(ctx, { city, store, condition, family, rtl, edge, top }) {
+// out from the reading edge, so it mirrors in Kurdish/Arabic. Given `ink` (the
+// card colour's dark shade), both chips are solid white with their icon and
+// text in that shade, so they read clearly on any card colour.
+function drawChips(ctx, { city, store, condition, family, rtl, edge, top, ink }) {
   const chips = [];
   ctx.font = `700 36px ${family}`;
   if (city) chips.push({ kind: "city", text: city, w: 28 + 38 + 12 + ctx.measureText(city).width + 30 });
@@ -239,7 +241,7 @@ function drawChips(ctx, { city, store, condition, family, rtl, edge, top }) {
   for (const c of chips) {
     const x = rtl ? at - c.w : at;
     roundedRect(ctx, x, top, c.w, h, h / 2);
-    if (c.kind === "city") {
+    if (c.kind === "city" && !ink) {
       ctx.fillStyle = "rgba(255, 255, 255, 0.16)";
       ctx.fill();
       ctx.strokeStyle = "rgba(255, 255, 255, 0.6)";
@@ -249,7 +251,7 @@ function drawChips(ctx, { city, store, condition, family, rtl, edge, top }) {
       ctx.fillStyle = "#ffffff";
       ctx.fill();
     }
-    const color = c.kind === "city" ? "#ffffff" : INK;
+    const color = ink ?? (c.kind === "city" ? "#ffffff" : INK);
     const iconX = rtl ? x + c.w - 28 - 38 : x + 28;
     drawIcon(ctx, c.kind === "city" ? PIN_PATH : c.kind === "store" ? STORE_PATH : TAG_PATH, iconX, mid - 19, 38, color);
     ctx.fillStyle = color;
@@ -421,14 +423,16 @@ const CARD_ART = {
 
 // Colour themes for the card, so stories posted one after another don't all
 // look the same: the card art recoloured (public/story-card-*.png, same
-// shape as the red one), a soft tint over the white page, and the price's
-// colour on the tag. Red, the brand colour, comes first.
+// shape as the red one, the tag's face pure white in every one), a soft tint
+// over the white page, and the price's colour on the tag. A calm palette:
+// brand red, the only bright one, comes first; the rest are muted so the
+// product photo stays the star.
 export const STORY_THEMES = [
   { name: "red", art: "/story-card.png", tint: null, price: "#5a0a1e" },
-  { name: "teal", art: "/story-card-teal.png", tint: "#dff4f1", price: "#0b4a44" },
-  { name: "blue", art: "/story-card-blue.png", tint: "#e3ebfa", price: "#0d2f6b" },
-  { name: "amber", art: "/story-card-amber.png", tint: "#fdf0d5", price: "#6b3a00" },
-  { name: "purple", art: "/story-card-purple.png", tint: "#f1e6f6", price: "#3f1257" },
+  { name: "sage", art: "/story-card-sage.png", tint: "#eef4f0", price: "#2f4a3b" },
+  { name: "dusty blue", art: "/story-card-dustyblue.png", tint: "#ebf1f7", price: "#23384f" },
+  { name: "caramel", art: "/story-card-caramel.png", tint: "#f8efe4", price: "#5a3a1a" },
+  { name: "mauve", art: "/story-card-mauve.png", tint: "#f3ecf2", price: "#432a3e" },
 ];
 
 // A theme index, or for a single story the product code's number
@@ -498,7 +502,7 @@ function drawCardArt(ctx, { art, CS, cx, cy, cw, ch, rtl, price, label, title, c
   // chips and title inside the shorter card
   const pad = 56;
   const chipTop = cy + 34;
-  drawChipsSized(ctx, { city, store, condition, family, rtl, edge: rtl ? cx + cw - pad : cx + pad, top: chipTop });
+  drawChipsSized(ctx, { city, store, condition, family, rtl, edge: rtl ? cx + cw - pad : cx + pad, top: chipTop, ink: priceColor });
   const inner = cw - 2 * pad - 40;
   let tsize = 58, lines;
   for (; tsize >= 40; tsize -= 2) {
