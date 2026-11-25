@@ -247,7 +247,7 @@ export default function AdminStoriesPage() {
       for (const [i, p] of chosen.entries()) {
         setMaking({ kind, done: i, total: chosen.length });
         const blob = spotlight
-          ? await buildSpotlightImage({ title: p.title, category: p.category, photo: mainPhoto(p), storyCrop: p.storyCrop, code: p.seq ? `#${p.seq}` : undefined })
+          ? await buildSpotlightImage({ category: p.category, photo: mainPhoto(p), storyCrop: p.storyCrop, code: p.seq ? `#${p.seq}` : undefined })
           : await buildStoryImage({ ...storyFor(p, price === "none"), theme: i });
         if (!blob) continue;
         const file = new File([blob], `${p.seq || p._id}${spotlight ? "-spotlight" : price === "none" ? "-link" : ""}.png`, { type: "image/png" });

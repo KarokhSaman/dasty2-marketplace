@@ -2,8 +2,8 @@
 // the Spotlight button. A deep brand wine background with the baby drawings
 // faint in white, a question for parents that fits the product's category
 // (its second line on a red highlight), the seller's real photo in a large
-// card with the product's name across its bottom, and an empty white bar for
-// the Instagram link sticker. No price: the link is how to find out.
+// card, and an empty white bar for the Instagram link sticker. No name or
+// price: the link is how to find out.
 //
 // All writing is drawn here, in Noto Kufi so it looks different from the
 // regular stories.
@@ -52,12 +52,12 @@ function fit(ctx, font, text, px, max, min = 34) {
   return f;
 }
 
-function drawSpotlight(ctx, { img, storyCrop, title, code, q1, q2, find, family, pageFamily, drawings = [] }) {
+function drawSpotlight(ctx, { img, storyCrop, code, q1, q2, find, family, pageFamily, drawings = [] }) {
   const font = (px) => `900 ${px}px ${family}`;
 
   // deep brand wine, with the baby drawings faint in white
   const g = ctx.createLinearGradient(0, 0, W, H);
-  g.addColorStop(0, "#5c0a22"); g.addColorStop(1, "#2a0410");
+  g.addColorStop(0, "#7d1232"); g.addColorStop(1, "#4a0a1f");
   ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
   if (drawings.length) {
     const size = 86, step = 150;
@@ -72,7 +72,7 @@ function drawSpotlight(ctx, { img, storyCrop, title, code, q1, q2, find, family,
     let n = 0;
     for (let row = 0, y = -30; y < H; row++, y += step * 0.86) {
       for (let x = row % 2 ? -10 : -85; x < W; x += step, n++) {
-        ctx.save(); ctx.globalAlpha = 0.07;
+        ctx.save(); ctx.globalAlpha = 0.12;
         ctx.translate(x + size / 2, y + size / 2); ctx.rotate((((n * 37) % 11) - 5) * 0.06);
         ctx.drawImage(inks[(n * 5 + row) % inks.length], -size / 2, -size / 2);
         ctx.restore();
@@ -94,7 +94,10 @@ function drawSpotlight(ctx, { img, storyCrop, title, code, q1, q2, find, family,
   ctx.fillStyle = "#ffffff"; ctx.fillText(q2, W / 2, 406);
   ctx.restore();
 
-  // the seller's photo, straight, in a large rounded card with a thin white rim
+  // the seller's photo, straight, in a large square card with a thin white rim.
+  // The photo (as the admin framed it, or trimmed by at most 30% around the
+  // item) fills the card; one still too tall or wide for that is shown whole,
+  // over a blurred copy of itself, instead of being cut further
   const fx = 72, fy = 500, fw = W - 144, fh = 940;
   const crop = img && (storyCrop
     ? { sx: storyCrop.x * img.width, sy: storyCrop.y * img.height, sw: storyCrop.w * img.width, sh: storyCrop.h * img.height }
@@ -106,24 +109,31 @@ function drawSpotlight(ctx, { img, storyCrop, title, code, q1, q2, find, family,
   ctx.save();
   roundedRect(ctx, fx, fy, fw, fh, 46); ctx.clip();
   if (crop) {
-    // cover the card: the crop is widened or heightened to its shape
-    let { sx, sy, sw, sh } = crop;
-    const want = fw / fh;
-    if (sw / sh > want) { const n = sh * want; sx += (sw - n) / 2; sw = n; } else { const n = sw / want; sy += (sh - n) / 2; sh = n; }
+    const want = fw / fh, ratio = crop.sw / crop.sh;
+    // the part of the photo that fills the card, cut evenly from both ends
+    const keepW = Math.min(crop.sw, crop.sh * want), keepH = Math.min(crop.sh, crop.sw / want);
+    const cover = [img, crop.sx + (crop.sw - keepW) / 2, crop.sy + (crop.sh - keepH) / 2, keepW, keepH];
+    const cut = 1 - Math.min(ratio / want, want / ratio);
     ctx.imageSmoothingQuality = "high";
-    ctx.drawImage(img, sx, sy, sw, sh, fx, fy, fw, fh);
+    if (cut <= (storyCrop ? 0.26 : 0.08)) {
+      ctx.drawImage(...cover, fx, fy, fw, fh);
+    } else {
+      // blurred by drawing it tiny and scaling it back up in steps, which
+      // works in every browser
+      let small;
+      for (const px of [96, 24, 72, 240]) {
+        const c = document.createElement("canvas"); c.width = c.height = px;
+        const t = c.getContext("2d"); t.imageSmoothingQuality = "high";
+        if (small) t.drawImage(small, 0, 0, px, px); else t.drawImage(...cover, 0, 0, px, px);
+        small = c;
+      }
+      ctx.drawImage(small, fx - 30, fy - 30, fw + 60, fh + 60);
+      ctx.fillStyle = "rgba(40,6,18,0.22)"; ctx.fillRect(fx, fy, fw, fh);
+      const k = Math.min(fw / crop.sw, fh / crop.sh), w = crop.sw * k, h = crop.sh * k;
+      ctx.drawImage(img, crop.sx, crop.sy, crop.sw, crop.sh, fx + (fw - w) / 2, fy + (fh - h) / 2, w, h);
+    }
   } else {
     ctx.fillStyle = "#f3ece6"; ctx.fillRect(fx, fy, fw, fh);
-  }
-  // the product name on a dark band across the photo's bottom
-  if (title) {
-    const band = ctx.createLinearGradient(0, fy + fh - 260, 0, fy + fh);
-    band.addColorStop(0, "rgba(15,10,12,0)");
-    band.addColorStop(1, "rgba(15,10,12,0.82)");
-    ctx.fillStyle = band; ctx.fillRect(fx, fy + fh - 260, fw, 260);
-    ctx.fillStyle = "#ffffff"; ctx.direction = "rtl"; ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
-    fit(ctx, font, title, 58, fw - 100);
-    ctx.fillText(title, W / 2, fy + fh - 58);
   }
   ctx.restore();
 
@@ -153,7 +163,6 @@ function drawSpotlight(ctx, { img, storyCrop, title, code, q1, q2, find, family,
  * Draw a Spotlight story and return it as a PNG blob.
  *
  * @param {object} p
- * @param {string} p.title     product title, shown in the red cloud
  * @param {string} p.category  product category (picks the question)
  * @param {string} [p.photo]   absolute image URL (R2)
  * @param {object} [p.storyCrop] admin-set framing ({ url, x, y, w, h }), used
@@ -161,7 +170,7 @@ function drawSpotlight(ctx, { img, storyCrop, title, code, q1, q2, find, family,
  * @param {string} [p.code]    product code, e.g. "#26-0009"
  * @param {string} [p.locale]  language of the writing (default Kurdish)
  */
-export async function buildSpotlightImage({ title, category, photo, storyCrop, code, locale = "ckb" }) {
+export async function buildSpotlightImage({ category, photo, storyCrop, code, locale = "ckb" }) {
   const q = QUESTION[category] ?? QUESTION.Other;
   const L = { locale };
   const q1 = m[`spotlight${q}1`]({}, L), q2 = m[`spotlight${q}2`]({}, L), find = m.spotlightFindHere({}, L);
@@ -177,7 +186,7 @@ export async function buildSpotlightImage({ title, category, photo, storyCrop, c
   const drawings = drawingImgs.filter(Boolean);
   const page = getComputedStyle(document.body).fontFamily || "sans-serif";
   const pageFamily = storyOk ? `"${STORY_FONT}", ${page}` : page;
-  // Noto Kufi for the Kurdish; Latin letters in a title fall back to the story font
+  // Noto Kufi for the Kurdish; other letters fall back to the story font
   const family = spotOk ? `"${SPOT_FONT}", ${pageFamily}` : pageFamily;
 
   const render = (withPhoto) => {
@@ -185,7 +194,7 @@ export async function buildSpotlightImage({ title, category, photo, storyCrop, c
     canvas.width = W; canvas.height = H;
     const ctx = canvas.getContext("2d");
     if (!ctx) return null;
-    drawSpotlight(ctx, { img: withPhoto ? img : null, storyCrop: crop, title, code, q1, q2, find, family, pageFamily, drawings: withPhoto ? drawings : [] });
+    drawSpotlight(ctx, { img: withPhoto ? img : null, storyCrop: crop, code, q1, q2, find, family, pageFamily, drawings: withPhoto ? drawings : [] });
     return canvas;
   };
   const toBlob = (canvas) => new Promise((resolve, reject) => {
