@@ -1,36 +1,36 @@
-// "Spotlight" story: a pattern-break story that goes between the regular
-// product stories (Admin → Stories puts one after every 5). A photographed
-// room for the product's category (made once with Codex, public/spotlight/),
-// a question for parents, the seller's real photo in a white frame with the
-// product's name in a red cloud, and an empty white bar for the Instagram
-// link sticker. No price: the link is how to find out.
+// "Spotlight" story: a pattern-break story, made from Admin → Stories with
+// the Spotlight button. A deep brand wine background with the baby drawings
+// faint in white, a question for parents that fits the product's category
+// (its second line on a red highlight), the seller's real photo in a large
+// card with the product's name across its bottom, and an empty white bar for
+// the Instagram link sticker. No price: the link is how to find out.
 //
-// All writing is drawn here (AI image tools break Kurdish letters), in
-// Noto Kufi so it looks different from the regular stories.
+// All writing is drawn here, in Noto Kufi so it looks different from the
+// regular stories.
 
 import notoKufi from "@fontsource/noto-kufi-arabic/files/noto-kufi-arabic-arabic-900-normal.woff2?url";
 import * as m from "@/paraglide/messages";
 import {
-  STORY_W as W, STORY_H as H, INK, INK_SOFT, BRAND, STORY_FONT,
-  loadImage, loadStoryFonts, roundedRect, smartCrop, drawHeader,
+  STORY_W as W, STORY_H as H, BRAND, STORY_FONT,
+  loadImage, loadStoryFonts, roundedRect, smartCrop,
 } from "@/lib/storyImage";
+import { CATEGORY_CONFIG } from "@/lib/categories";
 
-// Category → [room, question]. Rooms are 1080×1920 JPEGs with a calm top
-// (for the question) and an empty middle (for the photo).
-const SPOTLIGHT = {
-  Toy: ["living", "Toy"],
-  Electronic: ["living", "Other"],
-  Other: ["living", "Other"],
-  Crib: ["nursery", "Sleep"],
-  Cradle: ["nursery", "Sleep"],
-  Bassinet: ["nursery", "Sleep"],
-  "Carry Cot": ["nursery", "Sleep"],
-  "Breast Pump": ["nursery", "Pump"],
-  Stroller: ["park", "Stroller"],
-  "Baby Walker": ["park", "Walk"],
-  "Car Seat": ["entrance", "CarSeat"],
-  "High Chair": ["kitchen", "Feeding"],
-  Bouncer: ["play", "Walk"],
+// Category → the question asked for it.
+const QUESTION = {
+  Toy: "Toy",
+  Electronic: "Other",
+  Other: "Other",
+  Crib: "Sleep",
+  Cradle: "Sleep",
+  Bassinet: "Sleep",
+  "Carry Cot": "Sleep",
+  "Breast Pump": "Pump",
+  Stroller: "Stroller",
+  "Baby Walker": "Walk",
+  "Car Seat": "CarSeat",
+  "High Chair": "Feeding",
+  Bouncer: "Walk",
 };
 
 const SPOT_FONT = "MndallanSpotlight";
@@ -44,29 +44,6 @@ function loadSpotFont() {
   return spotFont;
 }
 
-// A few short strokes fanning out from a point, as small decorations.
-function rays(ctx, x, y, color, rot, n = 3, len = 30) {
-  ctx.save();
-  ctx.translate(x, y); ctx.rotate(rot);
-  ctx.strokeStyle = color; ctx.lineWidth = 9; ctx.lineCap = "round";
-  for (let i = 0; i < n; i++) {
-    const a = (i - (n - 1) / 2) * 0.55;
-    ctx.beginPath();
-    ctx.moveTo(Math.sin(a) * 20, -Math.cos(a) * 20);
-    ctx.lineTo(Math.sin(a) * (20 + len), -Math.cos(a) * (20 + len));
-    ctx.stroke();
-  }
-  ctx.restore();
-}
-
-function heart(ctx, x, y, s, rot, color) {
-  ctx.save();
-  ctx.translate(x, y); ctx.rotate(rot); ctx.scale(s / 24, s / 24);
-  ctx.strokeStyle = color; ctx.lineWidth = 2.2; ctx.lineJoin = "round";
-  ctx.stroke(new Path2D("M12 20s-7.5-4.6-9.3-9.2C1.3 7.3 3.6 4 7 4c2.1 0 3.6 1.2 5 3 1.4-1.8 2.9-3 5-3 3.4 0 5.7 3.3 4.3 6.8C19.5 15.4 12 20 12 20z"));
-  ctx.restore();
-}
-
 // Set the font at `px`, shrinking it until `text` fits in `max`.
 function fit(ctx, font, text, px, max, min = 34) {
   let f = px;
@@ -75,106 +52,115 @@ function fit(ctx, font, text, px, max, min = 34) {
   return f;
 }
 
-function drawSpotlight(ctx, { scene, img, storyCrop, title, code, logo, q1, q2, find, family, pageFamily }) {
+function drawSpotlight(ctx, { img, storyCrop, title, code, logo, q1, q2, find, family, pageFamily, drawings = [] }) {
   const font = (px) => `900 ${px}px ${family}`;
 
-  // the room, full bleed, with a soft light wash at the top for the question
-  if (scene) {
-    const a = W / H, ia = scene.width / scene.height;
-    const [sw, sh] = ia > a ? [scene.height * a, scene.height] : [scene.width, scene.width / a];
-    ctx.drawImage(scene, (scene.width - sw) / 2, (scene.height - sh) / 2, sw, sh, 0, 0, W, H);
-  } else {
-    ctx.fillStyle = "#f6efe6"; ctx.fillRect(0, 0, W, H);
+  // deep brand wine, with the baby drawings faint in white
+  const g = ctx.createLinearGradient(0, 0, W, H);
+  g.addColorStop(0, "#5c0a22"); g.addColorStop(1, "#2a0410");
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  if (drawings.length) {
+    const size = 86, step = 150;
+    const inks = drawings.map((d) => {
+      const c = document.createElement("canvas"); c.width = c.height = size;
+      const t = c.getContext("2d");
+      const k = Math.min(size / d.width, size / d.height);
+      t.drawImage(d, (size - d.width * k) / 2, (size - d.height * k) / 2, d.width * k, d.height * k);
+      t.globalCompositeOperation = "source-in"; t.fillStyle = "#ffffff"; t.fillRect(0, 0, size, size);
+      return c;
+    });
+    let n = 0;
+    for (let row = 0, y = -30; y < H; row++, y += step * 0.86) {
+      for (let x = row % 2 ? -10 : -85; x < W; x += step, n++) {
+        ctx.save(); ctx.globalAlpha = 0.07;
+        ctx.translate(x + size / 2, y + size / 2); ctx.rotate((((n * 37) % 11) - 5) * 0.06);
+        ctx.drawImage(inks[(n * 5 + row) % inks.length], -size / 2, -size / 2);
+        ctx.restore();
+      }
+    }
   }
-  const wash = ctx.createLinearGradient(0, 0, 0, 760);
-  wash.addColorStop(0, "rgba(255,252,248,0.92)");
-  wash.addColorStop(0.75, "rgba(255,252,248,0.55)");
-  wash.addColorStop(1, "rgba(255,252,248,0)");
-  ctx.fillStyle = wash; ctx.fillRect(0, 0, W, 760);
+  const soft = "rgba(255,255,255,0.88)", strong = "#ffffff", quiet = "rgba(255,255,255,0.7)";
 
-  drawHeader(ctx, { logo, family: pageFamily });
-  heart(ctx, 930, 140, 96, 0.12, BRAND);
-  rays(ctx, 1010, 120, BRAND, 1.2, 2, 26);
+  // Mndallan in a white pill, centred at the top
+  {
+    ctx.save();
+    ctx.font = `800 40px ${pageFamily}`;
+    const tw = ctx.measureText("Mndallan").width;
+    const pw = 64 + 16 + tw + 56, ph = 92, px = (W - pw) / 2, py = 70;
+    roundedRect(ctx, px, py, pw, ph, ph / 2); ctx.fillStyle = "#ffffff"; ctx.fill();
+    ctx.shadowColor = "transparent";
+    if (logo) ctx.drawImage(logo, px + 28, py + 14, 64, 64);
+    ctx.fillStyle = BRAND; ctx.direction = "ltr"; ctx.textAlign = "left"; ctx.textBaseline = "middle";
+    ctx.fillText("Mndallan", px + 28 + 64 + 16, py + ph / 2 + 2);
+    ctx.restore();
+  }
 
-  // the question: a smaller first line, a big second one with a red swoosh
+  // the question: a lighter first line, then the second on a red highlight
   ctx.save();
-  ctx.direction = "rtl"; ctx.textAlign = "center"; ctx.textBaseline = "alphabetic"; ctx.fillStyle = INK;
-  fit(ctx, font, q1, 78, W - 110); ctx.fillText(q1, W / 2, 330);
-  fit(ctx, font, q2, 92, W - 110); ctx.fillText(q2, W / 2, 452);
-  const w2 = Math.min(ctx.measureText(q2).width, W - 200);
-  ctx.strokeStyle = BRAND; ctx.lineWidth = 11; ctx.lineCap = "round";
-  ctx.beginPath(); ctx.moveTo(W / 2 - w2 * 0.5, 505); ctx.quadraticCurveTo(W / 2, 470, W / 2 + w2 * 0.5, 492); ctx.stroke();
+  ctx.direction = "rtl"; ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+  ctx.fillStyle = soft;
+  fit(ctx, font, q1, 66, W - 140); ctx.fillText(q1, W / 2, 316);
+  const f2 = fit(ctx, font, q2, 86, W - 200);
+  const w2 = ctx.measureText(q2).width;
+  const hb = f2 * 1.5, hy = 432 - f2 * 1.02;
+  roundedRect(ctx, W / 2 - w2 / 2 - 40, hy, w2 + 80, hb, 26);
+  ctx.fillStyle = BRAND; ctx.fill();
+  ctx.fillStyle = "#ffffff"; ctx.fillText(q2, W / 2, 432);
   ctx.restore();
-  rays(ctx, 1000, 520, "#f5b400", 0.7, 3, 30);
 
-  // the seller's real photo in a white frame that takes its shape, a little tilted
-  let fx = 80, fy = 620, fw = W - 160, fh = 800;
+  // the seller's photo, straight, in a large rounded card with a thin white rim
+  const fx = 72, fy = 540, fw = W - 144, fh = 900;
   const crop = img && (storyCrop
     ? { sx: storyCrop.x * img.width, sy: storyCrop.y * img.height, sw: storyCrop.w * img.width, sh: storyCrop.h * img.height }
-    : smartCrop(img, (fw - 32) / (fh - 32)));
-  if (crop) {
-    const s = Math.min((fw - 32) / crop.sw, (fh - 32) / crop.sh);
-    const w = crop.sw * s + 32, h = crop.sh * s + 32;
-    fx += (fw - w) / 2; fy += (fh - h) / 2; fw = w; fh = h;
-  }
+    : smartCrop(img, fw / fh));
   ctx.save();
-  ctx.translate(fx + fw / 2, fy + fh / 2); ctx.rotate(-0.025); ctx.translate(-(fx + fw / 2), -(fy + fh / 2));
-  ctx.shadowColor = "rgba(60,30,10,0.35)"; ctx.shadowBlur = 70; ctx.shadowOffsetY = 34;
-  roundedRect(ctx, fx, fy, fw, fh, 48); ctx.fillStyle = "#fff"; ctx.fill();
-  ctx.shadowColor = "transparent";
-  roundedRect(ctx, fx + 16, fy + 16, fw - 32, fh - 32, 36);
-  ctx.save(); ctx.clip();
+  ctx.shadowColor = "rgba(0,0,0,0.5)"; ctx.shadowBlur = 80; ctx.shadowOffsetY = 30;
+  roundedRect(ctx, fx - 6, fy - 6, fw + 12, fh + 12, 52); ctx.fillStyle = "#ffffff"; ctx.fill();
+  ctx.restore();
+  ctx.save();
+  roundedRect(ctx, fx, fy, fw, fh, 46); ctx.clip();
   if (crop) {
+    // cover the card: the crop is widened or heightened to its shape
+    let { sx, sy, sw, sh } = crop;
+    const want = fw / fh;
+    if (sw / sh > want) { const n = sh * want; sx += (sw - n) / 2; sw = n; } else { const n = sw / want; sy += (sh - n) / 2; sh = n; }
     ctx.imageSmoothingQuality = "high";
-    ctx.drawImage(img, crop.sx, crop.sy, crop.sw, crop.sh, fx + 16, fy + 16, fw - 32, fh - 32);
+    ctx.drawImage(img, sx, sy, sw, sh, fx, fy, fw, fh);
   } else {
-    ctx.fillStyle = "#f6eee5"; ctx.fillRect(fx, fy, fw, fh);
+    ctx.fillStyle = "#f3ece6"; ctx.fillRect(fx, fy, fw, fh);
   }
-  ctx.restore();
-  ctx.restore();
-  rays(ctx, fx + 30, fy + 70, "#ffffff", -0.6, 3, 34);
-
-  // the product's name in a red cloud on the frame's top corner
+  // the product name on a dark band across the photo's bottom
   if (title) {
-    ctx.save();
-    const fs = fit(ctx, font, title, 52, 560);
-    const tw = ctx.measureText(title).width, bw = tw + 110, bh = Math.max(110, fs * 2.45);
-    const bx = Math.min(W - 60 - bw / 2, fx + fw - bw * 0.32), by = fy;
-    ctx.translate(bx, by); ctx.rotate(0.09);
-    ctx.shadowColor = "rgba(200,0,55,0.4)"; ctx.shadowBlur = 36; ctx.shadowOffsetY = 14;
-    ctx.fillStyle = BRAND;
-    roundedRect(ctx, -bw / 2, -bh / 2, bw, bh, bh / 2); ctx.fill();
-    for (const [x, y, r] of [[-bw * 0.22, -bh * 0.42, bh * 0.36], [bw * 0.08, -bh * 0.5, bh * 0.4], [bw * 0.32, -bh * 0.36, bh * 0.31]]) {
-      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
-    }
-    ctx.shadowColor = "transparent";
-    ctx.fillStyle = "#fff"; ctx.direction = "rtl"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    ctx.fillText(title, 0, 6);
-    ctx.restore();
+    const band = ctx.createLinearGradient(0, fy + fh - 260, 0, fy + fh);
+    band.addColorStop(0, "rgba(15,10,12,0)");
+    band.addColorStop(1, "rgba(15,10,12,0.82)");
+    ctx.fillStyle = band; ctx.fillRect(fx, fy + fh - 260, fw, 260);
+    ctx.fillStyle = "#ffffff"; ctx.direction = "rtl"; ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+    fit(ctx, font, title, 58, fw - 100);
+    ctx.fillText(title, W / 2, fy + fh - 58);
   }
-
-  // "find it here", and under it the empty white bar for the link sticker
-  ctx.save();
-  ctx.fillStyle = INK; ctx.font = font(66); ctx.direction = "rtl"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-  ctx.shadowColor = "rgba(255,255,255,0.9)"; ctx.shadowBlur = 24;
-  ctx.fillText(find, W / 2, 1572);
   ctx.restore();
-  const sw = 760, sh = 150, sx = (W - sw) / 2, sy = 1625;
+
+  // "find it here" with a small arrow, and the white bar for the link sticker
   ctx.save();
-  ctx.shadowColor = "rgba(60,30,10,0.25)"; ctx.shadowBlur = 50; ctx.shadowOffsetY = 18;
+  ctx.fillStyle = strong; ctx.font = font(58); ctx.direction = "rtl"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillText(find, W / 2, 1518);
+  ctx.strokeStyle = BRAND; ctx.lineWidth = 8; ctx.lineCap = "round"; ctx.lineJoin = "round";
+  ctx.beginPath(); ctx.moveTo(W / 2 - 18, 1586); ctx.lineTo(W / 2, 1604); ctx.lineTo(W / 2 + 18, 1586); ctx.stroke();
+  ctx.restore();
+  const sw = 760, sh = 140, sx = (W - sw) / 2, sy = 1640;
+  ctx.save();
+  roundedRect(ctx, sx - 10, sy - 10, sw + 20, sh + 20, (sh + 20) / 2);
+  ctx.fillStyle = "rgba(255,255,255,0.22)"; ctx.fill();
   roundedRect(ctx, sx, sy, sw, sh, sh / 2); ctx.fillStyle = "#ffffff"; ctx.fill();
   ctx.restore();
-  rays(ctx, sx - 46, sy + sh / 2, BRAND, -Math.PI / 2, 3, 26);
-  rays(ctx, sx + sw + 46, sy + sh / 2, BRAND, Math.PI / 2, 3, 26);
 
-  // the product code, small, at the bottom
-  if (code) {
-    ctx.save();
-    ctx.direction = "ltr"; ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
-    ctx.fillStyle = INK_SOFT; ctx.font = `700 34px ${pageFamily}`;
-    ctx.fillText(code, 72, H - 60);
-    ctx.restore();
-  }
+  // code and site, small and quiet, at the bottom
+  ctx.save();
+  ctx.fillStyle = quiet; ctx.font = `700 32px ${pageFamily}`; ctx.textBaseline = "alphabetic"; ctx.direction = "ltr";
+  if (code) { ctx.textAlign = "left"; ctx.fillText(code, 72, H - 64); }
+  ctx.textAlign = "right"; ctx.fillText("mndallan.com", W - 72, H - 64);
+  ctx.restore();
 }
 
 /**
@@ -182,7 +168,7 @@ function drawSpotlight(ctx, { scene, img, storyCrop, title, code, logo, q1, q2, 
  *
  * @param {object} p
  * @param {string} p.title     product title, shown in the red cloud
- * @param {string} p.category  product category (picks the room and the question)
+ * @param {string} p.category  product category (picks the question)
  * @param {string} [p.photo]   absolute image URL (R2)
  * @param {object} [p.storyCrop] admin-set framing ({ url, x, y, w, h }), used
  *                             only while `url` is this photo
@@ -190,18 +176,20 @@ function drawSpotlight(ctx, { scene, img, storyCrop, title, code, logo, q1, q2, 
  * @param {string} [p.locale]  language of the writing (default Kurdish)
  */
 export async function buildSpotlightImage({ title, category, photo, storyCrop, code, locale = "ckb" }) {
-  const [room, q] = SPOTLIGHT[category] ?? SPOTLIGHT.Other;
+  const q = QUESTION[category] ?? QUESTION.Other;
   const L = { locale };
   const q1 = m[`spotlight${q}1`]({}, L), q2 = m[`spotlight${q}2`]({}, L), find = m.spotlightFindHere({}, L);
   const crop = storyCrop && storyCrop.url === photo ? storyCrop : null;
 
-  const [scene, img, logo, storyOk, spotOk] = await Promise.all([
-    loadImage(`/spotlight/${room}.jpg`),
+  const drawingUrls = CATEGORY_CONFIG.filter((c) => c.value !== "all").map((c) => c.img);
+  const [img, logo, storyOk, spotOk, ...drawingImgs] = await Promise.all([
     loadImage(photo, { cors: true }),
     loadImage("/logo-mndallan.svg"),
     loadStoryFonts(),
     loadSpotFont(),
+    ...drawingUrls.map((u) => loadImage(u, { cors: true })),
   ]);
+  const drawings = drawingImgs.filter(Boolean);
   const page = getComputedStyle(document.body).fontFamily || "sans-serif";
   const pageFamily = storyOk ? `"${STORY_FONT}", ${page}` : page;
   // Noto Kufi for the Kurdish; Latin letters in a title fall back to the story font
@@ -212,7 +200,7 @@ export async function buildSpotlightImage({ title, category, photo, storyCrop, c
     canvas.width = W; canvas.height = H;
     const ctx = canvas.getContext("2d");
     if (!ctx) return null;
-    drawSpotlight(ctx, { scene, img: withPhoto ? img : null, storyCrop: crop, title, code, logo, q1, q2, find, family, pageFamily });
+    drawSpotlight(ctx, { img: withPhoto ? img : null, storyCrop: crop, title, code, logo, q1, q2, find, family, pageFamily, drawings: withPhoto ? drawings : [] });
     return canvas;
   };
   const toBlob = (canvas) => new Promise((resolve, reject) => {

@@ -222,8 +222,10 @@ function drawIcon(ctx, d, x, y, size, color) {
 
 // City chip (outlined) and a white chip after it: "new from a shop" for store
 // products, or the condition (new / like new / used) for everyone else. Laid
-// out from the reading edge, so it mirrors in Kurdish/Arabic.
-function drawChips(ctx, { city, store, condition, family, rtl, edge, top }) {
+// out from the reading edge, so it mirrors in Kurdish/Arabic. Given `ink` (the
+// card colour's dark shade), both chips are solid white with their icon and
+// text in that shade, so they read clearly on any card colour.
+function drawChips(ctx, { city, store, condition, family, rtl, edge, top, ink }) {
   const chips = [];
   ctx.font = `700 36px ${family}`;
   if (city) chips.push({ kind: "city", text: city, w: 28 + 38 + 12 + ctx.measureText(city).width + 30 });
@@ -239,7 +241,7 @@ function drawChips(ctx, { city, store, condition, family, rtl, edge, top }) {
   for (const c of chips) {
     const x = rtl ? at - c.w : at;
     roundedRect(ctx, x, top, c.w, h, h / 2);
-    if (c.kind === "city") {
+    if (c.kind === "city" && !ink) {
       ctx.fillStyle = "rgba(255, 255, 255, 0.16)";
       ctx.fill();
       ctx.strokeStyle = "rgba(255, 255, 255, 0.6)";
@@ -249,7 +251,7 @@ function drawChips(ctx, { city, store, condition, family, rtl, edge, top }) {
       ctx.fillStyle = "#ffffff";
       ctx.fill();
     }
-    const color = c.kind === "city" ? "#ffffff" : INK;
+    const color = ink ?? (c.kind === "city" ? "#ffffff" : INK);
     const iconX = rtl ? x + c.w - 28 - 38 : x + 28;
     drawIcon(ctx, c.kind === "city" ? PIN_PATH : c.kind === "store" ? STORE_PATH : TAG_PATH, iconX, mid - 19, 38, color);
     ctx.fillStyle = color;
@@ -500,7 +502,7 @@ function drawCardArt(ctx, { art, CS, cx, cy, cw, ch, rtl, price, label, title, c
   // chips and title inside the shorter card
   const pad = 56;
   const chipTop = cy + 34;
-  drawChipsSized(ctx, { city, store, condition, family, rtl, edge: rtl ? cx + cw - pad : cx + pad, top: chipTop });
+  drawChipsSized(ctx, { city, store, condition, family, rtl, edge: rtl ? cx + cw - pad : cx + pad, top: chipTop, ink: priceColor });
   const inner = cw - 2 * pad - 40;
   let tsize = 58, lines;
   for (; tsize >= 40; tsize -= 2) {
