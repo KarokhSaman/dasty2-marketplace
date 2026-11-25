@@ -421,14 +421,16 @@ const CARD_ART = {
 
 // Colour themes for the card, so stories posted one after another don't all
 // look the same: the card art recoloured (public/story-card-*.png, same
-// shape as the red one), a soft tint over the white page, and the price's
-// colour on the tag. Red, the brand colour, comes first.
+// shape as the red one, the tag's face pure white in every one), a soft tint
+// over the white page, and the price's colour on the tag. A calm palette:
+// brand red, the only bright one, comes first; the rest are muted so the
+// product photo stays the star.
 export const STORY_THEMES = [
   { name: "red", art: "/story-card.png", tint: null, price: "#5a0a1e" },
-  { name: "teal", art: "/story-card-teal.png", tint: "#dff4f1", price: "#0b4a44" },
-  { name: "blue", art: "/story-card-blue.png", tint: "#e3ebfa", price: "#0d2f6b" },
-  { name: "amber", art: "/story-card-amber.png", tint: "#fdf0d5", price: "#6b3a00" },
-  { name: "purple", art: "/story-card-purple.png", tint: "#f1e6f6", price: "#3f1257" },
+  { name: "sage", art: "/story-card-sage.png", tint: "#eef4f0", price: "#2f4a3b" },
+  { name: "dusty blue", art: "/story-card-dustyblue.png", tint: "#ebf1f7", price: "#23384f" },
+  { name: "caramel", art: "/story-card-caramel.png", tint: "#f8efe4", price: "#5a3a1a" },
+  { name: "mauve", art: "/story-card-mauve.png", tint: "#f3ecf2", price: "#432a3e" },
 ];
 
 // A theme index, or for a single story the product code's number
