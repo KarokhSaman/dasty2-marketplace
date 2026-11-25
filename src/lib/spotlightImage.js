@@ -30,7 +30,7 @@ const QUESTION = {
   "Baby Walker": "Walk",
   "Car Seat": "CarSeat",
   "High Chair": "Feeding",
-  Bouncer: "Walk",
+  Bouncer: "Sleep",
 };
 
 const SPOT_FONT = "MndallanSpotlight";
