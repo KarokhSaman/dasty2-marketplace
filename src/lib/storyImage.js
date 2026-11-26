@@ -417,8 +417,13 @@ const CARD_ART = {
   // the two-tone "زانینی نرخ؟ خوارەوە داگرە" label for a story without a price
   // (public/story-price-label.png, 1000 × 224); its pointer rests on the empty tag
   label: "/story-price-label.png",
+  // how wide the label is drawn, in card-art pixels
+  labelWidth: 440,
   card: [29, 168, 1147, 242],
   price: [508, 127, -5.0, 470],
+  // the middle of the tag's white face (the price sits a little off it, clear
+  // of the eyelet); the label above the tag is centred on this
+  face: 460,
 };
 
 // Colour themes for the card, so stories posted one after another don't all
@@ -427,12 +432,43 @@ const CARD_ART = {
 // over the white page, and the price's colour on the tag. A calm palette:
 // brand red, the only bright one, comes first; the rest are muted so the
 // product photo stays the star.
+// The "without price" label recoloured from brand red to a card colour: its
+// red parts take that colour (lighter and darker shades kept), while white
+// and the black writing stay. Made once per colour.
+const recoloured = new Map();
+function recolourLabel(img, hex) {
+  if (!hex || !img) return img;
+  const key = `${img.src}|${hex}`;
+  if (recoloured.has(key)) return recoloured.get(key);
+  const hsl = (r, g, b) => { r /= 255; g /= 255; b /= 255; const mx = Math.max(r, g, b), mn = Math.min(r, g, b); let h = 0, s = 0; const l = (mx + mn) / 2; if (mx !== mn) { const d = mx - mn; s = l > 0.5 ? d / (2 - mx - mn) : d / (mx + mn); h = mx === r ? (g - b) / d + (g < b ? 6 : 0) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; h /= 6; } return [h, s, l]; };
+  const rgb = (h, s, l) => { if (!s) return [l, l, l].map((v) => v * 255); const q = l < 0.5 ? l * (1 + s) : l + s - l * s, p = 2 * l - q; const f = (t) => { t = (t + 1) % 1; if (t < 1 / 6) return p + (q - p) * 6 * t; if (t < 1 / 2) return q; if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6; return p; }; return [f(h + 1 / 3), f(h), f(h - 1 / 3)].map((v) => v * 255); };
+  const c = document.createElement("canvas"); c.width = img.width; c.height = img.height;
+  const x = c.getContext("2d"); if (!x) return img;
+  x.drawImage(img, 0, 0);
+  let data;
+  try { data = x.getImageData(0, 0, c.width, c.height); } catch { return img; }
+  const px = data.data;
+  const [, bs, bl] = hsl(237, 0, 64);
+  const [th, ts, tl] = hsl(parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16));
+  for (let i = 0; i < px.length; i += 4) {
+    if (!px[i + 3]) continue;
+    const [, s, l] = hsl(px[i], px[i + 1], px[i + 2]);
+    if (s < 0.2) continue;
+    const nl = l <= bl ? (l * tl) / bl : tl + ((l - bl) * (1 - tl)) / (1 - bl);
+    const [r, g, b] = rgb(th, Math.min(1, (s * ts) / bs), Math.min(1, nl));
+    px[i] = r; px[i + 1] = g; px[i + 2] = b;
+  }
+  x.putImageData(data, 0, 0);
+  recoloured.set(key, c);
+  return c;
+}
+
 export const STORY_THEMES = [
-  { name: "red", art: "/story-card.png", tint: null, price: "#5a0a1e" },
-  { name: "sage", art: "/story-card-sage.png", tint: "#eef4f0", price: "#2f4a3b" },
-  { name: "dusty blue", art: "/story-card-dustyblue.png", tint: "#ebf1f7", price: "#23384f" },
-  { name: "caramel", art: "/story-card-caramel.png", tint: "#f8efe4", price: "#5a3a1a" },
-  { name: "mauve", art: "/story-card-mauve.png", tint: "#f3ecf2", price: "#432a3e" },
+  { name: "red", art: "/story-card.png", tint: null, price: "#5a0a1e", card: null },
+  { name: "sage", art: "/story-card-sage.png", tint: "#eef4f0", price: "#2f4a3b", card: "#6f9a82" },
+  { name: "dusty blue", art: "/story-card-dustyblue.png", tint: "#ebf1f7", price: "#23384f", card: "#5b7fa6" },
+  { name: "caramel", art: "/story-card-caramel.png", tint: "#f8efe4", price: "#5a3a1a", card: "#c98a4b" },
+  { name: "mauve", art: "/story-card-mauve.png", tint: "#f3ecf2", price: "#432a3e", card: "#9a6b8f" },
 ];
 
 // A theme index, or for a single story the product code's number
@@ -455,7 +491,8 @@ export const STORY_PHOTO_ASPECT = (() => {
 // The card art is drawn as is in Kurdish/Arabic (eyelet on the left, arrow
 // pointing left) and flipped in English (eyelet on the right, arrow pointing
 // right); the price, chips and title are written on it.
-function drawCardArt(ctx, { art, CS, cx, cy, cw, ch, rtl, price, label, title, city, store, condition, family, priceColor = TAG_PRICE }) {
+function drawCardArt(ctx, { art, CS, cx, cy, cw, ch, rtl, price, label, labelColor, title, city, store, condition, family, priceColor = TAG_PRICE }) {
+  label = recolourLabel(label, labelColor);
   const A = CARD_ART;
   const ox = A.card[0] * CS, oy = A.card[1] * CS, iw = art.width * CS, ih = art.height * CS;
   ctx.save();
@@ -474,9 +511,10 @@ function drawCardArt(ctx, { art, CS, cx, cy, cw, ch, rtl, price, label, title, c
   if (label) {
     // no price: the tag stays empty for the Instagram link sticker, and the
     // label above it, tilted with the tag, says to tap there for the price
-    const lw = 600 * CS, lh = lw * (label.height / label.width);
+    const lw = A.labelWidth * CS, lh = lw * (label.height / label.width);
     ctx.save();
-    ctx.translate(tcx, tcy);
+    const fdx = (A.price[0] - A.face) * CS * (rtl ? 1 : -1);
+    ctx.translate(tcx - fdx, tcy);
     ctx.rotate(rtl ? ang : -ang);
     ctx.drawImage(label, -lw / 2, -50 * CS - lh - 12, lw, lh);
     ctx.restore();
@@ -717,7 +755,7 @@ function drawStory(ctx, { title, price, label, img, storyCrop, sold, city, store
     // on a sold story the card and price tag fade back so the stamp leads
     ctx.save();
     if (sold) ctx.globalAlpha = 0.4;
-    drawCardArt(ctx, { art, CS, cx, cy, cw, ch, rtl, price, label, title, city, store, condition, family, priceColor: theme.price });
+    drawCardArt(ctx, { art, CS, cx, cy, cw, ch, rtl, price, label, labelColor: theme.card, title, city, store, condition, family, priceColor: theme.price });
     ctx.restore();
   } else {
   ctx.save();
